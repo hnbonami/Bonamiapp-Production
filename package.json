@@ -1,0 +1,15 @@
+{
+    "name": "bonamiapp-pdf-generator",
+    "version": "1.0.0",
+    "description": "PDF generation for Bonami Bikefit reports",
+    "main": "resources\/js\/pdf-generator.js",
+    "scripts": {
+        "test-pdf": "node resources\/js\/pdf-generator.js"
+    },
+    "dependencies": {
+        "puppeteer": "^21.0.0"
+    },
+    "engines": {
+        "node": ">=16.0.0"
+    }
+}

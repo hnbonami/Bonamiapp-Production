@@ -1,0 +1,13 @@
+// Zoek naar de main sidebar in app.blade.php
+// Waarschijnlijk ziet het er zo uit:
+// <x-sidebar-sjablonen-tab /> of {{ component('sidebar-sjablonen-tab') }}
+// 
+// Als je de bestaande "Sjablonen" link vindt, vervang dan:
+// href="{{ route('sjablonen.index') }}" 
+// door:
+// href="{{ url('/sjabloon-manager') }}"
+//
+// Of als het een component is, gebruik dan:
+// <x-sidebar-sjablonen-tab />
+
+// ALTERNATIEF: Zoek naar bestaande sjablonen link en pas aan

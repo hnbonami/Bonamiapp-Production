@@ -1,0 +1,7 @@
+<a href="{{ route('admin.staffnotes.overview') }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->routeIs('admin.staffnotes.overview') ? 'text-gray-900 bg-blue-50 font-bold' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->routeIs('admin.staffnotes.overview') ? 'background:#f6fbfe' : '' }}">
+    @if(request()->routeIs('admin.staffnotes.overview'))
+        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
+    @endif
+    <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v2h2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2h-2v2a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-2H6a2 2 0 0 1-2-2v-2H2a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2h2V8a2 2 0 0 1 2-2h2V4a2 2 0 0 1 2-2h2z" stroke="#9bb3bd" stroke-width="1.5" fill="none"/></svg>
+    <span class="font-medium text-[17px]">Beheer</span>
+</a>

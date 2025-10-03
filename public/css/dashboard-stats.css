@@ -1,0 +1,38 @@
+/* STATISTIEK TEGELS - SMALLER HEIGHT */
+.stat-tile,
+.statistics-tile,
+.dashboard-stat,
+[class*="stat-"],
+[class*="statistic"],
+.metric-tile,
+.counter-tile {
+    min-height: 80px !important;
+    max-height: 100px !important;
+    padding: 12px !important;
+}
+
+/* Statistiek tegel content aanpassingen */
+.stat-tile .number,
+.statistics-tile .number,
+.dashboard-stat .number,
+[class*="stat-"] .number {
+    font-size: 1.8em !important;
+    line-height: 1.2 !important;
+    margin-bottom: 4px !important;
+}
+
+.stat-tile .label,
+.statistics-tile .label,
+.dashboard-stat .label,
+[class*="stat-"] .label {
+    font-size: 0.85em !important;
+    line-height: 1.2 !important;
+}
+
+/* Target statistiek tegels in de dashboard header */
+.dashboard-stats .tile,
+.stats-row .tile,
+.statistics-row .tile {
+    min-height: 80px !important;
+    max-height: 100px !important;
+}

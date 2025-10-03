@@ -1,0 +1,186 @@
+/* Dashboard Grid Layout - Force multiple columns */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Dashboard Tiles - Flexible width */
+.dashboard-tile {
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 2px 8px rgba(229, 231, 235, 1);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.dashboard-tile:hover {
+    box-shadow: 0 4px 16px rgba(229, 231, 235, 1);
+    transform: translateY(-2px);
+}
+
+/* Tile Sizes - Grid span based */
+.dashboard-tile-small {
+    grid-column: span 1;
+    min-height: 180px;
+}
+
+.dashboard-tile-medium {
+    grid-column: span 1;
+    min-height: 220px;
+}
+
+.dashboard-tile-large {
+    grid-column: span 2;
+    min-height: 280px;
+}
+
+/* Responsive Grid - Multiple columns */
+@media (max-width: 480px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 0 16px;
+    }
+    
+    .dashboard-tile-large {
+        grid-column: span 1;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+    }
+    
+    .dashboard-tile-large {
+        grid-column: span 2;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .dashboard-tile-large {
+        grid-column: span 2;
+    }
+}
+
+@media (min-width: 1025px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .dashboard-tile-large {
+        grid-column: span 2;
+    }
+}
+
+/* Action Buttons - Working Version */
+.tile-actions {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    display: flex;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+}
+
+.dashboard-tile:hover .tile-actions {
+    opacity: 1;
+}
+
+.tile-actions button {
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(8px);
+}
+
+.tile-actions button:hover {
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Button States */
+.edit-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.pin-btn:hover {
+    border-color: #10b981;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.pin-btn.pinned {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+.pin-btn.pinned:hover {
+    background: #059669;
+}
+
+.archive-btn:hover {
+    border-color: #f59e0b;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.1);
+}
+
+.delete-btn:hover {
+    border-color: #ef4444;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Tile Content */
+.tile-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.tile-meta {
+    margin-top: auto;
+    padding-top: 1rem;
+}
+
+/* Drag and Drop */
+.dashboard-tile.sortable-ghost {
+    opacity: 0.5;
+}
+
+.dashboard-tile.sortable-chosen {
+    transform: scale(1.02);
+}
+
+/* Hide unwanted elements */
+.type-icon,
+.priority-badge,
+.tile-header {
+    display: none !important;
+}

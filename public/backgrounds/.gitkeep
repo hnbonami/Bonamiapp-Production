@@ -1,0 +1,4 @@
+/* Sample CSS for testing backgrounds directory */
+body {
+    font-family: Arial, sans-serif;
+}

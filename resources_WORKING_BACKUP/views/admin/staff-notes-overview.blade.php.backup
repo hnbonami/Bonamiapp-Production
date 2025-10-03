@@ -1,0 +1,23 @@
+@extends('layouts.app')
+@section('content')
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Overzicht gelezen notities per gebruiker</h1>
+    @foreach($notes as $note)
+        <div class="mb-6 p-4 bg-white rounded shadow">
+            <div class="mb-2 font-semibold prose max-w-none">{!! $note->content !!}</div>
+            <div class="text-xs text-gray-500 mb-1">Aangemaakt op {{ $note->created_at->format('d-m-Y H:i') }}</div>
+            <div>
+                <strong>Gelezen door:</strong>
+                @foreach($users as $user)
+                    @php
+                        $reader = $note->readers->firstWhere('id', $user->id);
+                    @endphp
+                    <span class="{{ $reader ? 'text-green-600' : 'text-red-600' }} mr-2">
+                        {{ $user->name }}{{ $reader ? ' ✔' : ' ✗' }}
+                    </span>
+                @endforeach
+            </div>
+        </div>
+    @endforeach
+</div>
+@endsection

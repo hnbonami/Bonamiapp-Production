@@ -1,0 +1,183 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Klant;
+use App\Models\User;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AccountCreatedMail;
+
+class KlantController extends Controller
+{
+    public function verwijderViaPost(Request $request, Klant $klant)
+    {
+        $klant->delete();
+        return redirect()->route('klanten.index')->with('success', 'Klant succesvol verwijderd.');
+    }
+    public function destroy(Klant $klant)
+    {
+        $id = $klant->id;
+        // Verwijder gekoppelde user
+        if ($klant->email) {
+            $user = \App\Models\User::where('email', $klant->email)->first();
+            if ($user) {
+                $user->delete();
+            }
+        }
+        $klant->delete();
+        \Log::info('Klant en gekoppelde user verwijderd', ['id' => $id]);
+        return redirect()->route('klanten.index')->with('success', 'Klant en gekoppelde gebruiker succesvol verwijderd.');
+    }
+    public function edit(Klant $klant)
+    {
+        return view('klanten.edit', compact('klant'));
+    }
+
+    public function update(Request $request, Klant $klant)
+    {
+        $validated = $request->validate([
+            'voornaam' => 'required',
+            'naam' => 'required',
+            'email' => 'nullable|email',
+            'geboortedatum' => 'nullable|date',
+            'geslacht' => 'nullable|string',
+            'sport' => 'nullable|string',
+            'niveau' => 'nullable|string',
+            'club' => 'nullable|string',
+            'herkomst' => 'nullable|string',
+            'status' => 'required',
+            'avatar' => 'nullable|image|max:5120',
+        ]);
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars/klanten', 'public');
+            $validated['avatar_path'] = $path;
+        }
+        $klant->update($validated);
+        return redirect()->route('klanten.index');
+    }
+    public function index()
+    {
+        $zoek = request('zoek');
+        $klanten = Klant::query();
+        if ($zoek) {
+            $klanten = $klanten->where(function($query) use ($zoek) {
+                $query->where('naam', 'like', "%$zoek%")
+                      ->orWhere('voornaam', 'like', "%$zoek%");
+            });
+        }
+        $klanten = $klanten->get();
+        return view('klanten.index', compact('klanten'));
+    }
+
+    public function create()
+    {
+        return view('klanten.create');
+    }
+
+    public function store(Request $request)
+    {
+        // Validatie en opslaan
+        $validated = $request->validate([
+            'voornaam' => 'required',
+            'naam' => 'required',
+            'email' => [
+                'nullable',
+                'email',
+                'unique:users,email',
+            ],
+            'geboortedatum' => 'nullable|date',
+            'geslacht' => 'nullable|string',
+            'sport' => 'nullable|string',
+            'niveau' => 'nullable|string',
+            'club' => 'nullable|string',
+            'herkomst' => 'nullable|string',
+            'status' => 'required',
+            'avatar' => 'nullable|image|max:5120',
+        ], [
+            'email.unique' => 'Dit e-mailadres is al in gebruik. Kies een ander e-mailadres.'
+        ]);
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars/klanten', 'public');
+            $validated['avatar_path'] = $path;
+        }
+
+        $klant = Klant::create($validated);
+
+        // User aanmaken
+        if (!empty($validated['email'])) {
+            $password = Str::random(12);
+            $user = User::create([
+                'name' => $validated['voornaam'] . ' ' . $validated['naam'],
+                'email' => $validated['email'],
+                'password' => Hash::make($password),
+                'role' => 'klant',
+            ]);
+            $loginUrl = url('/login');
+            Mail::to($user->email)->send(new AccountCreatedMail($user->name, $user->email, $password, $loginUrl));
+        }
+        return redirect()->route('klanten.index')->with('success', 'Klant toegevoegd en loginmail verzonden!');
+    }
+    public function show(Klant $klant)
+    {
+        $user = auth()->user();
+        if ($user->role === 'klant' && $user->email !== $klant->email) {
+            abort(403, 'Je mag alleen je eigen profiel bekijken.');
+        }
+
+        // Haal beide soorten tests op
+        $inspanningstests = $klant->inspanningstests()->get()->map(function ($test) {
+            $test->type = 'inspanningstest';
+            $test->test_id = $test->id;
+            $test->datum = $test->testdatum;
+            return $test;
+        });
+
+        $bikefits = $klant->bikefits()->get()->map(function ($test) {
+            $test->type = 'bikefit';
+            $test->test_id = $test->id;
+            $test->datum = $test->datum;
+            return $test;
+        });
+
+        // Voeg samen en sorteer
+        $testen = $inspanningstests->concat($bikefits)->sortByDesc('datum');
+
+        return view('klanten.show', compact('klant', 'testen'));
+    }
+    public function sendInvitation(Request $request, Klant $klant)
+    {
+        // Zoek de user op basis van e-mail
+        $user = User::where('email', $klant->email)->first();
+        if ($user) {
+            // Genereer een nieuw wachtwoord
+            $password = Str::random(12);
+            $user->password = Hash::make($password);
+            $user->save();
+            $loginUrl = url('/login');
+            Mail::to($user->email)->send(new AccountCreatedMail($user->name, $user->email, $password, $loginUrl));
+            return back()->with('success', 'Uitnodiging opnieuw verzonden!');
+        } else {
+            return back()->with('error', 'Er is geen gebruiker gekoppeld aan dit e-mailadres.');
+        }
+    }
+
+    public function updateAvatar(Request $request, Klant $klant)
+    {
+        $request->validate([
+            'avatar' => 'required|image|max:5120',
+        ]);
+
+        // Verwijder oude avatar indien aanwezig
+        if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
+            \Storage::disk('public')->delete($klant->avatar_path);
+        }
+
+        $path = $request->file('avatar')->store('avatars/klanten', 'public');
+        $klant->update(['avatar_path' => $path]);
+
+        return back()->with('success', 'Profielfoto bijgewerkt.');
+    }
+}

@@ -1,0 +1,44 @@
+/* Mobility table scaling - 30% kleiner */
+.mobility-table-wrapper {
+    transform: scale(0.7);
+    transform-origin: top left;
+    width: 142.86%; /* compensatie voor scaling */
+    margin-bottom: -30%; /* compensatie voor extra ruimte */
+}
+
+/* Mobility table specifieke styling */
+.mobility-table,
+.mobility-table table,
+table[class*="mobility"],
+div[id*="mobility"] table,
+.bikefit-mobility-table {
+    transform: scale(0.7) !important;
+    transform-origin: top left !important;
+    font-size: 0.7em !important;
+}
+
+/* Algemene tabel scaling voor mobility gerelateerde content */
+.container .table:has([class*="mobility"]),
+.container .table:has([id*="mobility"]) {
+    transform: scale(0.7);
+    transform-origin: top left;
+    margin-bottom: -200px;
+}
+
+/* Specifiek voor bikefit results pagina */
+.bikefit-results .mobility-section,
+.bikefit-results .mobility-table,
+.bikefit-results table {
+    transform: scale(0.7) !important;
+    transform-origin: top left !important;
+    font-size: 12px !important;
+    margin-bottom: -100px !important;
+}
+
+/* Alternatieve selector voor alle tabellen op results pagina */
+body[class*="bikefit"] table,
+.bikefit-container table {
+    transform: scale(0.7);
+    transform-origin: top left;
+    font-size: 0.7em;
+}

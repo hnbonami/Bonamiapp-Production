@@ -1,0 +1,162 @@
+<?php
+namespace App\Http\Controllers;
+
+use App\Models\StaffNote;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class StaffNoteController extends Controller
+{
+    public function index()
+    {
+        $user = Auth::user();
+        
+        // Filter notities op basis van gebruikersrol
+        $notes = StaffNote::with('user')
+            ->visibleFor($user->role)
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
+        return view('staff-notes.index', compact('notes'));
+    }
+
+    public function create()
+    {
+        // Alleen staff mag notities aanmaken
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
+        }
+
+        return view('staff-notes.create');
+    }
+
+    public function store(Request $request)
+    {
+        \Log::info('Store method called', [
+            'user_id' => Auth::id(),
+            'user_role' => Auth::user()->role ?? 'not_found',
+            'request_data' => $request->except(['_token'])
+        ]);
+        
+        // Check of user nog steeds ingelogd is
+        if (!Auth::check()) {
+            \Log::error('User not authenticated during store');
+            return redirect()->route('login');
+        }
+        
+        // Alleen staff mag notities aanmaken
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'medewerker'])) {
+            \Log::error('Access denied for user role: ' . $user->role);
+            abort(403, 'Geen toegang');
+        }
+
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'content' => 'required|string',
+                'visibility' => 'required|in:staff,all'
+            ]);
+
+            $validated['user_id'] = Auth::id();
+
+            \Log::info('Creating staff note', $validated);
+
+            $note = StaffNote::create($validated);
+            
+            \Log::info('Staff note created successfully', ['id' => $note->id]);
+
+            return redirect()->route('staff-notes.index')
+                ->with('success', 'Notitie succesvol toegevoegd!');
+                
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation error: ', $e->errors());
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Error creating staff note: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return back()->withErrors(['error' => 'Er is een fout opgetreden: ' . $e->getMessage()])->withInput();
+        }
+    }
+
+    public function show(StaffNote $staffNote)
+    {
+        $user = Auth::user();
+        
+        // Check toegang op basis van visibility
+        if ($staffNote->visibility == 'staff' && !in_array($user->role, ['admin', 'medewerker'])) {
+            abort(403, 'Geen toegang tot deze notitie');
+        }
+        
+        return view('staff-notes.show', compact('staffNote'));
+    }
+
+    public function edit(StaffNote $staffNote)
+    {
+        // Alleen staff mag notities bewerken
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
+        }
+
+        return view('staff-notes.edit', compact('staffNote'));
+    }
+
+    public function update(Request $request, StaffNote $staffNote)
+    {
+        \Log::info('Update method called', $request->all());
+        
+        // Alleen staff mag notities bewerken
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
+        }
+
+        try {
+            $validated = $request->validate([
+                'title' => 'required|string|max:255',
+                'content' => 'required|string',
+                'visibility' => 'required|in:staff,all'
+            ]);
+
+            \Log::info('Updating staff note', ['id' => $staffNote->id, 'data' => $validated]);
+
+            $staffNote->update($validated);
+            
+            \Log::info('Staff note updated successfully');
+
+            return redirect()->route('staff-notes.index')
+                ->with('success', 'Notitie succesvol bijgewerkt!');
+                
+        } catch (\Exception $e) {
+            \Log::error('Error updating staff note: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Er is een fout opgetreden: ' . $e->getMessage()])->withInput();
+        }
+    }
+
+    public function destroy(StaffNote $staffNote)
+    {
+        // Alleen staff mag notities verwijderen
+        $user = Auth::user();
+        if (!in_array($user->role, ['admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
+        }
+
+        $staffNote->delete();
+
+        return redirect()->route('staffnotes.index')->with('success', 'Notitie verwijderd');
+    }
+
+    /**
+     * Admin overview with database import/export tools
+     */
+    public function adminOverview()
+    {
+        // Get staff notes with pagination for the overview
+        $notes = StaffNote::with('user')->latest()->paginate(10);
+        
+        return view('admin.staff-notes.overview', compact('notes'));
+    }
+}
+}

@@ -1,0 +1,9 @@
+Ik kan het bikefit create bestand niet vinden op de verwachte locaties. 
+
+Kun je me het volledige pad van het bestand geven zodat ik het dubbele gedeelte voorzichtig kan verwijderen?
+
+Mogelijke locaties waar ik heb gekeken:
+- /Users/hannesbonami/Herd/app/Bonamiapp/resources/views/bikefits/create.blade.php
+- /Users/hannesbonami/Herd/app/Bonamiapp/resources/views/klanten/bikefits/create.blade.php
+
+Het bestand kan ook ergens anders staan of een andere naam hebben.
