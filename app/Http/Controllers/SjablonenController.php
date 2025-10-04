@@ -96,6 +96,35 @@ class SjablonenController extends Controller
         return view('sjablonen.edit', compact('sjabloon', 'templateKeys'));
     }
 
+    /**
+     * Show the form for editing basic sjabloon information
+     */
+    public function editBasic($id)
+    {
+        $sjabloon = Sjabloon::findOrFail($id);
+        return view('sjablonen.edit-basic', compact('sjabloon'));
+    }
+
+    /**
+     * Update basic sjabloon information
+     */
+    public function updateBasic(Request $request, $id)
+    {
+        $sjabloon = Sjabloon::findOrFail($id);
+        
+        $request->validate([
+            'naam' => 'required|string|max:255',
+            'categorie' => 'required|string|max:255',
+            'testtype' => 'nullable|string|max:255',
+            'beschrijving' => 'nullable|string',
+        ]);
+
+        $sjabloon->update($request->only(['naam', 'categorie', 'testtype', 'beschrijving']));
+
+        return redirect()->route('sjablonen.edit', $sjabloon)
+                        ->with('success', 'Sjabloon informatie bijgewerkt! Nu kun je de inhoud bewerken.');
+    }
+
     public function update(Request $request, Sjabloon $sjabloon)
     {
         $request->validate([

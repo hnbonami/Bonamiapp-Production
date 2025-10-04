@@ -1027,3 +1027,7 @@ include __DIR__ . '/preview.php';
 
 // Sjablonen duplicate route
 Route::post('/sjablonen/{sjabloon}/duplicate', [App\Http\Controllers\SjablonenController::class, 'duplicate'])->name('sjablonen.duplicate');
+
+// Routes voor basis sjabloon bewerken
+Route::get('/sjablonen/{id}/edit-basic', [App\Http\Controllers\SjablonenController::class, 'editBasic'])->name('sjablonen.edit-basic');
+Route::post('/sjablonen/{id}/update-basic', [App\Http\Controllers\SjablonenController::class, 'updateBasic'])->name('sjablonen.update-basic');

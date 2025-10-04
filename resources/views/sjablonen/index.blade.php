@@ -84,7 +84,7 @@
                         <div class="flex items-center justify-between">
                             <!-- Eerste drie knoppen in kleur #c8e1eb -->
                             <div class="flex space-x-3">
-                                <a href="{{ route('sjablonen.edit', $sjabloon) }}" 
+                                <a href="{{ route('sjablonen.edit-basic', $sjabloon) }}" 
                                    class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
                                    style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
                                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
