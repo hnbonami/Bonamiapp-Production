@@ -22,10 +22,13 @@ class Sjabloon extends Model
         'categorie',
         'testtype',
         'beschrijving',
-        'user_id'
+        'user_id',
+        'content',
+        'is_actief'
     ];
 
     protected $casts = [
+        'is_actief' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -38,5 +41,10 @@ class Sjabloon extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function pages()
+    {
+        return $this->hasMany(SjabloonPage::class);
     }
 }

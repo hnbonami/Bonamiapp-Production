@@ -99,14 +99,14 @@
             <div class="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center py-4">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">{{ $template->name }}</h1>
-                        <p class="text-sm text-gray-600">{{ $template->type_display }} Sjabloon</p>
+                        <h1 class="text-2xl font-bold text-gray-900">{{ $sjabloon->naam }}</h1>
+                        <p class="text-sm text-gray-600">{{ ucfirst($sjabloon->categorie) }} Sjabloon</p>
                     </div>
                     <div class="flex gap-2">
                         <button onclick="saveCurrentPage()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                             Opslaan
                         </button>
-                        <a href="{{ route('sjablonen.show', $template) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        <a href="/sjablonen/{{ $sjabloon->id }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                             Voorvertoning
                         </a>
                         <a href="{{ route('sjablonen.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
@@ -171,7 +171,7 @@
                 <!-- Page Tabs -->
                 <div class="bg-white border-b p-4">
                     <div class="flex items-center gap-2 overflow-x-auto">
-                        @foreach($template->pages as $page)
+                        @foreach($sjabloon->pages as $page)
                             <div class="page-tab px-4 py-2 rounded-lg border {{ $loop->first ? 'active' : 'border-gray-300' }}"
                                  data-page-id="{{ $page->id }}"
                                  onclick="switchToPage({{ $page->id }}, {{ $page->page_number }})">
@@ -179,7 +179,7 @@
                                 @if($page->is_url_page)
                                     <span class="ml-1 text-xs bg-green-100 text-green-800 px-1 rounded">URL</span>
                                 @endif
-                                @if($template->pages->count() > 1)
+                                @if($sjabloon->pages->count() > 1)
                                     <button onclick="deletePage({{ $page->id }}, event)" class="ml-2 text-red-500 hover:text-red-700 text-xs">×</button>
                                 @endif
                             </div>
@@ -197,7 +197,7 @@
 
                 <!-- Editor Container -->
                 <div class="editor-container bg-gray-100 p-8">
-                    @foreach($template->pages as $page)
+                    @foreach($sjabloon->pages as $page)
                         <div id="page-{{ $page->id }}" class="page-editor {{ !$loop->first ? 'hidden' : '' }}">
                             @if($page->is_url_page)
                                 <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
@@ -227,11 +227,11 @@
     </div>
 
     <script>
-        let currentPageId = {{ $template->pages->first()->id }};
+        let currentPageId = {{ $sjabloon->pages->first()->id }};
         let editors = {};
         
         // Initialize CKEditor for each page
-        @foreach($template->pages->where('is_url_page', false) as $page)
+        @foreach($sjabloon->pages->where('is_url_page', false) as $page)
             CKEDITOR.replace('editor-{{ $page->id }}', {
                 height: '800px',
                 toolbar: [
@@ -260,7 +260,7 @@
         @endforeach
 
         // Set initial background
-        @foreach($template->pages->where('is_url_page', false) as $page)
+        @foreach($sjabloon->pages->where('is_url_page', false) as $page)
             @if($page->background_image)
                 setPageBackgroundImage({{ $page->id }}, '{{ $page->background_image }}');
             @endif
@@ -315,7 +315,7 @@
                 const content = editors[currentPageId].getData();
                 const backgroundImage = document.getElementById('a4-page-' + currentPageId).dataset.background || '';
                 
-                fetch(`/sjablonen/{{ $template->id }}/pages/${currentPageId}/update`, {
+                fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${currentPageId}/update`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -341,7 +341,7 @@
         function saveUrlPage(pageId) {
             const url = document.getElementById('url-' + pageId).value;
             
-            fetch(`/sjablonen/{{ $template->id }}/pages/${pageId}/update`, {
+            fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${pageId}/update`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -361,7 +361,7 @@
         }
 
         function addNewPage() {
-            fetch(`/sjablonen/{{ $template->id }}/pages`, {
+            fetch(`/sjablonen/{{ $sjabloon->id }}/pages`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -382,7 +382,7 @@
         function addUrlPage() {
             const url = prompt('Voer URL in:');
             if (url) {
-                fetch(`/sjablonen/{{ $template->id }}/pages`, {
+                fetch(`/sjablonen/{{ $sjabloon->id }}/pages`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -406,7 +406,7 @@
             event.stopPropagation();
             
             if (confirm('Weet je zeker dat je deze pagina wilt verwijderen?')) {
-                fetch(`/sjablonen/{{ $template->id }}/pages/${pageId}`, {
+                fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${pageId}`, {
                     method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
