@@ -29,14 +29,150 @@
             background: white;
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
             position: relative;
+        }
+        
+        /* Background overlay system */
+        .background-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            opacity: 0.4;
+            pointer-events: none;
+            z-index: 5;
+            transition: opacity 0.3s ease;
+        }
+        
+        .background-overlay.hidden {
+            opacity: 0;
+        }
+        
+        .overlay-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+            display: flex;
+            gap: 5px;
+        }
+        
+        .overlay-btn {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .overlay-btn:hover {
+            background: rgba(0,0,0,0.9);
+        }
+        
+        .overlay-btn.active {
+            background: #3b82f6;
+        }
+        
+        /* CKEditor styling - perfect A4 schaal matching */
+        .a4-page .cke {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 210mm !important;
+            height: 297mm !important;
+            z-index: 2;
+            border: none !important;
+        }
+        
+        .a4-page .cke_top {
+            position: absolute;
+            top: -170px;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px 4px 0 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .a4-page .cke_contents {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            background: transparent !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .a4-page .cke_bottom {
+            display: none !important;
+        }
+        
+        .a4-page .cke_contents iframe {
+            width: 210mm !important;
+            height: 297mm !important;
+            background: transparent !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        
+        .a4-page .cke_wysiwyg_frame {
+            background: transparent !important;
+            width: 210mm !important;
+            height: 297mm !important;
+        }
+        
+        /* Perfect A4 dimensies voor editor content */
+        .a4-page .cke_editable {
+            background: transparent !important;
+            background-color: transparent !important;
+            padding: 20mm !important;
+            margin: 0 !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            min-height: 297mm !important;
+            max-height: 297mm !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+        
+        .a4-page .cke_contents iframe html,
+        .a4-page .cke_contents iframe body {
+            background: transparent !important;
+            background-color: transparent !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            box-sizing: border-box !important;
+        }
+        
+        .a4-page .cke_wysiwyg_frame,
+        .a4-page .cke_wysiwyg_frame html,
+        .a4-page .cke_wysiwyg_frame body {
+            background: transparent !important;
+            background-color: transparent !important;
+            width: 210mm !important;
+            height: 297mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
         
         .editor-container {
             height: calc(100vh - 200px);
             overflow-y: auto;
+            padding-top: 80px; /* Extra ruimte voor CKEditor toolbar */
         }
         
         .key-library {
@@ -200,7 +336,7 @@
                 </div>
 
                 <!-- Editor Container -->
-                <div class="editor-container bg-gray-100 p-8">
+                <div class="editor-container bg-gray-100">
                     @foreach($sjabloon->pages as $page)
                         <div id="page-{{ $page->id }}" class="page-editor {{ !$loop->first ? 'hidden' : '' }}">
                             @if($page->is_url_page)
@@ -219,7 +355,22 @@
                                     </button>
                                 </div>
                             @else
-                                <div class="a4-page" id="a4-page-{{ $page->id }}" data-background="{{ $page->background_image ?? '' }}">
+                                <div class="a4-page" id="a4-page-{{ $page->id }}" data-background="{{ $page->background_image ?? '' }}" style="margin-top: 100px;">
+                                    <!-- Background overlay -->
+                                    <div class="background-overlay" id="overlay-{{ $page->id }}"></div>
+                                    
+                                    <!-- Overlay controls -->
+                                    <div class="overlay-controls">
+                                        <button class="overlay-btn active" id="toggle-overlay-{{ $page->id }}" onclick="toggleOverlay({{ $page->id }})">👁️ Overlay</button>
+                                        <input type="range" 
+                                               id="opacity-{{ $page->id }}" 
+                                               min="0" 
+                                               max="100" 
+                                               value="40" 
+                                               onchange="changeOpacity({{ $page->id }}, this.value)"
+                                               style="width: 80px;">
+                                    </div>
+                                    
                                     <textarea id="editor-{{ $page->id }}" name="content">{{ $page->content }}</textarea>
                                 </div>
                             @endif
@@ -237,15 +388,46 @@
         // Initialize CKEditor for each page
         @foreach($sjabloon->pages->where('is_url_page', false) as $page)
             CKEDITOR.replace('editor-{{ $page->id }}', {
-                height: '800px',
+                width: '210mm',
+                height: '297mm', 
                 toolbar: 'Full',
                 resize_enabled: false,
-                removePlugins: 'elementspath',
+                removePlugins: 'elementspath,resize',
                 allowedContent: true,
                 enterMode: CKEDITOR.ENTER_P,
                 shiftEnterMode: CKEDITOR.ENTER_BR,
-                contentsCss: ['body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.4; margin: 0; padding: 20px; background: transparent; }'],
-                bodyClass: 'a4-content'
+                contentsCss: [
+                    'body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.4; margin: 0; padding: 20mm; background: transparent; box-sizing: border-box; width: 210mm; height: 297mm; min-height: 297mm; max-height: 297mm; }'
+                ],
+                bodyClass: 'a4-content',
+                on: {
+                    instanceReady: function(evt) {
+                        var editor = evt.editor;
+                        var contents = editor.ui.space('contents');
+                        var editable = editor.editable();
+                        
+                        // Set exact dimensions for iframe and editable area
+                        if (contents) {
+                            contents.setStyle('width', '210mm');
+                            contents.setStyle('height', '297mm');
+                            contents.setStyle('margin', '0');
+                            contents.setStyle('padding', '0');
+                            contents.setStyle('border', 'none');
+                        }
+                        
+                        // Ensure iframe content matches A4 exactly
+                        if (editable) {
+                            editable.setStyle('width', '210mm');
+                            editable.setStyle('height', '297mm');
+                            editable.setStyle('min-height', '297mm');
+                            editable.setStyle('max-height', '297mm');
+                            editable.setStyle('box-sizing', 'border-box');
+                            editable.setStyle('padding', '20mm');
+                            editable.setStyle('margin', '0');
+                            editable.setStyle('background', 'transparent');
+                        }
+                    }
+                }
             });
             
             editors[{{ $page->id }}] = CKEDITOR.instances['editor-{{ $page->id }}'];
@@ -285,16 +467,36 @@
         }
 
         function setPageBackgroundImage(pageId, imageName) {
-            const pageElement = document.getElementById('a4-page-' + pageId);
-            if (pageElement) {
+            const overlayElement = document.getElementById('overlay-' + pageId);
+            if (overlayElement) {
                 if (imageName) {
-                    pageElement.style.backgroundImage = `url('/backgrounds/${imageName}')`;
-                    pageElement.dataset.background = imageName;
+                    overlayElement.style.backgroundImage = `url('/backgrounds/${imageName}')`;
+                    document.getElementById('a4-page-' + pageId).dataset.background = imageName;
                 } else {
-                    pageElement.style.backgroundImage = '';
-                    pageElement.dataset.background = '';
+                    overlayElement.style.backgroundImage = '';
+                    document.getElementById('a4-page-' + pageId).dataset.background = '';
                 }
             }
+        }
+
+        function toggleOverlay(pageId) {
+            const overlay = document.getElementById('overlay-' + pageId);
+            const button = document.getElementById('toggle-overlay-' + pageId);
+            
+            if (overlay.classList.contains('hidden')) {
+                overlay.classList.remove('hidden');
+                button.classList.add('active');
+                button.textContent = '👁️ Overlay';
+            } else {
+                overlay.classList.add('hidden');
+                button.classList.remove('active');
+                button.textContent = '🚫 Hidden';
+            }
+        }
+
+        function changeOpacity(pageId, value) {
+            const overlay = document.getElementById('overlay-' + pageId);
+            overlay.style.opacity = value / 100;
         }
 
         function saveAndPreview() {
@@ -376,64 +578,6 @@
             @endforeach
             
             return Promise.all(promises);
-        }
-
-        function saveCurrentPage() {
-            return new Promise((resolve, reject) => {
-                console.log('💾 Saving page:', currentPageId);
-                
-                const pageElement = document.getElementById('page-' + currentPageId);
-                const isUrlPage = pageElement.querySelector('input[type="url"]') !== null;
-                
-                if (isUrlPage) {
-                    console.log('📄 Saving URL page');
-                    saveUrlPagePromise(currentPageId).then(resolve).catch(reject);
-                } else {
-                    console.log('📝 Saving editor page');
-                    
-                    if (!editors[currentPageId]) {
-                        console.error('❌ No editor found for page:', currentPageId);
-                        reject(new Error('No editor found'));
-                        return;
-                    }
-                    
-                    const content = editors[currentPageId].getData();
-                    const backgroundImage = document.getElementById('a4-page-' + currentPageId).dataset.background || '';
-                    
-                    console.log('📝 Content length:', content.length);
-                    console.log('🎨 Background:', backgroundImage);
-                    
-                    fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${currentPageId}/update`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        },
-                        body: JSON.stringify({
-                            content: content,
-                            background_image: backgroundImage
-                        })
-                    })
-                    .then(response => {
-                        console.log('📡 Response status:', response.status);
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('📡 Response data:', data);
-                        if (data.success) {
-                            showNotification('Pagina opgeslagen!', 'success');
-                            resolve(data);
-                        } else {
-                            reject(new Error('Save failed: ' + (data.message || 'Unknown error')));
-                        }
-                    })
-                    .catch(error => {
-                        console.error('❌ Save error:', error);
-                        showNotification('Fout bij opslaan', 'error');
-                        reject(error);
-                    });
-                }
-            });
         }
 
         function saveCurrentPage() {
