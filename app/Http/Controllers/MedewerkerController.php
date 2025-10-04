@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Helpers\MailHelper;
-use App\Models\User;
+use Illuminate\Http\Request;
 use App\Models\Medewerker;
+use App\Models\User;
+use App\Models\InvitationToken;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -163,13 +164,7 @@ class MedewerkerController extends Controller
             $invitationToken = \App\Models\InvitationToken::createForMedewerker($medewerker->email, $temporaryPassword);
             
             // Send invitation email
-            \MailHelper::smartSend('emails.medewerker-invitation', [
-                'medewerker' => $medewerker,
-                'temporaryPassword' => $temporaryPassword
-            ], function ($message) use ($medewerker) {
-                $message->to($medewerker->email, $medewerker->voornaam . ' ' . $medewerker->naam)
-                       ->subject('Welkom bij Bonami Sportcoaching - Medewerker Account');
-            });
+                            $emailSent = \App\Helpers\MailHelper::sendMedewerkerInvitation($medewerker, $temporaryPassword, $invitationToken);
             
             // Update medewerker to show invitation was sent
             $medewerker->update(['laatste_uitnodiging' => now()]);

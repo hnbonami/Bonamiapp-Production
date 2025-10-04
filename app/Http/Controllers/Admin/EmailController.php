@@ -388,15 +388,35 @@ class EmailController extends Controller
                 'is_active' => true
             ],
             [
-                'name' => 'Welkom Nieuwe Klant',
+                'name' => 'Welkom Klant',
                 'type' => EmailTemplate::TYPE_WELCOME_CUSTOMER,
-                'subject' => 'Welkom bij @{{bedrijf_naam}}, @{{voornaam}}!',
+                'subject' => 'Welkom bij @{{bedrijf_naam}}, @{{voornaam}}! 🚴‍♂️',
                 'body_html' => '<h2>Welkom @{{voornaam}}!</h2>
 <p>Leuk dat je een account hebt aangemaakt bij <strong>@{{bedrijf_naam}}</strong>.</p>
-<p>We kijken ernaar uit om je te helpen met de perfecte bikefit.</p>
-<p>Heb je vragen? Neem gerust contact met ons op!</p>
+<p><strong>Je inloggegevens:</strong><br>
+E-mail: @{{email}}<br>
+Tijdelijk wachtwoord: @{{wachtwoord}}</p>
+<p><a href="@{{login_url}}" style="background-color: #3B82F6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Inloggen op je account</a></p>
+<p>We kijken ernaar uit om je te helpen met de perfecte bikefit!</p>
 <p>Met vriendelijke groet,<br>Het @{{bedrijf_naam}} team</p>',
-                'description' => 'Automatisch verstuurd bij nieuwe klant registratie',
+                'description' => 'Automatisch verstuurd bij nieuwe klant registratie met inloggegevens',
+                'is_active' => true
+            ],
+            [
+                'name' => 'Welkom Medewerker',
+                'type' => EmailTemplate::TYPE_WELCOME_EMPLOYEE,
+                'subject' => 'Welkom bij het @{{bedrijf_naam}} team, @{{voornaam}}! 👥',
+                'body_html' => '<h2>Welkom bij het team, @{{voornaam}}!</h2>
+<p>Welkom bij <strong>@{{bedrijf_naam}}</strong> als nieuwe @{{functie}}!</p>
+<p><strong>Je inloggegevens voor het systeem:</strong><br>
+E-mail: @{{email}}<br>
+Tijdelijk wachtwoord: @{{wachtwoord}}<br>
+Rol: @{{rol}}</p>
+<p><a href="@{{login_url}}" style="background-color: #10B981; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Inloggen op het systeem</a></p>
+<p>We kijken ernaar uit om met je samen te werken!</p>
+<p>Bij vragen kun je altijd contact opnemen met je manager.</p>
+<p>Met vriendelijke groet,<br>Het @{{bedrijf_naam}} team</p>',
+                'description' => 'Automatisch verstuurd bij nieuwe medewerker registratie met inloggegevens',
                 'is_active' => true
             ],
             [

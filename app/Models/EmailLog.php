@@ -89,11 +89,13 @@ class EmailLog extends Model
         ]);
     }
 
-    public function markAsFailed(string $error = null): void
+        public static function markAsFailed($id, ?string $error = null)
     {
-        $this->update([
+        return self::where('id', $id)->update([
             'status' => self::STATUS_FAILED,
-            'error_message' => $error
+            'error_message' => $error,
+            'sent_at' => null,
+            'updated_at' => now()
         ]);
     }
 

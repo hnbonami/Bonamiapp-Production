@@ -1,0 +1,50 @@
+/* TESTZADELS LAYOUT FIXES - Positioned next to sidebar */
+/* Force correct layout for testzadels pages only */
+
+/* Target the main content area specifically - position next to sidebar */
+body main#app-main {
+    margin-left: 16rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    width: calc(100% - 16rem) !important;
+}
+
+/* Target any container inside main on testzadels pages */
+body main#app-main > *,
+body main#app-main .container,
+body main#app-main > div,
+body main#app-main > section {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Override any Tailwind or other CSS frameworks */
+body main#app-main [class*="max-w"],
+body main#app-main [class*="mx-"],
+body main#app-main [class*="container"] {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: none !important;
+    width: 100% !important;
+}
+
+/* Ensure content starts properly */
+body main#app-main > div:first-child,
+body main#app-main > section:first-child {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+}
+
+/* Mobile responsive - stack below sidebar */
+@media (max-width: 1024px) {
+    body main#app-main {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+}
