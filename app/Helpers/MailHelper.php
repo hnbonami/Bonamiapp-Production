@@ -155,7 +155,33 @@ class MailHelper
         Het Bonami Sportcoaching team</p>
         ";
         
-        return self::sendMail($medewerker->email, $subject, $message);
+        $emailSent = self::sendMail($medewerker->email, $subject, $message);
+        
+        \Log::info('Email sent result: ' . ($emailSent ? 'true' : 'false'));
+        
+        // Create email log entry for tracking
+        if ($emailSent) {
+            \Log::info('Attempting to create email log entry...');
+            try {
+                $emailLog = \App\Models\EmailLog::create([
+                    'recipient_email' => $medewerker->email,
+                    'recipient_name' => $medewerker->voornaam . ' ' . $medewerker->achternaam,
+                    'subject' => $subject,
+                    'body_html' => $message,
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                    'metadata' => json_encode(['type' => 'employee_invitation'])
+                ]);
+                \Log::info('Email log created successfully with ID: ' . $emailLog->id);
+            } catch (\Exception $e) {
+                \Log::error('Failed to create email log: ' . $e->getMessage());
+                \Log::error('Exception details: ' . $e->getTraceAsString());
+            }
+        } else {
+            \Log::warning('Email not sent, skipping log creation');
+        }
+        
+        return $emailSent;
     }
 
     /**

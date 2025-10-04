@@ -5,7 +5,7 @@
 <div class="flex items-center justify-between mb-6">
     <div>
         <h1 class="text-2xl font-bold mb-2">Sjablonenlijst</h1>
-    <a href="{{ route('templates.create') }}" class="inline-block rounded-xl px-4 py-1 bg-blue-100 text-gray-900 font-semibold text-base shadow-sm hover:bg-blue-200 transition" style="text-decoration:none;z-index:10000;position:relative;">+ Sjabloon aanmaken</a>
+    <a href="/sjabloon-manager/create" class="inline-block rounded-xl px-4 py-1 bg-blue-100 text-gray-900 font-semibold text-base shadow-sm hover:bg-blue-200 transition" style="text-decoration:none;z-index:10000;position:relative;">+ Sjabloon aanmaken</a>
     </div>
     <div>
         <input type="text" placeholder="Zoek sjabloon..." class="border rounded px-3 py-2" style="min-width:200px;" oninput="filterTemplates(this.value)">
@@ -36,19 +36,19 @@ function filterTemplates(query) {
                 <div class="font-semibold sjabloon-naam">{{ $template->name ?? 'Zonder naam' }}</div>
                 <div class="text-sm text-gray-500 sjabloon-type">{{ $template->type }}</div>
                 <div class="flex items-center gap-2 justify-end">
-                    <a href="{{ route('templates.edit', $template) }}" aria-label="Bewerk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800 hover:bg-orange-200 transition" title="Bewerk">
+                    <a href="/sjablonen/{{ $template->id }}/edit" aria-label="Bewerk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800 hover:bg-orange-200 transition" title="Bewerk">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                     </a>
-                    <a href="{{ route('templates.show', $template) }}" aria-label="Bekijk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition" title="Bekijk">
+                    <a href="/sjablonen/{{ $template->id }}" aria-label="Bekijk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800 hover:bg-blue-200 transition" title="Bekijk">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     </a>
-                    <form action="{{ route('templates.duplicate', $template->id) }}" method="POST" class="inline">
+                    <form action="/sjablonen/{{ $template->id }}/duplicate" method="POST" class="inline">
                         @csrf
                         <button type="submit" aria-label="Dupliceer" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition" title="Dupliceer">
                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
                         </button>
                     </form>
-                    <form action="{{ route('templates.destroy', $template) }}" method="POST" onsubmit="return confirm('Sjabloon verwijderen?');">
+                    <form action="/sjablonen/{{ $template->id }}" method="POST" onsubmit="return confirm('Sjabloon verwijderen?');">
                         @csrf
                         @method('DELETE')
                         <button type="submit" aria-label="Verwijderen" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-200 transition" title="Verwijderen">

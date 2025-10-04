@@ -1,21 +1,14 @@
 <?php
 
-// SJABLOON-MANAGER ROUTE - NAAR OUDE TEMPLATES SYSTEEM (CKEditor)!
+// SJABLOON-MANAGER ROUTE - NAAR TEMPLATES INDEX BLADE!
 Route::get('/sjabloon-manager', function() {
-    \Log::info('SJABLOON-MANAGER ROUTE GERAAKT!', [
-        'auth_check' => auth()->check(),
-        'user_id' => optional(auth()->user())->id,
-        'request_method' => request()->method(),
-        'request_path' => request()->path(),
-    ]);
+    // Get templates data (assuming you have a Template model)
+    $templates = \App\Models\Template::all();
     
-    if (!auth()->check()) {
-        return 'SJABLOON-MANAGER ROUTE WERKT! Maar je moet inloggen voor sjablonen. (Je bent niet ingelogd)';
-    }
-    
-    // Redirect naar het OUDE templates systeem (CKEditor versie)
-    return view('templates.create');
-})->name('templates.index');
+    // Return the templates index view
+    return view('templates.index', compact('templates'));
+})->name('sjabloon-manager')->middleware('auth');
+
 
 // ULTIMATE TEST - BOVENAAN!
 Route::get('/ultimate-test', function() {
