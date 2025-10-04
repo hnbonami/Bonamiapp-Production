@@ -10,6 +10,10 @@
             print-color-adjust: exact !important;
         }
         
+        html {
+            width: 100%;
+        }
+        
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -18,6 +22,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
+            width: 100%;
         }
         
         .header-actions {
@@ -29,16 +35,37 @@
             z-index: 1000;
             position: sticky;
             top: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        
+        .header-actions h1 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
         }
         
         .report-container {
             background: #888a8d;
-            min-height: 100vh;
+            min-height: calc(100vh - 120px);
             width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: flex-start;
             padding: 20px 0;
+            box-sizing: border-box;
+            position: relative;
         }
         
         .report-page {
@@ -52,13 +79,11 @@
             background-size: cover !important;
             background-position: center !important;
             background-repeat: no-repeat !important;
-            page-break-after: always;
             overflow: hidden;
         }
         
         .report-page:last-child {
             margin-bottom: 0;
-            page-break-after: avoid;
         }
         
         .page-content {
@@ -75,26 +100,22 @@
         }
         
         @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            
             * {
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
                 print-color-adjust: exact !important;
-                box-sizing: border-box !important;
-            }
-            
-            @page {
-                size: A4 portrait;
-                margin: 0mm;
             }
             
             html, body { 
-                width: 210mm;
-                height: auto;
-                margin: 0 !important;
-                padding: 0 !important;
-                background: white !important;
+                margin: 0;
+                padding: 0;
+                background: white;
                 font-size: 12pt;
-                line-height: 1.2;
             }
             
             .header-actions { 
@@ -105,73 +126,41 @@
                 background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
-                width: 210mm !important;
                 display: block !important;
-                flex-direction: initial !important;
-                align-items: initial !important;
             }
             
             .report-page { 
-                display: block !important;
-                box-shadow: none !important; 
                 margin: 0 !important;
                 padding: 0 !important;
                 width: 210mm !important;
                 height: 297mm !important;
-                max-width: 210mm !important;
-                max-height: 297mm !important;
-                min-width: 210mm !important;
-                min-height: 297mm !important;
-                page-break-before: auto !important;
-                page-break-inside: avoid !important;
-                position: relative !important;
-                overflow: hidden !important;
                 background-color: white !important;
-            }
-            
-            .report-page:not(:last-child) {
-                page-break-after: always !important;
+                box-shadow: none !important;
+                page-break-after: page !important;
+                page-break-inside: avoid !important;
+                display: block !important;
             }
             
             .report-page:last-child {
                 page-break-after: avoid !important;
             }
             
-            .report-page[style*="background-image"] {
-                background-size: 210mm 297mm !important;
-                background-position: 0mm 0mm !important;
-                background-repeat: no-repeat !important;
-                background-attachment: scroll !important;
-            }
-            
             .page-content {
-                display: block !important;
                 padding: 20mm !important;
-                height: 257mm !important;
                 width: 170mm !important;
-                max-width: 170mm !important;
-                max-height: 257mm !important;
-                position: relative !important;
-                z-index: 2 !important;
-                box-sizing: border-box !important;
-                overflow: hidden !important;
+                height: 257mm !important;
                 margin: 0 !important;
+                box-sizing: border-box !important;
             }
             
             .no-print { 
                 display: none !important; 
             }
-            
-            /* Extra specificiteit voor Safari/WebKit */
-            .report-page + .report-page {
-                page-break-before: always !important;
-                margin-top: 0 !important;
-            }
         }
         
         .btn {
             padding: 12px 24px;
-            margin: 0 8px;
+            margin: 0 4px;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -179,53 +168,71 @@
             text-decoration: none;
             display: inline-block;
             font-size: 14px;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            min-width: 140px;
+            text-align: center;
         }
         
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         
-        .btn-primary { background: #007bff; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-        .btn-danger { background: #dc3545; color: white; }
+        .btn:active, .btn:focus {
+            transform: translateY(0);
+            outline: none;
+        }
+        
+        .btn-primary { 
+            background: #007bff; 
+            color: white; 
+        }
+        
+        .btn-primary:hover { 
+            background: #0056b3; 
+        }
+        
+        .btn-success { 
+            background: #28a745; 
+            color: white; 
+        }
+        
+        .btn-success:hover { 
+            background: #1e7e34; 
+        }
+        
+        .btn-secondary { 
+            background: #6c757d; 
+            color: white; 
+        }
+        
+        .btn-secondary:hover { 
+            background: #545b62; 
+        }
+        
+        .btn-danger { 
+            background: #dc3545; 
+            color: white; 
+        }
+        
+        .btn-danger:hover { 
+            background: #c82333; 
+        }
     </style>
 </head>
 <body>
     <div class="no-print header-actions">
-        <h1 style="margin-bottom: 15px; color: #333;">{{ $template->naam ?? $template->name ?? 'Sjabloon' }} - {{ $klantModel->naam }}</h1>
-        <button class="btn btn-primary" onclick="window.print()">🖨️ Afdrukken</button>
-        <a href="/sjablonen/{{ $template->id }}/pdf" 
-           class="btn btn-danger">📄 Download PDF</a>
-        <a href="/sjablonen/{{ $template->id }}/edit" class="btn btn-secondary">✏️ Sjabloon Bewerken</a>
-        @if($klantModel->id !== 'preview')
-            <a href="/klanten/{{ $klantModel->id }}" class="btn btn-success">👤 Terug naar Klant</a>
-        @else
-            <a href="/sjablonen/{{ $template->id }}" class="btn btn-success">👁️ Terug naar Sjabloon</a>
-        @endif
+        <h1>{{ $template->naam ?? $template->name ?? 'Sjabloon' }} - {{ $klantModel->naam }}</h1>
+        <div class="header-buttons">
+            <button class="btn btn-primary" onclick="window.print()">🖨️ Afdrukken</button>
+            <a href="/sjablonen/{{ $template->id }}/pdf" 
+               class="btn btn-danger">📄 Download PDF</a>
+            <a href="/sjablonen/{{ $template->id }}/edit" class="btn btn-secondary">✏️ Sjabloon Bewerken</a>
+        </div>
     </div>
 
     <div class="report-container">
-        {{-- Debug info for development --}}
-        @if(config('app.debug'))
-            <div class="no-print" style="background: #fff; padding: 10px; margin: 10px; border: 1px solid #ccc;">
-                <strong>Debug Info:</strong> {{ count($generatedPages) }} pagina(s) gevonden
-                @foreach($generatedPages as $index => $page)
-                    <br>- Pagina {{ $index + 1 }}: 
-                    @if($page['is_url_page'])
-                        URL: {{ $page['url'] }}
-                    @else
-                        Content: {{ strlen($page['content']) }} karakters
-                        @if($page['background_image'])
-                            , Achtergrond: {{ $page['background_image'] }}
-                        @endif
-                    @endif
-                @endforeach
-            </div>
-        @endif
-        
         @forelse($generatedPages as $index => $page)
             @if($page['is_url_page'])
                 <div class="report-page">
@@ -256,152 +263,38 @@
     </div>
 
     <script>
-        // Advanced print optimization
+        // Simple print optimization - no layout changes
         window.addEventListener('beforeprint', function() {
-            console.log('🖨️ PRINT PREPARATION STARTING');
+            console.log('🖨️ SIMPLE PRINT PREPARATION');
             
-            // Remove flexbox from container to prevent overlap
-            const container = document.querySelector('.report-container');
-            if (container) {
-                container.style.display = 'block';
-                container.style.flexDirection = 'initial';
-                container.style.alignItems = 'initial';
-                container.style.justifyContent = 'initial';
-                container.style.minHeight = 'initial';
-                console.log('✅ Container display fixed');
-            }
-            
-            // Process each page individually
             const pages = document.querySelectorAll('.report-page');
-            console.log(`📄 Processing ${pages.length} pages`);
-            
             pages.forEach(function(page, index) {
-                console.log(`🔧 Configuring page ${index + 1}`);
+                // Only remove box shadow for print
+                page.style.boxShadow = 'none';
                 
-                // Remove any transforms or positioning that could cause overlap
-                page.style.transform = 'none';
-                page.style.position = 'relative';
-                page.style.float = 'none';
-                page.style.clear = 'both';
-                
-                // Force exact A4 dimensions
-                page.style.width = '210mm';
-                page.style.height = '297mm';
-                page.style.minWidth = '210mm';
-                page.style.minHeight = '297mm';
-                page.style.maxWidth = '210mm';
-                page.style.maxHeight = '297mm';
-                page.style.margin = '0';
-                page.style.padding = '0';
-                page.style.overflow = 'hidden';
-                page.style.display = 'block';
-                
-                // Simple page break logic
-                page.style.pageBreakInside = 'avoid';
-                
-                if (index === pages.length - 1) {
-                    page.style.pageBreakAfter = 'avoid';
-                } else {
-                    page.style.pageBreakAfter = 'page';
-                }
-                
-                // Background handling
+                // Background optimization for print only
                 const style = page.getAttribute('style');
                 if (style && style.includes('background-image')) {
-                    console.log(`🎨 Setting background for page ${index + 1}`);
                     page.style.backgroundSize = '210mm 297mm';
                     page.style.backgroundPosition = '0mm 0mm';
                     page.style.backgroundRepeat = 'no-repeat';
-                    page.style.backgroundAttachment = 'scroll';
-                }
-                
-                // Content container
-                const content = page.querySelector('.page-content');
-                if (content) {
-                    content.style.display = 'block';
-                    content.style.padding = '20mm';
-                    content.style.width = '170mm';
-                    content.style.height = '257mm';
-                    content.style.maxWidth = '170mm';
-                    content.style.maxHeight = '257mm';
-                    content.style.boxSizing = 'border-box';
-                    content.style.position = 'relative';
-                    content.style.zIndex = '2';
-                    content.style.overflow = 'hidden';
-                    content.style.margin = '0';
                 }
             });
-            
-            // Set body and html
-            document.documentElement.style.width = '210mm';
-            document.documentElement.style.height = 'auto';
-            document.body.style.margin = '0';
-            document.body.style.padding = '0';
-            document.body.style.width = '210mm';
-            document.body.style.height = 'auto';
-            document.body.style.display = 'block';
-            
-            console.log('✅ PRINT PREPARATION COMPLETE');
         });
 
         window.addEventListener('afterprint', function() {
-            console.log('🔄 RESETTING TO NORMAL VIEW');
+            console.log('🔄 SIMPLE RESTORE');
             
-            // Reset container
-            const container = document.querySelector('.report-container');
-            if (container) {
-                container.style.display = 'flex';
-                container.style.flexDirection = 'column';
-                container.style.alignItems = 'center';
-                container.style.minHeight = '100vh';
-            }
-            
-            // Reset pages
             const pages = document.querySelectorAll('.report-page');
-            pages.forEach(function(page, index) {
-                page.style.width = '210mm';
-                page.style.height = '297mm';
-                page.style.margin = '0 0 20mm 0';
-                page.style.transform = '';
+            pages.forEach(function(page) {
+                // Restore box shadow
+                page.style.boxShadow = '0 0 20px rgba(0,0,0,0.3)';
                 
+                // Restore background for screen
                 const style = page.getAttribute('style');
                 if (style && style.includes('background-image')) {
                     page.style.backgroundSize = 'cover';
                     page.style.backgroundPosition = 'center';
-                }
-            });
-            
-            console.log('✅ RESET COMPLETE');
-        });
-
-        // Download as HTML functionality
-        function downloadAsHTML() {
-            const fileName = '{{ $template->naam ?? "sjabloon" }}_{{ $klantModel->naam }}_{{ date("Y-m-d") }}.html';
-            const htmlContent = document.documentElement.outerHTML;
-            
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const url = window.URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
-            
-            console.log('📄 Downloaded:', fileName);
-        }
-
-        // Initialize on load
-        document.addEventListener('DOMContentLoaded', function() {
-            const pages = document.querySelectorAll('.report-page');
-            console.log(`📋 Report loaded with ${pages.length} pages`);
-            
-            // Ensure proper spacing between pages in normal view
-            pages.forEach(function(page, index) {
-                if (index > 0) {
-                    page.style.marginTop = '20mm';
                 }
             });
         });

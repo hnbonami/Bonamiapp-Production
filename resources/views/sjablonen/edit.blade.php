@@ -110,10 +110,9 @@
                         <button onclick="saveCurrentPage()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                             Opslaan
                         </button>
-                                                <a href="/sjablonen/{{ $sjabloon->id }}/preview" 
-                           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                        <button onclick="saveAndPreview()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                             Voorvertoning
-                        </a>
+                        </button>
                         <a href="{{ route('sjablonen.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                             Terug
                         </a>
@@ -310,58 +309,217 @@
             }
         }
 
-        function saveCurrentPage() {
-            const pageElement = document.getElementById('page-' + currentPageId);
-            const isUrlPage = pageElement.querySelector('input[type="url"]') !== null;
+        function saveAndPreview() {
+            console.log('🔵 saveAndPreview() started');
             
-            if (isUrlPage) {
-                saveUrlPage(currentPageId);
-            } else {
-                const content = editors[currentPageId].getData();
-                const backgroundImage = document.getElementById('a4-page-' + currentPageId).dataset.background || '';
+            // Show loading indicator
+            const previewBtn = document.querySelector('button[onclick="saveAndPreview()"]');
+            const originalText = previewBtn.textContent;
+            previewBtn.textContent = 'Opslaan & Laden...';
+            previewBtn.disabled = true;
+            
+            console.log('🔵 About to save current page:', currentPageId);
+            
+            // First save current page
+            saveCurrentPage()
+                .then(() => {
+                    console.log('✅ Current page saved, now saving all pages');
+                    // Then save all other pages to ensure everything is up to date
+                    return saveAllPages();
+                })
+                .then(() => {
+                    console.log('✅ All pages saved, redirecting to preview');
+                    showNotification('Alle wijzigingen opgeslagen! Naar voorvertoning...', 'success');
+                    // Small delay to show success message
+                    setTimeout(() => {
+                        window.location.href = '/sjablonen/{{ $sjabloon->id }}/preview';
+                    }, 1000);
+                })
+                .catch(error => {
+                    console.error('❌ Error saving before preview:', error);
+                    showNotification('Fout bij opslaan voor voorvertoning', 'error');
+                    // Restore button
+                    previewBtn.textContent = originalText;
+                    previewBtn.disabled = false;
+                });
+        }
+
+        function saveAllPages() {
+            const promises = [];
+            
+            // Save all editor pages
+            @foreach($sjabloon->pages->where('is_url_page', false) as $page)
+                if (editors[{{ $page->id }}]) {
+                    const content = editors[{{ $page->id }}].getData();
+                    const backgroundImage = document.getElementById('a4-page-{{ $page->id }}').dataset.background || '';
+                    
+                    const promise = fetch(`/sjablonen/{{ $sjabloon->id }}/pages/{{ $page->id }}/update`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            content: content,
+                            background_image: backgroundImage
+                        })
+                    });
+                    promises.push(promise);
+                }
+            @endforeach
+            
+            // Save all URL pages
+            @foreach($sjabloon->pages->where('is_url_page', true) as $page)
+                const urlInput = document.getElementById('url-{{ $page->id }}');
+                if (urlInput) {
+                    const promise = fetch(`/sjablonen/{{ $sjabloon->id }}/pages/{{ $page->id }}/update`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            url: urlInput.value,
+                            is_url_page: true
+                        })
+                    });
+                    promises.push(promise);
+                }
+            @endforeach
+            
+            return Promise.all(promises);
+        }
+
+        function saveCurrentPage() {
+            return new Promise((resolve, reject) => {
+                console.log('💾 Saving page:', currentPageId);
                 
-                fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${currentPageId}/update`, {
+                const pageElement = document.getElementById('page-' + currentPageId);
+                const isUrlPage = pageElement.querySelector('input[type="url"]') !== null;
+                
+                if (isUrlPage) {
+                    console.log('📄 Saving URL page');
+                    saveUrlPagePromise(currentPageId).then(resolve).catch(reject);
+                } else {
+                    console.log('📝 Saving editor page');
+                    
+                    if (!editors[currentPageId]) {
+                        console.error('❌ No editor found for page:', currentPageId);
+                        reject(new Error('No editor found'));
+                        return;
+                    }
+                    
+                    const content = editors[currentPageId].getData();
+                    const backgroundImage = document.getElementById('a4-page-' + currentPageId).dataset.background || '';
+                    
+                    console.log('📝 Content length:', content.length);
+                    console.log('🎨 Background:', backgroundImage);
+                    
+                    fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${currentPageId}/update`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            content: content,
+                            background_image: backgroundImage
+                        })
+                    })
+                    .then(response => {
+                        console.log('📡 Response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('📡 Response data:', data);
+                        if (data.success) {
+                            showNotification('Pagina opgeslagen!', 'success');
+                            resolve(data);
+                        } else {
+                            reject(new Error('Save failed: ' + (data.message || 'Unknown error')));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Save error:', error);
+                        showNotification('Fout bij opslaan', 'error');
+                        reject(error);
+                    });
+                }
+            });
+        }
+
+        function saveUrlPagePromise(pageId) {
+            return new Promise((resolve, reject) => {
+                const url = document.getElementById('url-' + pageId).value;
+                
+                fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${pageId}/update`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                     },
                     body: JSON.stringify({
-                        content: content,
-                        background_image: backgroundImage
+                        url: url,
+                        is_url_page: true
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        showNotification('Pagina opgeslagen!', 'success');
+                        showNotification('URL pagina opgeslagen!', 'success');
+                        resolve(data);
+                    } else {
+                        reject(new Error('Save failed'));
                     }
                 })
-                .catch(error => {
-                    showNotification('Fout bij opslaan', 'error');
-                });
-            }
+                .catch(reject);
+            });
+        }
+
+        function saveCurrentPage() {
+            return new Promise((resolve, reject) => {
+                const pageElement = document.getElementById('page-' + currentPageId);
+                const isUrlPage = pageElement.querySelector('input[type="url"]') !== null;
+                
+                if (isUrlPage) {
+                    saveUrlPagePromise(currentPageId).then(resolve).catch(reject);
+                } else {
+                    const content = editors[currentPageId].getData();
+                    const backgroundImage = document.getElementById('a4-page-' + currentPageId).dataset.background || '';
+                    
+                    fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${currentPageId}/update`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            content: content,
+                            background_image: backgroundImage
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification('Pagina opgeslagen!', 'success');
+                            resolve(data);
+                        } else {
+                            reject(new Error('Save failed'));
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('Fout bij opslaan', 'error');
+                        reject(error);
+                    });
+                }
+            });
         }
 
         function saveUrlPage(pageId) {
-            const url = document.getElementById('url-' + pageId).value;
-            
-            fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${pageId}/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({
-                    url: url,
-                    is_url_page: true
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('URL pagina opgeslagen!', 'success');
-                }
+            saveUrlPagePromise(pageId).then(() => {
+                // Success handled in promise
+            }).catch(error => {
+                console.error('Error saving URL page:', error);
             });
         }
 
