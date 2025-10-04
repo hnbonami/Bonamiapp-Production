@@ -13,8 +13,8 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
-    <!-- CKEditor 4.22.1 -->
-    <script src="https://cdn.ckeditor.com/4.22.1/standard-all/ckeditor.js"></script>
+    <!-- CKEditor 4.22.1 Full Version -->
+    <script src="https://cdn.ckeditor.com/4.22.1/full/ckeditor.js"></script>
     
     <!-- Sjablonen Editor Button Enhancements -->
     <link rel="stylesheet" href="/css/sjablonen-editor-buttons.css">
@@ -238,26 +238,14 @@
         @foreach($sjabloon->pages->where('is_url_page', false) as $page)
             CKEDITOR.replace('editor-{{ $page->id }}', {
                 height: '800px',
-                toolbar: [
-                    { name: 'document', items: ['Source', '-', 'NewPage', 'Preview', 'Print', '-', 'Templates'] },
-                    { name: 'clipboard', items: ['Cut', 'Copy', 'Paste', 'PasteText', 'PasteFromWord', '-', 'Undo', 'Redo'] },
-                    { name: 'editing', items: ['Find', 'Replace', '-', 'SelectAll', '-', 'Scayt'] },
-                    '/',
-                    { name: 'basicstyles', items: ['Bold', 'Italic', 'Underline', 'Strike', 'Subscript', 'Superscript', '-', 'CopyFormatting', 'RemoveFormat'] },
-                    { name: 'paragraph', items: ['NumberedList', 'BulletedList', '-', 'Outdent', 'Indent', '-', 'Blockquote', 'CreateDiv', '-', 'JustifyLeft', 'JustifyCenter', 'JustifyRight', 'JustifyBlock', '-', 'BidiLtr', 'BidiRtl'] },
-                    { name: 'links', items: ['Link', 'Unlink', 'Anchor'] },
-                    '/',
-                    { name: 'styles', items: ['Styles', 'Format', 'Font', 'FontSize'] },
-                    { name: 'colors', items: ['TextColor', 'BGColor'] },
-                    { name: 'tools', items: ['Maximize', 'ShowBlocks'] },
-                    { name: 'insert', items: ['Image', 'Table', 'HorizontalRule', 'SpecialChar', 'PageBreak', 'Iframe'] }
-                ],
-                font_names: 'Arial/Arial, Helvetica, sans-serif;Times New Roman/Times New Roman, Times, serif;Verdana/Verdana, Geneva, sans-serif;Georgia/Georgia, serif;Courier New/Courier New, Courier, monospace;Tahoma/Tahoma, Geneva, sans-serif;Impact/Impact, Charcoal, sans-serif;Comic Sans MS/Comic Sans MS, cursive;Lucida Console/Lucida Console, Monaco, monospace;Trebuchet MS/Trebuchet MS, Helvetica, sans-serif',
-                fontSize_sizes: '8/8px;9/9px;10/10px;11/11px;12/12px;14/14px;16/16px;18/18px;20/20px;22/22px;24/24px;26/26px;28/28px;36/36px;48/48px;72/72px',
-                contentsCss: ['body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.4; margin: 0; padding: 0; background: transparent; }'],
-                bodyClass: 'a4-content',
+                toolbar: 'Full',
                 resize_enabled: false,
-                removePlugins: 'elementspath'
+                removePlugins: 'elementspath',
+                allowedContent: true,
+                enterMode: CKEDITOR.ENTER_P,
+                shiftEnterMode: CKEDITOR.ENTER_BR,
+                contentsCss: ['body { font-family: Arial, sans-serif; font-size: 12pt; line-height: 1.4; margin: 0; padding: 20px; background: transparent; }'],
+                bodyClass: 'a4-content'
             });
             
             editors[{{ $page->id }}] = CKEDITOR.instances['editor-{{ $page->id }}'];
@@ -448,6 +436,64 @@
             });
         }
 
+        function saveCurrentPage() {
+            return new Promise((resolve, reject) => {
+                console.log('💾 Saving page:', currentPageId);
+                
+                const pageElement = document.getElementById('page-' + currentPageId);
+                const isUrlPage = pageElement.querySelector('input[type="url"]') !== null;
+                
+                if (isUrlPage) {
+                    console.log('📄 Saving URL page');
+                    saveUrlPagePromise(currentPageId).then(resolve).catch(reject);
+                } else {
+                    console.log('📝 Saving editor page');
+                    
+                    if (!editors[currentPageId]) {
+                        console.error('❌ No editor found for page:', currentPageId);
+                        reject(new Error('No editor found'));
+                        return;
+                    }
+                    
+                    const content = editors[currentPageId].getData();
+                    const backgroundImage = document.getElementById('a4-page-' + currentPageId).dataset.background || '';
+                    
+                    console.log('📝 Content length:', content.length);
+                    console.log('🎨 Background:', backgroundImage);
+                    
+                    fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${currentPageId}/update`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify({
+                            content: content,
+                            background_image: backgroundImage
+                        })
+                    })
+                    .then(response => {
+                        console.log('📡 Response status:', response.status);
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('📡 Response data:', data);
+                        if (data.success) {
+                            showNotification('Pagina opgeslagen!', 'success');
+                            resolve(data);
+                        } else {
+                            reject(new Error('Save failed: ' + (data.message || 'Unknown error')));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('❌ Save error:', error);
+                        showNotification('Fout bij opslaan', 'error');
+                        reject(error);
+                    });
+                }
+            });
+        }
+
         function saveUrlPagePromise(pageId) {
             return new Promise((resolve, reject) => {
                 const url = document.getElementById('url-' + pageId).value;
@@ -473,45 +519,6 @@
                     }
                 })
                 .catch(reject);
-            });
-        }
-
-        function saveCurrentPage() {
-            return new Promise((resolve, reject) => {
-                const pageElement = document.getElementById('page-' + currentPageId);
-                const isUrlPage = pageElement.querySelector('input[type="url"]') !== null;
-                
-                if (isUrlPage) {
-                    saveUrlPagePromise(currentPageId).then(resolve).catch(reject);
-                } else {
-                    const content = editors[currentPageId].getData();
-                    const backgroundImage = document.getElementById('a4-page-' + currentPageId).dataset.background || '';
-                    
-                    fetch(`/sjablonen/{{ $sjabloon->id }}/pages/${currentPageId}/update`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        },
-                        body: JSON.stringify({
-                            content: content,
-                            background_image: backgroundImage
-                        })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showNotification('Pagina opgeslagen!', 'success');
-                            resolve(data);
-                        } else {
-                            reject(new Error('Save failed'));
-                        }
-                    })
-                    .catch(error => {
-                        showNotification('Fout bij opslaan', 'error');
-                        reject(error);
-                    });
-                }
             });
         }
 
