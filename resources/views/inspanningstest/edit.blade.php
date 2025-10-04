@@ -74,6 +74,32 @@
                     <div class="mb-2"><label>Advies Anaërobe Drempel:</label><textarea name="advies_anaerobe_drempel" class="border rounded w-full p-2">{{ old('advies_anaerobe_drempel', $test->advies_anaerobe_drempel) }}</textarea></div>
 
                     <div class="mt-6 flex gap-3 justify-end">
+                        @php
+                            use App\Helpers\SjabloonHelper;
+                            $hasMatchingTemplate = SjabloonHelper::hasMatchingTemplate($test->testtype, 'inspanningstest');
+                            $matchingTemplate = SjabloonHelper::findMatchingTemplate($test->testtype, 'inspanningstest');
+                        @endphp
+                        
+                        @if($hasMatchingTemplate)
+                            <a href="{{ route('inspanningstest.sjabloon-rapport', ['klant' => $klant->id, 'test' => $test->id]) }}" 
+                               target="_blank"
+                               class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
+                               style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                                📄 Rapport Preview ({{ $matchingTemplate->naam }})
+                            </a>
+                        @else
+                            <div class="inline-flex items-center px-3 py-2 rounded-lg text-sm font-medium bg-yellow-100 border border-yellow-400 text-yellow-800">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.734-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                Geen sjabloon voor "{{ $test->testtype }}" 
+                                <a href="{{ route('sjablonen.create') }}" class="ml-1 underline hover:no-underline">Maak aan</a>
+                            </div>
+                        @endif
+                        
                         <a href="{{ route('klanten.show', $klant->id) }}" class="rounded-full px-4 py-1 bg-gray-100 text-gray-800 font-bold text-sm flex items-center justify-center">Terug</a>
                         <button type="submit" class="rounded-full px-4 py-1 bg-indigo-100 text-indigo-800 font-bold text-sm flex items-center justify-center">Test Opslaan</button>
                     </div>

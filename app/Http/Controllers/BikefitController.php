@@ -7,6 +7,7 @@ use App\Services\EmailIntegrationService;
 use App\Models\Klant;
 use App\Models\Bikefit;
 use App\Services\BikefitReportGenerator;
+use App\Helpers\SjabloonHelper;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class BikefitController extends Controller
@@ -180,7 +181,12 @@ class BikefitController extends Controller
     public function show(Klant $klant, $bikefitId)
     {
         $bikefit = $klant->bikefits()->with('uploads')->findOrFail($bikefitId);
-        return view('bikefit.show', compact('klant', 'bikefit'));
+        
+        // Check if there's a matching sjabloon for this bikefit
+        $hasMatchingTemplate = SjabloonHelper::hasMatchingTemplate($bikefit->testtype, 'bikefit');
+        $matchingTemplate = SjabloonHelper::findMatchingTemplate($bikefit->testtype, 'bikefit');
+        
+        return view('bikefit.show', compact('klant', 'bikefit', 'hasMatchingTemplate', 'matchingTemplate'));
     }
 
     public function edit(Klant $klant, $bikefitId)
@@ -1534,6 +1540,34 @@ const fs = require('fs');
             
         } catch (\Exception $e) {
             \Log::error('Failed to schedule testzadel reminder email: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Generate sjabloon-based report for bikefit
+     */
+    public function generateSjabloonReport($klantId, $bikefitId)
+    {
+        try {
+            $klant = Klant::findOrFail($klantId);
+            $bikefit = $klant->bikefits()->findOrFail($bikefitId);
+            
+            // Find matching sjabloon
+            $sjabloon = SjabloonHelper::findMatchingTemplate($bikefit->testtype, 'bikefit');
+            
+            if (!$sjabloon) {
+                return redirect()->back()
+                    ->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $bikefit->testtype);
+            }
+            
+            // Use SjablonenController to generate the report
+            $sjablonenController = new \App\Http\Controllers\SjablonenController();
+            return $sjablonenController->generateBikefitReport($bikefit->id);
+            
+        } catch (\Exception $e) {
+            \Log::error('Bikefit sjabloon report generation failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Er is een fout opgetreden bij het genereren van het rapport.');
         }
     }
 }

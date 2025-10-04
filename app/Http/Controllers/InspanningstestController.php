@@ -3,6 +3,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Inspanningstest;
 use App\Models\Klant;
+use App\Helpers\SjabloonHelper;
 use Illuminate\Http\Request;
 
 class InspanningstestController extends Controller {
@@ -63,7 +64,12 @@ class InspanningstestController extends Controller {
     {
         $klant = \App\Models\Klant::findOrFail($klantId);
         $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
-        return view('inspanningstest.show', compact('klant', 'test'));
+        
+        // Check if there's a matching sjabloon for this inspanningstest
+        $hasMatchingTemplate = SjabloonHelper::hasMatchingTemplate($test->testtype, 'inspanningstest');
+        $matchingTemplate = SjabloonHelper::findMatchingTemplate($test->testtype, 'inspanningstest');
+        
+        return view('inspanningstest.show', compact('klant', 'test', 'hasMatchingTemplate', 'matchingTemplate'));
     }
 
     public function edit($klantId, $testId)
@@ -131,5 +137,32 @@ class InspanningstestController extends Controller {
         $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
         // Reuse the same view used for PDF generation but render as HTML preview
         return view('inspanningstest.show', compact('klant', 'test'));
+    }
+    /**
+     * Generate sjabloon-based report for inspanningstest
+     */
+    public function generateSjabloonReport($klantId, $testId)
+    {
+        try {
+            $klant = \App\Models\Klant::findOrFail($klantId);
+            $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
+            
+            // Find matching sjabloon
+            $sjabloon = SjabloonHelper::findMatchingTemplate($test->testtype, 'inspanningstest');
+            
+            if (!$sjabloon) {
+                return redirect()->back()
+                    ->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $test->testtype);
+            }
+            
+            // Use SjablonenController to generate the report
+            $sjablonenController = new \App\Http\Controllers\SjablonenController();
+            return $sjablonenController->generateInspanningstestReport($test->id);
+            
+        } catch (\Exception $e) {
+            \Log::error('Inspanningstest sjabloon report generation failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Er is een fout opgetreden bij het genereren van het rapport.');
+        }
     }
 }

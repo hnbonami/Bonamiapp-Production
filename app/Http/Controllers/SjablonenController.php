@@ -473,4 +473,230 @@ class SjablonenController extends Controller
                 ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
         }
     }
+
+    /**
+     * Find matching sjabloon based on testtype and category
+     */
+    public static function findMatchingTemplate($testtype, $category = null)
+    {
+        $query = Sjabloon::where('is_actief', true);
+        
+        // First try to match both testtype and category
+        if ($testtype && $category) {
+            $template = $query->where('testtype', $testtype)
+                             ->where('categorie', $category)
+                             ->first();
+            if ($template) {
+                return $template;
+            }
+        }
+        
+        // If no exact match, try just testtype
+        if ($testtype) {
+            $template = $query->where('testtype', $testtype)->first();
+            if ($template) {
+                return $template;
+            }
+        }
+        
+        // If still no match, try just category
+        if ($category) {
+            $template = $query->where('categorie', $category)->first();
+            if ($template) {
+                return $template;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Generate report for bikefit using matching sjabloon
+     */
+    public function generateBikefitReport($bikefitId)
+    {
+        try {
+            // Find bikefit (assuming you have a Bikefit model)
+            $bikefit = \App\Models\Bikefit::findOrFail($bikefitId);
+            
+            // Find matching sjabloon
+            $sjabloon = $this->findMatchingTemplate($bikefit->testtype, 'bikefit');
+            
+            if (!$sjabloon) {
+                return redirect()->back()
+                    ->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $bikefit->testtype);
+            }
+            
+            // Load pages
+            $sjabloon->load(['pages' => function($query) {
+                $query->orderBy('page_number', 'asc');
+            }]);
+            
+            // Generate pages with real bikefit data
+            $generatedPages = $this->generatePagesForBikefit($sjabloon, $bikefit);
+            
+            return view('sjablonen.generated-report', [
+                'template' => $sjabloon,
+                'klantModel' => $bikefit->klant ?? null,
+                'bikefitModel' => $bikefit,
+                'generatedPages' => $generatedPages,
+                'reportType' => 'bikefit'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Bikefit report generation failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Er is een fout opgetreden bij het genereren van het rapport.');
+        }
+    }
+
+    /**
+     * Generate report for inspanningstest using matching sjabloon
+     */
+    public function generateInspanningstestReport($inspanningstestId)
+    {
+        try {
+            // Find inspanningstest (assuming you have an Inspanningstest model)
+            $inspanningstest = \App\Models\Inspanningstest::findOrFail($inspanningstestId);
+            
+            // Find matching sjabloon
+            $sjabloon = $this->findMatchingTemplate($inspanningstest->testtype, 'inspanningstest');
+            
+            if (!$sjabloon) {
+                return redirect()->back()
+                    ->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $inspanningstest->testtype);
+            }
+            
+            // Load pages
+            $sjabloon->load(['pages' => function($query) {
+                $query->orderBy('page_number', 'asc');
+            }]);
+            
+            // Generate pages with real inspanningstest data
+            $generatedPages = $this->generatePagesForInspanningstest($sjabloon, $inspanningstest);
+            
+            return view('sjablonen.generated-report', [
+                'template' => $sjabloon,
+                'klantModel' => $inspanningstest->klant ?? null,
+                'inspanningstestModel' => $inspanningstest,
+                'generatedPages' => $generatedPages,
+                'reportType' => 'inspanningstest'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Inspanningstest report generation failed: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Er is een fout opgetreden bij het genereren van het rapport.');
+        }
+    }
+
+    /**
+     * Generate pages for bikefit with real data
+     */
+    private function generatePagesForBikefit($sjabloon, $bikefit)
+    {
+        $generatedPages = [];
+        
+        foreach ($sjabloon->pages as $page) {
+            if ($page->is_url_page) {
+                $generatedPages[] = [
+                    'is_url_page' => true,
+                    'url' => $page->url,
+                    'content' => null,
+                    'background_image' => $page->background_image,
+                    'page_number' => $page->page_number
+                ];
+            } else {
+                // Replace template variables with real bikefit data
+                $content = $page->content ?? '<p>Geen content</p>';
+                
+                // Klant data
+                if ($bikefit->klant) {
+                    $content = str_replace('{{klant.naam}}', $bikefit->klant->naam ?? '', $content);
+                    $content = str_replace('{{klant.voornaam}}', $bikefit->klant->voornaam ?? '', $content);
+                    $content = str_replace('{{klant.email}}', $bikefit->klant->email ?? '', $content);
+                    $content = str_replace('{{klant.geboortedatum}}', $bikefit->klant->geboortedatum ?? '', $content);
+                }
+                
+                // Bikefit data
+                $content = str_replace('{{bikefit.datum}}', $bikefit->datum ?? date('Y-m-d'), $content);
+                $content = str_replace('{{bikefit.testtype}}', $bikefit->testtype ?? '', $content);
+                $content = str_replace('{{bikefit.lengte_cm}}', $bikefit->lengte_cm ?? '', $content);
+                $content = str_replace('{{bikefit.binnenbeenlengte_cm}}', $bikefit->binnenbeenlengte_cm ?? '', $content);
+                
+                // Add mobility table if available
+                $content = str_replace('$mobility_table_report$', $this->generateMobilityTable($bikefit), $content);
+                
+                $generatedPages[] = [
+                    'is_url_page' => false,
+                    'content' => $content,
+                    'background_image' => $page->background_image,
+                    'url' => null,
+                    'page_number' => $page->page_number
+                ];
+            }
+        }
+        
+        return $generatedPages;
+    }
+
+    /**
+     * Generate pages for inspanningstest with real data
+     */
+    private function generatePagesForInspanningstest($sjabloon, $inspanningstest)
+    {
+        $generatedPages = [];
+        
+        foreach ($sjabloon->pages as $page) {
+            if ($page->is_url_page) {
+                $generatedPages[] = [
+                    'is_url_page' => true,
+                    'url' => $page->url,
+                    'content' => null,
+                    'background_image' => $page->background_image,
+                    'page_number' => $page->page_number
+                ];
+            } else {
+                // Replace template variables with real inspanningstest data
+                $content = $page->content ?? '<p>Geen content</p>';
+                
+                // Klant data
+                if ($inspanningstest->klant) {
+                    $content = str_replace('{{klant.naam}}', $inspanningstest->klant->naam ?? '', $content);
+                    $content = str_replace('{{klant.voornaam}}', $inspanningstest->klant->voornaam ?? '', $content);
+                    $content = str_replace('{{klant.email}}', $inspanningstest->klant->email ?? '', $content);
+                    $content = str_replace('{{klant.geboortedatum}}', $inspanningstest->klant->geboortedatum ?? '', $content);
+                }
+                
+                // Inspanningstest data - add your specific fields here
+                $content = str_replace('{{test.datum}}', $inspanningstest->datum ?? date('Y-m-d'), $content);
+                $content = str_replace('{{test.testtype}}', $inspanningstest->testtype ?? '', $content);
+                // Add more inspanningstest-specific variables as needed
+                
+                $generatedPages[] = [
+                    'is_url_page' => false,
+                    'content' => $content,
+                    'background_image' => $page->background_image,
+                    'url' => null,
+                    'page_number' => $page->page_number
+                ];
+            }
+        }
+        
+        return $generatedPages;
+    }
+
+    /**
+     * Generate mobility table HTML
+     */
+    private function generateMobilityTable($bikefit)
+    {
+        // This would generate the actual mobility table based on your bikefit data
+        // For now, return placeholder
+        return '<div class="mobility-table">
+                    <h3>Mobiliteit Rapport</h3>
+                    <p>Mobiliteit data voor: ' . ($bikefit->klant->naam ?? 'Onbekend') . '</p>
+                    <!-- Add your actual mobility table generation logic here -->
+                </div>';
+    }
 }

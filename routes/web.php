@@ -1031,3 +1031,11 @@ Route::post('/sjablonen/{sjabloon}/duplicate', [App\Http\Controllers\SjablonenCo
 // Routes voor basis sjabloon bewerken
 Route::get('/sjablonen/{id}/edit-basic', [App\Http\Controllers\SjablonenController::class, 'editBasic'])->name('sjablonen.edit-basic');
 Route::post('/sjablonen/{id}/update-basic', [App\Http\Controllers\SjablonenController::class, 'updateBasic'])->name('sjablonen.update-basic');
+
+// Routes voor rapport generatie
+Route::get('/sjablonen/bikefit/{id}/rapport', [App\Http\Controllers\SjablonenController::class, 'generateBikefitReport'])->name('sjablonen.bikefit-rapport');
+Route::get('/sjablonen/inspanningstest/{id}/rapport', [App\Http\Controllers\SjablonenController::class, 'generateInspanningstestReport'])->name('sjablonen.inspanningstest-rapport');
+
+// Routes voor sjabloon-gebaseerde rapporten
+Route::get('/bikefit/{klant}/{bikefit}/sjabloon-rapport', [App\Http\Controllers\BikefitController::class, 'generateSjabloonReport'])->name('bikefit.sjabloon-rapport');
+Route::get('/inspanningstest/{klant}/{test}/sjabloon-rapport', [App\Http\Controllers\InspanningstestController::class, 'generateSjabloonReport'])->name('inspanningstest.sjabloon-rapport');
