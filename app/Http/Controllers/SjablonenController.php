@@ -2,23 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Sjabloon;
+use Illuminate\Http\Request;
 
 class SjablonenController extends Controller
 {
     public function index()
     {
-        try {
-            $sjablonen = Sjabloon::all();
-            return view('sjablonen.index', compact('sjablonen'));
-        } catch (\Exception $e) {
-            // Fallback if view doesn't exist yet
-            return response()->json([
-                'message' => 'Sjablonen INDEX werkt! Aantal sjablonen: ' . ($sjablonen->count() ?? 0),
-                'sjablonen' => $sjablonen ?? []
-            ]);
-        }
+        $sjablonen = Sjabloon::where('is_actief', true)
+                            ->orderBy('naam')
+                            ->get();
+        
+        return view('sjablonen.index', compact('sjablonen'));
     }
 
     public function create()
@@ -28,8 +23,23 @@ class SjablonenController extends Controller
 
     public function store(Request $request)
     {
-        $sjabloon = Sjabloon::create($request->all());
-        return redirect()->route('sjablonen.index')->with('success', 'Sjabloon aangemaakt!');
+        $request->validate([
+            'naam' => 'required|string|max:255',
+            'categorie' => 'required|string|max:255',
+            'testtype' => 'nullable|string|max:255',
+            'beschrijving' => 'nullable|string',
+        ]);
+
+        $sjabloon = Sjabloon::create([
+            'naam' => $request->naam,
+            'categorie' => $request->categorie,
+            'testtype' => $request->testtype,
+            'beschrijving' => $request->beschrijving,
+            'is_actief' => true
+        ]);
+
+        return redirect()->route('sjablonen.edit', $sjabloon)
+                        ->with('success', 'Sjabloon aangemaakt!');
     }
 
     public function show(Sjabloon $sjabloon)
@@ -39,38 +49,6 @@ class SjablonenController extends Controller
 
     public function edit(Sjabloon $sjabloon)
     {
-        // Load pages relation and ensure it's not null
-        $sjabloon->load('pages');
-        if (!$sjabloon->pages) {
-            $sjabloon->pages = collect();
-        }
-        
-        // Ensure at least one page exists - only if sjabloon has valid ID
-        if ($sjabloon->id && $sjabloon->pages->isEmpty()) {
-            $page = new SjabloonPage([
-                'sjabloon_id' => $sjabloon->id,
-                'page_number' => 1,
-                'content' => '<p>Start met bewerken...</p>',
-                'is_url_page' => false
-            ]);
-            $page->save();
-            $sjabloon->load('pages'); // Reload pages
-        }
-        
-        // If still no pages, create a temporary one for the view
-        if ($sjabloon->pages->isEmpty()) {
-            $sjabloon->pages = collect([
-                (object)[
-                    'id' => 'temp-1',
-                    'page_number' => 1,
-                    'content' => '<p>Start met bewerken...</p>',
-                    'is_url_page' => false,
-                    'background_image' => null,
-                    'url' => null
-                ]
-            ]);
-        }
-        
         // Get template keys for the sidebar
         $templateKeys = collect([
             'klant' => [
@@ -87,44 +65,42 @@ class SjablonenController extends Controller
                 (object)['placeholder' => '$mobility_table_report$', 'display_name' => 'Mobiliteit Tabel'],
             ]
         ]);
+
+        // Ensure sjabloon has pages for the editor - ALWAYS create a valid collection
+        $sjabloon->pages = collect([
+            (object)[
+                'id' => 1,
+                'page_number' => 1,
+                'content' => '<p>Start met bewerken...</p>',
+                'is_url_page' => false,
+                'background_image' => null,
+                'url' => null
+            ]
+        ]);
         
         return view('sjablonen.edit', compact('sjabloon', 'templateKeys'));
     }
 
     public function update(Request $request, Sjabloon $sjabloon)
     {
-        $sjabloon->update($request->all());
-        return redirect()->route('sjablonen.index')->with('success', 'Sjabloon bijgewerkt!');
+        $request->validate([
+            'naam' => 'required|string|max:255',
+            'categorie' => 'required|string|max:255',
+            'testtype' => 'nullable|string|max:255',
+            'beschrijving' => 'nullable|string',
+        ]);
+
+        $sjabloon->update($request->only(['naam', 'categorie', 'testtype', 'beschrijving']));
+
+        return redirect()->route('sjablonen.index')
+                        ->with('success', 'Sjabloon bijgewerkt!');
     }
 
     public function destroy(Sjabloon $sjabloon)
     {
-        $sjabloon->delete();
-        return redirect()->route('sjablonen.index')->with('success', 'Sjabloon verwijderd!');
-    }
-
-    public function getTesttypes($categorie)
-    {
-        // AJAX endpoint voor testtypes
-        $testtypes = ['bikefit', 'inspanningstest', 'algemeen'];
-        return response()->json($testtypes);
-    }
-
-    public function updatePagina(Request $request, $sjabloon, $pagina)
-    {
-        // AJAX endpoint voor pagina updates
-        return response()->json(['success' => true]);
-    }
-
-    public function addPagina(Request $request, $sjabloon)
-    {
-        // AJAX endpoint voor nieuwe pagina
-        return response()->json(['success' => true]);
-    }
-
-    public function deletePagina($sjabloon, $pagina)
-    {
-        // AJAX endpoint voor pagina verwijderen
-        return response()->json(['success' => true]);
+        $sjabloon->update(['is_actief' => false]);
+        
+        return redirect()->route('sjablonen.index')
+                        ->with('success', 'Sjabloon gearchiveerd!');
     }
 }

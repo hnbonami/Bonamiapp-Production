@@ -644,9 +644,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('sjablonen', \App\Http\Controllers\SjablonenController::class);
     
     // AJAX routes voor sjabloon editor
-    Route::post('sjablonen/{sjabloon}/paginas/{pagina}/update', [\App\Http\Controllers\SjablonenController::class, 'updatePagina'])->name('sjablonen.pagina.update');
-    Route::post('sjablonen/{sjabloon}/paginas', [\App\Http\Controllers\SjablonenController::class, 'addPagina'])->name('sjablonen.pagina.add');
-    Route::delete('sjablonen/{sjabloon}/paginas/{pagina}', [\App\Http\Controllers\SjablonenController::class, 'deletePagina'])->name('sjablonen.pagina.delete');
+    Route::post('sjablonen/{sjabloon}/pages/{pagina}/update', [\App\Http\Controllers\SjablonenController::class, 'updatePagina'])->name('sjablonen.pagina.update');
+    Route::post('sjablonen/{sjabloon}/pages', [\App\Http\Controllers\SjablonenController::class, 'addPagina'])->name('sjablonen.pagina.add');
+    Route::delete('sjablonen/{sjabloon}/pages/{pagina}', [\App\Http\Controllers\SjablonenController::class, 'deletePagina'])->name('sjablonen.pagina.delete');
 });
 
 // Rapport routes
