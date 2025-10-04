@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sjabloon;
+use App\Models\SjabloonPage;
 use Illuminate\Http\Request;
 
 class SjablonenController extends Controller
@@ -47,8 +48,29 @@ class SjablonenController extends Controller
         return view('sjablonen.show', compact('sjabloon'));
     }
 
-    public function edit(Sjabloon $sjabloon)
+    public function edit($id)
     {
+        // Find sjabloon manually
+        $sjabloon = Sjabloon::findOrFail($id);
+        
+        // Load pages from database
+        $sjabloon->load('pages');
+        
+        // If no pages exist, create the first one
+        if ($sjabloon->pages->isEmpty()) {
+            $newPage = new SjabloonPage();
+            $newPage->sjabloon_id = $sjabloon->id;
+            $newPage->page_number = 1;
+            $newPage->content = '<p>Start met bewerken...</p>';
+            $newPage->is_url_page = false;
+            $newPage->background_image = null;
+            $newPage->url = null;
+            $newPage->save();
+            
+            // Reload pages after creation
+            $sjabloon->load('pages');
+        }
+        
         // Get template keys for the sidebar
         $templateKeys = collect([
             'klant' => [
@@ -63,18 +85,6 @@ class SjablonenController extends Controller
                 (object)['placeholder' => '{{bikefit.lengte_cm}}', 'display_name' => 'Lengte (cm)'],
                 (object)['placeholder' => '{{bikefit.binnenbeenlengte_cm}}', 'display_name' => 'Binnenbeenlengte (cm)'],
                 (object)['placeholder' => '$mobility_table_report$', 'display_name' => 'Mobiliteit Tabel'],
-            ]
-        ]);
-
-        // Ensure sjabloon has pages for the editor - ALWAYS create a valid collection
-        $sjabloon->pages = collect([
-            (object)[
-                'id' => 1,
-                'page_number' => 1,
-                'content' => '<p>Start met bewerken...</p>',
-                'is_url_page' => false,
-                'background_image' => null,
-                'url' => null
             ]
         ]);
         
@@ -102,5 +112,80 @@ class SjablonenController extends Controller
         
         return redirect()->route('sjablonen.index')
                         ->with('success', 'Sjabloon gearchiveerd!');
+    }
+
+    // AJAX methods for page management
+    public function addPagina(Request $request, Sjabloon $sjabloon)
+    {
+        // Get the highest page number and add 1
+        $maxPageNumber = SjabloonPage::where('sjabloon_id', $sjabloon->id)->max('page_number') ?? 0;
+        
+        // Create new page
+        $page = SjabloonPage::create([
+            'sjabloon_id' => $sjabloon->id,
+            'page_number' => $maxPageNumber + 1,
+            'content' => $request->input('is_url_page') ? null : '<p>Nieuwe pagina...</p>',
+            'url' => $request->input('url'),
+            'is_url_page' => $request->input('is_url_page', false),
+            'background_image' => null
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Pagina toegevoegd!',
+            'page_id' => $page->id,
+            'reload' => true
+        ]);
+    }
+
+    public function updatePagina(Request $request, Sjabloon $sjabloon, $paginaId)
+    {
+        $page = SjabloonPage::where('sjabloon_id', $sjabloon->id)
+                            ->where('id', $paginaId)
+                            ->first();
+        
+        if (!$page) {
+            return response()->json(['success' => false, 'message' => 'Pagina niet gevonden']);
+        }
+        
+        $page->update([
+            'content' => $request->input('content'),
+            'background_image' => $request->input('background_image'),
+            'url' => $request->input('url'),
+            'is_url_page' => $request->input('is_url_page', false)
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Pagina opgeslagen!'
+        ]);
+    }
+
+    public function deletePagina(Request $request, Sjabloon $sjabloon, $paginaId)
+    {
+        // Don't delete if it's the last page
+        $totalPages = SjabloonPage::where('sjabloon_id', $sjabloon->id)->count();
+        if ($totalPages <= 1) {
+            return response()->json([
+                'success' => false, 
+                'message' => 'Kan de laatste pagina niet verwijderen'
+            ]);
+        }
+        
+        $page = SjabloonPage::where('sjabloon_id', $sjabloon->id)
+                            ->where('id', $paginaId)
+                            ->first();
+        
+        if (!$page) {
+            return response()->json(['success' => false, 'message' => 'Pagina niet gevonden']);
+        }
+        
+        $page->delete();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Pagina verwijderd!',
+            'reload' => true
+        ]);
     }
 }

@@ -1,0 +1,139 @@
+/* Sjablonen Editor Button Improvements */
+
+/* Better visibility for Add Page buttons */
+.px-3.py-2.bg-blue-500 {
+    background-color: #1d4ed8 !important; /* Darker blue for better visibility */
+    border: 2px solid #1e40af !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+}
+
+.px-3.py-2.bg-blue-500:hover {
+    background-color: #1e40af !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+.px-3.py-2.bg-green-500 {
+    background-color: #059669 !important; /* Better green for URL pages */
+    border: 2px solid #047857 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    transition: all 0.2s ease !important;
+}
+
+.px-3.py-2.bg-green-500:hover {
+    background-color: #047857 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Better visibility for Preview button */
+.bg-blue-500.hover\:bg-blue-700 {
+    background-color: #2563eb !important;
+    border: 2px solid #1d4ed8 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3) !important;
+}
+
+.bg-blue-500.hover\:bg-blue-700:hover {
+    background-color: #1d4ed8 !important;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Save button enhancement */
+.bg-green-500.hover\:bg-green-700 {
+    background-color: #10b981 !important;
+    border: 2px solid #059669 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3) !important;
+}
+
+.bg-green-500.hover\:bg-green-700:hover {
+    background-color: #059669 !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Back button enhancement */
+.bg-gray-500.hover\:bg-gray-700 {
+    background-color: #6b7280 !important;
+    border: 2px solid #4b5563 !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 6px rgba(107, 114, 128, 0.3) !important;
+}
+
+.bg-gray-500.hover\:bg-gray-700:hover {
+    background-color: #4b5563 !important;
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Index and Create page button enhancements */
+.bg-red-500.hover\:bg-red-700 {
+    background-color: #dc2626 !important;
+    border: 2px solid #b91c1c !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3) !important;
+}
+
+.bg-red-500.hover\:bg-red-700:hover {
+    background-color: #b91c1c !important;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* General button improvements for all sjablonen pages */
+.rounded {
+    border-radius: 6px !important;
+}
+
+.font-bold {
+    font-weight: 700 !important;
+    letter-spacing: 0.025em !important;
+}
+
+/* Card hover effects for index page */
+.hover\:shadow-lg {
+    transition: all 0.3s ease !important;
+}
+
+.hover\:shadow-lg:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+    transform: translateY(-2px) !important;
+}
+
+/* Form button spacing and layout improvements */
+.space-x-2 > * + * {
+    margin-left: 0.5rem !important;
+}
+
+.space-x-3 > * + * {
+    margin-left: 0.75rem !important;
+}
+
+/* Badge styling improvements */
+.bg-blue-100 {
+    background-color: #dbeafe !important;
+    color: #1e40af !important;
+    font-weight: 600 !important;
+}
+
+.bg-gray-100 {
+    background-color: #f3f4f6 !important;
+    color: #374151 !important;
+    font-weight: 600 !important;
+}
+
+/* Focus states for better accessibility */
+.focus\:ring-blue-500:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+    border-color: #3b82f6 !important;
+}
+
+.focus\:border-blue-500:focus {
+    border-color: #3b82f6 !important;
+}

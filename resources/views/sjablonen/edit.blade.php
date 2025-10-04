@@ -16,6 +16,10 @@
     <!-- CKEditor 4.22.1 -->
     <script src="https://cdn.ckeditor.com/4.22.1/standard-all/ckeditor.js"></script>
     
+    <!-- Sjablonen Editor Button Enhancements -->
+    <link rel="stylesheet" href="/css/sjablonen-editor-buttons.css">
+    <script src="/js/sjablonen-editor-buttons.js"></script>
+    
     <style>
         .a4-page {
             width: 210mm;
