@@ -7,6 +7,14 @@ use App\Models\Sjabloon;
 class SjabloonHelper
 {
     /**
+     * Check if there's a matching template for given testtype and category
+     */
+    public static function hasMatchingTemplate($testtype, $category = null)
+    {
+        return self::findMatchingTemplate($testtype, $category) !== null;
+    }
+
+    /**
      * Find matching sjabloon based on testtype and category
      */
     public static function findMatchingTemplate($testtype, $category = null)
@@ -43,24 +51,14 @@ class SjabloonHelper
     }
 
     /**
-     * Check if a matching sjabloon exists for given testtype
+     * Get all available testtypes
      */
-    public static function hasMatchingTemplate($testtype, $category = null)
+    public static function getAvailableTesttypes()
     {
-        return self::findMatchingTemplate($testtype, $category) !== null;
-    }
-
-    /**
-     * Get all available testtypes from sjablonen
-     */
-    public static function getAvailableTesttypes($category = null)
-    {
-        $query = Sjabloon::where('is_actief', true)->whereNotNull('testtype');
-        
-        if ($category) {
-            $query->where('categorie', $category);
-        }
-        
-        return $query->pluck('testtype')->unique()->sort()->values();
+        return Sjabloon::where('is_actief', true)
+                      ->whereNotNull('testtype')
+                      ->pluck('testtype')
+                      ->unique()
+                      ->values();
     }
 }

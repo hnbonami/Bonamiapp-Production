@@ -511,6 +511,23 @@ class SjablonenController extends Controller
     }
 
     /**
+     * API endpoint to check if sjabloon exists for testtype
+     */
+    public function checkSjabloon(Request $request)
+    {
+        $testtype = $request->query('testtype');
+        $category = $request->query('categorie');
+        
+        $template = \App\Helpers\SjabloonHelper::findMatchingTemplate($testtype, $category);
+        
+        return response()->json([
+            'hasTemplate' => $template !== null,
+            'templateName' => $template ? $template->naam : null,
+            'templateId' => $template ? $template->id : null
+        ]);
+    }
+
+    /**
      * Generate report for bikefit using matching sjabloon
      */
     public function generateBikefitReport($bikefitId)

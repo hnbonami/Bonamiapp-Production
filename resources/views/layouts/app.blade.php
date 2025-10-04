@@ -237,13 +237,13 @@
                     <span class="ml-px inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Newsletter::count() }}</span>
                 </a>
                 <!-- Sjablonen (report templates) -->
-                <a href="/sjabloon-manager" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('sjabloon-manager*') || request()->is('templates*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('sjabloon-manager*') || request()->is('templates*') ? 'background:#f6fbfe' : '' }}">
-                    @if(request()->is('sjabloon-manager*') || request()->is('templates*'))
+                <a href="/sjablonen" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('sjablonen*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('sjablonen*') ? 'background:#f6fbfe' : '' }}">
+                    @if(request()->is('sjablonen*'))
                         <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
                     @endif
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9bb3bd" stroke-width="1.5"><rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="10" height="6" rx="1"/></svg>
                     <span class="font-medium text-[17px]">Sjablonen</span>
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Template::count() }}</span>
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Sjabloon::count() }}</span>
                 </a>
                 @endif
             <!-- Beheer-tabblad echt helemaal onderaan -->

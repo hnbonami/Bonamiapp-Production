@@ -1039,3 +1039,6 @@ Route::get('/sjablonen/inspanningstest/{id}/rapport', [App\Http\Controllers\Sjab
 // Routes voor sjabloon-gebaseerde rapporten
 Route::get('/bikefit/{klant}/{bikefit}/sjabloon-rapport', [App\Http\Controllers\BikefitController::class, 'generateSjabloonReport'])->name('bikefit.sjabloon-rapport');
 Route::get('/inspanningstest/{klant}/{test}/sjabloon-rapport', [App\Http\Controllers\InspanningstestController::class, 'generateSjabloonReport'])->name('inspanningstest.sjabloon-rapport');
+
+// API route voor sjabloon check
+Route::get('/api/check-sjabloon', [App\Http\Controllers\SjablonenController::class, 'checkSjabloon']);

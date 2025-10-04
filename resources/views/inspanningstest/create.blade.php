@@ -336,18 +336,27 @@
                         <h4 class="font-bold">Debug Info:</h4>
                         <p>Datum: <span id="debug-datum"></span></p>
                         <p>Testtype: <span id="debug-testtype"></span></p>
-                    </div>                    <!-- Submit buttons -->
-                    <div class="mt-8 flex gap-3 justify-start">
-                        <a href="{{ route('klanten.show', $klant->id) }}" 
-                           class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200" 
-                           style="background-color: #c8e1eb;">
-                            Terug
-                        </a>
-                        <button type="submit" 
-                                class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200" 
-                                style="background-color: #c8e1eb;">
-                            Test Aanmaken
-                        </button>
+                    </div>
+
+                    <!-- Sjabloon notificatie - EENVOUDIGE VERSIE -->
+                    <div id="sjabloon-notificatie" class="mt-6 mb-6" style="background: #e3f2fd; border: 2px solid #2196f3; padding: 15px; border-radius: 8px;">
+                        <strong style="color: #1976d2;">📋 Selecteer een testtype om te zien of er een sjabloon beschikbaar is voor rapportgeneratie.</strong>
+                    </div>
+
+                    <!-- Submit buttons -->
+                    <div class="mt-8 flex gap-3 justify-start flex-wrap">
+                        <div class="flex gap-3">
+                            <a href="{{ route('klanten.show', $klant->id) }}" 
+                               class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200" 
+                               style="background-color: #c8e1eb;">
+                                Terug
+                            </a>
+                            <button type="submit" 
+                                    class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200" 
+                                    style="background-color: #c8e1eb;">
+                                Test Aanmaken
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -644,6 +653,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const standardProtocolField2 = document.getElementById('standard-protocol-field-2');
     const standardProtocolField3 = document.getElementById('standard-protocol-field-3');
     
+    // Functie om sjabloon notificatie te updaten
+    function updateSjabloonNotificatie() {
+        const selectedType = testtypeSelect.value;
+        const notificatieContainer = document.getElementById('sjabloon-notificatie');
+        
+        console.log('updateSjabloonNotificatie called with:', selectedType);
+        
+        if (!selectedType) {
+            notificatieContainer.innerHTML = '<strong style="color: #1976d2;">📋 Selecteer een testtype om te zien of er een sjabloon beschikbaar is voor rapportgeneratie.</strong>';
+            notificatieContainer.style.background = '#e3f2fd';
+            notificatieContainer.style.borderColor = '#2196f3';
+            return;
+        }
+        
+        // Simpele update
+        notificatieContainer.innerHTML = '<strong style="color: #2e7d32;">✅ Testtype "' + selectedType + '" geselecteerd - Na het aanmaken van de test kun je rapporten genereren!</strong>';
+        notificatieContainer.style.background = '#e8f5e8';
+        notificatieContainer.style.borderColor = '#4caf50';
+    }
+    
     function updateProtocolFields() {
         const selectedType = testtypeSelect.value;
         
@@ -657,6 +686,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update tabel op basis van testtype
         updateTable(selectedType);
+        
+        // Update sjabloon notificatie
+        updateSjabloonNotificatie();
         
         if (selectedType === 'veldtest_lopen') {
             // Veldtest lopen: toon loop protocol dropdown, verberg standaard velden
