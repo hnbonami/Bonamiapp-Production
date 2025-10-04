@@ -110,7 +110,8 @@
                         <button onclick="saveCurrentPage()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                             Opslaan
                         </button>
-                        <a href="/sjablonen/{{ $sjabloon->id }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                                <a href="/sjablonen/{{ $sjabloon->id }}/preview" 
+                           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
                             Voorvertoning
                         </a>
                         <a href="{{ route('sjablonen.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">

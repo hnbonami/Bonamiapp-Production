@@ -247,9 +247,6 @@ require __DIR__.'/auth.php';
 // Sjablonen routes
 Route::middleware(['auth'])->group(function () {
     // We verwijderen deze duplicate route
-    // Sjablonen preview route
-    Route::get("sjablonen/{id}/preview", [\App\Http\Controllers\SjablonenController::class, "preview"])->name("sjablonen.preview");
-    
     // Route::resource('sjablonen', App\Http\Controllers\SjablonenController::class);
 });
 
@@ -1021,6 +1018,3 @@ Route::get('/template', function() {
 Route::get('/sjabloon-test', function() {
     return 'SJABLOON-TEST ROUTE WERKT!!! Dit is NIET /templates!';
 });
-
-// PDF and Preview routes
-include __DIR__ . '/preview.php';

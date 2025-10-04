@@ -1,88 +1,144 @@
-<x-app-layout>
-    <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ $template->name }} - Voorvertoning
-            </h2>
-            <div class="flex gap-2">
-                <a href="{{ route('sjablonen.edit', $template) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                    Bewerken
-                </a>
-                <a href="{{ route('sjablonen.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                    Terug
-                </a>
-            </div>
+@extends('layouts.app')
+
+@section('title', ($sjabloon->naam ?? $template->naam ?? 'Sjabloon') . ' - Sjablonen Manager')
+
+@section('content')
+    @php
+        // Support both $sjabloon and $template variables for compatibility
+        $currentSjabloon = $sjabloon ?? $template ?? null;
+    @endphp
+
+    @if(!$currentSjabloon)
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+            Sjabloon niet gevonden.
         </div>
-    </x-slot>
-
-    <div class="py-12">
-        <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold mb-2">Sjabloon Informatie</h3>
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <p><strong>Type:</strong> {{ $template->type_display }}</p>
-                            @if($template->description)
-                                <p><strong>Beschrijving:</strong> {{ $template->description }}</p>
-                            @endif
-                            <p><strong>Aantal pagina's:</strong> {{ $template->pages->count() }}</p>
-                            <p><strong>Laatst gewijzigd:</strong> {{ $template->updated_at->format('d-m-Y H:i') }}</p>
-                        </div>
+    @else
+        <!-- Header -->
+        <div class="bg-white shadow rounded-lg mb-6">
+            <div class="px-6 py-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">{{ $currentSjabloon->naam }}</h1>
+                        <p class="text-sm text-gray-600">{{ ucfirst($currentSjabloon->categorie) }} sjabloon</p>
+                        @if($currentSjabloon->testtype)
+                            <p class="text-sm text-blue-600">{{ $currentSjabloon->testtype }}</p>
+                        @endif
                     </div>
-
-                    <div class="space-y-8">
-                        @foreach($template->pages as $page)
-                            <div class="border-l-4 border-blue-500 pl-6">
-                                <h4 class="text-md font-semibold mb-4 flex items-center">
-                                    Pagina {{ $page->page_number }}
-                                    @if($page->is_url_page)
-                                        <span class="ml-2 px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">URL Pagina</span>
-                                    @endif
-                                </h4>
-                                
-                                @if($page->is_url_page)
-                                    <div class="bg-green-50 p-4 rounded-lg">
-                                        <p><strong>URL:</strong> 
-                                            <a href="{{ $page->url }}" target="_blank" class="text-blue-600 hover:text-blue-800 underline">
-                                                {{ $page->url }}
-                                            </a>
-                                        </p>
-                                    </div>
-                                @else
-                                    <!-- A4 Preview Style -->
-                                    <div class="bg-white border border-gray-300 shadow-lg mx-auto" 
-                                         style="width: 210mm; min-height: 297mm; padding: 20mm; font-family: 'Times New Roman', serif;
-                                                @if($page->background_image) 
-                                                    background-image: url('/backgrounds/{{ $page->background_image }}'); 
-                                                    background-size: cover; 
-                                                    background-position: center; 
-                                                    background-repeat: no-repeat;
-                                                @endif">
-                                        <div class="preview-content">
-                                            {!! $page->content !!}
-                                        </div>
-                                    </div>
-                                @endif
-                            </div>
-                        @endforeach
+                    <div class="flex gap-2">
+                        <a href="{{ route('sjablonen.preview', $currentSjabloon->id) }}" 
+                           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            👁️ Voorvertoning
+                        </a>
+                        <a href="{{ route('sjablonen.edit', $currentSjabloon->id) }}" 
+                           class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                            ✏️ Bewerken
+                        </a>
+                        <a href="{{ route('sjablonen.index') }}" 
+                           class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                            ← Terug naar Overzicht
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <style>
-        .preview-content {
-            font-size: 12pt;
-            line-height: 1.4;
-        }
-        
-        .preview-content h1 { font-size: 18pt; font-weight: bold; margin-bottom: 12pt; }
-        .preview-content h2 { font-size: 16pt; font-weight: bold; margin-bottom: 10pt; }
-        .preview-content h3 { font-size: 14pt; font-weight: bold; margin-bottom: 8pt; }
-        .preview-content p { margin-bottom: 6pt; }
-        .preview-content table { width: 100%; border-collapse: collapse; margin: 12pt 0; }
-        .preview-content td, .preview-content th { border: 1px solid #000; padding: 6pt; }
-    </style>
-</x-app-layout>
+        <!-- Sjabloon Details -->
+        <div class="bg-white shadow rounded-lg p-6 mb-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Sjabloon Informatie</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Naam</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ $currentSjabloon->naam }}</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Categorie</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ ucfirst($currentSjabloon->categorie) }}</p>
+                </div>
+                
+                @if($currentSjabloon->testtype)
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Test Type</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ $currentSjabloon->testtype }}</p>
+                </div>
+                @endif
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Aangemaakt</label>
+                    <p class="mt-1 text-sm text-gray-900">{{ $currentSjabloon->created_at->format('d-m-Y H:i') }}</p>
+                </div>
+            </div>
+            
+            @if($currentSjabloon->beschrijving)
+            <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700">Beschrijving</label>
+                <p class="mt-1 text-sm text-gray-900">{{ $currentSjabloon->beschrijving }}</p>
+            </div>
+            @endif
+        </div>
+
+        <!-- Pages Overview -->
+        @if($currentSjabloon->pages && $currentSjabloon->pages->count() > 0)
+        <div class="bg-white shadow rounded-lg p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                Pagina's ({{ $currentSjabloon->pages->count() }})
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                @foreach($currentSjabloon->pages as $page)
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="font-medium text-gray-900">
+                                Pagina {{ $page->page_number }}
+                            </h3>
+                            @if($page->is_url_page)
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    URL
+                                </span>
+                            @else
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    Content
+                                </span>
+                            @endif
+                        </div>
+                        
+                        @if($page->is_url_page)
+                            <p class="text-sm text-gray-600 break-all">{{ $page->url }}</p>
+                        @else
+                            <p class="text-sm text-gray-600">
+                                {{ Str::limit(strip_tags($page->content), 100) }}
+                            </p>
+                        @endif
+                        
+                        @if($page->background_image)
+                            <p class="text-xs text-gray-500 mt-2">
+                                🖼️ Achtergrond: {{ $page->background_image }}
+                            </p>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        @else
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800">Geen pagina's</h3>
+                    <p class="text-sm text-yellow-700 mt-1">
+                        Dit sjabloon heeft nog geen pagina's. 
+                        <a href="{{ route('sjablonen.edit', $currentSjabloon->id) }}" class="underline font-medium">
+                            Ga naar de editor om pagina's toe te voegen.
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+        @endif
+    @endif
+@endsection

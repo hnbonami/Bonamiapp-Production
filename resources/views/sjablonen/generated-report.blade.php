@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>{{ $template->name }} - {{ $klantModel->naam }}</title>
+    <title>{{ $template->naam ?? $template->name ?? 'Sjabloon' }} - {{ $klantModel->naam }}</title>
     <style>
         * {
             -webkit-print-color-adjust: exact !important;
@@ -195,16 +195,38 @@
 </head>
 <body>
     <div class="no-print header-actions">
-        <h1 style="margin-bottom: 15px; color: #333;">{{ $template->name }} - {{ $klantModel->naam }}</h1>
+        <h1 style="margin-bottom: 15px; color: #333;">{{ $template->naam ?? $template->name ?? 'Sjabloon' }} - {{ $klantModel->naam }}</h1>
         <button class="btn btn-primary" onclick="window.print()">🖨️ Afdrukken</button>
-        <a href="{{ route('sjablonen.generate-pdf', ['template' => $template->id, 'klant' => $klantModel->id, 'test_id' => request()->route('test_id'), 'type' => request()->route('type')]) }}" 
-           class="btn btn-danger">📄 Export naar PDF</a>
-        <a href="{{ route('sjablonen.edit', $template) }}" class="btn btn-secondary">✏️ Sjabloon Bewerken</a>
-        <a href="{{ route('klanten.show', $klantModel) }}" class="btn btn-success">👤 Terug naar Klant</a>
+        <a href="/sjablonen/{{ $template->id }}/pdf" 
+           class="btn btn-danger">📄 Download PDF</a>
+        <a href="/sjablonen/{{ $template->id }}/edit" class="btn btn-secondary">✏️ Sjabloon Bewerken</a>
+        @if($klantModel->id !== 'preview')
+            <a href="/klanten/{{ $klantModel->id }}" class="btn btn-success">👤 Terug naar Klant</a>
+        @else
+            <a href="/sjablonen/{{ $template->id }}" class="btn btn-success">👁️ Terug naar Sjabloon</a>
+        @endif
     </div>
 
     <div class="report-container">
-        @foreach($generatedPages as $index => $page)
+        {{-- Debug info for development --}}
+        @if(config('app.debug'))
+            <div class="no-print" style="background: #fff; padding: 10px; margin: 10px; border: 1px solid #ccc;">
+                <strong>Debug Info:</strong> {{ count($generatedPages) }} pagina(s) gevonden
+                @foreach($generatedPages as $index => $page)
+                    <br>- Pagina {{ $index + 1 }}: 
+                    @if($page['is_url_page'])
+                        URL: {{ $page['url'] }}
+                    @else
+                        Content: {{ strlen($page['content']) }} karakters
+                        @if($page['background_image'])
+                            , Achtergrond: {{ $page['background_image'] }}
+                        @endif
+                    @endif
+                @endforeach
+            </div>
+        @endif
+        
+        @forelse($generatedPages as $index => $page)
             @if($page['is_url_page'])
                 <div class="report-page">
                     <div class="page-content">
@@ -223,7 +245,14 @@
                     </div>
                 </div>
             @endif
-        @endforeach
+        @empty
+            <div class="report-page">
+                <div class="page-content">
+                    <h2>Geen pagina's gevonden</h2>
+                    <p>Dit sjabloon heeft nog geen pagina's.</p>
+                </div>
+            </div>
+        @endforelse
     </div>
 
     <script>
@@ -344,6 +373,25 @@
             
             console.log('✅ RESET COMPLETE');
         });
+
+        // Download as HTML functionality
+        function downloadAsHTML() {
+            const fileName = '{{ $template->naam ?? "sjabloon" }}_{{ $klantModel->naam }}_{{ date("Y-m-d") }}.html';
+            const htmlContent = document.documentElement.outerHTML;
+            
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = window.URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            console.log('📄 Downloaded:', fileName);
+        }
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', function() {

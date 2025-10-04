@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Sjabloon;
 use App\Models\SjabloonPage;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SjablonenController extends Controller
 {
@@ -43,8 +44,12 @@ class SjablonenController extends Controller
                         ->with('success', 'Sjabloon aangemaakt!');
     }
 
-    public function show(Sjabloon $sjabloon)
+    public function show($id)
     {
+        // Find sjabloon manually to ensure consistency
+        $sjabloon = Sjabloon::findOrFail($id);
+        $sjabloon->load('pages');
+        
         return view('sjablonen.show', compact('sjabloon'));
     }
 
@@ -187,5 +192,200 @@ class SjablonenController extends Controller
             'message' => 'Pagina verwijderd!',
             'reload' => true
         ]);
+    }
+
+    public function preview($id)
+    {
+        // Find sjabloon
+        $sjabloon = Sjabloon::findOrFail($id);
+        
+        // Load pages and sort by page_number
+        $sjabloon->load(['pages' => function($query) {
+            $query->orderBy('page_number', 'asc');
+        }]);
+        
+        // Debug: Log how many pages we have
+        \Log::info("Preview for sjabloon {$id}: Found " . $sjabloon->pages->count() . " pages");
+        
+        // Create a dummy klant for preview
+        $dummyKlant = (object)[
+            'id' => 'preview',
+            'naam' => 'Voorbeeld Klant',
+            'voornaam' => 'Jan',
+            'email' => 'voorbeeld@bonami.app',
+            'geboortedatum' => '1990-01-01'
+        ];
+        
+        // Create dummy bikefit data
+        $dummyBikefit = (object)[
+            'datum' => date('Y-m-d'),
+            'testtype' => 'Voorbeeld Test',
+            'lengte_cm' => '180',
+            'binnenbeenlengte_cm' => '85'
+        ];
+        
+        // Process ALL pages - make sure we get them all
+        $generatedPages = [];
+        foreach ($sjabloon->pages as $page) {
+            \Log::info("Processing page {$page->page_number}: is_url_page={$page->is_url_page}, content length=" . strlen($page->content ?? ''));
+            
+            if ($page->is_url_page) {
+                $generatedPages[] = [
+                    'is_url_page' => true,
+                    'url' => $page->url,
+                    'content' => null,
+                    'background_image' => $page->background_image,
+                    'page_number' => $page->page_number
+                ];
+            } else {
+                // Replace template variables with dummy data
+                $content = $page->content ?? '<p>Geen content</p>';
+                $content = str_replace('{{klant.naam}}', $dummyKlant->naam, $content);
+                $content = str_replace('{{klant.voornaam}}', $dummyKlant->voornaam, $content);
+                $content = str_replace('{{klant.email}}', $dummyKlant->email, $content);
+                $content = str_replace('{{klant.geboortedatum}}', $dummyKlant->geboortedatum, $content);
+                $content = str_replace('{{bikefit.datum}}', $dummyBikefit->datum, $content);
+                $content = str_replace('{{bikefit.testtype}}', $dummyBikefit->testtype, $content);
+                $content = str_replace('{{bikefit.lengte_cm}}', $dummyBikefit->lengte_cm, $content);
+                $content = str_replace('{{bikefit.binnenbeenlengte_cm}}', $dummyBikefit->binnenbeenlengte_cm, $content);
+                $content = str_replace('$mobility_table_report$', '<p><em>Mobiliteit tabel wordt hier weergegeven</em></p>', $content);
+                
+                $generatedPages[] = [
+                    'is_url_page' => false,
+                    'content' => $content,
+                    'background_image' => $page->background_image,
+                    'url' => null,
+                    'page_number' => $page->page_number
+                ];
+            }
+        }
+        
+        // Debug: Log how many pages we're sending to view
+        \Log::info("Sending " . count($generatedPages) . " pages to view");
+        
+        return view('sjablonen.generated-report', [
+            'template' => $sjabloon,
+            'klantModel' => $dummyKlant,
+            'generatedPages' => $generatedPages
+        ]);
+    }
+
+    public function generatePdf($templateId, $klantId = 'preview', $testId = null, $type = null)
+    {
+        // If templateId is actually the ID and no other params, set defaults
+        if ($klantId === null) {
+            $klantId = 'preview';
+        }
+        
+        // Find sjabloon
+        $sjabloon = Sjabloon::findOrFail($templateId);
+        
+        // Load pages and sort by page_number
+        $sjabloon->load(['pages' => function($query) {
+            $query->orderBy('page_number', 'asc');
+        }]);
+        
+        // Create dummy klant if not provided
+        if ($klantId && $klantId !== 'preview') {
+            // In real implementation, load actual klant
+            $klant = (object)[
+                'id' => $klantId,
+                'naam' => 'Echte Klant',
+                'voornaam' => 'Jan',
+                'email' => 'klant@bonami.app',
+                'geboortedatum' => '1990-01-01'
+            ];
+        } else {
+            $klant = (object)[
+                'id' => 'preview',
+                'naam' => 'Voorbeeld Klant',
+                'voornaam' => 'Jan',
+                'email' => 'voorbeeld@bonami.app',
+                'geboortedatum' => '1990-01-01'
+            ];
+        }
+        
+        // Create dummy bikefit data
+        $dummyBikefit = (object)[
+            'datum' => date('Y-m-d'),
+            'testtype' => 'Voorbeeld Test',
+            'lengte_cm' => '180',
+            'binnenbeenlengte_cm' => '85'
+        ];
+        
+        // Process pages (same as preview)
+        $generatedPages = [];
+        foreach ($sjabloon->pages as $page) {
+            if ($page->is_url_page) {
+                // Skip URL pages for PDF for now
+                continue;
+            } else {
+                // Replace template variables with dummy data
+                $content = $page->content ?? '<p>Geen content</p>';
+                $content = str_replace('{{klant.naam}}', $klant->naam, $content);
+                $content = str_replace('{{klant.voornaam}}', $klant->voornaam, $content);
+                $content = str_replace('{{klant.email}}', $klant->email, $content);
+                $content = str_replace('{{klant.geboortedatum}}', $klant->geboortedatum, $content);
+                $content = str_replace('{{bikefit.datum}}', $dummyBikefit->datum, $content);
+                $content = str_replace('{{bikefit.testtype}}', $dummyBikefit->testtype, $content);
+                $content = str_replace('{{bikefit.lengte_cm}}', $dummyBikefit->lengte_cm, $content);
+                $content = str_replace('{{bikefit.binnenbeenlengte_cm}}', $dummyBikefit->binnenbeenlengte_cm, $content);
+                $content = str_replace('$mobility_table_report$', '<p><em>Mobiliteit tabel wordt hier weergegeven</em></p>', $content);
+                
+                $generatedPages[] = [
+                    'is_url_page' => false,
+                    'content' => $content,
+                    'background_image' => $page->background_image,
+                    'url' => null,
+                    'page_number' => $page->page_number
+                ];
+            }
+        }
+        
+        // Generate PDF using DomPDF
+        try {
+            $pdf = Pdf::loadView('sjablonen.pdf-template', [
+                'template' => $sjabloon,
+                'klantModel' => $klant,
+                'generatedPages' => $generatedPages
+            ]);
+            
+            // Configure PDF options for better image support
+            $pdf->setPaper('A4', 'portrait');
+            $pdf->setOptions([
+                'isHtml5ParserEnabled' => true,
+                'isPhpEnabled' => true,
+                'isRemoteEnabled' => true,
+                'isJavascriptEnabled' => false,
+                'isFontSubsettingEnabled' => true,
+                'defaultFont' => 'Arial',
+                'dpi' => 150,
+                'defaultMediaType' => 'screen',
+                'isCssFloatEnabled' => true
+            ]);
+            
+            // Enable image processing
+            $pdf->getDomPDF()->getOptions()->setChroot(public_path());
+            
+            $fileName = $sjabloon->naam . '_' . $klant->naam . '_' . date('Y-m-d') . '.pdf';
+            
+            return $pdf->download($fileName);
+            
+        } catch (\Exception $e) {
+            \Log::error('PDF Generation failed: ' . $e->getMessage());
+            
+            // Fallback to HTML download
+            $html = view('sjablonen.pdf-template', [
+                'template' => $sjabloon,
+                'klantModel' => $klant,
+                'generatedPages' => $generatedPages
+            ])->render();
+            
+            $fileName = $sjabloon->naam . '_' . $klant->naam . '_' . date('Y-m-d') . '.html';
+            
+            return response($html)
+                ->header('Content-Type', 'text/html')
+                ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+        }
     }
 }
