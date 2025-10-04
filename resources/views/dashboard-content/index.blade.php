@@ -79,8 +79,13 @@ document.addEventListener('DOMContentLoaded', function() {
             <a href="{{ route('dashboard-content.archived') }}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
                 📁 Archief
             </a>
-            <a href="{{ route('dashboard-content.create') }}" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                ➕ Nieuwe Content
+            <a href="{{ route('dashboard-content.create') }}" 
+               class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
+               style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Nieuwe Content
             </a>
         </div>
     </div>

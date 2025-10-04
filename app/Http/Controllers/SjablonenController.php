@@ -111,12 +111,68 @@ class SjablonenController extends Controller
                         ->with('success', 'Sjabloon bijgewerkt!');
     }
 
-    public function destroy(Sjabloon $sjabloon)
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id)
     {
-        $sjabloon->update(['is_actief' => false]);
-        
-        return redirect()->route('sjablonen.index')
-                        ->with('success', 'Sjabloon gearchiveerd!');
+        try {
+            // Find the sjabloon by ID
+            $sjabloon = Sjabloon::findOrFail($id);
+            
+            // Debug log met ID
+            \Log::info('Deleting sjabloon: ' . $sjabloon->id . ' (naam: ' . $sjabloon->naam . ')');
+            
+            // Verwijder alle gerelateerde pagina's eerst
+            $deletedPages = $sjabloon->pages()->delete();
+            \Log::info('Deleted ' . $deletedPages . ' pages');
+            
+            // Verwijder het sjabloon zelf
+            $result = $sjabloon->delete();
+            
+            \Log::info('Delete result: ' . ($result ? 'success' : 'failed'));
+            
+            return redirect()->route('sjablonen.index')
+                ->with('success', 'Sjabloon "' . $sjabloon->naam . '" is succesvol verwijderd.');
+        } catch (\Exception $e) {
+            \Log::error('Delete error: ' . $e->getMessage());
+            return redirect()->route('sjablonen.index')
+                ->with('error', 'Er is een fout opgetreden bij het verwijderen: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Duplicate the specified sjabloon.
+     */
+    public function duplicate($id)
+    {
+        try {
+            // Find the sjabloon by ID
+            $sjabloon = Sjabloon::findOrFail($id);
+            
+            \Log::info('Duplicating sjabloon: ' . $sjabloon->id . ' (naam: ' . $sjabloon->naam . ')');
+            
+            // Maak een kopie van het sjabloon
+            $newSjabloon = $sjabloon->replicate();
+            $newSjabloon->naam = $sjabloon->naam . ' (Kopie)';
+            $newSjabloon->save();
+
+            // Kopieer alle pagina's
+            foreach ($sjabloon->pages as $page) {
+                $newPage = $page->replicate();
+                $newPage->sjabloon_id = $newSjabloon->id;
+                $newPage->save();
+            }
+
+            \Log::info('Successfully duplicated sjabloon to: ' . $newSjabloon->id);
+
+            return redirect()->route('sjablonen.edit', $newSjabloon)
+                ->with('success', 'Sjabloon is succesvol gedupliceerd.');
+        } catch (\Exception $e) {
+            \Log::error('Duplicate error: ' . $e->getMessage());
+            return redirect()->route('sjablonen.index')
+                ->with('error', 'Er is een fout opgetreden bij het dupliceren van het sjabloon: ' . $e->getMessage());
+        }
     }
 
     // AJAX methods for page management

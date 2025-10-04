@@ -1024,3 +1024,6 @@ Route::get('/sjabloon-test', function() {
 
 // PDF and Preview routes
 include __DIR__ . '/preview.php';
+
+// Sjablonen duplicate route
+Route::post('/sjablonen/{sjabloon}/duplicate', [App\Http\Controllers\SjablonenController::class, 'duplicate'])->name('sjablonen.duplicate');
