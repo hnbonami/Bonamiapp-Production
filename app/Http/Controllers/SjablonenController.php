@@ -1047,8 +1047,78 @@ class SjablonenController extends Controller
             ])->render();
             $content = str_replace('$Bikefit.prognose_zitpositie_html$', $prognoseZitpositieHtml, $content);
             
-            // Body measurements - HERSTELD
-            $bodyMeasurementsHtml = view('bikefit._body_measurements', [
+            // Body measurements - 5% KLEINER + TAHOMA FONT
+            $bodyMeasurementsCSS = '<style>
+                /* 5% KLEINER LICHAAMSMATEN DIAGRAM */
+                *[class*="body"],
+                *[class*="measurement"],
+                *[class*="lichaam"],
+                *[class*="diagram"],
+                *[class*="bikefit"] div:has(svg),
+                div:has(svg[viewBox]),
+                svg[viewBox],
+                svg,
+                .body-measurements,
+                .lichaamsmaten,
+                .body-measurements-block,
+                .measurements-container,
+                .measurements,
+                .measurement-diagram,
+                .bikefit-measurements {
+                    transform: scale(0.95) !important;
+                    transform-origin: left !important;
+                    margin: 10px auto !important;
+                    font-family: Tahoma, Arial, sans-serif !important;
+                    width: auto !important;
+                    height: auto !important;
+                }
+                
+                /* 5% KLEINERE SVG ELEMENTEN */
+                svg {
+                    transform: scale(0.95) !important;
+                    transform-origin: left !important;
+                    width: auto !important;
+                    height: auto !important;
+                    max-width: none !important;
+                    max-height: none !important;
+                }
+                
+                /* CONTAINER RUIMTE VOOR KLEINER DIAGRAM */
+                div:has(svg) {
+                    padding: 10px !important;
+                    margin: 5px auto !important;
+                    overflow: visible !important;
+                }
+                
+                /* FORCEER ALLE TEKST OP TAHOMA */
+                * {
+                    font-family: Tahoma, Arial, sans-serif !important;
+                }
+                
+                /* ALLE SVG TEKST GROTER EN DIKKER */
+                svg text,
+                svg tspan,
+                text,
+                tspan {
+                    font-family: Tahoma, Arial, sans-serif !important;
+                    font-weight: 600 !important;
+                    font-size: 11px !important;
+                }
+                
+                /* ALLE MOGELIJKE CIJFER ELEMENTEN */
+                .value,
+                .number,
+                .measurement-value,
+                span:contains("cm"),
+                span:contains("."),
+                *[class*="value"] {
+                    font-family: Tahoma, Arial, sans-serif !important;
+                    font-weight: 600 !important;
+                    font-size: 12px !important;
+                }
+            </style>';
+            
+            $bodyMeasurementsHtml = $bodyMeasurementsCSS . view('bikefit._body_measurements', [
                 'bikefit' => $bikefit
             ])->render();
             $content = str_replace('$Bikefit.body_measurements_block_html$', $bodyMeasurementsHtml, $content);
@@ -1163,14 +1233,14 @@ class SjablonenController extends Controller
                     vertical-align: middle !important;
                 }
                 
-                /* KLEINERE LINKSE KOLOM - VAN 22.5% NAAR 15% + ZWARTE TEKST */
+                /* KLEINERE LINKSE KOLOM - VAN 25% NAAR 18% + ZWARTE TEKST */
                 .mobility-report-table .test-name,
                 table.mobility-report-table .test-name,
                 .mobility-report-table td:first-child,
                 table.mobility-report-table td:first-child {
                     text-align: left !important;
                     font-weight: 600 !important;
-                    width: 15% !important;
+                    width: 20% !important;
                     background-color: #f8fafc !important;
                     font-size: 10px !important;
                     vertical-align: top !important;
