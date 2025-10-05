@@ -76,20 +76,90 @@ class SjablonenController extends Controller
             $sjabloon->load('pages');
         }
         
-        // Get template keys for the sidebar
+        // Get template keys for the sidebar - alleen werkende database velden
         $templateKeys = collect([
             'klant' => [
-                (object)['placeholder' => '{{klant.naam}}', 'display_name' => 'Klant Naam'],
-                (object)['placeholder' => '{{klant.voornaam}}', 'display_name' => 'Klant Voornaam'],
-                (object)['placeholder' => '{{klant.email}}', 'display_name' => 'Klant Email'],
+                (object)['placeholder' => '{{klant.voornaam}}', 'display_name' => 'Voornaam'],
+                (object)['placeholder' => '{{klant.naam}}', 'display_name' => 'Naam'],
+                (object)['placeholder' => '{{klant.email}}', 'display_name' => 'E-mailadres'],
+                (object)['placeholder' => '{{klant.telefoonnummer}}', 'display_name' => 'Telefoonnummer'],
                 (object)['placeholder' => '{{klant.geboortedatum}}', 'display_name' => 'Geboortedatum'],
+                (object)['placeholder' => '{{klant.geslacht}}', 'display_name' => 'Geslacht'],
+                (object)['placeholder' => '{{klant.straatnaam}}', 'display_name' => 'Straatnaam'],
+                (object)['placeholder' => '{{klant.huisnummer}}', 'display_name' => 'Huisnummer'],
+                (object)['placeholder' => '{{klant.postcode}}', 'display_name' => 'Postcode'],
+                (object)['placeholder' => '{{klant.stad}}', 'display_name' => 'Stad'],
+                (object)['placeholder' => '{{klant.sport}}', 'display_name' => 'Sport'],
+                (object)['placeholder' => '{{klant.niveau}}', 'display_name' => 'Niveau'],
+                (object)['placeholder' => '{{klant.club}}', 'display_name' => 'Club / Ploeg'],
+                (object)['placeholder' => '{{klant.herkomst}}', 'display_name' => 'Herkomst'],
+                (object)['placeholder' => '{{klant.status}}', 'display_name' => 'Status'],
             ],
             'bikefit' => [
                 (object)['placeholder' => '{{bikefit.datum}}', 'display_name' => 'Bikefit Datum'],
-                (object)['placeholder' => '{{bikefit.testtype}}', 'display_name' => 'Test Type'],
-                (object)['placeholder' => '{{bikefit.lengte_cm}}', 'display_name' => 'Lengte (cm)'],
-                (object)['placeholder' => '{{bikefit.binnenbeenlengte_cm}}', 'display_name' => 'Binnenbeenlengte (cm)'],
-                (object)['placeholder' => '$mobility_table_report$', 'display_name' => 'Mobiliteit Tabel'],
+                (object)['placeholder' => '{{bikefit.fietsmerk}}', 'display_name' => 'Fiets Merk'],
+                (object)['placeholder' => '{{bikefit.fiets_type}}', 'display_name' => 'Fiets Type'],
+                (object)['placeholder' => '{{bikefit.kadermaat}}', 'display_name' => 'Kadermaat'],
+                (object)['placeholder' => '{{bikefit.algemene_klachten}}', 'display_name' => 'Algemene Klachten'],
+                (object)['placeholder' => '{{bikefit.ervaring_fiets}}', 'display_name' => 'Ervaring met Fiets'],
+                (object)['placeholder' => '{{bikefit.doelstellingen}}', 'display_name' => 'Doelstellingen'],
+                (object)['placeholder' => '{{bikefit.huidige_positie_opmerkingen}}', 'display_name' => 'Huidige Positie Opmerkingen'],
+                (object)['placeholder' => '{{bikefit.zadel_trapas_hoek}}', 'display_name' => 'Zadel-trapas hoek (graden)'],
+                (object)['placeholder' => '{{bikefit.zadel_trapas_afstand}}', 'display_name' => 'Zadel-trapas afstand (cm)'],
+                (object)['placeholder' => '{{bikefit.stuur_trapas_hoek}}', 'display_name' => 'Stuur-trapas hoek (graden)'],
+                (object)['placeholder' => '{{bikefit.stuur_trapas_afstand}}', 'display_name' => 'Stuur-trapas afstand (cm)'],
+                (object)['placeholder' => '{{bikefit.zadel_lengte}}', 'display_name' => 'Zadel lengte (cm)'],
+                (object)['placeholder' => '{{bikefit.beenlengteverschil}}', 'display_name' => 'Beenlengteverschil'],
+                (object)['placeholder' => '{{bikefit.beenlengteverschil_cm}}', 'display_name' => 'Beenlengteverschil (cm)'],
+                (object)['placeholder' => '{{bikefit.lengte}}', 'display_name' => 'Lengte (cm)'],
+                (object)['placeholder' => '{{bikefit.binnenbeenlengte}}', 'display_name' => 'Binnenbeenlengte (cm)'],
+                (object)['placeholder' => '{{bikefit.armlengte}}', 'display_name' => 'Armlengte (cm)'],
+                (object)['placeholder' => '{{bikefit.romplengte}}', 'display_name' => 'Romplengte (cm)'],
+                (object)['placeholder' => '{{bikefit.schouderbreedte}}', 'display_name' => 'Schouderbreedte (cm)'],
+                (object)['placeholder' => '{{bikefit.aanpassing_zadel}}', 'display_name' => 'Aanpassing zadel (cm)'],
+                (object)['placeholder' => '{{bikefit.aanpassing_setback}}', 'display_name' => 'Aanpassing setback (cm)'],
+                (object)['placeholder' => '{{bikefit.aanpassing_reach}}', 'display_name' => 'Aanpassing reach (cm)'],
+                (object)['placeholder' => '{{bikefit.aanpassing_drop}}', 'display_name' => 'Aanpassing drop (cm)'],
+                (object)['placeholder' => '{{bikefit.aanpassing_stuurpen}}', 'display_name' => 'Aanpassing stuurpen (cm)'],
+                (object)['placeholder' => '{{bikefit.schoenmaat}}', 'display_name' => 'Schoenmaat'],
+                (object)['placeholder' => '{{bikefit.voetbreedte}}', 'display_name' => 'Voetbreedte (cm)'],
+                (object)['placeholder' => '{{bikefit.steunzolen}}', 'display_name' => 'Steunzolen'],
+                (object)['placeholder' => '{{bikefit.steunzolen_reden}}', 'display_name' => 'Steunzolen Reden'],
+                (object)['placeholder' => '{{bikefit.aerobe_drempel}}', 'display_name' => 'Aërobe Drempel'],
+                (object)['placeholder' => '{{bikefit.anaerobe_drempel}}', 'display_name' => 'Anaërobe Drempel'],
+                (object)['placeholder' => '{{bikefit.conclusie}}', 'display_name' => 'Conclusie'],
+                (object)['placeholder' => '{{bikefit.aanbevelingen}}', 'display_name' => 'Aanbevelingen'],
+                (object)['placeholder' => '{{bikefit.opmerkingen}}', 'display_name' => 'Opmerkingen'],
+                (object)['placeholder' => '{{bikefit.follow_up}}', 'display_name' => 'Follow-up'],
+            ],
+            'inspanningstest' => [
+                (object)['placeholder' => '{{test.testdatum}}', 'display_name' => 'Testdatum'],
+                (object)['placeholder' => '{{test.testtype}}', 'display_name' => 'Testtype'],
+                (object)['placeholder' => '{{test.specifieke_doelstellingen}}', 'display_name' => 'Specifieke doelstellingen'],
+                (object)['placeholder' => '{{test.lichaamslengte_cm}}', 'display_name' => 'Lengte (cm)'],
+                (object)['placeholder' => '{{test.lichaamsgewicht_kg}}', 'display_name' => 'Gewicht (kg)'],
+                (object)['placeholder' => '{{test.bmi}}', 'display_name' => 'BMI'],
+                (object)['placeholder' => '{{test.hartslag_rust_bpm}}', 'display_name' => 'Hartslag rust (bpm)'],
+                (object)['placeholder' => '{{test.maximale_hartslag_bpm}}', 'display_name' => 'Hartslag max (bpm)'],
+                (object)['placeholder' => '{{test.buikomtrek_cm}}', 'display_name' => 'Buikomtrek (cm)'],
+                (object)['placeholder' => '{{test.testlocatie}}', 'display_name' => 'Testlocatie'],
+                (object)['placeholder' => '{{test.protocol}}', 'display_name' => 'Protocol'],
+                (object)['placeholder' => '{{test.startwattage}}', 'display_name' => 'Start wattage'],
+                (object)['placeholder' => '{{test.stappen_min}}', 'display_name' => 'Stappen (minuten)'],
+                (object)['placeholder' => '{{test.stappen_watt}}', 'display_name' => 'Stappen (watt)'],
+                (object)['placeholder' => '{{test.weersomstandigheden}}', 'display_name' => 'Weersomstandigheden'],
+                (object)['placeholder' => '{{test.analyse_methode}}', 'display_name' => 'Analyse methode'],
+                (object)['placeholder' => '{{test.aerobe_drempel_vermogen}}', 'display_name' => 'Aërobe drempel - Vermogen (W)'],
+                (object)['placeholder' => '{{test.aerobe_drempel_hartslag}}', 'display_name' => 'Aërobe drempel - Hartslag (bpm)'],
+                (object)['placeholder' => '{{test.anaerobe_drempel_vermogen}}', 'display_name' => 'Anaërobe drempel - Vermogen (W)'],
+                (object)['placeholder' => '{{test.anaerobe_drempel_hartslag}}', 'display_name' => 'Anaërobe drempel - Hartslag (bpm)'],
+                (object)['placeholder' => '{{test.besluit_lichaamssamenstelling}}', 'display_name' => 'Besluit Lichaamssamenstelling'],
+                (object)['placeholder' => '{{test.advies_aerobe_drempel}}', 'display_name' => 'Advies Aërobe Drempel'],
+                (object)['placeholder' => '{{test.advies_anaerobe_drempel}}', 'display_name' => 'Advies Anaërobe Drempel'],
+            ],
+            'systeem' => [
+                (object)['placeholder' => '{{datum.vandaag}}', 'display_name' => 'Datum Vandaag'],
+                (object)['placeholder' => '{{datum.jaar}}', 'display_name' => 'Huidig Jaar'],
             ]
         ]);
         
@@ -335,6 +405,13 @@ class SjablonenController extends Controller
                 $content = str_replace('{{bikefit.binnenbeenlengte_cm}}', $dummyBikefit->binnenbeenlengte_cm, $content);
                 $content = str_replace('$mobility_table_report$', '<p><em>Mobiliteit tabel wordt hier weergegeven</em></p>', $content);
                 
+                // Systeem variabelen
+                $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
+                $content = str_replace('{{datum.jaar}}', date('Y'), $content);
+                
+                // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
+                $content = $this->hideCKEditorTableBorders($content);
+                
                 $generatedPages[] = [
                     'is_url_page' => false,
                     'content' => $content,
@@ -416,6 +493,13 @@ class SjablonenController extends Controller
                 $content = str_replace('{{bikefit.lengte_cm}}', $dummyBikefit->lengte_cm, $content);
                 $content = str_replace('{{bikefit.binnenbeenlengte_cm}}', $dummyBikefit->binnenbeenlengte_cm, $content);
                 $content = str_replace('$mobility_table_report$', '<p><em>Mobiliteit tabel wordt hier weergegeven</em></p>', $content);
+                
+                // Systeem variabelen  
+                $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
+                $content = str_replace('{{datum.jaar}}', date('Y'), $content);
+                
+                // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
+                $content = $this->hideCKEditorTableBorders($content);
                 
                 $generatedPages[] = [
                     'is_url_page' => false,
@@ -632,17 +716,66 @@ class SjablonenController extends Controller
                     $content = str_replace('{{klant.naam}}', $bikefit->klant->naam ?? '', $content);
                     $content = str_replace('{{klant.voornaam}}', $bikefit->klant->voornaam ?? '', $content);
                     $content = str_replace('{{klant.email}}', $bikefit->klant->email ?? '', $content);
+                    $content = str_replace('{{klant.telefoonnummer}}', $bikefit->klant->telefoonnummer ?? '', $content);
                     $content = str_replace('{{klant.geboortedatum}}', $bikefit->klant->geboortedatum ?? '', $content);
+                    $content = str_replace('{{klant.geslacht}}', $bikefit->klant->geslacht ?? '', $content);
+                    $content = str_replace('{{klant.straatnaam}}', $bikefit->klant->straatnaam ?? '', $content);
+                    $content = str_replace('{{klant.huisnummer}}', $bikefit->klant->huisnummer ?? '', $content);
+                    $content = str_replace('{{klant.postcode}}', $bikefit->klant->postcode ?? '', $content);
+                    $content = str_replace('{{klant.stad}}', $bikefit->klant->stad ?? '', $content);
+                    $content = str_replace('{{klant.sport}}', $bikefit->klant->sport ?? '', $content);
+                    $content = str_replace('{{klant.niveau}}', $bikefit->klant->niveau ?? '', $content);
+                    $content = str_replace('{{klant.club}}', $bikefit->klant->club ?? '', $content);
+                    $content = str_replace('{{klant.herkomst}}', $bikefit->klant->herkomst ?? '', $content);
+                    $content = str_replace('{{klant.status}}', $bikefit->klant->status ?? '', $content);
                 }
                 
-                // Bikefit data
+                // Alle Bikefit data - COMPLEET
                 $content = str_replace('{{bikefit.datum}}', $bikefit->datum ?? date('Y-m-d'), $content);
-                $content = str_replace('{{bikefit.testtype}}', $bikefit->testtype ?? '', $content);
-                $content = str_replace('{{bikefit.lengte_cm}}', $bikefit->lengte_cm ?? '', $content);
-                $content = str_replace('{{bikefit.binnenbeenlengte_cm}}', $bikefit->binnenbeenlengte_cm ?? '', $content);
+                $content = str_replace('{{bikefit.fietsmerk}}', $bikefit->fietsmerk ?? '', $content);
+                $content = str_replace('{{bikefit.fiets_type}}', $bikefit->fiets_type ?? '', $content);
+                $content = str_replace('{{bikefit.kadermaat}}', $bikefit->kadermaat ?? '', $content);
+                $content = str_replace('{{bikefit.algemene_klachten}}', $bikefit->algemene_klachten ?? '', $content);
+                $content = str_replace('{{bikefit.ervaring_fiets}}', $bikefit->ervaring_fiets ?? '', $content);
+                $content = str_replace('{{bikefit.doelstellingen}}', $bikefit->doelstellingen ?? '', $content);
+                $content = str_replace('{{bikefit.huidige_positie_opmerkingen}}', $bikefit->huidige_positie_opmerkingen ?? '', $content);
+                $content = str_replace('{{bikefit.zadel_trapas_hoek}}', $bikefit->zadel_trapas_hoek ?? '', $content);
+                $content = str_replace('{{bikefit.zadel_trapas_afstand}}', $bikefit->zadel_trapas_afstand ?? '', $content);
+                $content = str_replace('{{bikefit.stuur_trapas_hoek}}', $bikefit->stuur_trapas_hoek ?? '', $content);
+                $content = str_replace('{{bikefit.stuur_trapas_afstand}}', $bikefit->stuur_trapas_afstand ?? '', $content);
+                $content = str_replace('{{bikefit.zadel_lengte}}', $bikefit->zadel_lengte ?? '', $content);
+                $content = str_replace('{{bikefit.beenlengteverschil}}', $bikefit->beenlengteverschil == '1' ? 'Ja' : 'Nee', $content);
+                $content = str_replace('{{bikefit.beenlengteverschil_cm}}', $bikefit->beenlengteverschil_cm ?? '', $content);
+                $content = str_replace('{{bikefit.lengte}}', $bikefit->lengte ?? '', $content);
+                $content = str_replace('{{bikefit.binnenbeenlengte}}', $bikefit->binnenbeenlengte ?? '', $content);
+                $content = str_replace('{{bikefit.armlengte}}', $bikefit->armlengte ?? '', $content);
+                $content = str_replace('{{bikefit.romplengte}}', $bikefit->romplengte ?? '', $content);
+                $content = str_replace('{{bikefit.schouderbreedte}}', $bikefit->schouderbreedte ?? '', $content);
+                $content = str_replace('{{bikefit.aanpassing_zadel}}', $bikefit->aanpassing_zadel ?? '', $content);
+                $content = str_replace('{{bikefit.aanpassing_setback}}', $bikefit->aanpassing_setback ?? '', $content);
+                $content = str_replace('{{bikefit.aanpassing_reach}}', $bikefit->aanpassing_reach ?? '', $content);
+                $content = str_replace('{{bikefit.aanpassing_drop}}', $bikefit->aanpassing_drop ?? '', $content);
+                $content = str_replace('{{bikefit.aanpassing_stuurpen}}', $bikefit->aanpassing_stuurpen ?? '', $content);
+                $content = str_replace('{{bikefit.schoenmaat}}', $bikefit->schoenmaat ?? '', $content);
+                $content = str_replace('{{bikefit.voetbreedte}}', $bikefit->voetbreedte ?? '', $content);
+                $content = str_replace('{{bikefit.steunzolen}}', $bikefit->steunzolen == '1' ? 'Ja' : 'Nee', $content);
+                $content = str_replace('{{bikefit.steunzolen_reden}}', $bikefit->steunzolen_reden ?? '', $content);
+                $content = str_replace('{{bikefit.aerobe_drempel}}', $bikefit->aerobe_drempel ?? '', $content);
+                $content = str_replace('{{bikefit.anaerobe_drempel}}', $bikefit->anaerobe_drempel ?? '', $content);
+                $content = str_replace('{{bikefit.conclusie}}', $bikefit->conclusie ?? '', $content);
+                $content = str_replace('{{bikefit.aanbevelingen}}', $bikefit->aanbevelingen ?? '', $content);
+                $content = str_replace('{{bikefit.opmerkingen}}', $bikefit->opmerkingen ?? '', $content);
+                $content = str_replace('{{bikefit.follow_up}}', $bikefit->follow_up ?? '', $content);
+                
+                // Systeem variabelen
+                $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
+                $content = str_replace('{{datum.jaar}}', date('Y'), $content);
                 
                 // Add mobility table if available
                 $content = str_replace('$mobility_table_report$', $this->generateMobilityTable($bikefit), $content);
+                
+                // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
+                $content = $this->hideCKEditorTableBorders($content);
                 
                 $generatedPages[] = [
                     'is_url_page' => false,
@@ -682,13 +815,51 @@ class SjablonenController extends Controller
                     $content = str_replace('{{klant.naam}}', $inspanningstest->klant->naam ?? '', $content);
                     $content = str_replace('{{klant.voornaam}}', $inspanningstest->klant->voornaam ?? '', $content);
                     $content = str_replace('{{klant.email}}', $inspanningstest->klant->email ?? '', $content);
+                    $content = str_replace('{{klant.telefoonnummer}}', $inspanningstest->klant->telefoonnummer ?? '', $content);
                     $content = str_replace('{{klant.geboortedatum}}', $inspanningstest->klant->geboortedatum ?? '', $content);
+                    $content = str_replace('{{klant.geslacht}}', $inspanningstest->klant->geslacht ?? '', $content);
+                    $content = str_replace('{{klant.straatnaam}}', $inspanningstest->klant->straatnaam ?? '', $content);
+                    $content = str_replace('{{klant.huisnummer}}', $inspanningstest->klant->huisnummer ?? '', $content);
+                    $content = str_replace('{{klant.postcode}}', $inspanningstest->klant->postcode ?? '', $content);
+                    $content = str_replace('{{klant.stad}}', $inspanningstest->klant->stad ?? '', $content);
+                    $content = str_replace('{{klant.sport}}', $inspanningstest->klant->sport ?? '', $content);
+                    $content = str_replace('{{klant.niveau}}', $inspanningstest->klant->niveau ?? '', $content);
+                    $content = str_replace('{{klant.club}}', $inspanningstest->klant->club ?? '', $content);
+                    $content = str_replace('{{klant.herkomst}}', $inspanningstest->klant->herkomst ?? '', $content);
+                    $content = str_replace('{{klant.status}}', $inspanningstest->klant->status ?? '', $content);
                 }
                 
-                // Inspanningstest data - add your specific fields here
-                $content = str_replace('{{test.datum}}', $inspanningstest->datum ?? date('Y-m-d'), $content);
+                // Alle Inspanningstest data - COMPLEET
+                $content = str_replace('{{test.testdatum}}', $inspanningstest->testdatum ?? '', $content);
                 $content = str_replace('{{test.testtype}}', $inspanningstest->testtype ?? '', $content);
-                // Add more inspanningstest-specific variables as needed
+                $content = str_replace('{{test.specifieke_doelstellingen}}', $inspanningstest->specifieke_doelstellingen ?? '', $content);
+                $content = str_replace('{{test.lichaamslengte_cm}}', $inspanningstest->lichaamslengte_cm ?? '', $content);
+                $content = str_replace('{{test.lichaamsgewicht_kg}}', $inspanningstest->lichaamsgewicht_kg ?? '', $content);
+                $content = str_replace('{{test.bmi}}', $inspanningstest->bmi ?? '', $content);
+                $content = str_replace('{{test.hartslag_rust_bpm}}', $inspanningstest->hartslag_rust_bpm ?? '', $content);
+                $content = str_replace('{{test.maximale_hartslag_bpm}}', $inspanningstest->maximale_hartslag_bpm ?? '', $content);
+                $content = str_replace('{{test.buikomtrek_cm}}', $inspanningstest->buikomtrek_cm ?? '', $content);
+                $content = str_replace('{{test.testlocatie}}', $inspanningstest->testlocatie ?? '', $content);
+                $content = str_replace('{{test.protocol}}', $inspanningstest->protocol ?? '', $content);
+                $content = str_replace('{{test.startwattage}}', $inspanningstest->startwattage ?? '', $content);
+                $content = str_replace('{{test.stappen_min}}', $inspanningstest->stappen_min ?? '', $content);
+                $content = str_replace('{{test.stappen_watt}}', $inspanningstest->stappen_watt ?? '', $content);
+                $content = str_replace('{{test.weersomstandigheden}}', $inspanningstest->weersomstandigheden ?? '', $content);
+                $content = str_replace('{{test.analyse_methode}}', $inspanningstest->analyse_methode ?? '', $content);
+                $content = str_replace('{{test.aerobe_drempel_vermogen}}', $inspanningstest->aerobe_drempel_vermogen ?? '', $content);
+                $content = str_replace('{{test.aerobe_drempel_hartslag}}', $inspanningstest->aerobe_drempel_hartslag ?? '', $content);
+                $content = str_replace('{{test.anaerobe_drempel_vermogen}}', $inspanningstest->anaerobe_drempel_vermogen ?? '', $content);
+                $content = str_replace('{{test.anaerobe_drempel_hartslag}}', $inspanningstest->anaerobe_drempel_hartslag ?? '', $content);
+                $content = str_replace('{{test.besluit_lichaamssamenstelling}}', $inspanningstest->besluit_lichaamssamenstelling ?? '', $content);
+                $content = str_replace('{{test.advies_aerobe_drempel}}', $inspanningstest->advies_aerobe_drempel ?? '', $content);
+                $content = str_replace('{{test.advies_anaerobe_drempel}}', $inspanningstest->advies_anaerobe_drempel ?? '', $content);
+                
+                // Systeem variabelen
+                $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
+                $content = str_replace('{{datum.jaar}}', date('Y'), $content);
+                
+                // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
+                $content = $this->hideCKEditorTableBorders($content);
                 
                 $generatedPages[] = [
                     'is_url_page' => false,
@@ -715,5 +886,32 @@ class SjablonenController extends Controller
                     <p>Mobiliteit data voor: ' . ($bikefit->klant->naam ?? 'Onbekend') . '</p>
                     <!-- Add your actual mobility table generation logic here -->
                 </div>';
+    }
+    
+    /**
+     * Hide table borders for CKEditor layout tables
+     */
+    private function hideCKEditorTableBorders($content)
+    {
+        // Voeg CSS toe om alle tabelranden te verbergen
+        $css = '<style>
+            table, table td, table th, table tr {
+                border: none !important;
+                border-collapse: collapse !important;
+                border-spacing: 0 !important;
+            }
+            table {
+                border: 0 !important;
+                cellspacing: 0 !important;
+                cellpadding: 5px !important;
+            }
+            td, th {
+                border: 0 !important;
+                padding: 5px !important;
+            }
+        </style>';
+        
+        // Voeg CSS toe aan het begin van de content
+        return $css . $content;
     }
 }
