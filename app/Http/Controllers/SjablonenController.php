@@ -970,18 +970,18 @@ class SjablonenController extends Controller
         
         // Genereer HTML voor elk component
         try {
-            // Resultaten VOOR - zeer kleine schaling voor compacte weergave
-            $resultatenVoorHtml = '<div style="transform:scale(0.35); transform-origin:top left; width:285%; margin-bottom:-280px;">' 
-                . view('bikefit._results_section', [
+            // Resultaten VOOR - gebruik exact dezelfde schaling als prognose zitpositie
+            $resultatenVoorHtml = '<div style="transform:scale(0.7); transform-origin:top left; width:143%; margin-bottom:-100px;">' 
+                . view('bikefit._results_section_report', [
                     'results' => $resultsVoor, 
                     'bikefit' => $bikefitVoor
                 ])->render() 
                 . '</div>';
             $content = str_replace('$ResultatenVoor$', $resultatenVoorHtml, $content);
             
-            // Resultaten NA - zeer kleine schaling voor compacte weergave
-            $resultatenNaHtml = '<div style="transform:scale(0.35); transform-origin:top left; width:285%; margin-bottom:-280px;">' 
-                . view('bikefit._results_section', [
+            // Resultaten NA - gebruik exact dezelfde schaling als prognose zitpositie
+            $resultatenNaHtml = '<div style="transform:scale(0.7); transform-origin:top left; width:143%; margin-bottom:-100px;">' 
+                . view('bikefit._results_section_report', [
                     'results' => $resultsNa, 
                     'bikefit' => $bikefitNa
                 ])->render() 

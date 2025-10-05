@@ -11,52 +11,18 @@
                 $img = '/images/bikefit-schema.png';
             }
         @endphp
-        <div style="flex: 1; min-width: 300px;">
-            <img src="{{ $img }}" alt="Bikefit schema" style="width: 100%; max-width: 400px; height: auto;">
-        </div>
-        <div style="flex: 1; min-width: 300px;">
-            <table style="width: 100%; border-collapse: collapse; font-size: 16px;">
+        <img src="{{ $img }}" alt="Bikefit schema" class="w-full md:w-1/2 max-w-md mx-auto">
+        <div class="w-full md:w-1/2">
+            <table class="w-full text-sm mb-4">
                 <tbody>
-                    <tr>
-                        <td style="font-weight: bold; color: #2563eb; padding: 8px; border: 1px solid #e5e7eb;">A</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb;">Zadelhoogte</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">{{ $results['zadelhoogte'] ?? '' }} cm</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: bold; color: #2563eb; padding: 8px; border: 1px solid #e5e7eb;">B</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb;">Zadelterugstand</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">{{ $results['zadelterugstand'] ?? '' }} cm</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: bold; color: #2563eb; padding: 8px; border: 1px solid #e5e7eb;">C</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb;">Zadelterugstand (top zadel)</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">{{ $results['zadelterugstand_top'] ?? '' }} cm</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: bold; color: #2563eb; padding: 8px; border: 1px solid #e5e7eb;">D</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb;">Horizontale reach</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">{{ $results['reach'] ?? '' }} mm</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: bold; color: #2563eb; padding: 8px; border: 1px solid #e5e7eb;">E</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb;">Reach</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">{{ $results['directe_reach'] ?? '' }} mm</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: bold; color: #2563eb; padding: 8px; border: 1px solid #e5e7eb;">F</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb;">Drop</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">{{ $results['drop'] ?? '' }} mm</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: bold; color: #2563eb; padding: 8px; border: 1px solid #e5e7eb;">G</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb;">Cranklengte</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">{{ $results['cranklengte'] ?? '' }} mm</td>
-                    </tr>
-                    <tr>
-                        <td style="font-weight: bold; color: #2563eb; padding: 8px; border: 1px solid #e5e7eb;">H</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb;">Stuurbreedte</td>
-                        <td style="padding: 8px; border: 1px solid #e5e7eb; text-align: right;">{{ $results['stuurbreedte'] ?? '' }} mm</td>
-                    </tr>
+                    <tr><td class="font-bold text-blue-700">A</td><td>Zadelhoogte</td><td>{{ $results['zadelhoogte'] ?? '' }} cm</td></tr>
+                    <tr><td class="font-bold text-blue-700">B</td><td>Zadelterugstand</td><td>{{ $results['zadelterugstand'] ?? '' }} cm</td></tr>
+                    <tr><td class="font-bold text-blue-700">C</td><td>Zadelterugstand (top zadel)</td><td>{{ $results['zadelterugstand_top'] ?? '' }} cm</td></tr>
+                    <tr><td class="font-bold text-blue-700">D</td><td>Horizontale reach</td><td>{{ $results['reach'] ?? '' }} mm</td></tr>
+                    <tr><td class="font-bold text-blue-700">E</td><td>Reach</td><td>{{ $results['directe_reach'] ?? '' }} mm</td></tr>
+                    <tr><td class="font-bold text-blue-700">F</td><td>Drop</td><td>{{ $results['drop'] ?? '' }} mm</td></tr>
+                    <tr><td class="font-bold text-blue-700">G</td><td>Cranklengte</td><td>{{ $results['cranklengte'] ?? '' }} mm</td></tr>
+                    <tr><td class="font-bold text-blue-700">H</td><td>Stuurbreedte</td><td>{{ $results['stuurbreedte'] ?? '' }} mm</td></tr>
                 </tbody>
             </table>
         </div>

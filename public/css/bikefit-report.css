@@ -1,0 +1,109 @@
+/* Bikefit Report Styling */
+
+/* Afbeeldingen - ALLE mogelijke selectors om afbeeldingen zichtbaar te maken */
+.bike-image,
+img.bike-image,
+.bikefit-image,
+.bikefit-schema img,
+.schema-image,
+img[src*="bikefit-schema"],
+img[alt*="Bikefit schema"],
+img[alt*="bikefit"],
+.report-page img {
+    width: 80% !important;
+    height: auto !important;
+    max-width: 320px !important;
+    display: block !important;
+    visibility: visible !important;
+    transform: none !important;
+    opacity: 1 !important;
+    max-height: none !important;
+    min-width: auto !important;
+    min-height: auto !important;
+}
+
+/* Bikefit metingen tabel styling */
+.bikefit-measurements {
+    border: 2px solid #9ca3af !important;
+    border-collapse: collapse !important;
+    width: 300px !important;
+    max-width: 300px !important;
+    margin: 0 auto !important;
+}
+
+.bikefit-measurements td {
+    border: 1px solid #9ca3af !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+}
+
+.bikefit-measurements .legend {
+    color: #000000 !important;
+    font-weight: bold !important;
+    background-color: #f9fafb !important;
+    width: 25px !important;
+    text-align: center !important;
+}
+
+/* Input fields styling */
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button { 
+    -webkit-appearance: none; 
+    margin: 0; 
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+/* Mobiliteit tabel styling */
+.mobility-report-table {
+    width: 100% !important;
+    margin: 0 auto !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border: 1px solid #d1d5db !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    table-layout: fixed !important;
+    min-width: 600px !important;
+    max-width: 100% !important;
+}
+
+.mobility-report-table th,
+.mobility-report-table td {
+    border: 1px solid #e5e7eb !important;
+    padding: 5px 7px !important;
+    text-align: left !important;
+    overflow-wrap: break-word !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+}
+
+.mobility-report-table th {
+    background-color: #c8e1eb !important;
+    font-weight: 600 !important;
+    border-bottom: 2px solid #a5c9d6 !important;
+    font-size: 13px !important;
+}
+
+.mobility-report-table tbody tr:nth-child(even) {
+    background-color: #f9fafb !important;
+}
+
+.mobility-report-table .test-name {
+    font-weight: 600 !important;
+    width: 25% !important;
+    font-size: 12px !important;
+}
+
+.mobility-report-table .score-cell {
+    text-align: center !important;
+    width: 37.5% !important;
+}
+
+.mobility-bar {
+    width: 140px !important;
+    height: 12px !important;
+}

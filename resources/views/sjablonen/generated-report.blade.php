@@ -219,6 +219,111 @@
         .btn-danger:hover { 
             background: #c82333; 
         }
+        
+        /* EXACTE KOPIE VAN PRINT-PERFECT STYLING VOOR BIKEFIT COMPONENTEN */
+        .page-content .flex {
+            display: flex !important;
+        }
+        
+        .page-content .flex-col {
+            flex-direction: column !important;
+        }
+        
+        .page-content .flex-row {
+            flex-direction: row !important;
+        }
+        
+        .page-content .gap-8 {
+            gap: 2rem !important;
+        }
+        
+        .page-content .items-center {
+            align-items: center !important;
+        }
+        
+        .page-content .w-full {
+            width: 100% !important;
+        }
+        
+        .page-content .max-w-md {
+            max-width: 28rem !important;
+        }
+        
+        .page-content .mx-auto {
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        
+        .page-content .text-sm {
+            font-size: 0.875rem !important;
+        }
+        
+        .page-content .mb-4 {
+            margin-bottom: 1rem !important;
+        }
+        
+        .page-content .font-bold {
+            font-weight: bold !important;
+        }
+        
+        .page-content .text-blue-700 {
+            color: #1d4ed8 !important;
+        }
+        
+        /* RESPONSIVE CLASSES VOOR MEDIUM SCREENS EN GROTER */
+        @media (min-width: 768px) {
+            .page-content .md\\:flex-row {
+                flex-direction: row !important;
+            }
+            
+            .page-content .md\\:w-1\\/2 {
+                width: 50% !important;
+            }
+        }
+        
+        /* BIKEFIT AFBEELDING STYLING - EXACT ALS PRINT-PERFECT */
+        .page-content img[alt="Bikefit schema"] {
+            max-width: 28rem !important;
+            width: 100% !important;
+            height: auto !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            display: block !important;
+        }
+        
+        @media (min-width: 768px) {
+            .page-content img[alt="Bikefit schema"] {
+                width: 50% !important;
+            }
+        }
+        
+        /* TABEL STYLING VOOR BIKEFIT RESULTATEN */
+        .page-content table {
+            border-collapse: collapse !important;
+            width: 100% !important;
+            font-size: 0.875rem !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        .page-content table td {
+            padding: 0.25rem 0.5rem !important;
+            border: none !important;
+        }
+        
+        .page-content table td:first-child {
+            font-weight: bold !important;
+            color: #1d4ed8 !important;
+            width: 2rem !important;
+        }
+        
+        .page-content table td:nth-child(2) {
+            width: auto !important;
+        }
+        
+        .page-content table td:last-child {
+            text-align: right !important;
+            font-weight: 500 !important;
+        }
     </style>
 </head>
 <body>
