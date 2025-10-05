@@ -160,6 +160,14 @@ class SjablonenController extends Controller
             'systeem' => [
                 (object)['placeholder' => '{{datum.vandaag}}', 'display_name' => 'Datum Vandaag'],
                 (object)['placeholder' => '{{datum.jaar}}', 'display_name' => 'Huidig Jaar'],
+            ],
+            'bikefit_html_componenten' => [
+                (object)['placeholder' => '$ResultatenVoor$', 'display_name' => 'Bikefit Resultaten VOOR (HTML Tabel)'],
+                (object)['placeholder' => '$ResultatenNa$', 'display_name' => 'Bikefit Resultaten NA (HTML Tabel)'],
+                (object)['placeholder' => '$Bikefit.prognose_zitpositie_html$', 'display_name' => 'Prognose Zitpositie (Schema + Tabel)'],
+                (object)['placeholder' => '$MobiliteitTabel$', 'display_name' => 'Mobiliteit Resultaten (HTML Tabel)'],
+                (object)['placeholder' => '$mobiliteitklant$', 'display_name' => 'Mobiliteit Klant Tabel (Gekleurde Balken)'],
+                (object)['placeholder' => '$Bikefit.body_measurements_block_html$', 'display_name' => 'Lichaamsmaten Blok (HTML)'],
             ]
         ]);
         
@@ -404,6 +412,14 @@ class SjablonenController extends Controller
                 $content = str_replace('{{bikefit.lengte_cm}}', $dummyBikefit->lengte_cm, $content);
                 $content = str_replace('{{bikefit.binnenbeenlengte_cm}}', $dummyBikefit->binnenbeenlengte_cm, $content);
                 $content = str_replace('$mobility_table_report$', '<p><em>Mobiliteit tabel wordt hier weergegeven</em></p>', $content);
+                
+                // Bikefit HTML componenten (voor preview met dummy data)
+                $content = str_replace('$ResultatenVoor$', '<div class="preview-placeholder"><h4>🔧 Bikefit Resultaten VOOR</h4><p><em>Wordt getoond in echte bikefit rapporten</em></p></div>', $content);
+                $content = str_replace('$ResultatenNa$', '<div class="preview-placeholder"><h4>🔧 Bikefit Resultaten NA</h4><p><em>Wordt getoond in echte bikefit rapporten</em></p></div>', $content);
+                $content = str_replace('$Bikefit.prognose_zitpositie_html$', '<div class="preview-placeholder"><h4>📐 Prognose Zitpositie</h4><p><em>Schema met zitpositie berekeningen</em></p></div>', $content);
+                $content = str_replace('$MobiliteitTabel$', '<div class="preview-placeholder"><h4>🤸 Mobiliteit Resultaten</h4><p><em>Mobiliteit test resultaten tabel</em></p></div>', $content);
+                $content = str_replace('$mobiliteitklant$', '<div class="preview-placeholder"><h4>📊 Mobiliteit Klant (Gekleurde Balken)</h4><p><em>Mooie mobiliteit tabel met kleurbalken</em></p></div>', $content);
+                $content = str_replace('$Bikefit.body_measurements_block_html$', '<div class="preview-placeholder"><h4>📏 Lichaamsmaten Blok</h4><p><em>Overzicht van alle lichaamsmaten</em></p></div>', $content);
                 
                 // Systeem variabelen
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
@@ -696,6 +712,10 @@ class SjablonenController extends Controller
      */
     private function generatePagesForBikefit($sjabloon, $bikefit)
     {
+        // Bereken eerst de results
+        $bikefitCalculator = new \App\Services\BikefitCalculator();
+        $results = $bikefitCalculator->calculate($bikefit);
+        
         $generatedPages = [];
         
         foreach ($sjabloon->pages as $page) {
@@ -770,6 +790,9 @@ class SjablonenController extends Controller
                 // Systeem variabelen
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
                 $content = str_replace('{{datum.jaar}}', date('Y'), $content);
+                
+                // Bikefit HTML componenten - Genereer echte HTML
+                $content = $this->replaceBikefitHTMLComponents($content, $bikefit, $results);
                 
                 // Add mobility table if available
                 $content = str_replace('$mobility_table_report$', $this->generateMobilityTable($bikefit), $content);
@@ -909,9 +932,158 @@ class SjablonenController extends Controller
                 border: 0 !important;
                 padding: 5px !important;
             }
+            /* Preview placeholder styling */
+            .preview-placeholder {
+                background: #f3f4f6;
+                border: 2px dashed #9ca3af;
+                padding: 20px;
+                margin: 10px 0;
+                text-align: center;
+                border-radius: 8px;
+                color: #6b7280;
+            }
+            .preview-placeholder h4 {
+                margin: 0 0 10px 0;
+                color: #374151;
+            }
         </style>';
         
         // Voeg CSS toe aan het begin van de content
         return $css . $content;
+    }
+    
+    /**
+     * Replace Bikefit HTML components with actual rendered HTML
+     */
+    private function replaceBikefitHTMLComponents($content, $bikefit, $results)
+    {
+        // Voor/na berekeningen maken
+        $bikefitVoor = clone $bikefit;
+        $bikefitVoor->context = 'voor';
+        $bikefitNa = clone $bikefit;
+        $bikefitNa->context = 'na';
+        
+        // Herbereken results voor voor/na
+        $bikefitCalculator = new \App\Services\BikefitCalculator();
+        $resultsNa = $bikefitCalculator->calculate($bikefitNa);
+        $resultsVoor = $bikefitCalculator->calculate($bikefitVoor, $resultsNa);
+        
+        // Genereer HTML voor elk component
+        try {
+            // Resultaten VOOR - zeer kleine schaling voor compacte weergave
+            $resultatenVoorHtml = '<div style="transform:scale(0.35); transform-origin:top left; width:285%; margin-bottom:-280px;">' 
+                . view('bikefit._results_section', [
+                    'results' => $resultsVoor, 
+                    'bikefit' => $bikefitVoor
+                ])->render() 
+                . '</div>';
+            $content = str_replace('$ResultatenVoor$', $resultatenVoorHtml, $content);
+            
+            // Resultaten NA - zeer kleine schaling voor compacte weergave
+            $resultatenNaHtml = '<div style="transform:scale(0.35); transform-origin:top left; width:285%; margin-bottom:-280px;">' 
+                . view('bikefit._results_section', [
+                    'results' => $resultsNa, 
+                    'bikefit' => $bikefitNa
+                ])->render() 
+                . '</div>';
+            $content = str_replace('$ResultatenNa$', $resultatenNaHtml, $content);
+            
+            // Prognose zitpositie - gebruik speciale rapport versie met leesbare tekst
+            $prognoseZitpositieHtml = '<div style="transform:scale(0.7); transform-origin:top left; width:143%; margin-bottom:-100px;">' 
+                . view('bikefit._prognose_zitpositie_report', [
+                    'bikefit' => $bikefit,
+                    'results' => $results
+                ])->render() 
+                . '</div>';
+            $content = str_replace('$Bikefit.prognose_zitpositie_html$', $prognoseZitpositieHtml, $content);
+            
+            // Mobiliteit resultaten - juiste schaling zoals op results pagina
+            $mobiliteitHtml = '<div style="transform:scale(0.65); transform-origin:top left; width:154%; margin-bottom:-120px;">' 
+                . view('bikefit._mobility_results', [
+                    'bikefit' => $bikefitNa
+                ])->render() 
+                . '</div>';
+            $content = str_replace('$MobiliteitTabel$', $mobiliteitHtml, $content);
+            
+            // Mobiliteit klant tabel (met gekleurde balken) - verbeterde styling
+            $mobiliteitklantData = [
+                'slr_links' => $bikefit->straight_leg_raise_links ?? '',
+                'slr_rechts' => $bikefit->straight_leg_raise_rechts ?? '',
+                'knieflexie_links' => $bikefit->knieflexie_links ?? '',
+                'knieflexie_rechts' => $bikefit->knieflexie_rechts ?? '',
+                'heup_endorotatie_links' => $bikefit->heup_endorotatie_links ?? '',
+                'heup_endorotatie_rechts' => $bikefit->heup_endorotatie_rechts ?? '',
+                'heup_exorotatie_links' => $bikefit->heup_exorotatie_links ?? '',
+                'heup_exorotatie_rechts' => $bikefit->heup_exorotatie_rechts ?? '',
+                'enkeldorsiflexie_links' => $bikefit->enkeldorsiflexie_links ?? '',
+                'enkeldorsiflexie_rechts' => $bikefit->enkeldorsiflexie_rechts ?? '',
+                'one_leg_squat_links' => $bikefit->one_leg_squat_links ?? '',
+                'one_leg_squat_rechts' => $bikefit->one_leg_squat_rechts ?? '',
+            ];
+            
+            // Voeg extra CSS toe voor betere tabel styling
+            $mobiliteitTableCSS = '<style>
+                .mobility-report-table {
+                    width: 100% !important;
+                    margin: 0 auto !important;
+                    border-collapse: separate !important;
+                    border-spacing: 0 !important;
+                    border: 1px solid #d1d5db !important;
+                    border-radius: 8px !important;
+                    overflow: hidden !important;
+                    table-layout: fixed !important;
+                }
+                .mobility-report-table th,
+                .mobility-report-table td {
+                    border: 1px solid #e5e7eb !important;
+                    padding: 12px 16px !important;
+                    text-align: left !important;
+                    overflow-wrap: break-word !important;
+                }
+                .mobility-report-table th {
+                    background-color: #c8e1eb !important;
+                    font-weight: 600 !important;
+                    border-bottom: 2px solid #a5c9d6 !important;
+                }
+                .mobility-report-table tbody tr:nth-child(even) {
+                    background-color: #f9fafb !important;
+                }
+                .mobility-report-table .test-name {
+                    font-weight: 600 !important;
+                    width: 33.33% !important;
+                }
+                .mobility-report-table .score-cell {
+                    text-align: center !important;
+                    width: 33.33% !important;
+                }
+            </style>';
+            
+            $mobiliteitklantHtml = $mobiliteitTableCSS . '<div style="margin: 20px 0; width: 100%; overflow-x: auto;">' 
+                . view('bikefit._mobility_table_report', [
+                    'mobiliteitklant' => $mobiliteitklantData
+                ])->render() 
+                . '</div>';
+            $content = str_replace('$mobiliteitklant$', $mobiliteitklantHtml, $content);
+            
+            // Body measurements - compact weergegeven
+            $bodyMeasurementsHtml = '<div style="transform:scale(0.8); transform-origin:top left; width:125%; margin-bottom:-50px;">' 
+                . view('bikefit._body_measurements', [
+                    'bikefit' => $bikefit
+                ])->render() 
+                . '</div>';
+            $content = str_replace('$Bikefit.body_measurements_block_html$', $bodyMeasurementsHtml, $content);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error rendering bikefit HTML components: ' . $e->getMessage());
+            // Fallback bij fouten
+            $content = str_replace('$ResultatenVoor$', '<p><em>Resultaten VOOR kunnen niet worden geladen</em></p>', $content);
+            $content = str_replace('$ResultatenNa$', '<p><em>Resultaten NA kunnen niet worden geladen</em></p>', $content);
+            $content = str_replace('$Bikefit.prognose_zitpositie_html$', '<p><em>Prognose zitpositie kan niet worden geladen</em></p>', $content);
+            $content = str_replace('$MobiliteitTabel$', '<p><em>Mobiliteit tabel kan niet worden geladen</em></p>', $content);
+            $content = str_replace('$mobiliteitklant$', '<p><em>Mobiliteit klant tabel kan niet worden geladen</em></p>', $content);
+            $content = str_replace('$Bikefit.body_measurements_block_html$', '<p><em>Lichaamsmaten kunnen niet worden geladen</em></p>', $content);
+        }
+        
+        return $content;
     }
 }

@@ -30,13 +30,13 @@
     pointer-events: none;
 }
 </style>
-<div style="transform:scale(0.77); transform-origin:top center; width:fit-content; margin: 0 auto;">
-    <table class="w-full text-sm" style="border:1px solid #e5e7eb;">
+<div style="width:100%; margin: 0 auto; overflow-x: auto;">
+    <table class="mobility-report-table" style="width:100%; border-collapse:separate; border-spacing:0; border:1px solid #d1d5db; border-radius:8px; overflow:hidden;">
         <thead>
-            <tr style="border-bottom:1px solid #e5e7eb;">
-                <th class="text-left p-2" style="border-right:1px solid #e5e7eb;background:#c8e1eb;">Test</th>
-                <th class="text-center p-2" style="background:#c8e1eb;">Links</th>
-                <th class="text-center p-2" style="background:#c8e1eb;">Rechts</th>
+            <tr style="background-color:#c8e1eb;">
+                <th class="test-name" style="border:1px solid #e5e7eb; padding:12px 16px; font-weight:600; text-align:left; width:33.33%;">Test</th>
+                <th class="score-cell" style="border:1px solid #e5e7eb; padding:12px 16px; font-weight:600; text-align:center; width:33.33%;">Links</th>
+                <th class="score-cell" style="border:1px solid #e5e7eb; padding:12px 16px; font-weight:600; text-align:center; width:33.33%;">Rechts</th>
             </tr>
         </thead>
         <tbody>
@@ -91,6 +91,7 @@
                         default: return 'background-color:#e5e7eb;color:#374151;';
                     }
                 };
+                $rowCount = 0;
             @endphp
             @foreach($tests as $index => $test)
                 @php
@@ -100,11 +101,12 @@
                 @if(in_array($score_links, ['_', '-', '']) || in_array($score_rechts, ['_', '-', '']))
                     @continue
                 @endif
-                <tr>
-                    <td class="align-top p-2 font-semibold" style="border-right:1px solid #e5e7eb;">{{ $test['label'] }}</td>
+                @php $rowCount++; @endphp
+                <tr style="{{ $rowCount % 2 == 0 ? 'background-color:#f9fafb;' : '' }}">
+                    <td class="test-name" style="border:1px solid #e5e7eb; padding:12px 16px; font-weight:600; vertical-align:top; width:33.33%;">{{ $test['label'] }}</td>
                     @if($score_links === $score_rechts)
-                        <td class="text-center align-top p-2" colspan="2">
-                            <div class="mobility-bar" style="margin-left:auto;margin-right:auto;">
+                        <td class="score-cell" colspan="2" style="border:1px solid #e5e7eb; padding:12px 16px; text-align:center; vertical-align:top; width:66.66%;">
+                            <div class="mobility-bar" style="margin:0 auto 8px auto;">
                                 @foreach($scoreLabels as $i => $label)
                                     @php
                                         $colorClasses = ['heel-laag', 'laag', 'gemiddeld', 'hoog', 'heel-hoog'];
@@ -116,13 +118,13 @@
                                     <div class="{{ $segmentClass }}"></div>
                                 @endforeach
                             </div>
-                            <span style="display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600; {{ $getColorClass($score_links) }}">
+                            <span style="display:inline-block; padding:4px 12px; border-radius:16px; font-size:12px; font-weight:600; {{ $getColorClass($score_links) }}">
                                 {{ $score_links }}
                             </span>
                         </td>
                     @else
-                        <td class="text-center align-top p-2">
-                            <div class="mobility-bar">
+                        <td class="score-cell" style="border:1px solid #e5e7eb; padding:12px 16px; text-align:center; vertical-align:top; width:33.33%;">
+                            <div class="mobility-bar" style="margin:0 auto 8px auto;">
                                 @foreach($scoreLabels as $i => $label)
                                     @php
                                         $colorClasses = ['heel-laag', 'laag', 'gemiddeld', 'hoog', 'heel-hoog'];
@@ -134,12 +136,12 @@
                                     <div class="{{ $segmentClass }}"></div>
                                 @endforeach
                             </div>
-                            <span style="display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600; {{ $getColorClass($score_links) }}">
+                            <span style="display:inline-block; padding:4px 12px; border-radius:16px; font-size:12px; font-weight:600; {{ $getColorClass($score_links) }}">
                                 {{ $score_links }}
                             </span>
                         </td>
-                        <td class="text-center align-top p-2">
-                            <div class="mobility-bar">
+                        <td class="score-cell" style="border:1px solid #e5e7eb; padding:12px 16px; text-align:center; vertical-align:top; width:33.33%;">
+                            <div class="mobility-bar" style="margin:0 auto 8px auto;">
                                 @foreach($scoreLabels as $i => $label)
                                     @php
                                         $colorClasses = ['heel-laag', 'laag', 'gemiddeld', 'hoog', 'heel-hoog'];
@@ -151,7 +153,7 @@
                                     <div class="{{ $segmentClass }}"></div>
                                 @endforeach
                             </div>
-                            <span style="display:inline-block; padding:2px 8px; border-radius:12px; font-size:12px; font-weight:600; {{ $getColorClass($score_rechts) }}">
+                            <span style="display:inline-block; padding:4px 12px; border-radius:16px; font-size:12px; font-weight:600; {{ $getColorClass($score_rechts) }}">
                                 {{ $score_rechts }}
                             </span>
                         </td>
@@ -162,23 +164,18 @@
                     $desc_rechts = $test['desc_rechts'] ?? $test['desc'];
                     $score_links = $mobiliteitklant[$test['key_links']] ?? '-';
                     $score_rechts = $mobiliteitklant[$test['key_rechts']] ?? '-';
+                    $rowCount++;
                 @endphp
                 @if($score_links === $score_rechts)
-                    <tr>
-                        <td style="border-right:1px solid #e5e7eb;"></td>
-                        <td class="align-top p-2 text-xs text-gray-600 text-center" colspan="2">{{ $desc_links }}</td>
+                    <tr style="{{ $rowCount % 2 == 0 ? 'background-color:#f9fafb;' : '' }}">
+                        <td style="border:1px solid #e5e7eb; padding:8px 16px; width:33.33%;"></td>
+                        <td colspan="2" style="border:1px solid #e5e7eb; padding:8px 16px; text-align:center; font-size:12px; color:#6b7280; line-height:1.4; width:66.66%;">{{ $desc_links }}</td>
                     </tr>
                 @else
-                    <tr>
-                        <td style="border-right:1px solid #e5e7eb;"></td>
-                        <td class="align-top p-2 text-xs text-gray-600">{{ $desc_links }}</td>
-                        <td class="align-top p-2 text-xs text-gray-600">{{ $desc_rechts }}</td>
-                    </tr>
-                @endif
-                @if($index < count($tests) - 1)
-                    <tr>
-                        <td style="border-right:1px solid #e5e7eb;"></td>
-                        <td colspan="2" style="border-top:1px solid #e5e7eb;"></td>
+                    <tr style="{{ $rowCount % 2 == 0 ? 'background-color:#f9fafb;' : '' }}">
+                        <td style="border:1px solid #e5e7eb; padding:8px 16px; width:33.33%;"></td>
+                        <td style="border:1px solid #e5e7eb; padding:8px 16px; font-size:12px; color:#6b7280; line-height:1.4; width:33.33%;">{{ $desc_links }}</td>
+                        <td style="border:1px solid #e5e7eb; padding:8px 16px; font-size:12px; color:#6b7280; line-height:1.4; width:33.33%;">{{ $desc_rechts }}</td>
                     </tr>
                 @endif
             @endforeach
