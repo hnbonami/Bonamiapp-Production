@@ -20,71 +20,132 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 </style>
-<div style="transform:scale(0.85); transform-origin:top left; width:fit-content; margin-left:60px;">
-<div class="flex flex-col items-center gap-4">
-    <img src="{{ $img }}" alt="Bikefit schema" class="w-full max-w-md mx-auto mb-2">
-    <div class="w-full max-w-xs">
-        <table class="w-full text-sm mb-4">
+<div class="flex flex-col items-center" style="width: 100%; max-width: 600px; margin: 0 auto; min-height: 500px; position: relative;">
+    @php
+        $type = strtolower(trim($bikefit->type_fitting ?? ''));
+        if (in_array($type, ['mtb', 'mountainbike'])) {
+            $img = '/images/bikefit-schema-mtb.png';
+        } elseif (in_array($type, ['tijdritfiets', 'tt'])) {
+            $img = '/images/bikefit-schema-tt.png';
+        } else {
+            $img = '/images/bikefit-schema.png';
+        }
+    @endphp
+    
+    <!-- Afbeelding bovenaan -->
+    <div class="mb-4" style="width: 320px; height: auto; flex-shrink: 0;">
+        <img src="{{ $img }}" alt="Bikefit schema" style="width: 320px; height: auto; display: block; margin: 0 auto;">
+    </div>
+    
+    <!-- Tabel eronder met zwart randje en bewerkbare velden -->
+    <div style="width: 100%; max-width: 500px; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); background-color: white; flex-shrink: 0;">
+        <table style="width: 100%; font-size: 14px; border-collapse: collapse; table-layout: fixed;">
             <tbody>
-            <tr>
-                <td class="font-bold" style="color:#c8e1eb;">A</td>
-                <td>Zadelhoogte</td>
-                <td>
-                    <input type="number" step="0.1" name="zadelhoogte" value="{{ $results['zadelhoogte'] ?? '' }}" class="px-1 py-1 w-16 text-right" style="border:none; outline:none; appearance:none; -webkit-appearance:none; -moz-appearance:textfield;" form="bikefit-report-form"> cm
-                </td>
-            </tr>
-            <tr>
-                <td class="font-bold" style="color:#c8e1eb;">B</td>
-                <td>Zadelterugstand</td>
-                <td>
-                    <input type="number" step="0.1" name="zadelterugstand" value="{{ $results['zadelterugstand'] ?? '' }}" class="px-1 py-1 w-16 text-right" style="border:none; outline:none; appearance:none; -webkit-appearance:none; -moz-appearance:textfield;" form="bikefit-report-form"> cm
-                </td>
-            </tr>
-            <tr>
-                <td class="font-bold" style="color:#c8e1eb;">C</td>
-                <td>Zadelterugstand (top zadel)</td>
-                <td>
-                    <input type="number" step="0.1" name="zadelterugstand_top" value="{{ $results['zadelterugstand_top'] ?? '' }}" class="px-1 py-1 w-16 text-right" style="border:none; outline:none; appearance:none; -webkit-appearance:none; -moz-appearance:textfield;" form="bikefit-report-form"> cm
-                </td>
-            </tr>
-            <tr>
-                <td class="font-bold" style="color:#c8e1eb;">D</td>
-                <td>Horizontale reach</td>
-                <td>
-                    <input type="number" step="0.1" name="reach" value="{{ $results['reach'] ?? '' }}" class="px-1 py-1 w-16 text-right" style="border:none; outline:none; appearance:none; -webkit-appearance:none; -moz-appearance:textfield;" form="bikefit-report-form"> cm
-                </td>
-            </tr>
-            <tr>
-                <td class="font-bold" style="color:#c8e1eb;">E</td>
-                <td>Reach</td>
-                <td>
-                    <input type="number" step="0.1" name="reach_e" value="{{ $results['reach_e'] ?? '' }}" class="px-1 py-1 w-16 text-right" style="border:none; outline:none; appearance:none; -webkit-appearance:none; -moz-appearance:textfield;" form="bikefit-report-form"> cm
-                </td>
-            </tr>
-            <tr>
-                <td class="font-bold" style="color:#c8e1eb;">F</td>
-                <td>Drop</td>
-                <td>
-                    <input type="number" step="0.1" name="drop_zadel_stuur" value="{{ $results['drop_zadel_stuur'] ?? '' }}" class="px-1 py-1 w-16 text-right" style="border:none; outline:none; appearance:none; -webkit-appearance:none; -moz-appearance:textfield;" form="bikefit-report-form"> cm
-                </td>
-            </tr>
-            <tr>
-                <td class="font-bold" style="color:#c8e1eb;">G</td>
-                <td>Cranklengte</td>
-                <td>
-                    <input type="number" step="0.1" name="cranklengte" value="{{ $results['cranklengte'] ?? '' }}" class="px-1 py-1 w-16 text-right" style="border:none; outline:none; appearance:none; -webkit-appearance:none; -moz-appearance:textfield;" form="bikefit-report-form"> mm
-                </td>
-            </tr>
-            <tr>
-                <td class="font-bold" style="color:#c8e1eb;">H</td>
-                <td>Stuurbreedte</td>
-                <td>
-                    <input type="number" step="0.1" name="stuurbreedte" value="{{ $results['stuurbreedte'] ?? '' }}" class="px-1 py-1 w-16 text-right" style="border:none; outline:none; appearance:none; -webkit-appearance:none; -moz-appearance:textfield;" form="bikefit-report-form"> cm
-                </td>
-            </tr>
+                <tr class="bg-white">
+                    <td class="font-bold text-black border-b border-gray-300 px-2 py-1 w-8 text-center">A</td>
+                    <td class="border-b border-gray-300 px-2 py-1 w-40">Zadelhoogte</td>
+                    <td class="border-b border-gray-300 px-2 py-1">
+                        <div class="flex items-center justify-between">
+                            <span></span>
+                            <div class="flex items-center">
+                                <input type="number" step="0.1" name="zadelhoogte" value="{{ $results['zadelhoogte'] ?? '77' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <span class="ml-2 text-sm font-medium">cm</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="bg-gray-50">
+                    <td class="font-bold text-black border-b border-gray-300 px-2 py-1">B</td>
+                    <td class="border-b border-gray-300 px-2 py-1">Zadelterugstand</td>
+                    <td class="border-b border-gray-300 px-2 py-1">
+                        <div class="flex items-center justify-between">
+                            <span></span>
+                            <div class="flex items-center">
+                                <input type="number" step="0.1" name="zadelterugstand" value="{{ $results['zadelterugstand'] ?? '17.3' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <span class="ml-2 text-sm font-medium">cm</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="bg-white">
+                    <td class="font-bold text-black border-b border-gray-300 px-2 py-1">C</td>
+                    <td class="border-b border-gray-300 px-2 py-1">Zadelterugstand (top zadel)</td>
+                    <td class="border-b border-gray-300 px-2 py-1">
+                        <div class="flex items-center justify-between">
+                            <span></span>
+                            <div class="flex items-center">
+                                <input type="number" step="0.1" name="zadelterugstand_top" value="{{ $results['zadelterugstand_top'] ?? '5.3' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <span class="ml-2 text-sm font-medium">cm</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="bg-gray-50">
+                    <td class="font-bold text-black border-b border-gray-300 px-2 py-1">D</td>
+                    <td class="border-b border-gray-300 px-2 py-1">Horizontale reach</td>
+                    <td class="border-b border-gray-300 px-2 py-1">
+                        <div class="flex items-center justify-between">
+                            <span></span>
+                            <div class="flex items-center">
+                                <input type="number" step="0.1" name="reach" value="{{ $results['reach'] ?? '52.5' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <span class="ml-2 text-sm font-medium">mm</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="bg-white">
+                    <td class="font-bold text-black border-b border-gray-300 px-2 py-1">E</td>
+                    <td class="border-b border-gray-300 px-2 py-1">Reach</td>
+                    <td class="border-b border-gray-300 px-2 py-1">
+                        <div class="flex items-center justify-between">
+                            <span></span>
+                            <div class="flex items-center">
+                                <input type="number" step="0.1" name="directe_reach" value="{{ $results['directe_reach'] ?? '54' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <span class="ml-2 text-sm font-medium">mm</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="bg-gray-50">
+                    <td class="font-bold text-black border-b border-gray-300 px-2 py-1">F</td>
+                    <td class="border-b border-gray-300 px-2 py-1">Drop</td>
+                    <td class="border-b border-gray-300 px-2 py-1">
+                        <div class="flex items-center justify-between">
+                            <span></span>
+                            <div class="flex items-center">
+                                <input type="number" step="0.1" name="drop" value="{{ $results['drop'] ?? '12.7' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <span class="ml-2 text-sm font-medium">mm</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="bg-white">
+                    <td class="font-bold text-black border-b border-gray-300 px-2 py-1">G</td>
+                    <td class="border-b border-gray-300 px-2 py-1">Cranklengte</td>
+                    <td class="border-b border-gray-300 px-2 py-1">
+                        <div class="flex items-center justify-between">
+                            <span></span>
+                            <div class="flex items-center">
+                                <input type="number" step="0.1" name="cranklengte" value="{{ $results['cranklengte'] ?? '165' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <span class="ml-2 text-sm font-medium">mm</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr class="bg-gray-50">
+                    <td class="font-bold text-black px-2 py-1">H</td>
+                    <td class="px-2 py-1">Stuurbreedte</td>
+                    <td class="px-2 py-1">
+                        <div class="flex items-center justify-between">
+                            <span></span>
+                            <div class="flex items-center">
+                                <input type="number" step="0.1" name="stuurbreedte" value="{{ $results['stuurbreedte'] ?? '38' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <span class="ml-2 text-sm font-medium">mm</span>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
             </tbody>
         </table>
     </div>
-    <!-- Mobiliteitstabel is verwijderd om dubbele weergave te voorkomen -->
-</div>
 </div>

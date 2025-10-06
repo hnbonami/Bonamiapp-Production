@@ -11,16 +11,16 @@
     @endphp
     <img src="{{ $img }}" alt="Bikefit schema" class="w-full md:w-1/2 max-w-md mx-auto">
     <div class="w-full md:w-1/2">
-        <table class="w-full text-sm mb-4">
+        <table class="w-full text-sm mb-4 border-collapse border border-gray-300 rounded-lg overflow-hidden">
             <tbody>
-                <tr><td class="font-bold text-blue-700">A</td><td>Zadelhoogte</td><td>{{ $results['zadelhoogte'] ?? '' }} cm</td></tr>
-                <tr><td class="font-bold text-blue-700">B</td><td>Zadelterugstand</td><td>{{ $results['zadelterugstand'] ?? '' }} cm</td></tr>
-                <tr><td class="font-bold text-blue-700">C</td><td>Zadelterugstand (top zadel)</td><td>{{ $results['zadelterugstand_top'] ?? '' }} cm</td></tr>
-                <tr><td class="font-bold text-blue-700">D</td><td>Horizontale reach</td><td>{{ $results['reach'] ?? '' }} mm</td></tr>
-                <tr><td class="font-bold text-blue-700">E</td><td>Reach</td><td>{{ $results['directe_reach'] ?? '' }} mm</td></tr>
-                <tr><td class="font-bold text-blue-700">F</td><td>Drop</td><td>{{ $results['drop'] ?? '' }} mm</td></tr>
-                <tr><td class="font-bold text-blue-700">G</td><td>Cranklengte</td><td>{{ $results['cranklengte'] ?? '' }} mm</td></tr>
-                <tr><td class="font-bold text-blue-700">H</td><td>Stuurbreedte</td><td>{{ $results['stuurbreedte'] ?? '' }} mm</td></tr>
+                <tr class="bg-white"><td class="font-bold text-black border border-gray-300 px-3 py-2">A</td><td class="border border-gray-300 px-3 py-2">Zadelhoogte</td><td class="border border-gray-300 px-3 py-2 text-right">{{ $results['zadelhoogte'] ?? '' }} cm</td></tr>
+                <tr class="bg-gray-50"><td class="font-bold text-black border border-gray-300 px-3 py-2">B</td><td class="border border-gray-300 px-3 py-2">Zadelterugstand</td><td class="border border-gray-300 px-3 py-2 text-right">{{ $results['zadelterugstand'] ?? '' }} cm</td></tr>
+                <tr class="bg-white"><td class="font-bold text-black border border-gray-300 px-3 py-2">C</td><td class="border border-gray-300 px-3 py-2">Zadelterugstand (top zadel)</td><td class="border border-gray-300 px-3 py-2 text-right">{{ $results['zadelterugstand_top'] ?? '' }} cm</td></tr>
+                <tr class="bg-gray-50"><td class="font-bold text-black border border-gray-300 px-3 py-2">D</td><td class="border border-gray-300 px-3 py-2">Horizontale reach</td><td class="border border-gray-300 px-3 py-2 text-right">{{ $results['reach'] ?? '' }} mm</td></tr>
+                <tr class="bg-white"><td class="font-bold text-black border border-gray-300 px-3 py-2">E</td><td class="border border-gray-300 px-3 py-2">Reach</td><td class="border border-gray-300 px-3 py-2 text-right">{{ $results['directe_reach'] ?? '' }} mm</td></tr>
+                <tr class="bg-gray-50"><td class="font-bold text-black border border-gray-300 px-3 py-2">F</td><td class="border border-gray-300 px-3 py-2">Drop</td><td class="border border-gray-300 px-3 py-2 text-right">{{ $results['drop'] ?? '' }} mm</td></tr>
+                <tr class="bg-white"><td class="font-bold text-black border border-gray-300 px-3 py-2">G</td><td class="border border-gray-300 px-3 py-2">Cranklengte</td><td class="border border-gray-300 px-3 py-2 text-right">{{ $results['cranklengte'] ?? '' }} mm</td></tr>
+                <tr class="bg-gray-50"><td class="font-bold text-black border border-gray-300 px-3 py-2">H</td><td class="border border-gray-300 px-3 py-2">Stuurbreedte</td><td class="border border-gray-300 px-3 py-2 text-right">{{ $results['stuurbreedte'] ?? '' }} mm</td></tr>
             </tbody>
         </table>
     </div>
