@@ -225,14 +225,14 @@
         /* Specifieke styling voor de bikefit resultaten container - MEER NAAR LINKS */
         .page-content div[style*="width: 500px"] {
             width: 500px !important;
-            margin: 0 0 0 -30px !important;
+            margin: 0 0 0 -9px !important;
             min-height: auto !important;
             position: relative !important;
         }
         
         /* Specifieke styling voor bikefit afbeelding - 20% GROTER DAN ORIGINEEL (320px * 1.2 = 384px) */
         .page-content img[src*="bikefit-schema"] {
-            width: 384px !important;
+            width: 500px !important;
             height: auto !important;
             display: block !important;
             margin: 0 auto !important;
