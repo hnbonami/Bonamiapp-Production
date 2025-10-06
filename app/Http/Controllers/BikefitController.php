@@ -249,12 +249,27 @@ class BikefitController extends Controller
             'voetpositie' => 'nullable|in:neutraal,pronatie,supinatie',
             // Template selection for report rendering (nullable)
             'template_kind' => 'nullable|string|in:inspanningstest_fietsen,inspanningstest_lopen,standaard_bikefit,professionele_bikefit,zadeldrukmeting,maatbepaling',
+            // Type fitting - TOEGEVOEGD!
+            'type_fitting' => 'nullable|string',
             // nieuw_testzadel field
             'nieuw_testzadel' => 'nullable|string|max:255',
             'type_fiets' => 'nullable|string',
             'frametype' => 'nullable|string',
             // Zadellengte center-top
             'zadel_lengte_center_top' => 'nullable|numeric',
+            // Functionele mobiliteit - TOEGEVOEGD!
+            'straight_leg_raise_links' => 'nullable|string',
+            'straight_leg_raise_rechts' => 'nullable|string',
+            'knieflexie_links' => 'nullable|string',
+            'knieflexie_rechts' => 'nullable|string',
+            'heup_endorotatie_links' => 'nullable|string',
+            'heup_endorotatie_rechts' => 'nullable|string',
+            'heup_exorotatie_links' => 'nullable|string',
+            'heup_exorotatie_rechts' => 'nullable|string',
+            'enkeldorsiflexie_links' => 'nullable|string',
+            'enkeldorsiflexie_rechts' => 'nullable|string',
+            'one_leg_squat_links' => 'nullable|string',
+            'one_leg_squat_rechts' => 'nullable|string',
         ]);
 
         // Debug: Log wat er wordt verstuurd

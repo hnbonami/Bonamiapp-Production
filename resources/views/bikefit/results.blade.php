@@ -33,6 +33,12 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="w-full bg-white p-8 rounded shadow">
     <h1 class="text-2xl font-bold mb-4">Bikefit berekende resultaten</h1>
 
+    <!-- Hidden form voor het opslaan van wijzigingen -->
+    <form id="bikefit-form" method="POST" action="{{ route('bikefit.update', ['klant' => $bikefit->klant_id, 'bikefit' => $bikefit->id]) }}" style="display: none;">
+        @csrf
+        @method('PUT')
+    </form>
+
     <!-- Prognose zitpositie -->
     <div class="bg-white rounded shadow p-4 md:p-6 mb-8">
         <h2 class="text-lg font-bold text-center mb-4">Prognose zitpositie</h2>
@@ -58,6 +64,14 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 
     <div class="mt-6 flex gap-4">
+        <button type="submit" form="bikefit-form" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-block">
+            💾 Wijzigingen opslaan
+        </button>
+        
+        <a href="{{ route('bikefit.edit', ['klant' => $bikefit->klant_id, 'bikefit' => $bikefit->id]) }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-block">
+            ✏️ Bewerken
+        </a>
+        
         <a href="{{ route('bikefit.report.print.perfect', ['klant' => $bikefit->klant_id, 'bikefit' => $bikefit->id]) }}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-block">
             📋 Verslag genereren
         </a>

@@ -48,7 +48,7 @@ input[type=number] {
                         <div class="flex items-center justify-between">
                             <span></span>
                             <div class="flex items-center">
-                                <input type="number" step="0.1" name="zadelhoogte" value="{{ $results['zadelhoogte'] ?? '77' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <input type="number" step="0.1" name="zadelhoogte" value="{{ $results['zadelhoogte'] ?? '77' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
                                 <span class="ml-2 text-sm font-medium">cm</span>
                             </div>
                         </div>
@@ -61,7 +61,7 @@ input[type=number] {
                         <div class="flex items-center justify-between">
                             <span></span>
                             <div class="flex items-center">
-                                <input type="number" step="0.1" name="zadelterugstand" value="{{ $results['zadelterugstand'] ?? '17.3' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <input type="number" step="0.1" name="zadelterugstand" value="{{ $results['zadelterugstand'] ?? '17.3' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
                                 <span class="ml-2 text-sm font-medium">cm</span>
                             </div>
                         </div>
@@ -74,7 +74,7 @@ input[type=number] {
                         <div class="flex items-center justify-between">
                             <span></span>
                             <div class="flex items-center">
-                                <input type="number" step="0.1" name="zadelterugstand_top" value="{{ $results['zadelterugstand_top'] ?? '5.3' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <input type="number" step="0.1" name="zadelterugstand_top" value="{{ $results['zadelterugstand_top'] ?? '5.3' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
                                 <span class="ml-2 text-sm font-medium">cm</span>
                             </div>
                         </div>
@@ -87,7 +87,7 @@ input[type=number] {
                         <div class="flex items-center justify-between">
                             <span></span>
                             <div class="flex items-center">
-                                <input type="number" step="0.1" name="reach" value="{{ $results['reach'] ?? '52.5' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <input type="number" step="0.1" name="reach" value="{{ $results['reach'] ?? '52.5' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
                                 <span class="ml-2 text-sm font-medium">mm</span>
                             </div>
                         </div>
@@ -100,7 +100,7 @@ input[type=number] {
                         <div class="flex items-center justify-between">
                             <span></span>
                             <div class="flex items-center">
-                                <input type="number" step="0.1" name="directe_reach" value="{{ $results['directe_reach'] ?? '54' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <input type="number" step="0.1" name="directe_reach" value="{{ $results['directe_reach'] ?? '54' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
                                 <span class="ml-2 text-sm font-medium">mm</span>
                             </div>
                         </div>
@@ -113,7 +113,7 @@ input[type=number] {
                         <div class="flex items-center justify-between">
                             <span></span>
                             <div class="flex items-center">
-                                <input type="number" step="0.1" name="drop" value="{{ $results['drop'] ?? '12.7' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <input type="number" step="0.1" name="drop" value="{{ $results['drop'] ?? '12.7' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
                                 <span class="ml-2 text-sm font-medium">mm</span>
                             </div>
                         </div>
@@ -126,7 +126,7 @@ input[type=number] {
                         <div class="flex items-center justify-between">
                             <span></span>
                             <div class="flex items-center">
-                                <input type="number" step="0.1" name="cranklengte" value="{{ $results['cranklengte'] ?? '165' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <input type="number" step="0.1" name="cranklengte" value="{{ $results['cranklengte'] ?? '165' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
                                 <span class="ml-2 text-sm font-medium">mm</span>
                             </div>
                         </div>
@@ -139,7 +139,7 @@ input[type=number] {
                         <div class="flex items-center justify-between">
                             <span></span>
                             <div class="flex items-center">
-                                <input type="number" step="0.1" name="stuurbreedte" value="{{ $results['stuurbreedte'] ?? '38' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-report-form">
+                                <input type="number" step="0.1" name="stuurbreedte" value="{{ $results['stuurbreedte'] ?? '38' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
                                 <span class="ml-2 text-sm font-medium">mm</span>
                             </div>
                         </div>
