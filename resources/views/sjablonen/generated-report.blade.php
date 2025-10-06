@@ -220,109 +220,132 @@
             background: #c82333; 
         }
         
-        /* EXACTE KOPIE VAN PRINT-PERFECT STYLING VOOR BIKEFIT COMPONENTEN */
-        .page-content .flex {
-            display: flex !important;
+        /* ALLEEN BIKEFIT RESULTATEN COMPONENTEN - EXACT ALS RESULTS PAGINA */
+        
+        /* Specifieke styling voor de bikefit resultaten container - MEER NAAR LINKS */
+        .page-content div[style*="width: 500px"] {
+            width: 500px !important;
+            margin: 0 0 0 -30px !important;
+            min-height: auto !important;
+            position: relative !important;
         }
         
-        .page-content .flex-col {
-            flex-direction: column !important;
-        }
-        
-        .page-content .flex-row {
-            flex-direction: row !important;
-        }
-        
-        .page-content .gap-8 {
-            gap: 2rem !important;
-        }
-        
-        .page-content .items-center {
-            align-items: center !important;
-        }
-        
-        .page-content .w-full {
-            width: 100% !important;
-        }
-        
-        .page-content .max-w-md {
-            max-width: 28rem !important;
-        }
-        
-        .page-content .mx-auto {
-            margin-left: auto !important;
-            margin-right: auto !important;
-        }
-        
-        .page-content .text-sm {
-            font-size: 0.875rem !important;
-        }
-        
-        .page-content .mb-4 {
-            margin-bottom: 1rem !important;
-        }
-        
-        .page-content .font-bold {
-            font-weight: bold !important;
-        }
-        
-        .page-content .text-blue-700 {
-            color: #1d4ed8 !important;
-        }
-        
-        /* RESPONSIVE CLASSES VOOR MEDIUM SCREENS EN GROTER */
-        @media (min-width: 768px) {
-            .page-content .md\\:flex-row {
-                flex-direction: row !important;
-            }
-            
-            .page-content .md\\:w-1\\/2 {
-                width: 50% !important;
-            }
-        }
-        
-        /* BIKEFIT AFBEELDING STYLING - EXACT ALS PRINT-PERFECT */
-        .page-content img[alt="Bikefit schema"] {
-            max-width: 28rem !important;
-            width: 100% !important;
+        /* Specifieke styling voor bikefit afbeelding - 20% GROTER DAN ORIGINEEL (320px * 1.2 = 384px) */
+        .page-content img[src*="bikefit-schema"] {
+            width: 384px !important;
             height: auto !important;
-            margin-left: auto !important;
-            margin-right: auto !important;
             display: block !important;
+            margin: 0 auto !important;
         }
         
-        @media (min-width: 768px) {
-            .page-content img[alt="Bikefit schema"] {
-                width: 50% !important;
-            }
-        }
-        
-        /* TABEL STYLING VOOR BIKEFIT RESULTATEN */
-        .page-content table {
-            border-collapse: collapse !important;
+        /* PROGNOSE TABEL SPECIFIEK - EXACT ALS BIKEFIT RESULTATEN */
+        .page-content h4:contains("Prognose") + div table,
+        .page-content div:has(img[src*="bikefit-schema"]) table {
             width: 100% !important;
-            font-size: 0.875rem !important;
-            margin-bottom: 1rem !important;
+            font-size: 11.9px !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            margin-bottom: 0 !important;
         }
         
-        .page-content table td {
+        .page-content h4:contains("Prognose") + div tr:nth-child(odd),
+        .page-content div:has(img[src*="bikefit-schema"]) tr:nth-child(odd) {
+            background-color: white !important;
+        }
+        
+        .page-content h4:contains("Prognose") + div tr:nth-child(even),
+        .page-content div:has(img[src*="bikefit-schema"]) tr:nth-child(even) {
+            background-color: #f9fafb !important;
+        }
+        
+        .page-content h4:contains("Prognose") + div td,
+        .page-content div:has(img[src*="bikefit-schema"]) td {
             padding: 0.25rem 0.5rem !important;
-            border: none !important;
+            border-bottom: 1px solid #d1d5db !important;
+            font-size: 11.9px !important;
         }
         
-        .page-content table td:first-child {
+        .page-content h4:contains("Prognose") + div td:first-child,
+        .page-content div:has(img[src*="bikefit-schema"]) td:first-child {
             font-weight: bold !important;
-            color: #1d4ed8 !important;
+            color: #000000 !important;
+            text-align: center !important;
             width: 2rem !important;
         }
         
-        .page-content table td:nth-child(2) {
-            width: auto !important;
+        .page-content h4:contains("Prognose") + div td:nth-child(2) {
+            text-align: left !important;
         }
         
-        .page-content table td:last-child {
+        .page-content h4:contains("Prognose") + div td:last-child,
+        .page-content div:has(img[src*="bikefit-schema"]) td:last-child {
             text-align: right !important;
-            font-weight: 500 !important;
+        }
+        
+        /* Specifieke styling voor bikefit tabel container - GEEN EXTRA RUIMTE */
+        .page-content div[style*="border: 1px solid #d1d5db"] {
+            width: 500px !important;
+            border: 1px solid #d1d5db !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+            background-color: white !important;
+            margin-bottom: 0 !important;
+            padding-bottom: 0 !important;
+        }
+        
+        /* Specifieke styling voor bikefit tabel */
+        .page-content table[style*="table-layout: fixed"] {
+            width: 100% !important;
+            font-size: 11.9px !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            margin-bottom: 0 !important;
+        }
+        
+        /* Bikefit tabel rijen */
+        .page-content table[style*="table-layout: fixed"] tr.bg-white {
+            background-color: white !important;
+        }
+        
+        .page-content table[style*="table-layout: fixed"] tr.bg-gray-50 {
+            background-color: #f9fafb !important;
+        }
+        
+        /* Bikefit tabel cellen */
+        .page-content table[style*="table-layout: fixed"] td {
+            padding: 0.25rem 0.5rem !important;
+            border-bottom: 1px solid #d1d5db !important;
+            font-size: 11.9px !important;
+        }
+        
+        .page-content table[style*="table-layout: fixed"] td.font-bold {
+            font-weight: bold !important;
+            color: #000000 !important;
+            text-align: center !important;
+        }
+        
+        /* LAATSTE RIJ GEEN BORDER BOTTOM */
+        .page-content table[style*="table-layout: fixed"] tr:last-child td {
+            border-bottom: none !important;
+        }
+        
+        /* Bikefit input velden - KLEINER LETTERTYPE VOOR CIJFERS */
+        .page-content input[name*="zadelhoogte"],
+        .page-content input[name*="zadelterugstand"],
+        .page-content input[name*="reach"],
+        .page-content input[name*="drop"],
+        .page-content input[name*="cranklengte"],
+        .page-content input[name*="stuurbreedte"] {
+            padding: 0.25rem 0.5rem !important;
+            width: 4rem !important;
+            text-align: right !important;
+            background: transparent !important;
+            border: 0 !important;
+            outline: none !important;
+            font-size: 11.9px !important;
+            font-weight: 400 !important;
+            font-family: Arial, sans-serif !important;
         }
     </style>
 </head>

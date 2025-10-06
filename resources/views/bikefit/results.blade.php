@@ -64,16 +64,13 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
 
     <div class="mt-6 flex gap-4">
-        <button type="submit" form="bikefit-form" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-block">
-            💾 Wijzigingen opslaan
-        </button>
-        
-        <a href="{{ route('bikefit.edit', ['klant' => $bikefit->klant_id, 'bikefit' => $bikefit->id]) }}" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-block">
-            ✏️ Bewerken
-        </a>
-        
-        <a href="{{ route('bikefit.report.print.perfect', ['klant' => $bikefit->klant_id, 'bikefit' => $bikefit->id]) }}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded inline-block">
-            📋 Verslag genereren
+        <a href="{{ route('bikefit.edit', ['klant' => $bikefit->klant_id, 'bikefit' => $bikefit->id]) }}" 
+           class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
+           style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+            Bewerken
         </a>
         
         @php
@@ -90,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
-                📄 Rapport Preview ({{ $matchingTemplate->naam }})
+                Rapport Preview ({{ $matchingTemplate->naam }})
             </a>
         @else
             <div class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-yellow-100 border border-yellow-400 text-yellow-800">
@@ -102,8 +99,13 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         @endif
         
-        <a href="{{ route('klanten.show', $bikefit->klant_id) }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded inline-block">
-            ← Terug naar klant
+        <a href="{{ route('klanten.show', $bikefit->klant_id) }}" 
+           class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
+           style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Terug naar klant
         </a>
     </div>
 <script>

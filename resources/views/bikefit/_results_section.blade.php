@@ -20,7 +20,7 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 </style>
-<div class="flex flex-col items-center" style="width: 100%; max-width: 600px; margin: 0 auto; min-height: 500px; position: relative;">
+<div class="flex flex-col items-center" style="width: 500px; margin: 0 auto; min-height: 500px; position: relative;">
     @php
         $type = strtolower(trim($bikefit->type_fitting ?? ''));
         if (in_array($type, ['mtb', 'mountainbike'])) {
@@ -38,7 +38,7 @@ input[type=number] {
     </div>
     
     <!-- Tabel eronder met zwart randje en bewerkbare velden -->
-    <div style="width: 100%; max-width: 500px; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); background-color: white; flex-shrink: 0;">
+    <div style="width: 500px; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); background-color: white; flex-shrink: 0;">
         <table style="width: 100%; font-size: 14px; border-collapse: collapse; table-layout: fixed;">
             <tbody>
                 <tr class="bg-white">
