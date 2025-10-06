@@ -354,7 +354,7 @@
         <h1>{{ $template->naam ?? $template->name ?? 'Sjabloon' }} - {{ $klantModel->naam }}</h1>
         <div class="header-buttons">
             <button class="btn btn-primary" onclick="window.print()">🖨️ Afdrukken</button>
-            <a href="/sjablonen/{{ $template->id }}/pdf?klant={{ $klantModel->id ?? '' }}" 
+            <a href="/sjablonen/{{ $template->id }}/pdf?klant={{ $klantModel->id ?? '' }}&context=generated-report" 
                class="btn btn-danger">📄 Download PDF</a>
             <a href="/sjablonen/{{ $template->id }}/edit" class="btn btn-secondary">✏️ Sjabloon Bewerken</a>
         </div>
