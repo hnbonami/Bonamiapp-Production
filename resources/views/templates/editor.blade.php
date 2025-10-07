@@ -15,7 +15,7 @@
         </div>
         <!-- Editor + Live Preview -->
         <div class="col-md-8">
-            <form method="POST" action="{{ route('templates.update', $template->id) }}">
+            <form method="POST" action="route('temp.save-content', $template)">
                 @csrf
                 @method('PUT')
                 <div class="form-group">

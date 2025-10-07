@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="flex:1 1 0%; min-width:500px; margin-right:32px; margin-left:-8px;">
             <div class="rounded-2xl p-8" style="background:#fff; box-shadow:none;">
                 <h1 class="text-3xl font-bold mb-4 text-left" style="margin-top:32px;">Sjabloon bewerken</h1>
-                <form action="{{ route('templates.update', $template) }}" method="POST" enctype="multipart/form-data">
+                <form action="{{ route('temp.show', $template) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     <div class="mb-6">

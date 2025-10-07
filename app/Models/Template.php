@@ -12,18 +12,20 @@ class Template extends Model
     protected $table = 'templates';
 
     protected $fillable = [
+        'name',
+        'type',
+        'description',
+        'content',
+        // Also allow old column names for compatibility
         'naam',
-        'type', 
         'inhoud',
         'variabelen',
         'is_actief',
-        // Also allow old column names for compatibility
-        'name',
-        'html_contents',
-        'background_images'
     ];
 
     protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
         'is_actief' => 'boolean',
         // Remove automatic JSON casting to prevent double parsing
         // 'inhoud' => 'array',

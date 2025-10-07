@@ -1038,7 +1038,22 @@ Route::get('/sjablonen/inspanningstest/{id}/rapport', [App\Http\Controllers\Sjab
 
 // Routes voor sjabloon-gebaseerde rapporten
 Route::get('/bikefit/{klant}/{bikefit}/sjabloon-rapport', [App\Http\Controllers\BikefitController::class, 'generateSjabloonReport'])->name('bikefit.sjabloon-rapport');
+Route::get('/bikefit/{klant}/{bikefit}/sjabloon-rapport-pdf', [App\Http\Controllers\BikefitController::class, 'generateSjabloonReportPdf'])->name('bikefit.sjabloon-rapport-pdf');
 Route::get('/inspanningstest/{klant}/{test}/sjabloon-rapport', [App\Http\Controllers\InspanningstestController::class, 'generateSjabloonReport'])->name('inspanningstest.sjabloon-rapport');
 
 // API route voor sjabloon check
 Route::get('/api/check-sjabloon', [App\Http\Controllers\SjablonenController::class, 'checkSjabloon']);
+
+// Template routes (renamed to temp to avoid conflicts)
+Route::middleware(['auth'])->prefix('temp')->name('temp.')->group(function () {
+    Route::get('/', [App\Http\Controllers\TemplateController::class, 'index'])->name('index');
+    Route::get('/create', [App\Http\Controllers\TemplateController::class, 'create'])->name('create');
+    Route::post('/', [App\Http\Controllers\TemplateController::class, 'store'])->name('store');
+    Route::get('/{template}', [App\Http\Controllers\TemplateController::class, 'show'])->name('show');
+    Route::get('/{template}/edit', [App\Http\Controllers\TemplateController::class, 'edit'])->name('edit');
+    Route::put('/{template}', [App\Http\Controllers\TemplateController::class, 'update'])->name('update');
+    Route::delete('/{template}', [App\Http\Controllers\TemplateController::class, 'destroy'])->name('destroy');
+    Route::get('/{template}/preview', [App\Http\Controllers\TemplateController::class, 'preview'])->name('preview');
+    Route::get('/{template}/editor', [App\Http\Controllers\TemplateController::class, 'editor'])->name('editor');
+    Route::post('/{template}/save-content', [App\Http\Controllers\TemplateController::class, 'saveContent'])->name('save-content');
+});

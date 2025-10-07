@@ -1585,4 +1585,62 @@ const fs = require('fs');
                 ->with('error', 'Er is een fout opgetreden bij het genereren van het rapport.');
         }
     }
+
+    /**
+     * Generate PDF EXACTLY like the working web report - EXACT COPY
+     */
+    public function generateSjabloonReportPdf($klantId, $bikefitId)
+    {
+        try {
+            // Get models
+            $klant = \App\Models\Klant::findOrFail($klantId);
+            $bikefit = \App\Models\Bikefit::where('id', $bikefitId)
+                ->where('klant_id', $klantId)
+                ->firstOrFail();
+
+            // Use the EXACT SAME method as the working web version
+            $sjablonenController = app(\App\Http\Controllers\SjablonenController::class);
+            $response = $sjablonenController->generateBikefitReport($bikefitId);
+            
+            // Get the HTML from the working response
+            if ($response instanceof \Illuminate\View\View) {
+                $html = $response->render();
+            } else {
+                $html = $response->getContent();
+            }
+            
+            // MINIMAL PDF styling - keep everything the same, just hide buttons
+            $pdfStyles = '
+            <style>
+                .no-print, .header-buttons, button { display: none !important; }
+                @media print {
+                    .no-print, .header-buttons, button { display: none !important; }
+                }
+            </style>';
+            
+            // Add ONLY the minimal styles to hide buttons
+            $html = str_replace('</head>', $pdfStyles . '</head>', $html);
+            
+            // Generate PDF with DomPDF - BASIC settings to preserve original
+            $pdf = \PDF::loadHTML($html);
+            $pdf->setPaper('A4', 'portrait');
+            $pdf->setOptions([
+                'isRemoteEnabled' => true,
+                'isHtml5ParserEnabled' => true
+            ]);
+            
+            $filename = 'Bikefit_Rapport_' . $klant->naam . '_' . date('Y-m-d') . '.pdf';
+            
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            \Log::error('PDF generation failed: ' . $e->getMessage());
+            
+            return response()->json([
+                'error' => 'PDF generatie mislukt',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

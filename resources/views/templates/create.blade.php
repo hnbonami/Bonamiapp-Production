@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="flex:1 1 0%; min-width:500px; margin-right:32px;">
             <div class="rounded-2xl p-8" style="background:#fff; box-shadow:none;">
                 <h1 class="text-3xl font-bold mb-4 text-left" style="margin-top:32px;">Sjabloon aanmaken</h1>
-                <form action="{{ route('sjablonen.store') }}" method="POST" enctype="multipart/form-data">
+                <form action="route('temp.store')" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="mb-6">
                         <label for="type" class="block font-semibold mb-2">Type *</label>
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                     <div class="flex gap-3 justify-start mt-6">
                         <button type="submit" class="px-5 py-2 bg-blue-600 text-white font-semibold rounded shadow hover:bg-blue-700 transition">Opslaan</button>
-                        <a href="{{ route('sjablonen.index') }}" class="px-5 py-2 bg-gray-100 text-gray-900 font-semibold rounded shadow hover:bg-gray-200 transition">Annuleer</a>
+                        <a href="{{ route('temp.index') }}" class="px-5 py-2 bg-gray-100 text-gray-900 font-semibold rounded shadow hover:bg-gray-200 transition">Annuleer</a>
                     </div>
                 </form>
                 <!-- Background upload JS removed -->

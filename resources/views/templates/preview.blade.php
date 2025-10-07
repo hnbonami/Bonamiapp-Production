@@ -20,6 +20,6 @@
             </div>
         @endif
     </div>
-    <a href="{{ route('templates.index') }}" class="btn btn-secondary">Terug</a>
+    <a href="{{ route('temp.show', $template) }}" class="btn btn-secondary">Terug</a>
 </div>
 @endsection

@@ -14,7 +14,7 @@
         <strong>CSS inhoud:</strong>
         <pre>{{ $template->css_content }}</pre>
     </div>
-    <a href="{{ route('templates.edit', $template) }}" class="btn btn-warning">Bewerken</a>
-    <a href="{{ route('templates.index') }}" class="btn btn-secondary">Terug</a>
+    <a href="{{ route('temp.edit', $template) }}" class="btn btn-warning">Bewerken</a>
+    <a href="{{ route('temp.index') }}" class="btn btn-secondary">Terug</a>
 </div>
 @endsection
