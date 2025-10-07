@@ -75,13 +75,19 @@ class BikefitCalculator
             $zadel_trapas_hoek = isset($bikefit->zadel_trapas_hoek) && is_numeric($bikefit->zadel_trapas_hoek) ? floatval($bikefit->zadel_trapas_hoek) : null;
             
             if ($zadel_trapas_afstand !== null && $stuur_trapas_afstand !== null && $zadel_trapas_hoek !== null && $stuur_trapas_hoek !== null) {
-                // Bereken D als projectie van zijde I op de horizontale as
+                // Bereken D' (afstand center zadel-stuur)
                 $gamma = 180 - $zadel_trapas_hoek - $stuur_trapas_hoek;
                 $afstand_center_zadel_stuur = sqrt(pow($zadel_trapas_afstand, 2) + pow($stuur_trapas_afstand, 2) - 2 * $zadel_trapas_afstand * $stuur_trapas_afstand * cos($gamma * pi() / 180));
                 
-                // Horizontale projectie: D = I * cos(hoek met horizontaal)
-                // Hoek met horizontaal = stuur_trapas_hoek
-                $results['horizontale_reach'] = round($afstand_center_zadel_stuur * cos($stuur_trapas_hoek * pi() / 180), 1);
+                // Bereken F (drop zadel-stuur)
+                $zadel_y = $zadel_trapas_afstand * sin($zadel_trapas_hoek * pi() / 180);
+                $stuur_y = $stuur_trapas_afstand * sin($stuur_trapas_hoek * pi() / 180);
+                $F = abs($zadel_y - $stuur_y);
+                
+                // Bereken D met Pythagoras: D = sqrt(D'² - F²) - zadellengte
+                $zadellengte = (isset($bikefit->zadel_lengte_center_top) && is_numeric($bikefit->zadel_lengte_center_top)) ? floatval($bikefit->zadel_lengte_center_top) : 0;
+                $D_zonder_zadel = sqrt(pow($afstand_center_zadel_stuur, 2) - pow($F, 2));
+                $results['horizontale_reach'] = round($D_zonder_zadel - $zadellengte, 1);
             } else if ($stuur_trapas_afstand !== null && $stuur_trapas_hoek !== null) {
                 $results['horizontale_reach'] = round($stuur_trapas_afstand * cos($stuur_trapas_hoek * pi() / 180), 1);
             } else {
@@ -126,36 +132,32 @@ class BikefitCalculator
                 $afstand_center_zadel_stuur = sqrt(pow($zadel_trapas_afstand, 2) + pow($stuur_trapas_afstand, 2) - 2 * $zadel_trapas_afstand * $stuur_trapas_afstand * cos($gamma * pi() / 180));
                 $results['afstand_center_zadel_stuur'] = round($afstand_center_zadel_stuur, 1);
                 
-                // Nieuwe berekening D
-                $B_raw = isset($bikefit->zadel_trapas_afstand) && is_numeric($bikefit->zadel_trapas_afstand) && isset($bikefit->zadel_trapas_hoek) && is_numeric($bikefit->zadel_trapas_hoek)
-                    ? floatval($bikefit->zadel_trapas_afstand) * cos(floatval($bikefit->zadel_trapas_hoek) * pi() / 180)
-                    : null;
+                // Gebruik dezelfde berekening als horizontale_reach voor reach
+                $zadel_y = $zadel_trapas_afstand * sin($zadel_trapas_hoek * pi() / 180);
+                $stuur_y = $stuur_trapas_afstand * sin($stuur_trapas_hoek * pi() / 180);
+                $F = abs($zadel_y - $stuur_y);
                 $zadellengte_raw = (isset($bikefit->zadel_lengte_center_top) && is_numeric($bikefit->zadel_lengte_center_top)) ? floatval($bikefit->zadel_lengte_center_top) : 0;
-                $C_raw = $B_raw !== null ? $B_raw - $zadellengte_raw : null;
-                $I_raw = $afstand_center_zadel_stuur;
-                
-                if ($B_raw !== null && $C_raw !== null && $I_raw !== null) {
-                    $results['reach'] = round($I_raw - $C_raw - 0.5 * ($B_raw - $C_raw), 1);
+                $D_zonder_zadel = sqrt(pow($afstand_center_zadel_stuur, 2) - pow($F, 2));
+                $results['reach'] = round($D_zonder_zadel - $zadellengte_raw, 1);
                     
-                    // Bereken F (drop zadel-stuur) als verschil in y-coördinaat tussen zadel en stuur
-                    if ($zadel_trapas_afstand !== null && $zadel_trapas_hoek !== null && $stuur_trapas_afstand !== null && $stuur_trapas_hoek !== null) {
-                        $zadel_y = $zadel_trapas_afstand * sin($zadel_trapas_hoek * pi() / 180);
-                        $stuur_y = $stuur_trapas_afstand * sin($stuur_trapas_hoek * pi() / 180);
-                        $F = abs($zadel_y - $stuur_y);
-                        $results['drop_zadel_stuur'] = round($F, 1);
-                        $results['drop'] = $results['drop_zadel_stuur']; // Ook instellen voor template
-                        
-                        // Bereken E (reach) na bikefit met Pythagoras: E = sqrt(C^2 + D^2)
-                        if (isset($results['reach']) && isset($results['zadelterugstand_top']) && is_numeric($results['reach']) && is_numeric($results['zadelterugstand_top'])) {
-                            $E = sqrt(pow($results['reach'], 2) + pow($results['zadelterugstand_top'], 2));
-                            $results['reach_e'] = round($E, 1);
-                        } else {
-                            $results['reach_e'] = null;
-                        }
+                // Bereken F (drop zadel-stuur) als verschil in y-coördinaat tussen zadel en stuur
+                if ($zadel_trapas_afstand !== null && $zadel_trapas_hoek !== null && $stuur_trapas_afstand !== null && $stuur_trapas_hoek !== null) {
+                    $zadel_y = $zadel_trapas_afstand * sin($zadel_trapas_hoek * pi() / 180);
+                    $stuur_y = $stuur_trapas_afstand * sin($stuur_trapas_hoek * pi() / 180);
+                    $F = abs($zadel_y - $stuur_y);
+                    $results['drop_zadel_stuur'] = round($F, 1);
+                    $results['drop'] = $results['drop_zadel_stuur']; // Ook instellen voor template
+                    
+                    // Bereken E (reach) na bikefit met Pythagoras: E = sqrt(C^2 + D^2)
+                    if (isset($results['reach']) && isset($results['zadelterugstand_top']) && is_numeric($results['reach']) && is_numeric($results['zadelterugstand_top'])) {
+                        $E = sqrt(pow($results['reach'], 2) + pow($results['zadelterugstand_top'], 2));
+                        $results['reach_e'] = round($E, 1);
                     } else {
-                        $results['drop_zadel_stuur'] = null;
-                        $results['drop'] = null;
+                        $results['reach_e'] = null;
                     }
+                } else {
+                    $results['drop_zadel_stuur'] = null;
+                    $results['drop'] = null;
                 }
             } else {
                 $results['afstand_center_zadel_stuur'] = null;
