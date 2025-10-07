@@ -132,13 +132,16 @@ class BikefitCalculator
                 $afstand_center_zadel_stuur = sqrt(pow($zadel_trapas_afstand, 2) + pow($stuur_trapas_afstand, 2) - 2 * $zadel_trapas_afstand * $stuur_trapas_afstand * cos($gamma * pi() / 180));
                 $results['afstand_center_zadel_stuur'] = round($afstand_center_zadel_stuur, 1);
                 
-                // Gebruik dezelfde berekening als horizontale_reach voor reach
+                // Gebruik dezelfde berekening als horizontale_reach voor de basis reach
                 $zadel_y = $zadel_trapas_afstand * sin($zadel_trapas_hoek * pi() / 180);
                 $stuur_y = $stuur_trapas_afstand * sin($stuur_trapas_hoek * pi() / 180);
                 $F = abs($zadel_y - $stuur_y);
                 $zadellengte_raw = (isset($bikefit->zadel_lengte_center_top) && is_numeric($bikefit->zadel_lengte_center_top)) ? floatval($bikefit->zadel_lengte_center_top) : 0;
                 $D_zonder_zadel = sqrt(pow($afstand_center_zadel_stuur, 2) - pow($F, 2));
-                $results['reach'] = round($D_zonder_zadel - $zadellengte_raw, 1);
+                $horizontale_reach_basis = round($D_zonder_zadel - $zadellengte_raw, 1);
+                
+                // Bereken E (reach) na bikefit met Pythagoras: E = sqrt(F^2 + D^2)
+                $results['reach'] = round(sqrt(pow($F, 2) + pow($horizontale_reach_basis, 2)), 1);
                     
                 // Bereken F (drop zadel-stuur) als verschil in y-coördinaat tussen zadel en stuur
                 if ($zadel_trapas_afstand !== null && $zadel_trapas_hoek !== null && $stuur_trapas_afstand !== null && $stuur_trapas_hoek !== null) {
@@ -168,6 +171,14 @@ class BikefitCalculator
 
         // Zadelhoogte en zadelterugstand voor bikefit
         if (isset($bikefit->context) && $bikefit->context === 'voor') {
+            // Bereken horizontale_reach voor de "voor" situatie
+            if ($resultsNa && isset($resultsNa['horizontale_reach']) && is_numeric($resultsNa['horizontale_reach'])) {
+                $tussenberekening_reach = $resultsNa['tussenberekening_reach'] ?? 0;
+                $results['horizontale_reach'] = round($resultsNa['horizontale_reach'] - $tussenberekening_reach, 1);
+            } else {
+                $results['horizontale_reach'] = null;
+            }
+            
             // Simpele berekening: reach voor = reach na - tussenberekening_reach
             if ($resultsNa && isset($resultsNa['reach']) && is_numeric($resultsNa['reach'])) {
                 $tussenberekening_reach = $resultsNa['tussenberekening_reach'] ?? 0;

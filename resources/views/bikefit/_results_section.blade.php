@@ -87,7 +87,7 @@ input[type=number] {
                         <div class="flex items-center justify-between">
                             <span></span>
                             <div class="flex items-center">
-                                <input type="number" step="0.1" name="reach" value="{{ $results['reach'] ?? '' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
+                                <input type="number" step="0.1" name="horizontale_reach" value="{{ $results['horizontale_reach'] ?? '' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
                                 <span class="ml-2 text-sm font-medium">mm</span>
                             </div>
                         </div>
@@ -100,7 +100,7 @@ input[type=number] {
                         <div class="flex items-center justify-between">
                             <span></span>
                             <div class="flex items-center">
-                                <input type="number" step="0.1" name="reach_e" value="{{ $results['reach_e'] ?? '' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
+                                <input type="number" step="0.1" name="reach" value="{{ $results['reach'] ?? '' }}" class="px-2 py-1 w-16 text-right bg-transparent border-0 outline-none focus:bg-gray-50 focus:border focus:border-gray-300 rounded text-sm font-medium" form="bikefit-form">
                                 <span class="ml-2 text-sm font-medium">mm</span>
                             </div>
                         </div>
