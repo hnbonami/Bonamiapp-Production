@@ -354,6 +354,7 @@
         <h1>{{ $template->naam ?? $template->name ?? 'Sjabloon' }} - {{ $klantModel->naam }}</h1>
         <div class="header-buttons">
             <button class="btn btn-primary" onclick="window.print()">🖨️ Afdrukken</button>
+            <button class="btn btn-success" onclick="printToPDF()">📄 Afdruk PDF</button>
             <a href="/sjablonen/{{ $template->id }}/pdf?klant={{ $klantModel->id ?? '' }}&context=generated-report" 
                class="btn btn-danger">📄 Download PDF</a>
             <a href="/sjablonen/{{ $template->id }}/edit" class="btn btn-secondary">✏️ Sjabloon Bewerken</a>
@@ -391,6 +392,79 @@
     </div>
 
     <script>
+        // NEW: AFDRUK PDF FUNCTION - Shows instructions and opens print dialog
+        function printToPDF() {
+            console.log('📄 Showing PDF print instructions and opening print dialog...');
+            
+            // Show clear step-by-step instructions
+            showNotification('🖨️ <strong>PDF Afdrukken:</strong><br>1️⃣ Kies "Opslaan als PDF" in het print venster<br>2️⃣ Klik "Opslaan" - Klaar!<br><em>Het print venster wordt nu automatisch geopend...</em>', 'success');
+            
+            // Open print dialog after a short delay so user can read the notification
+            setTimeout(() => {
+                window.print();
+            }, 1000);
+        }
+
+        // NOTIFICATION SYSTEM
+        function showNotification(message, type) {
+            // Remove existing notifications
+            const existing = document.querySelectorAll('.pdf-notification');
+            existing.forEach(n => n.remove());
+            
+            // Create notification
+            const notification = document.createElement('div');
+            notification.className = 'pdf-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: ${type === 'success' ? '#28a745' : '#3b82f6'};
+                color: white;
+                padding: 15px 18px;
+                border-radius: 10px;
+                font-size: 13px;
+                font-weight: 500;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                z-index: 9999;
+                max-width: 280px;
+                animation: slideIn 0.3s ease-out;
+                line-height: 1.3;
+            `;
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: flex-start; gap: 12px;">
+                    <div style="flex: 1;">${message}</div>
+                    <button onclick="this.parentElement.parentElement.remove()" 
+                            style="background: rgba(255,255,255,0.2); border: none; color: white; 
+                                   border-radius: 50%; width: 28px; height: 28px; cursor: pointer; 
+                                   font-size: 16px; display: flex; align-items: center; justify-content: center;">×</button>
+                </div>
+            `;
+            
+            // Add CSS animation
+            if (!document.querySelector('#notification-styles')) {
+                const styles = document.createElement('style');
+                styles.id = 'notification-styles';
+                styles.textContent = `
+                    @keyframes slideIn {
+                        from { transform: translateX(100%); opacity: 0; }
+                        to { transform: translateX(0); opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(styles);
+            }
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 10 seconds
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.style.animation = 'slideIn 0.3s ease-out reverse';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, 10000);
+        }
+
         // Simple print optimization - no layout changes
         window.addEventListener('beforeprint', function() {
             console.log('🖨️ SIMPLE PRINT PREPARATION');
