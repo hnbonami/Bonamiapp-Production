@@ -93,6 +93,34 @@
             box-sizing: border-box;
             position: relative;
             z-index: 1;
+            overflow: visible !important;
+        }
+        
+        /* Remove ALL scrollbars from page content */
+        .page-content,
+        .page-content *,
+        .page-content div,
+        .page-content p,
+        .page-content span,
+        .page-content iframe {
+            overflow: visible !important;
+            overflow-x: visible !important;
+            overflow-y: visible !important;
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+        
+        .page-content::-webkit-scrollbar,
+        .page-content *::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+        
+        /* Force no scroll for any container */
+        .page-content [style*="overflow"],
+        .page-content [style*="scroll"] {
+            overflow: visible !important;
         }
         
         .no-print {
@@ -464,6 +492,19 @@
                 }
             }, 10000);
         }
+
+        // Remove all scrollbars after page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Force remove scrollbars from all elements
+            const allElements = document.querySelectorAll('.page-content, .page-content *');
+            allElements.forEach(function(element) {
+                element.style.overflow = 'visible';
+                element.style.overflowX = 'visible';
+                element.style.overflowY = 'visible';
+                element.style.scrollbarWidth = 'none';
+                element.style.msOverflowStyle = 'none';
+            });
+        });
 
         // Simple print optimization - no layout changes
         window.addEventListener('beforeprint', function() {
