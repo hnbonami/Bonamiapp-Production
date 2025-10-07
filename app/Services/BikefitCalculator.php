@@ -168,9 +168,10 @@ class BikefitCalculator
 
         // Zadelhoogte en zadelterugstand voor bikefit
         if (isset($bikefit->context) && $bikefit->context === 'voor') {
-            // Berekening D voor bikefit: D = D na bikefit - tussenberekening_reach
+            // Simpele berekening: reach voor = reach na - tussenberekening_reach
             if ($resultsNa && isset($resultsNa['reach']) && is_numeric($resultsNa['reach'])) {
-                $results['reach'] = round($resultsNa['reach'] - ($resultsNa['tussenberekening_reach'] ?? 0), 1);
+                $tussenberekening_reach = $resultsNa['tussenberekening_reach'] ?? 0;
+                $results['reach'] = round($resultsNa['reach'] - $tussenberekening_reach, 1);
             } else {
                 $results['reach'] = null;
             }
