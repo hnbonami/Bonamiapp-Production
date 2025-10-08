@@ -191,9 +191,9 @@ class EmailController extends Controller
     {
         $data = $this->getTriggerStats();
         
-        return view('admin.email.triggers', [
-            'stats' => $data['stats'],
-            'triggers' => $data['triggers']
+        return view('admin.email-triggers', [
+            'triggers' => $data['triggers'],
+            'statistics' => $data['stats']
         ]);
     }
 
@@ -224,7 +224,7 @@ class EmailController extends Controller
             $emailService = new EmailService();
             
             $testzadelsSent = $emailService->runTestzadelReminders();
-            $birthdaysSent = $emailService->runBirthdayEmails();
+            $birthdaysSent = $this->runBirthdayTrigger();
             
             $totalSent = $testzadelsSent + $birthdaysSent;
             
@@ -361,17 +361,17 @@ class EmailController extends Controller
     private function getTriggerStats()
     {
         try {
-            // Get all email logs for statistics (from email_logs table)
+            // Get all email logs for statistics
             $emailLogs = \App\Models\EmailLog::all();
             
             $stats = [
-                'total_sent' => $emailLogs->count(),
-                'today_sent' => $emailLogs->where('sent_at', '>=', now()->startOfDay())->count(),
-                'failed' => $emailLogs->where('status', 'failed')->count(),
-                'open_rate' => '0%', // Placeholder
+                'total_sent' => $emailLogs->where('status', 'sent')->count(),
+                'sent_today' => $emailLogs->where('status', 'sent')->where('sent_at', '>=', now()->startOfDay())->count(),
+                'failed_count' => $emailLogs->where('status', 'failed')->count(),
+                'open_rate' => 0,
             ];
             
-            // Get all automation triggers (from email_triggers table)
+            // Get all automation triggers
             $automationTriggers = collect();
             try {
                 $automationTriggers = \App\Models\EmailTrigger::with('emailTemplate')->get();
@@ -379,43 +379,98 @@ class EmailController extends Controller
                 \Log::warning('Could not load automation triggers: ' . $e->getMessage());
             }
             
-            $triggerCounts = $emailLogs->groupBy('trigger_name')->map->count();
+            // Group email logs by template type to count emails per trigger type
+            $emailLogsByTemplate = $emailLogs->groupBy('template_id');
+            $emailLogsByTrigger = $emailLogs->groupBy('trigger_name');
             
-            // Combine automation triggers with email statistics
             $triggers = [];
             
-            // Process automation triggers
+            // Process automation triggers and match with email logs
             foreach ($automationTriggers as $trigger) {
-                $emailCount = $triggerCounts->get($trigger->type, 0);
-                $lastRun = $emailLogs->where('trigger_name', $trigger->type)->max('sent_at');
+                $emailCount = 0;
+                $lastRun = null;
+                
+                // Count emails by template_id
+                if ($trigger->emailTemplate && isset($emailLogsByTemplate[$trigger->emailTemplate->id])) {
+                    $templateLogs = $emailLogsByTemplate[$trigger->emailTemplate->id];
+                    $emailCount = $templateLogs->where('status', 'sent')->count();
+                    $lastRun = $templateLogs->max('sent_at');
+                }
+                
+                // Also check by trigger name
+                if (isset($emailLogsByTrigger[$trigger->type])) {
+                    $triggerLogs = $emailLogsByTrigger[$trigger->type];
+                    $triggerEmailCount = $triggerLogs->where('status', 'sent')->count();
+                    $triggerLastRun = $triggerLogs->max('sent_at');
+                    
+                    $emailCount = max($emailCount, $triggerEmailCount);
+                    $lastRun = $lastRun ? max($lastRun, $triggerLastRun) : $triggerLastRun;
+                }
                 
                 $triggers[] = (object)[
                     'id' => $trigger->id,
                     'name' => $trigger->name,
                     'type' => $trigger->type,
+                    'type_name' => $trigger->type_name,
                     'emails_sent' => $emailCount,
                     'is_active' => $trigger->is_active ?? true,
-                    'last_run_at' => $lastRun,
-                    'template_name' => $trigger->emailTemplate->name ?? 'Geen template gekoppeld'
+                    'last_run_at' => $lastRun ? \Carbon\Carbon::parse($lastRun) : null,
+                    'emailTemplate' => $trigger->emailTemplate,
+                    'conditions' => $trigger->conditions ?? [],
+                    'settings' => $trigger->settings ?? []
                 ];
             }
             
-            // Add manual email logs that don't have automation triggers
-            foreach ($triggerCounts as $triggerName => $count) {
-                $existsInAutomation = $automationTriggers->where('type', $triggerName)->count() > 0;
-                
-                if (!$existsInAutomation) {
-                    $lastRun = $emailLogs->where('trigger_name', $triggerName)->max('sent_at');
+            // Add triggers for template types that don't have automation triggers yet
+            $templateTypes = [
+                'welcome_customer' => 'Welkom Nieuwe Klanten',
+                'welcome_employee' => 'Welkom Nieuwe Medewerkers', 
+                'klant_invitation' => 'Klant Uitnodigingen',
+                'medewerker_invitation' => 'Medewerker Uitnodigingen',
+                'testzadel_reminder' => 'Testzadel Herinneringen',
+                'birthday' => 'Verjaardag'
+            ];
+            
+            $existingTriggerTypes = $automationTriggers->pluck('type')->toArray();
+            
+            foreach ($templateTypes as $type => $name) {
+                if (!in_array($type, $existingTriggerTypes)) {
+                    // Find emails for this type
+                    $typeEmailCount = 0;
+                    $typeLastRun = null;
                     
-                    $triggers[] = (object)[
-                        'id' => null,
-                        'name' => ucfirst(str_replace('_', ' ', $triggerName)),
-                        'type' => $triggerName,
-                        'emails_sent' => $count,
-                        'is_active' => true,
-                        'last_run_at' => $lastRun,
-                        'template_name' => 'Handmatig verstuurd'
-                    ];
+                    // Check by trigger name in email logs
+                    if (isset($emailLogsByTrigger[$type])) {
+                        $typeLogs = $emailLogsByTrigger[$type];
+                        $typeEmailCount = $typeLogs->where('status', 'sent')->count();
+                        $typeLastRun = $typeLogs->max('sent_at');
+                    }
+                    
+                    // Check by template type
+                    $template = \App\Models\EmailTemplate::where('type', $type)->first();
+                    if ($template && isset($emailLogsByTemplate[$template->id])) {
+                        $templateLogs = $emailLogsByTemplate[$template->id];
+                        $templateEmailCount = $templateLogs->where('status', 'sent')->count();
+                        $templateLastRun = $templateLogs->max('sent_at');
+                        
+                        $typeEmailCount = max($typeEmailCount, $templateEmailCount);
+                        $typeLastRun = $typeLastRun ? max($typeLastRun, $templateLastRun) : $templateLastRun;
+                    }
+                    
+                    if ($typeEmailCount > 0 || $template) {
+                        $triggers[] = (object)[
+                            'id' => null,
+                            'name' => $name,
+                            'type' => $type,
+                            'type_name' => $name,
+                            'emails_sent' => $typeEmailCount,
+                            'is_active' => true,
+                            'last_run_at' => $typeLastRun ? \Carbon\Carbon::parse($typeLastRun) : null,
+                            'emailTemplate' => $template,
+                            'conditions' => [],
+                            'settings' => []
+                        ];
+                    }
                 }
             }
             
@@ -427,7 +482,7 @@ class EmailController extends Controller
         } catch (\Exception $e) {
             \Log::error('Failed to get trigger stats: ' . $e->getMessage());
             return [
-                'stats' => ['total_sent' => 0, 'today_sent' => 0, 'failed' => 0, 'open_rate' => '0%'],
+                'stats' => ['total_sent' => 0, 'sent_today' => 0, 'failed_count' => 0, 'open_rate' => '0%'],
                 'triggers' => collect([])
             ];
         }
@@ -553,6 +608,105 @@ Rol: @{{rol}}</p>
 
         foreach ($defaultTemplates as $templateData) {
             EmailTemplate::create($templateData);
+        }
+    }
+
+    /**
+     * Run birthday trigger and send emails to customers with birthday today
+     */
+    private function runBirthdayTrigger()
+    {
+        try {
+            // Find birthday trigger
+            $birthdayTrigger = EmailTrigger::where('type', EmailTrigger::TYPE_BIRTHDAY)
+                                         ->where('is_active', true)
+                                         ->first();
+            
+            if (!$birthdayTrigger || !$birthdayTrigger->emailTemplate) {
+                \Log::info('No active birthday trigger or template found');
+                return 0;
+            }
+
+            // Get customers with birthday today
+            $customers = \App\Models\Klant::whereMonth('geboortedatum', now()->month)
+                                         ->whereDay('geboortedatum', now()->day)
+                                         ->whereNotNull('email')
+                                         ->get();
+
+            $emailsSent = 0;
+
+            foreach ($customers as $customer) {
+                // Check if birthday email was already sent today
+                $alreadySent = \App\Models\EmailLog::where('recipient_email', $customer->email)
+                                                  ->where('trigger_name', 'birthday')
+                                                  ->whereDate('created_at', today())
+                                                  ->exists();
+
+                if ($alreadySent) {
+                    continue;
+                }
+
+                // Prepare variables for the email template
+                $variables = [
+                    'voornaam' => $customer->voornaam,
+                    'naam' => $customer->naam,
+                    'email' => $customer->email,
+                    'bedrijf_naam' => 'Bonami Sportcoaching',
+                    'datum' => now()->format('d/m/Y'),
+                    'jaar' => now()->format('Y'),
+                ];
+
+                try {
+                    // Send email using the template
+                    $subject = $birthdayTrigger->emailTemplate->renderSubject($variables);
+                    $body = $birthdayTrigger->emailTemplate->renderBody($variables);
+
+                    // Use your existing email sending method
+                    \Mail::html($body, function ($message) use ($customer, $subject) {
+                        $message->to($customer->email)
+                                ->subject($subject);
+                    });
+
+                    // Log the email
+                    \App\Models\EmailLog::create([
+                        'recipient_email' => $customer->email,
+                        'subject' => $subject,
+                        'template_id' => $birthdayTrigger->emailTemplate->id,
+                        'trigger_name' => 'birthday',
+                        'status' => 'sent',
+                        'sent_at' => now(),
+                        'variables' => $variables
+                    ]);
+
+                    $emailsSent++;
+
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send birthday email to ' . $customer->email . ': ' . $e->getMessage());
+                    
+                    // Log failed email
+                    \App\Models\EmailLog::create([
+                        'recipient_email' => $customer->email,
+                        'subject' => $subject ?? 'Birthday email',
+                        'template_id' => $birthdayTrigger->emailTemplate->id,
+                        'trigger_name' => 'birthday',
+                        'status' => 'failed',
+                        'error_message' => $e->getMessage(),
+                        'variables' => $variables
+                    ]);
+                }
+            }
+
+            // Update trigger statistics
+            $birthdayTrigger->increment('emails_sent', $emailsSent);
+            $birthdayTrigger->update(['last_run_at' => now()]);
+
+            \Log::info("Birthday trigger completed. Sent {$emailsSent} emails.");
+            
+            return $emailsSent;
+
+        } catch (\Exception $e) {
+            \Log::error('Birthday trigger failed: ' . $e->getMessage());
+            return 0;
         }
     }
 }

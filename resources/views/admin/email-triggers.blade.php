@@ -243,10 +243,14 @@
                                         {{ $trigger->last_run_at ? $trigger->last_run_at->diffForHumans() : 'Nog nooit' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <a href="{{ route('admin.email.triggers.edit', $trigger->id) }}" 
-                                           class="text-blue-600 hover:text-blue-900">
-                                            Bewerken
-                                        </a>
+                                        @if($trigger->id)
+                                            <a href="{{ route('admin.email.triggers.edit', $trigger->id) }}" 
+                                               class="text-blue-600 hover:text-blue-900">
+                                                Bewerken
+                                            </a>
+                                        @else
+                                            <span class="text-gray-400">Auto-gegenereerd</span>
+                                        @endif
                                     </td>
                                 </tr>
                             @endforeach
