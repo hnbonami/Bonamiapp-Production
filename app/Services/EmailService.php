@@ -78,76 +78,62 @@ class EmailService
     /**
      * Run testzadel reminder triggers
      */
-    public function runTestzadelReminders(): int
+    public static function runTestzadelReminders()
     {
-        $triggers = EmailTrigger::active()
-            ->byType(EmailTrigger::TYPE_TESTZADEL_REMINDER)
-            ->where(function($query) {
-                $query->whereNull('last_run_at')
-                      ->orWhere('last_run_at', '<=', now()->subDay());
-            })
-            ->get();
-
-        $totalSent = 0;
-
-        foreach ($triggers as $trigger) {
-            if (!$trigger->shouldRun()) {
-                continue;
-            }
-
-            $template = $trigger->emailTemplate;
-            if (!$template || !$template->is_active) {
-                continue;
-            }
-
-            // Get testzadels that need reminders
-            $reminderDays = $trigger->conditions['reminder_days'] ?? 7;
-            $testzadels = Testzadel::with('customer')
-                ->where('status', 'uitgeleend')
-                ->where('uitgeleend_op', '<=', now()->subDays($reminderDays))
-                ->whereDoesntHave('emailLogs', function($query) use ($trigger) {
-                    $query->where('email_trigger_id', $trigger->id)
-                          ->where('status', EmailLog::STATUS_SENT)
-                          ->where('created_at', '>=', now()->subDays(7)); // Don't spam
-                })
+        try {
+            // Get overdue testzadels with automatic mailing enabled
+            $overdueTestzadels = \App\Models\Testzadel::where('status', 'uitgeleend')
+                ->where('automatisch_mailtje', true)
+                ->where('verwachte_retour_datum', '<', now())
+                ->whereNull('laatste_herinnering')
+                ->orWhere('laatste_herinnering', '<', now()->subDays(7))
                 ->get();
-
-            foreach ($testzadels as $testzadel) {
-                if (!$testzadel->customer) continue;
-
-                $variables = [
-                    'voornaam' => $testzadel->customer->voornaam,
-                    'naam' => $testzadel->customer->naam,
-                    'email' => $testzadel->customer->email,
-                    'merk' => $testzadel->merk,
-                    'model' => $testzadel->model,
-                    'uitgeleend_op' => $testzadel->uitgeleend_op->format('d-m-Y'),
-                    'verwachte_retour' => $testzadel->uitgeleend_op->addDays(14)->format('d-m-Y')
-                ];
-
-                $metadata = [
-                    'customer_id' => $testzadel->customer->id,
-                    'testzadel_id' => $testzadel->id
-                ];
-
-                $this->sendEmail(
-                    $template,
-                    $testzadel->customer->email,
-                    $testzadel->customer->voornaam . ' ' . $testzadel->customer->naam,
-                    $variables,
-                    $trigger,
-                    EmailLog::TRIGGER_AUTOMATIC,
-                    $metadata
-                );
-
-                $totalSent++;
+                
+            $emailService = new \App\Services\EmailIntegrationService();
+            $sentCount = 0;
+            
+            foreach ($overdueTestzadels as $testzadel) {
+                try {
+                    $variables = [
+                        'voornaam' => $testzadel->klant->voornaam,
+                        'naam' => $testzadel->klant->naam,
+                        'email' => $testzadel->klant->email,
+                        'merk' => $testzadel->zadel_merk,
+                        'model' => $testzadel->zadel_model,
+                        'type' => $testzadel->zadel_type,
+                        'breedte' => $testzadel->zadel_breedte,
+                        'uitgeleend_op' => $testzadel->uitleen_datum->format('d/m/Y'),
+                        'verwachte_retour' => $testzadel->verwachte_retour_datum->format('d/m/Y'),
+                        'bedrijf_naam' => 'Bonami Sportcoaching',
+                        'datum' => now()->format('d/m/Y'),
+                        'jaar' => now()->format('Y'),
+                    ];
+                    
+                    $emailResult = $emailService->sendTestzadelReminderEmail(
+                        $testzadel->klant,
+                        $variables
+                    );
+                    
+                    if ($emailResult) {
+                        $testzadel->update([
+                            'herinnering_verstuurd' => true,
+                            'herinnering_verstuurd_op' => now(),
+                            'laatste_herinnering' => now()
+                        ]);
+                        $sentCount++;
+                    }
+                    
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send automatic reminder for testzadel ' . $testzadel->id . ': ' . $e->getMessage());
+                }
             }
-
-            $trigger->updateLastRun();
-            $trigger->incrementEmailsSent($testzadels->count());
+            
+            return $sentCount;
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to run testzadel reminders: ' . $e->getMessage());
+            return 0;
         }
-
-        return $totalSent;
     }
 
     /**
@@ -211,35 +197,27 @@ class EmailService
     /**
      * Send welcome email to new customer
      */
-    public function sendWelcomeEmail(Customer $customer): ?EmailLog
+    public static function sendWelcomeEmail($klant, $temporaryPassword = null)
     {
-        $trigger = EmailTrigger::active()
-            ->byType(EmailTrigger::TYPE_WELCOME_CUSTOMER)
-            ->first();
-
-        if (!$trigger || !$trigger->emailTemplate || !$trigger->emailTemplate->is_active) {
-            return null;
+        try {
+            $emailService = new \App\Services\EmailIntegrationService();
+            
+            $variables = [
+                'voornaam' => $klant->voornaam,
+                'naam' => $klant->naam,
+                'email' => $klant->email,
+                'temporary_password' => $temporaryPassword,
+                'bedrijf_naam' => 'Bonami Sportcoaching',
+                'datum' => now()->format('d/m/Y'),
+                'jaar' => now()->format('Y'),
+            ];
+            
+            return $emailService->sendWelcomeEmail($klant, $variables);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to send welcome email: ' . $e->getMessage());
+            return false;
         }
-
-        $variables = [
-            'voornaam' => $customer->voornaam,
-            'naam' => $customer->naam,
-            'email' => $customer->email
-        ];
-
-        $metadata = [
-            'customer_id' => $customer->id
-        ];
-
-        return $this->sendEmail(
-            $trigger->emailTemplate,
-            $customer->email,
-            $customer->voornaam . ' ' . $customer->naam,
-            $variables,
-            $trigger,
-            EmailLog::TRIGGER_AUTOMATIC,
-            $metadata
-        );
     }
 
     /**
@@ -277,5 +255,47 @@ class EmailService
 
         $clicked = EmailLog::sent()->whereNotNull('clicked_at')->count();
         return round(($clicked / $totalSent) * 100, 1);
+    }
+
+    /**
+     * Run birthday reminder triggers
+     */
+    public static function runBirthdayReminders()
+    {
+        try {
+            // Get customers with birthday today
+            $customers = \App\Models\Klant::whereMonth('geboortedatum', now()->month)
+                                         ->whereDay('geboortedatum', now()->day)
+                                         ->get();
+            
+            $emailService = new \App\Services\EmailIntegrationService();
+            $sentCount = 0;
+            
+            foreach ($customers as $customer) {
+                try {
+                    $variables = [
+                        'voornaam' => $customer->voornaam,
+                        'naam' => $customer->naam,
+                        'email' => $customer->email,
+                        'bedrijf_naam' => 'Bonami Sportcoaching',
+                        'datum' => now()->format('d/m/Y'),
+                        'jaar' => now()->format('Y'),
+                    ];
+                    
+                    if ($emailService->sendBirthdayEmail($customer, $variables)) {
+                        $sentCount++;
+                    }
+                    
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send birthday email for customer ' . $customer->id . ': ' . $e->getMessage());
+                }
+            }
+            
+            return $sentCount;
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to run birthday reminders: ' . $e->getMessage());
+            return 0;
+        }
     }
 }

@@ -2,17 +2,114 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Klant;
-use App\Helpers\MailHelper;
 use Illuminate\Http\Request;
-use App\Imports\KlantenImport;
+use App\Models\Klant;
+use App\Models\User;
+use App\Models\InvitationToken;
+use App\Services\EmailService;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
-use Illuminate\Support\Facades\Mail;
+use App\Helpers\MailHelper;
 
 class KlantenController extends Controller
 {
-    // In the KlantenController show method, ensure we load the testtype field for both bikefits and inspanningstesten
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        $klanten = Klant::orderBy('created_at', 'desc')->get();
+        return view('klanten.index', compact('klanten'));
+    }
 
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        return view('klanten.create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        // Add unique email validation to existing validation rules
+        $validatedData = $request->validate([
+            'voornaam' => 'required|string|max:255',
+            'naam' => 'required|string|max:255',
+            'email' => 'required|email|unique:klanten,email', // Add unique constraint
+            'telefoonnummer' => 'nullable|string|max:20',
+            'straatnaam' => 'nullable|string|max:255',
+            'huisnummer' => 'nullable|string|max:10',
+            'postcode' => 'nullable|string|max:10',
+            'stad' => 'nullable|string|max:255',
+            'geboortedatum' => 'nullable|date',
+            'geslacht' => 'nullable|in:Man,Vrouw,Andere',
+            'status' => 'required|in:Actief,Inactief,Prospect',
+            'sport' => 'nullable|string|max:255',
+            'niveau' => 'nullable|string|max:255',
+            'club' => 'nullable|string|max:255',
+            'herkomst' => 'nullable|string|max:255',
+        ]);
+        
+        try {
+            // Create the customer
+            $klant = Klant::create($validatedData);
+
+            // Create a user account for the customer
+            $temporaryPassword = Str::random(12);
+            $user = User::create([
+                'name' => $klant->voornaam . ' ' . $klant->naam,
+                'email' => $klant->email,
+                'password' => Hash::make($temporaryPassword),
+                'role' => 'customer',
+                'klant_id' => $klant->id,
+            ]);
+
+            // Create invitation token
+            InvitationToken::create([
+                'email' => $klant->email,
+                'token' => Str::random(60),
+                'type' => 'klant',
+                'temporary_password' => $temporaryPassword,
+                'expires_at' => now()->addDays(7),
+            ]);
+
+            // Send welcome email with temporary password
+            try {
+                EmailService::sendWelcomeEmail($klant, $temporaryPassword);
+            } catch (\Exception $e) {
+                \Log::error('Failed to send welcome email for customer ' . $klant->id . ': ' . $e->getMessage());
+                // Don't fail the customer creation if email fails
+            }
+
+            return redirect()->route('klanten.index')
+                ->with('success', 'Klant succesvol aangemaakt! Een welkomst email is verstuurd.');
+                
+        } catch (\Exception $e) {
+            \Log::error('Failed to create customer: ' . $e->getMessage());
+            return redirect()->back()
+                ->withErrors(['error' => 'Er is een fout opgetreden bij het aanmaken van de klant.'])
+                ->withInput();
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Models\Klant  $klant
+     * @return \Illuminate\Http\Response
+     */
     public function show(Klant $klant)
     {
         // Load all tests with their testtype fields and user relationships
@@ -23,6 +120,60 @@ class KlantenController extends Controller
         $alleTests = $bikefits->concat($inspanningstesten)->sortByDesc('datum');
         
         return view('klanten.show', compact('klant', 'alleTests'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  \App\Models\Klant  $klant
+     * @return \Illuminate\Http\Response
+     */
+    public function edit(Klant $klant)
+    {
+        return view('klanten.edit', compact('klant'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Klant  $klant
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request, Klant $klant)
+    {
+        $data = $request->validate([
+            'voornaam' => 'required|string|max:255',
+            'naam' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'telefoonnummer' => 'nullable|string|max:255',
+            'straatnaam' => 'nullable|string|max:255',
+            'huisnummer' => 'nullable|string|max:10',
+            'postcode' => 'nullable|string|max:10',
+            'stad' => 'nullable|string|max:255',
+            'geboortedatum' => 'nullable|date',
+            'geslacht' => 'required|in:Man,Vrouw,Anders',
+            'status' => 'required|in:Actief,Inactief',
+            'sport' => 'nullable|string|max:255',
+            'niveau' => 'nullable|string|max:255',
+            'club' => 'nullable|string|max:255',
+            'herkomst' => 'nullable|string|max:255',
+        ]);
+
+        $klant->update($data);
+        return redirect()->route('klanten.show', $klant)->with('success', 'Klant bijgewerkt');
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  \App\Models\Klant  $klant
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy(Klant $klant)
+    {
+        $klant->delete();
+        return redirect()->route('klanten.index')->with('success', 'Klant verwijderd');
     }
 
     /**
@@ -116,113 +267,6 @@ class KlantenController extends Controller
             
             fclose($file);
         }, $filename, ['Content-Type' => 'text/csv']);
-    }
-
-    public function index()
-    {
-        $klanten = Klant::orderBy('created_at', 'desc')->get();
-        return view('klanten.index', compact('klanten'));
-    }
-
-    public function create()
-    {
-        return view('klanten.create');
-    }
-
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'voornaam' => 'required|string|max:255',
-            'naam' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'telefoonnummer' => 'nullable|string|max:255',
-            'straatnaam' => 'nullable|string|max:255',
-            'huisnummer' => 'nullable|string|max:10',
-            'postcode' => 'nullable|string|max:10',
-            'stad' => 'nullable|string|max:255',
-            'geboortedatum' => 'nullable|date',
-            'geslacht' => 'required|in:Man,Vrouw,Anders',
-            'status' => 'required|in:Actief,Inactief',
-            'sport' => 'nullable|string|max:255',
-            'niveau' => 'nullable|string|max:255',
-            'club' => 'nullable|string|max:255',
-            'herkomst' => 'nullable|string|max:255',
-        ]);
-
-        $klant = Klant::create($data);
-
-        // Verstuur automatisch uitnodiging als email is ingevuld
-        if (!empty($data['email'])) {
-            try {
-                // Generate temporary password
-                $temporaryPassword = \Str::random(12);
-                
-                // Create user account for the customer
-                $user = \App\Models\User::create([
-                    'name' => $data['voornaam'] . ' ' . $data['naam'],
-                    'email' => $data['email'],
-                    'password' => \Hash::make($temporaryPassword),
-                    'role' => 'customer',
-                    'klant_id' => $klant->id,
-                ]);
-                
-                // Create invitation token
-                $invitationToken = \App\Models\InvitationToken::createForKlant($klant->email, $temporaryPassword);
-                
-                // Send invitation email
-                $emailResult = MailHelper::sendCustomerInvitation($klant, $temporaryPassword, $invitationToken);
-                
-                // Update klant to show invitation was sent
-                $klant->update(['laatste_uitnodiging' => now()]);
-                
-                if ($emailResult) {
-                    $successMessage = 'Klant aangemaakt en uitnodiging verstuurd naar ' . $klant->email . '. Login: ' . $klant->email . ' / ' . $temporaryPassword;
-                } else {
-                    $successMessage = 'Klant aangemaakt, maar uitnodiging kon niet worden verstuurd';
-                }            } catch (\Exception $e) {
-                \Log::error('Klant invitation sending failed: ' . $e->getMessage());
-                $successMessage = 'Klant aangemaakt, maar uitnodiging kon niet worden verstuurd';
-            }
-        } else {
-            $successMessage = 'Klant aangemaakt';
-        }
-
-        return redirect()->route('klanten.show', $klant)->with('success', $successMessage);
-    }
-
-    public function edit(Klant $klant)
-    {
-        return view('klanten.edit', compact('klant'));
-    }
-
-    public function update(Request $request, Klant $klant)
-    {
-        $data = $request->validate([
-            'voornaam' => 'required|string|max:255',
-            'naam' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'telefoonnummer' => 'nullable|string|max:255',
-            'straatnaam' => 'nullable|string|max:255',
-            'huisnummer' => 'nullable|string|max:10',
-            'postcode' => 'nullable|string|max:10',
-            'stad' => 'nullable|string|max:255',
-            'geboortedatum' => 'nullable|date',
-            'geslacht' => 'required|in:Man,Vrouw,Anders',
-            'status' => 'required|in:Actief,Inactief',
-            'sport' => 'nullable|string|max:255',
-            'niveau' => 'nullable|string|max:255',
-            'club' => 'nullable|string|max:255',
-            'herkomst' => 'nullable|string|max:255',
-        ]);
-
-        $klant->update($data);
-        return redirect()->route('klanten.show', $klant)->with('success', 'Klant bijgewerkt');
-    }
-
-    public function destroy(Klant $klant)
-    {
-        $klant->delete();
-        return redirect()->route('klanten.index')->with('success', 'Klant verwijderd');
     }
 
     /**

@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\MailHelper;
 use Illuminate\Http\Request;
 use App\Models\Medewerker;
 use App\Models\User;
 use App\Models\InvitationToken;
-use Illuminate\Support\Str;
+use App\Services\EmailIntegrationService;
+use App\Helpers\MailHelper;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\AccountCreatedMail;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class MedewerkerController extends Controller
 {

@@ -68,18 +68,29 @@ class EmailTemplate extends Model
     // Replace template variables with actual values
     public function renderSubject(array $variables = []): string
     {
-        return $this->replaceVariables($this->subject, $variables);
+        $subject = $this->replaceVariables($this->subject, $variables);
+        \Log::info('Email subject rendered', ['original' => $this->subject, 'rendered' => $subject, 'variables' => $variables]);
+        return $subject;
     }
 
     public function renderBody(array $variables = []): string
     {
-        return $this->replaceVariables($this->body_html, $variables);
+        $body = $this->replaceVariables($this->body_html, $variables);
+        \Log::info('Email body rendered', ['original_length' => strlen($this->body_html), 'rendered_length' => strlen($body), 'variables' => $variables]);
+        return $body;
     }
 
     private function replaceVariables(string $content, array $variables): string
     {
         foreach ($variables as $key => $value) {
-            $content = str_replace("@{{$key}}", $value, $content);
+            // Ensure value is string to prevent errors
+            $value = is_string($value) ? $value : (string) $value;
+            
+            // Replace various formats that might be used
+            $content = str_replace('@{{' . $key . '}}', $value, $content);
+            $content = str_replace('{{' . $key . '}}', $value, $content);
+            $content = str_replace('@{' . $key . '}', $value, $content);
+            $content = str_replace('{' . $key . '}', $value, $content);
         }
         return $content;
     }

@@ -117,7 +117,7 @@ class TestzadelsController extends Controller
     }
 
     /**
-     * Send reminder email only if automatic mailing is enabled
+     * Send reminder email using new email template system
      */
     public function sendReminder(Testzadel $testzadel)
     {
@@ -127,24 +127,40 @@ class TestzadelsController extends Controller
         }
         
         try {
-            // Send simple reminder email using Laravel Mail
-            \MailHelper::smartSend('emails.testzadel-reminder', [
-                'testzadel' => $testzadel,
-                'klant' => $testzadel->klant
-            ], function($message) use ($testzadel) {
-                $message->to($testzadel->klant->email, $testzadel->klant->voornaam . ' ' . $testzadel->klant->naam);
-                $message->from(config('mail.from.address'), config('mail.from.name'));
-                $message->subject('Herinnering Testzadel - Bonami Sportcoaching');
-            });
+            // Use new Email Template Service
+            $emailService = new \App\Services\EmailIntegrationService();
             
-            // Update reminder status
-            $testzadel->update([
-                'herinnering_verstuurd' => true,
-                'herinnering_verstuurd_op' => now(),
-                'laatste_herinnering' => now()
-            ]);
+            // Prepare template variables
+            $variables = [
+                'voornaam' => $testzadel->klant->voornaam,
+                'naam' => $testzadel->klant->naam,
+                'email' => $testzadel->klant->email,
+                'merk' => $testzadel->zadel_merk,
+                'model' => $testzadel->zadel_model,
+                'type' => $testzadel->zadel_type,
+                'breedte' => $testzadel->zadel_breedte,
+                'uitgeleend_op' => $testzadel->uitleen_datum->format('d/m/Y'),
+                'verwachte_retour' => $testzadel->verwachte_retour_datum->format('d/m/Y'),
+                'bedrijf_naam' => 'Bonami Sportcoaching',
+                'datum' => now()->format('d/m/Y'),
+                'jaar' => now()->format('Y'),
+            ];
             
-            return redirect()->back()->with('success', 'Herinnering verstuurd naar ' . $testzadel->klant->voornaam . ' ' . $testzadel->klant->naam);
+            // Send using template system
+            $result = $emailService->sendTestzadelReminderEmail($testzadel->klant, $variables);
+            
+            if ($result) {
+                // Update reminder status
+                $testzadel->update([
+                    'herinnering_verstuurd' => true,
+                    'herinnering_verstuurd_op' => now(),
+                    'laatste_herinnering' => now()
+                ]);
+                
+                return redirect()->back()->with('success', 'Herinnering verstuurd naar ' . $testzadel->klant->voornaam . ' ' . $testzadel->klant->naam);
+            } else {
+                return redirect()->back()->with('error', 'Er is een fout opgetreden bij het versturen van de herinnering');
+            }
             
         } catch (\Exception $e) {
             \Log::error('Failed to send testzadel reminder: ' . $e->getMessage());
@@ -245,24 +261,40 @@ class TestzadelsController extends Controller
                 return response()->json(['success' => false, 'message' => 'Automatische herinneringen zijn uitgeschakeld']);
             }
             
-            // Send simple reminder email using Laravel Mail
-            \MailHelper::smartSend('emails.testzadel-reminder', [
-                'testzadel' => $testzadel,
-                'klant' => $testzadel->klant
-            ], function($message) use ($testzadel) {
-                $message->to($testzadel->klant->email, $testzadel->klant->voornaam . ' ' . $testzadel->klant->naam);
-                $message->from(config('mail.from.address'), config('mail.from.name'));
-                $message->subject('Herinnering Testzadel - Bonami Sportcoaching');
-            });
+            // Use new Email Template Service
+            $emailService = new \App\Services\EmailIntegrationService();
             
-            // Update reminder status
-            $testzadel->update([
-                'herinnering_verstuurd' => true,
-                'herinnering_verstuurd_op' => now(),
-                'laatste_herinnering' => now()
-            ]);
+            // Prepare template variables
+            $variables = [
+                'voornaam' => $testzadel->klant->voornaam,
+                'naam' => $testzadel->klant->naam,
+                'email' => $testzadel->klant->email,
+                'merk' => $testzadel->zadel_merk,
+                'model' => $testzadel->zadel_model,
+                'type' => $testzadel->zadel_type,
+                'breedte' => $testzadel->zadel_breedte,
+                'uitgeleend_op' => $testzadel->uitleen_datum->format('d/m/Y'),
+                'verwachte_retour' => $testzadel->verwachte_retour_datum->format('d/m/Y'),
+                'bedrijf_naam' => 'Bonami Sportcoaching',
+                'datum' => now()->format('d/m/Y'),
+                'jaar' => now()->format('Y'),
+            ];
             
-            return response()->json(['success' => true, 'message' => 'Herinnering verstuurd']);
+            // Send using template system
+            $result = $emailService->sendTestzadelReminderEmail($testzadel->klant, $variables);
+            
+            if ($result) {
+                // Update reminder status
+                $testzadel->update([
+                    'herinnering_verstuurd' => true,
+                    'herinnering_verstuurd_op' => now(),
+                    'laatste_herinnering' => now()
+                ]);
+                
+                return response()->json(['success' => true, 'message' => 'Herinnering verstuurd']);
+            } else {
+                return response()->json(['success' => false, 'message' => 'Er is een fout opgetreden']);
+            }
             
         } catch (\Exception $e) {
             \Log::error('Failed to send testzadel reminder: ' . $e->getMessage());
