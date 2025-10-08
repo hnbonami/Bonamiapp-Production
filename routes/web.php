@@ -1057,3 +1057,7 @@ Route::middleware(['auth'])->prefix('temp')->name('temp.')->group(function () {
     Route::get('/{template}/editor', [App\Http\Controllers\TemplateController::class, 'editor'])->name('editor');
     Route::post('/{template}/save-content', [App\Http\Controllers\TemplateController::class, 'saveContent'])->name('save-content');
 });
+
+// Auto-save routes
+Route::post('/klanten/{klant}/bikefit/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save');
+Route::post('/klanten/{klant}/bikefit/{bikefit}/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save.update');

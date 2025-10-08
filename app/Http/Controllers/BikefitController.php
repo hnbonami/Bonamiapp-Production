@@ -1643,4 +1643,35 @@ const fs = require('fs');
         }
     }
 
+    /**
+     * Auto-save bikefit data via AJAX
+     */
+    public function autoSave(Request $request, $klantId, $bikefitId = null)
+    {
+        try {
+            if ($bikefitId) {
+                // Update existing bikefit
+                $bikefit = Bikefit::where('klant_id', $klantId)->findOrFail($bikefitId);
+                $bikefit->fill($request->all());
+                $bikefit->save();
+            } else {
+                // Create new bikefit
+                $bikefit = new Bikefit();
+                $bikefit->klant_id = $klantId;
+                $bikefit->fill($request->all());
+                $bikefit->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'bikefit_id' => $bikefit->id,
+                'message' => 'Auto-saved at ' . now()->format('H:i:s')
+            ]);
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Auto-save failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

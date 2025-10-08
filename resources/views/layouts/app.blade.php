@@ -302,5 +302,6 @@
         </script>
     {{-- Render any pushed scripts from views (e.g. upload drag/drop) --}}
     @stack('scripts')
+    @yield('scripts')
 </body>
 </html>
