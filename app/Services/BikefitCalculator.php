@@ -140,7 +140,7 @@ class BikefitCalculator
                 $D_zonder_zadel = sqrt(pow($afstand_center_zadel_stuur, 2) - pow($F, 2));
                 $horizontale_reach_basis = round($D_zonder_zadel - $zadellengte_raw, 1);
                 
-                // Bereken E (reach) na bikefit met Pythagoras: E = sqrt(F^2 + D^2)
+                // Voor bikefit "na" berekenen we altijd de gemeten reach met Pythagoras: E = sqrt(F^2 + D^2)
                 $results['reach'] = round(sqrt(pow($F, 2) + pow($horizontale_reach_basis, 2)), 1);
                     
                 // Bereken F (drop zadel-stuur) als verschil in y-coördinaat tussen zadel en stuur
@@ -301,27 +301,27 @@ class BikefitCalculator
         if ($armlengte > 0 && $romplengte > 0 && $binnenbeenlengte > 0) {
             switch ($type) {
                 case 'comfort':
-                    $results['reach'] = round($reach_basis * 0.38, 1);
+                    $results['horizontale_reach'] = round($reach_basis * 0.38, 1);
                     break;
                 case 'sportief':
-                    $results['reach'] = round($reach_basis * 0.42, 1);
+                    $results['horizontale_reach'] = round($reach_basis * 0.42, 1);
                     break;
                 case 'race':
-                    $results['reach'] = round($reach_basis * 0.44, 1);
+                    $results['horizontale_reach'] = round($reach_basis * 0.44, 1);
                     break;
                 case 'mountainbike':
                 case 'mtb':
-                    $results['reach'] = round($reach_basis * 0.44, 1);
+                    $results['horizontale_reach'] = round($reach_basis * 0.44, 1);
                     break;
                 case 'tijdritfiets':
                 case 'tt':
-                    $results['reach'] = round($reach_basis * 0.37, 1);
+                    $results['horizontale_reach'] = round($reach_basis * 0.37, 1);
                     break;
                 default:
-                    $results['reach'] = null;
+                    $results['horizontale_reach'] = null;
             }
         } else {
-            $results['reach'] = null;
+            $results['horizontale_reach'] = null;
         }
         
         if ($binnenbeenlengte > 0) {
@@ -348,6 +348,16 @@ class BikefitCalculator
             }
         } else {
             $results['drop'] = null;
+        }
+        
+        // Bereken reach met Pythagoras: E = sqrt(horizontale_reach^2 + drop^2)
+        $horizontale_reach = $results['horizontale_reach'] ?? null;
+        $drop = $results['drop'] ?? null;
+        
+        if (is_numeric($horizontale_reach) && is_numeric($drop)) {
+            $results['reach'] = round(sqrt(pow($horizontale_reach, 2) + pow($drop, 2)), 1);
+        } else {
+            $results['reach'] = null;
         }
         
         // Directe reach berekenen met Pythagoras: sqrt(drop^2 + reach^2)
