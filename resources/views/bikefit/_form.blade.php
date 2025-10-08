@@ -142,7 +142,7 @@
     <div>
         <label>Schoenmaat:</label>
         <select name="schoenmaat" class="border rounded w-full p-2">
-            @for($i=35;$i<=50;$i++)
+            @for($i=35;$i<=50;$i+=0.5)
                 <option value="{{ $i }}" {{ old('schoenmaat', $b->schoenmaat ?? '') == $i ? 'selected' : '' }}>{{ $i }}</option>
             @endfor
         </select>
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div>
         <label class="block font-medium">Zadeltil (graden)</label>
-        <input type="number" name="zadeltil" class="mt-1 block w-full border-gray-300 rounded" value="{{ old('zadeltil', $b->zadeltil ?? '') }}">
+        <input type="number" step="0.1" name="zadeltil" class="mt-1 block w-full border-gray-300 rounded" value="{{ old('zadeltil', $b->zadeltil ?? '') }}">
     </div>
     <div>
         <label class="block font-medium">Zadelbreedte (mm)</label>
