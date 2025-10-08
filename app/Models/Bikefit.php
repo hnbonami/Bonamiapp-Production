@@ -79,6 +79,22 @@ class Bikefit extends Model
         return $this->hasMany(Testzadel::class);
     }
 
+    /**
+     * Get the custom results for this bikefit.
+     */
+    public function customResults()
+    {
+        return $this->hasMany(BikefitCustomResult::class);
+    }
+
+    /**
+     * Get custom results for a specific context.
+     */
+    public function customResultsForContext($context)
+    {
+        return $this->customResults()->forContext($context);
+    }
+
     // Event listener voor automatische testzadel aanmaak
     protected static function booted()
     {

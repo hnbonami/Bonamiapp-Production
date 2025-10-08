@@ -1061,3 +1061,7 @@ Route::middleware(['auth'])->prefix('temp')->name('temp.')->group(function () {
 // Auto-save routes
 Route::post('/klanten/{klant}/bikefit/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save');
 Route::post('/klanten/{klant}/bikefit/{bikefit}/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save.update');
+
+// Custom results management routes
+Route::post('klanten/{klant}/bikefit/{bikefit}/save-custom-results', [BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results');
+Route::post('klanten/{klant}/bikefit/{bikefit}/reset-to-calculated', [BikefitController::class, 'resetToCalculated'])->name('bikefit.reset-to-calculated');

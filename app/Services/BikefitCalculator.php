@@ -2,15 +2,17 @@
 namespace App\Services;
 
 use App\Models\Bikefit;
+use App\Models\BikefitCustomResult;
 
 class BikefitCalculator
 {
     public function calculate(Bikefit $bikefit, $resultsNa = null): array
     {
         $results = [];
+        $context = $this->determineContext($bikefit, $resultsNa);
 
         // Zadelhoogte na bikefit
-        if (isset($bikefit->context) && $bikefit->context === 'na') {
+        if ($context === 'na') {
             // Nieuw veld: tussenberekening_drop = aanpassingen_zadel + aanpassingen_drop
             $tussenberekening_drop = 0;
             if (isset($bikefit->aanpassingen_zadel) && is_numeric($bikefit->aanpassingen_zadel)) {
@@ -166,11 +168,14 @@ class BikefitCalculator
                 $results['afstand_center_zadel_stuur'] = null;
             }
             
+            // Na alle berekeningen: merge met custom values
+            $results = $this->mergeWithCustomResults($bikefit, $context, $results);
+            
             return $results;
         }
 
         // Zadelhoogte en zadelterugstand voor bikefit
-        if (isset($bikefit->context) && $bikefit->context === 'voor') {
+        if ($context === 'voor') {
             // Bereken horizontale_reach voor de "voor" situatie
             if ($resultsNa && isset($resultsNa['horizontale_reach']) && is_numeric($resultsNa['horizontale_reach'])) {
                 $tussenberekening_reach = $resultsNa['tussenberekening_reach'] ?? 0;
@@ -249,6 +254,9 @@ class BikefitCalculator
             // Zadelterugstand top zadel = zadelterugstand center zadel - zadellengte center-top
             $zadellengte = isset($bikefit->zadel_lengte_center_top) && is_numeric($bikefit->zadel_lengte_center_top) ? floatval($bikefit->zadel_lengte_center_top) : 0;
             $results['zadelterugstand_top'] = isset($results['zadelterugstand']) && is_numeric($results['zadelterugstand']) ? round($results['zadelterugstand'] - $zadellengte, 1) : null;
+            
+            // BELANGRIJK: Merge met custom values voor VOOR context
+            $results = $this->mergeWithCustomResults($bikefit, $context, $results);
             
             return $results;
         }
@@ -405,7 +413,99 @@ class BikefitCalculator
             $results['stuurbreedte'] = null;
         }
         
+        // BELANGRIJK: Merge met custom values voor PROGNOSE
+        $results = $this->mergeWithCustomResults($bikefit, $context, $results);
+        
         return $results;
+    }
+
+    /**
+     * Bepaal de context van de berekening
+     */
+    private function determineContext(Bikefit $bikefit, $resultsNa = null): string
+    {
+        if (isset($bikefit->context) && $bikefit->context === 'na') {
+            return 'na';
+        } elseif (isset($bikefit->context) && $bikefit->context === 'voor') {
+            return 'voor';
+        } else {
+            return 'prognose';
+        }
+    }
+
+    /**
+     * Merge berekende resultaten met opgeslagen custom values
+     */
+    private function mergeWithCustomResults(Bikefit $bikefit, string $context, array $calculatedResults): array
+    {
+        $customResults = BikefitCustomResult::forBikefitAndContext($bikefit->id, $context)->get();
+        
+        $results = $calculatedResults;
+        $results['_custom_fields'] = [];
+        $results['_original_values'] = [];
+
+        foreach ($customResults as $customResult) {
+            // Sla originele waarde op
+            $results['_original_values'][$customResult->field_name] = $calculatedResults[$customResult->field_name] ?? null;
+            
+            // Vervang met custom waarde
+            $results[$customResult->field_name] = $customResult->custom_value;
+            
+            // Markeer als custom field
+            $results['_custom_fields'][$customResult->field_name] = true;
+        }
+
+        return $results;
+    }
+
+    /**
+     * Sla custom resultaten op
+     */
+    public function saveCustomResults(Bikefit $bikefit, string $context, array $customValues): void
+    {
+        foreach ($customValues as $fieldName => $customValue) {
+            if ($customValue !== null && $customValue !== '') {
+                // Bereken originele waarde door tijdelijk de huidige custom values te negeren
+                $originalValue = $this->getOriginalValue($bikefit, $context, $fieldName);
+                
+                BikefitCustomResult::updateOrCreate(
+                    [
+                        'bikefit_id' => $bikefit->id,
+                        'context' => $context,
+                        'field_name' => $fieldName
+                    ],
+                    [
+                        'custom_value' => $customValue,
+                        'original_value' => $originalValue
+                    ]
+                );
+            }
+        }
+    }
+
+    /**
+     * Reset naar berekende waarden
+     */
+    public function resetToCalculated(Bikefit $bikefit, string $context, array $fieldNames = null): void
+    {
+        $query = BikefitCustomResult::where('bikefit_id', $bikefit->id)
+                                   ->where('context', $context);
+        
+        if ($fieldNames) {
+            $query->whereIn('field_name', $fieldNames);
+        }
+        
+        $query->delete();
+    }
+
+    /**
+     * Get original calculated value for a field (without custom overrides)
+     */
+    private function getOriginalValue(Bikefit $bikefit, string $context, string $fieldName): ?float
+    {
+        // Voor nu, return een placeholder waarde
+        // Later kunnen we hier de daadwerkelijke berekening doen
+        return null;
     }
 }
 

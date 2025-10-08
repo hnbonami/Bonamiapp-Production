@@ -121,3 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 </div>
 @endsection
+
+@section('scripts')
+<script src="{{ asset('js/editable-results.js') }}"></script>
+@endsection

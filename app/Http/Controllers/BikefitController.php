@@ -9,6 +9,8 @@ use App\Models\Bikefit;
 use App\Services\BikefitReportGenerator;
 use App\Helpers\SjabloonHelper;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\BikefitCustomResult;
+use Exception;
 
 class BikefitController extends Controller
 {
@@ -1671,6 +1673,60 @@ const fs = require('fs');
             return response()->json([
                 'success' => false,
                 'message' => 'Auto-save failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Save custom results for a bikefit context
+     */
+    public function saveCustomResults(Request $request, $klantId, $bikefitId)
+    {
+        try {
+            $bikefit = Bikefit::where('klant_id', $klantId)->findOrFail($bikefitId);
+            
+            $context = $request->input('context'); // 'prognose', 'voor', 'na'
+            $customValues = $request->input('values', []);
+            
+            $calculator = app(\App\Services\BikefitCalculator::class);
+            $calculator->saveCustomResults($bikefit, $context, $customValues);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Aangepaste waarden opgeslagen voor ' . $context
+            ]);
+            
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fout bij opslaan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset to calculated values for a bikefit context
+     */
+    public function resetToCalculated(Request $request, $klantId, $bikefitId)
+    {
+        try {
+            $bikefit = Bikefit::where('klant_id', $klantId)->findOrFail($bikefitId);
+            
+            $context = $request->input('context'); // 'prognose', 'voor', 'na'
+            $fieldNames = $request->input('fields', null); // optioneel: specifieke velden
+            
+            $calculator = app(\App\Services\BikefitCalculator::class);
+            $calculator->resetToCalculated($bikefit, $context, $fieldNames);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Waarden hersteld naar berekende waarden voor ' . $context
+            ]);
+            
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Fout bij herstellen: ' . $e->getMessage()
             ], 500);
         }
     }
