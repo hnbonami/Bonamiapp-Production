@@ -121,4 +121,107 @@ class User extends Authenticatable
             }
         }
     }
+
+    /**
+     * Login logs relationship
+     */
+    public function loginLogs()
+    {
+        return $this->hasMany(UserLoginLog::class);
+    }
+
+    /**
+     * Check if user can access specific tab
+     */
+    public function canAccessTab($tabName)
+    {
+        if (!$this->role) {
+            return false;
+        }
+
+        return RolePermission::canAccessTab($this->role, $tabName);
+    }
+
+    /**
+     * Check if user can perform action on test type
+     */
+    public function canCreateTest($testType)
+    {
+        if (!$this->role) {
+            return false;
+        }
+
+        return RoleTestPermission::canPerformAction($this->role, $testType, 'create');
+    }
+
+    public function canEditTest($testType)
+    {
+        if (!$this->role) {
+            return false;
+        }
+
+        return RoleTestPermission::canPerformAction($this->role, $testType, 'edit');
+    }
+
+    public function canAccessTest($testType)
+    {
+        if (!$this->role) {
+            return false;
+        }
+
+        return RoleTestPermission::canPerformAction($this->role, $testType, 'access');
+    }
+
+    /**
+     * Get all accessible tabs for user
+     */
+    public function getAccessibleTabs()
+    {
+        if (!$this->role) {
+            return [];
+        }
+
+        return RolePermission::getAccessibleTabs($this->role);
+    }
+
+    /**
+     * Check if user has specific role
+     */
+    public function hasRole($roleName)
+    {
+        return $this->role === $roleName;
+    }
+
+    /**
+     * Check if user is admin
+     */
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is staff (admin or medewerker)
+     */
+    public function isStaff()
+    {
+        return in_array($this->role, ['admin', 'medewerker']);
+    }
+
+    /**
+     * Get latest login log
+     */
+    public function getLatestLoginAttribute()
+    {
+        return $this->loginLogs()->latest('login_at')->first();
+    }
+
+    /**
+     * Update login statistics
+     */
+    public function updateLoginStats()
+    {
+        $this->increment('login_count');
+        $this->update(['last_login_at' => now()]);
+    }
 }

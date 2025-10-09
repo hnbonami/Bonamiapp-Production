@@ -438,6 +438,16 @@ Route::middleware(['auth', 'verified'])->group(function() {
     
     // Quick access to birthday management
     Route::get('/birthdays', [App\Http\Controllers\BirthdayController::class, 'index'])->name('birthdays.index');
+    
+    // User Management Routes - NEW!
+    Route::prefix('admin/users')->name('admin.users.')->group(function() {
+        Route::get('/', [App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('index');
+        Route::get('/roles', [App\Http\Controllers\Admin\UserManagementController::class, 'roles'])->name('roles');
+        Route::get('/activity', [App\Http\Controllers\Admin\UserManagementController::class, 'activity'])->name('activity');
+        Route::get('/{user}/edit', [App\Http\Controllers\Admin\UserManagementController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [App\Http\Controllers\Admin\UserManagementController::class, 'update'])->name('update');
+        Route::post('/roles/update', [App\Http\Controllers\Admin\UserManagementController::class, 'updateRolePermissions'])->name('roles.update');
+    });
 });
 
 // Admin index route - CRITICAL FOR SITE TO WORK
