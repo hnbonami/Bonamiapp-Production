@@ -223,10 +223,24 @@ class UserManagementController extends Controller
      */
     public function activity()
     {
-        // Get login activities with user relationship
-        $loginActivities = \App\Models\LoginActivity::with('user')
-            ->orderBy('logged_in_at', 'desc')
-            ->paginate(50);
+        // Start with base query
+        $query = \App\Models\LoginActivity::with('user');
+        
+        // Apply filters
+        if (request('user_id')) {
+            $query->where('user_id', request('user_id'));
+        }
+        
+        if (request('date_from')) {
+            $query->whereDate('logged_in_at', '>=', request('date_from'));
+        }
+        
+        if (request('date_to')) {
+            $query->whereDate('logged_in_at', '<=', request('date_to'));
+        }
+        
+        // Get filtered login activities
+        $loginActivities = $query->orderBy('logged_in_at', 'desc')->paginate(50);
         
         // Get all users for the filter dropdown
         $users = \App\Models\User::orderBy('name')->get();
@@ -240,7 +254,7 @@ class UserManagementController extends Controller
             ['path' => request()->url()]
         );
         
-        // Statistics for the cards
+        // Statistics for the cards (use unfiltered data for stats)
         $stats = [
             'total_logins_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())->count(),
             'unique_users_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())->distinct('user_id')->count(),
@@ -259,6 +273,11 @@ class UserManagementController extends Controller
             'login_activities_count' => $loginActivities->total(),
             'login_activities_items' => $loginActivities->count(),
             'users_count' => $users->count(),
+            'filters' => [
+                'user_id' => request('user_id'),
+                'date_from' => request('date_from'),
+                'date_to' => request('date_to')
+            ],
             'stats' => $stats,
             'first_activity' => $loginActivities->first() ? [
                 'id' => $loginActivities->first()->id,
@@ -266,19 +285,9 @@ class UserManagementController extends Controller
                 'user_name' => $loginActivities->first()->user ? $loginActivities->first()->user->name : 'No user',
                 'logged_in_at' => $loginActivities->first()->logged_in_at,
                 'ip_address' => $loginActivities->first()->ip_address
-            ] : 'NO ACTIVITIES FOUND',
-            'all_activities' => $loginActivities->map(function($activity) {
-                return [
-                    'id' => $activity->id,
-                    'user_id' => $activity->user_id,
-                    'user_exists' => $activity->user ? true : false,
-                    'user_name' => $activity->user ? $activity->user->name : null,
-                    'logged_in_at' => $activity->logged_in_at->format('Y-m-d H:i:s'),
-                    'ip_address' => $activity->ip_address
-                ];
-            })
+            ] : 'NO ACTIVITIES FOUND'
         ]);
         
-        return view('admin.users.activity', compact('loginActivities', 'users', 'logs', 'stats'));
+        return view('admin.users.activity-clean', compact('loginActivities', 'users', 'logs', 'stats'));
     }
 }
