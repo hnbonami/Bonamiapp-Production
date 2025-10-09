@@ -160,11 +160,21 @@ class MedewerkerController extends Controller
             // Generate temporary password
             $temporaryPassword = \Str::random(12);
             
+            // Create or update User record for login
+            $user = \App\Models\User::updateOrCreate(
+                ['email' => $medewerker->email],
+                [
+                    'name' => $medewerker->voornaam . ' ' . $medewerker->achternaam,
+                    'password' => \Hash::make($temporaryPassword),
+                    'email_verified_at' => now(),
+                ]
+            );
+            
             // Create invitation token
             $invitationToken = \App\Models\InvitationToken::createForMedewerker($medewerker->email, $temporaryPassword);
             
             // Send invitation email
-                            $emailSent = \App\Helpers\MailHelper::sendMedewerkerInvitation($medewerker, $temporaryPassword, $invitationToken);
+            $emailSent = \App\Helpers\MailHelper::sendMedewerkerInvitation($medewerker, $temporaryPassword, $invitationToken);
             
             // Update medewerker to show invitation was sent
             $medewerker->update(['laatste_uitnodiging' => now()]);

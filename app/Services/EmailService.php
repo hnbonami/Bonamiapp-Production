@@ -200,6 +200,13 @@ class EmailService
     public static function sendWelcomeEmail($klant, $temporaryPassword = null)
     {
         try {
+            // Ensure the password is hashed in the database if provided and not already hashed
+            if ($temporaryPassword && !password_verify($temporaryPassword, $klant->password)) {
+                $klant->update([
+                    'password' => \Hash::make($temporaryPassword)
+                ]);
+            }
+            
             $emailService = new \App\Services\EmailIntegrationService();
             
             $variables = [
@@ -217,6 +224,40 @@ class EmailService
             
         } catch (\Exception $e) {
             \Log::error('Failed to send welcome email: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Send welcome email to new employee
+     */
+    public static function sendWelcomeEmailMedewerker($medewerker, $temporaryPassword = null)
+    {
+        try {
+            // Ensure the password is hashed in the database if provided and not already hashed
+            if ($temporaryPassword && !password_verify($temporaryPassword, $medewerker->password)) {
+                $medewerker->update([
+                    'password' => \Hash::make($temporaryPassword)
+                ]);
+            }
+            
+            $emailService = new \App\Services\EmailIntegrationService();
+            
+            $variables = [
+                'voornaam' => $medewerker->voornaam,
+                'naam' => $medewerker->naam,
+                'email' => $medewerker->email,
+                'wachtwoord' => $temporaryPassword,
+                'temporary_password' => $temporaryPassword,
+                'bedrijf_naam' => 'Bonami Sportcoaching',
+                'datum' => now()->format('d/m/Y'),
+                'jaar' => now()->format('Y'),
+            ];
+            
+            return $emailService->sendWelcomeEmail($medewerker, $variables);
+            
+        } catch (\Exception $e) {
+            \Log::error('Failed to send welcome email to employee: ' . $e->getMessage());
             return false;
         }
     }
