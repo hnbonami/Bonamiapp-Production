@@ -26,7 +26,7 @@
                         </a>
                     </div>
 
-                    <!-- Email Beheer KAKA -->
+                    <!-- Email Beheer -->
                     <div class="bg-green-50 p-6 rounded-lg">
                         <div class="flex items-center mb-4">
                             <svg class="w-8 h-8 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

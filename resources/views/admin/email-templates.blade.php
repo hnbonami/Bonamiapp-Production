@@ -63,13 +63,10 @@
                     
                     <div class="flex space-x-2">
                         <a href="{{ route('admin.email.templates.edit', $template->id) }}" 
-                           class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 text-center">
+                           class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-center text-gray-800 hover:opacity-80" 
+                           style="background-color: #c8e1eb;">
                             Bewerken
                         </a>
-                        <button onclick="previewTemplate({{ $template->id }})" 
-                                class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            Preview
-                        </button>
                         <button onclick="deleteTemplate({{ $template->id }}, '{{ $template->name }}')" 
                                 class="px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 hover:bg-red-50">
                             🗑️
@@ -185,11 +182,6 @@
 </div>
 
 <script>
-function previewTemplate(templateId) {
-    // Simple approach: redirect to edit page with preview hash
-    window.open(`/admin/email/templates/${templateId}/edit#preview`, '_blank');
-}
-
 function deleteTemplate(templateId, templateName) {
     if (confirm(`Weet je zeker dat je template "${templateName}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
         // Create a form for DELETE request
