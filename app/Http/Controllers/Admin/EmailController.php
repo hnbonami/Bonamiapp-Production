@@ -247,7 +247,7 @@ class EmailController extends Controller
             $this->createDefaultTriggers();
             
             return redirect()->back()->with('success', 
-                "✅ Automatische triggers zijn succesvol geconfigureerd! Het systeem is nu volledig automatisch.");
+                "✅ Automatische triggers zijn succesvol geconfigureerd! Alle ontbrekende triggers zijn toegevoegd.");
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 
                 "❌ Fout bij instellen triggers: " . $e->getMessage());
@@ -423,12 +423,12 @@ class EmailController extends Controller
             
             // Add triggers for template types that don't have automation triggers yet
             $templateTypes = [
-                'welcome_customer' => 'Welkom Nieuwe Klanten',
-                'welcome_employee' => 'Welkom Nieuwe Medewerkers', 
-                'klant_invitation' => 'Klant Uitnodigingen',
-                'medewerker_invitation' => 'Medewerker Uitnodigingen',
+                'welcome_customer' => 'Welkom Nieuwe Klanten (Automatisch)',
+                'welcome_employee' => 'Welkom Nieuwe Medewerkers (Automatisch)', 
+                'klant_invitation' => 'Klant Uitnodigingen (Handmatig)',
+                'medewerker_invitation' => 'Medewerker Uitnodigingen (Handmatig)',
                 'testzadel_reminder' => 'Testzadel Herinneringen',
-                'birthday' => 'Verjaardag'
+                'birthday' => 'Verjaardag Felicitaties'
             ];
             
             $existingTriggerTypes = $automationTriggers->pluck('type')->toArray();
@@ -499,7 +499,7 @@ class EmailController extends Controller
                 'email_template_id' => $testzadelTemplate->id,
                 'is_active' => true,
                 'conditions' => [
-                    'reminder_days' => 7, // Kan aangepast worden naar 21
+                    'reminder_days' => 7,
                     'frequency' => 'daily'
                 ],
                 'settings' => [
@@ -527,19 +527,70 @@ class EmailController extends Controller
             ]);
         }
 
-        // Welkom klant trigger
-        $welcomeTemplate = EmailTemplate::where('type', EmailTemplate::TYPE_WELCOME_CUSTOMER)->first();
-        if ($welcomeTemplate && !EmailTrigger::where('type', EmailTrigger::TYPE_WELCOME_CUSTOMER)->exists()) {
+        // Welkom klant trigger (automatisch)
+        $welcomeCustomerTemplate = EmailTemplate::where('type', EmailTemplate::TYPE_WELCOME_CUSTOMER)->first();
+        if ($welcomeCustomerTemplate && !EmailTrigger::where('type', EmailTrigger::TYPE_WELCOME_CUSTOMER)->exists()) {
             EmailTrigger::create([
-                'name' => 'Welkom Nieuwe Klanten',
+                'name' => 'Welkom Nieuwe Klanten (Automatisch)',
                 'type' => EmailTrigger::TYPE_WELCOME_CUSTOMER,
-                'email_template_id' => $welcomeTemplate->id,
+                'email_template_id' => $welcomeCustomerTemplate->id,
                 'is_active' => true,
                 'conditions' => [
                     'trigger_on' => 'customer_created'
                 ],
                 'settings' => [
-                    'delay_minutes' => 0 // Direct versturen
+                    'delay_minutes' => 0
+                ]
+            ]);
+        }
+
+        // Welkom medewerker trigger (automatisch)
+        $welcomeEmployeeTemplate = EmailTemplate::where('type', EmailTemplate::TYPE_WELCOME_EMPLOYEE)->first();
+        if ($welcomeEmployeeTemplate && !EmailTrigger::where('type', EmailTrigger::TYPE_WELCOME_EMPLOYEE)->exists()) {
+            EmailTrigger::create([
+                'name' => 'Welkom Nieuwe Medewerkers (Automatisch)',
+                'type' => EmailTrigger::TYPE_WELCOME_EMPLOYEE,
+                'email_template_id' => $welcomeEmployeeTemplate->id,
+                'is_active' => true,
+                'conditions' => [
+                    'trigger_on' => 'employee_created'
+                ],
+                'settings' => [
+                    'delay_minutes' => 0
+                ]
+            ]);
+        }
+
+        // Klant uitnodiging trigger (handmatig)
+        $klantInvitationTemplate = EmailTemplate::where('type', 'klant_invitation')->first();
+        if ($klantInvitationTemplate && !EmailTrigger::where('type', EmailTrigger::TYPE_KLANT_INVITATION)->exists()) {
+            EmailTrigger::create([
+                'name' => 'Klant Uitnodigingen (Handmatig)',
+                'type' => EmailTrigger::TYPE_KLANT_INVITATION,
+                'email_template_id' => $klantInvitationTemplate->id,
+                'is_active' => true,
+                'conditions' => [
+                    'trigger_on' => 'manual'
+                ],
+                'settings' => [
+                    'frequency' => 'manual'
+                ]
+            ]);
+        }
+
+        // Medewerker uitnodiging trigger (handmatig)
+        $medewerkerInvitationTemplate = EmailTemplate::where('type', 'medewerker_invitation')->first();
+        if ($medewerkerInvitationTemplate && !EmailTrigger::where('type', EmailTrigger::TYPE_MEDEWERKER_INVITATION)->exists()) {
+            EmailTrigger::create([
+                'name' => 'Medewerker Uitnodigingen (Handmatig)',
+                'type' => EmailTrigger::TYPE_MEDEWERKER_INVITATION,
+                'email_template_id' => $medewerkerInvitationTemplate->id,
+                'is_active' => true,
+                'conditions' => [
+                    'trigger_on' => 'manual'
+                ],
+                'settings' => [
+                    'frequency' => 'manual'
                 ]
             ]);
         }

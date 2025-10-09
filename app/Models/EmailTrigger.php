@@ -14,6 +14,8 @@ class EmailTrigger extends Model
     const TYPE_BIRTHDAY = 'birthday';
     const TYPE_WELCOME_CUSTOMER = 'welcome_customer';
     const TYPE_WELCOME_EMPLOYEE = 'welcome_employee';
+    const TYPE_KLANT_INVITATION = 'klant_invitation';
+    const TYPE_MEDEWERKER_INVITATION = 'medewerker_invitation';
 
     protected $fillable = [
         'name',
@@ -48,6 +50,8 @@ class EmailTrigger extends Model
             self::TYPE_BIRTHDAY => 'Verjaardag',
             self::TYPE_WELCOME_CUSTOMER => 'Welkom Klant',
             self::TYPE_WELCOME_EMPLOYEE => 'Welkom Medewerker',
+            self::TYPE_KLANT_INVITATION => 'Klant Uitnodiging',
+            self::TYPE_MEDEWERKER_INVITATION => 'Medewerker Uitnodiging',
         ];
     }
 
