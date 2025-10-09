@@ -981,6 +981,20 @@ Rol: @{{rol}}</p>
     }
 
     /**
+     * Show unsubscribe page (public)
+     */
+    public function showUnsubscribe($token)
+    {
+        $subscription = \App\Models\EmailSubscription::where('unsubscribe_token', $token)->first();
+        
+        if (!$subscription) {
+            abort(404, 'Ongeldige unsubscribe link');
+        }
+        
+        return view('emails.unsubscribe', compact('subscription'));
+    }
+
+    /**
      * Process unsubscribe (public)
      */
     public function processUnsubscribe(Request $request, $token)
@@ -991,8 +1005,35 @@ Rol: @{{rol}}</p>
             abort(404, 'Ongeldige unsubscribe link');
         }
 
+        if (!$subscription->isSubscribed()) {
+            return view('emails.unsubscribe-success', compact('subscription'));
+        }
+
         $reason = $request->input('reason', 'Geen reden opgegeven');
-        $subscription->unsubscribe($reason);
+        $additionalFeedback = $request->input('additional_feedback');
+        
+        // Combine reason and feedback
+        $fullReason = $reason;
+        if ($additionalFeedback) {
+            $fullReason .= ' | Extra feedback: ' . $additionalFeedback;
+        }
+        
+        $subscription->unsubscribe($fullReason);
+        
+        // Log this unsubscribe for analytics
+        \App\Models\EmailLog::create([
+            'recipient_email' => $subscription->email,
+            'subject' => 'Unsubscribe action',
+            'template_id' => null,
+            'trigger_name' => 'unsubscribe',
+            'status' => 'unsubscribed',
+            'sent_at' => now(),
+            'variables' => [
+                'reason' => $reason,
+                'additional_feedback' => $additionalFeedback,
+                'subscriber_type' => $subscription->subscriber_type
+            ]
+        ]);
         
         return view('emails.unsubscribe-success', compact('subscription'));
     }
@@ -1011,6 +1052,58 @@ Rol: @{{rol}}</p>
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 
                 "❌ Fout bij heraanmelden: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Preview email template
+     */
+    public function previewEmail(Request $request)
+    {
+        $validated = $request->validate([
+            'template_id' => 'required|exists:email_templates,id',
+            'subject' => 'required|string|max:255',
+            'custom_message' => 'nullable|string'
+        ]);
+
+        try {
+            $template = EmailTemplate::findOrFail($validated['template_id']);
+            
+            // Mock data for preview
+            $variables = [
+                'voornaam' => 'Jan',
+                'naam' => 'Janssen',
+                'email' => 'jan.janssen@example.com',
+                'bedrijf_naam' => 'Bonami Sportcoaching',
+                'datum' => now()->format('d/m/Y'),
+                'jaar' => now()->format('Y'),
+                'custom_message' => $validated['custom_message'] ?? '',
+                'unsubscribe_url' => route('email.unsubscribe', ['token' => 'preview-token'])
+            ];
+
+            $subject = $template->renderSubject($variables);
+            $body = $template->renderBody($variables);
+            
+            // Add unsubscribe footer for preview
+            $unsubscribeFooter = '
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
+                <p>Je ontvangt deze email omdat je geabonneerd bent op onze nieuwsbrief.</p>
+                <p><a href="' . $variables['unsubscribe_url'] . '" style="color: #999;">Klik hier om je af te melden</a></p>
+            </div>';
+            
+            $body = str_replace('</body>', $unsubscribeFooter . '</body>', $body);
+
+            return response()->json([
+                'success' => true,
+                'subject' => $subject,
+                'body' => $body
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
 }

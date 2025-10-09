@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@section('head')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@endsection
+
 @section('content')
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
@@ -204,7 +208,60 @@
                 return;
             }
             
-            alert('Preview functie komt binnenkort beschikbaar!');
+            const formData = new FormData();
+            formData.append('template_id', document.getElementById('template_id').value);
+            formData.append('subject', document.getElementById('subject').value);
+            formData.append('custom_message', document.getElementById('custom_message').value);
+            formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+            
+            fetch('{{ route("admin.email.preview") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Create preview modal
+                    const modal = document.createElement('div');
+                    modal.className = 'fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50';
+                    modal.onclick = function(e) {
+                        if (e.target === modal) {
+                            document.body.removeChild(modal);
+                        }
+                    };
+                    
+                    modal.innerHTML = `
+                        <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-bold text-gray-900">📧 Email Preview</h3>
+                                <button onclick="document.body.removeChild(this.closest('.fixed'))" 
+                                        class="text-gray-400 hover:text-gray-600">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="mb-4">
+                                <strong>Onderwerp:</strong> ${data.subject}
+                            </div>
+                            <div class="border rounded-lg p-4 bg-gray-50 max-h-96 overflow-y-auto">
+                                ${data.body}
+                            </div>
+                            <div class="mt-4 text-sm text-gray-500">
+                                <p>📝 Dit is een preview met voorbeeld data (Jan Janssen)</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(modal);
+                } else {
+                    alert('Fout bij laden preview: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Fout bij laden preview');
+            });
         }
         </script>
     </div>

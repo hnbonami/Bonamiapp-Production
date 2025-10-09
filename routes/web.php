@@ -1044,11 +1044,32 @@ Route::get('/inspanningstest/{klant}/{test}/sjabloon-rapport', [App\Http\Control
 // API route voor sjabloon check
 Route::get('/api/check-sjabloon', [App\Http\Controllers\SjablonenController::class, 'checkSjabloon']);
 
+// Public Email Unsubscribe Routes (MUST be BEFORE auth middleware!)
+Route::get('/email/unsubscribe/{token}', [App\Http\Controllers\Admin\EmailController::class, 'showUnsubscribe'])->name('email.unsubscribe');
+Route::post('/email/unsubscribe/{token}', [App\Http\Controllers\Admin\EmailController::class, 'processUnsubscribe'])->name('email.unsubscribe.process');
+
+// TEST ROUTE - Remove after testing
+Route::get('/test-unsubscribe', function() {
+    $subscription = \App\Models\EmailSubscription::first();
+    if (!$subscription) {
+        $subscription = \App\Models\EmailSubscription::create([
+            'email' => 'test@example.com',
+            'subscriber_type' => 'klant',
+            'status' => 'subscribed',
+            'unsubscribe_token' => \Illuminate\Support\Str::random(64),
+            'subscribed_at' => now()
+        ]);
+    }
+    $url = route('email.unsubscribe', ['token' => $subscription->unsubscribe_token]);
+    return "Test unsubscribe URL: <a href='$url'>$url</a>";
+});
+
 // Email Bulk & Unsubscribe Routes
 Route::middleware(['auth'])->prefix('admin/email')->name('admin.email.')->group(function () {
     // Bulk email routes
     Route::post('/bulk/customers', [App\Http\Controllers\Admin\EmailController::class, 'sendBulkToCustomers'])->name('bulk.customers');
     Route::post('/bulk/employees', [App\Http\Controllers\Admin\EmailController::class, 'sendBulkToEmployees'])->name('bulk.employees');
+    Route::post('/preview', [App\Http\Controllers\Admin\EmailController::class, 'previewEmail'])->name('preview');
     
     // Unsubscribed management
     Route::get('/unsubscribed', [App\Http\Controllers\Admin\EmailController::class, 'unsubscribed'])->name('unsubscribed');
