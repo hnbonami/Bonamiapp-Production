@@ -60,12 +60,22 @@ class User extends Authenticatable
     /**
      * Get the login activities for the user.
      */
+    // Add relationship to LoginActivity in User model
     public function loginActivities()
     {
-        return $this->hasMany(LoginActivity::class);
+        return $this->hasMany(\App\Models\LoginActivity::class);
     }
 
-    public function staffNotes()
+    public function lastLoginActivity()
+    {
+        return $this->hasOne(\App\Models\LoginActivity::class)->latest('logged_in_at');
+    }
+
+    // Helper to get login count
+    public function getLoginCountAttribute()
+    {
+        return $this->loginActivities()->count();
+    }    public function staffNotes()
     {
         return $this->belongsToMany(StaffNote::class)->withPivot('read_at')->withTimestamps();
     }

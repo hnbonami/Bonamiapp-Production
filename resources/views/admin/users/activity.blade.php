@@ -16,7 +16,30 @@
         </a>
     </div>
 
-    <!-- Statistics Cards -->
+{{-- DEBUG: Check if loginActivities variable exists --}}
+@if(isset($loginActivities))
+    <div class="alert alert-info">
+        <strong>DEBUG:</strong> loginActivities exists with {{ $loginActivities->count() }} items (total: {{ $loginActivities->total() }})
+        <br><strong>Loop test:</strong>
+        @foreach($loginActivities as $activity)
+            {{ $loop->iteration }}: {{ $activity->user ? $activity->user->name : 'No User' }} - {{ $activity->logged_in_at->format('H:i:s') }}<br>
+        @endforeach
+    </div>
+@else
+    <div class="alert alert-danger">
+        <strong>DEBUG:</strong> loginActivities variable does NOT exist!
+    </div>
+@endif
+
+{{-- DEBUG: Show first activity if exists --}}
+@if(isset($loginActivities) && $loginActivities->count() > 0)
+    <div class="alert alert-success">
+        <strong>DEBUG:</strong> First activity: 
+        User ID: {{ $loginActivities->first()->user_id }}, 
+        User Name: {{ $loginActivities->first()->user ? $loginActivities->first()->user->name : 'No User' }}, 
+        Time: {{ $loginActivities->first()->logged_in_at }}
+    </div>
+@endif    <!-- Statistics Cards -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div class="bg-white rounded-xl shadow-lg p-4">
             <div class="flex items-center">
@@ -208,5 +231,43 @@
             </div>
         @endif
     </div>
+
+    {{-- DEBUG: Add debug info right before the table loop --}}
+    <div class="alert alert-warning">
+        <strong>TABLE DEBUG:</strong> About to start table loop with {{ $loginActivities->count() }} items
+    </div>
+
+    {{-- Find the existing table tbody and add debug --}}
+    {{-- MANUAL TABLE ROWS - TEMPORARY FIX --}}
+    @if($loginActivities->count() > 0)
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Find the empty tbody and fill it
+                const tbody = document.querySelector('tbody');
+                if (tbody && tbody.children.length === 0) {
+                    let html = '<tr><td colspan="6" class="text-center text-success">✅ GEVONDEN: ' + {{ $loginActivities->count() }} + ' login activities - Nu tabel vullen...</td></tr>';
+                    
+                    @foreach($loginActivities as $activity)
+                        html += '<tr>';
+                        html += '<td>';
+                        @if($activity->user)
+                            html += '<strong>{{ $activity->user->name }}</strong><br><small class="text-muted">{{ $activity->user->email }}</small>';
+                        @else
+                            html += '<span class="text-danger">Gebruiker niet gevonden</span>';
+                        @endif
+                        html += '</td>';
+                        html += '<td>{{ $activity->logged_in_at->format("d/m/Y H:i:s") }}</td>';
+                        html += '<td>-</td>';
+                        html += '<td>-</td>';
+                        html += '<td>{{ $activity->ip_address }}</td>';
+                        html += '<td><span class="badge bg-success">Actief</span></td>';
+                        html += '</tr>';
+                    @endforeach
+                    
+                    tbody.innerHTML = html;
+                }
+            });
+        </script>
+    @endif
 </div>
 @endsection

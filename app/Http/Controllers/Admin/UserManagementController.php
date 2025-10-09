@@ -58,6 +58,25 @@ class UserManagementController extends Controller
             'users_with_medewerker_role' => User::where('role', 'medewerker')->count(),
         ]);
 
+        // Include login activity data for debugging
+        $users->load(['loginActivities' => function($query) {
+            $query->latest('logged_in_at')->limit(1);
+        }]);
+
+        // Debug: Log user info
+        \Log::info('Users with login activities', [
+            'users_count' => $users->count(),
+            'users_with_activities' => $users->map(function($user) {
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'last_login' => $user->loginActivities->first() ? $user->loginActivities->first()->logged_in_at : null,
+                    'login_count' => \App\Models\LoginActivity::where('user_id', $user->id)->count()
+                ];
+            })
+        ]);
+
         return view('admin.users.index', compact('users', 'stats'));
     }
 
@@ -204,14 +223,15 @@ class UserManagementController extends Controller
      */
     public function activity()
     {
+        // Get login activities with user relationship
         $loginActivities = \App\Models\LoginActivity::with('user')
             ->orderBy('logged_in_at', 'desc')
             ->paginate(50);
         
-        // Get all users for the view
+        // Get all users for the filter dropdown
         $users = \App\Models\User::orderBy('name')->get();
         
-        // Get recent logs (if you have a logs system, otherwise empty paginated collection)
+        // Create empty logs collection for the view
         $logs = new \Illuminate\Pagination\LengthAwarePaginator(
             collect(), // Empty collection
             0, // Total items
@@ -220,38 +240,44 @@ class UserManagementController extends Controller
             ['path' => request()->url()]
         );
         
-        // Complete statistics - add ALL possible variables the view might expect
+        // Statistics for the cards
         $stats = [
-            // Today stats
             'total_logins_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())->count(),
-            'unique_users_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())
-                ->distinct('user_id')
-                ->count(),
-            'unique_logins_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())
-                ->distinct('user_id')
-                ->count(),
-                
-            // Week stats  
-            'total_logins_week' => \App\Models\LoginActivity::whereBetween('logged_in_at', [
-                now()->startOfWeek(), 
-                now()->endOfWeek()
-            ])->count(),
-            'total_logins_this_week' => \App\Models\LoginActivity::whereBetween('logged_in_at', [
-                now()->startOfWeek(), 
-                now()->endOfWeek()
-            ])->count(),
-            
-            // General stats
+            'unique_users_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())->distinct('user_id')->count(),
+            'unique_logins_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())->distinct('user_id')->count(),
+            'total_logins_week' => \App\Models\LoginActivity::whereBetween('logged_in_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            'total_logins_this_week' => \App\Models\LoginActivity::whereBetween('logged_in_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
             'total_login_activities' => \App\Models\LoginActivity::count(),
             'most_recent_login' => \App\Models\LoginActivity::latest('logged_in_at')->first(),
-            
-            // Additional stats that might be needed
-            'average_session_time' => 1800, // 30 minutes in seconds (placeholder since we don't track session end)
+            'average_session_time' => 1800,
             'total_users' => \App\Models\User::count(),
-            'active_users_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())
-                ->distinct('user_id')
-                ->count(),
+            'active_users_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())->distinct('user_id')->count(),
         ];
+        
+        // Debug log for activity page
+        \Log::info('🔍 Activity Page Data', [
+            'login_activities_count' => $loginActivities->total(),
+            'login_activities_items' => $loginActivities->count(),
+            'users_count' => $users->count(),
+            'stats' => $stats,
+            'first_activity' => $loginActivities->first() ? [
+                'id' => $loginActivities->first()->id,
+                'user_id' => $loginActivities->first()->user_id,
+                'user_name' => $loginActivities->first()->user ? $loginActivities->first()->user->name : 'No user',
+                'logged_in_at' => $loginActivities->first()->logged_in_at,
+                'ip_address' => $loginActivities->first()->ip_address
+            ] : 'NO ACTIVITIES FOUND',
+            'all_activities' => $loginActivities->map(function($activity) {
+                return [
+                    'id' => $activity->id,
+                    'user_id' => $activity->user_id,
+                    'user_exists' => $activity->user ? true : false,
+                    'user_name' => $activity->user ? $activity->user->name : null,
+                    'logged_in_at' => $activity->logged_in_at->format('Y-m-d H:i:s'),
+                    'ip_address' => $activity->ip_address
+                ];
+            })
+        ]);
         
         return view('admin.users.activity', compact('loginActivities', 'users', 'logs', 'stats'));
     }

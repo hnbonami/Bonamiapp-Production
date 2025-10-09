@@ -444,6 +444,20 @@ Route::middleware(['auth', 'verified'])->group(function() {
         Route::get('/', [App\Http\Controllers\Admin\UserManagementController::class, 'index'])->name('index');
         Route::get('/roles', [App\Http\Controllers\Admin\UserManagementController::class, 'roles'])->name('roles');
         Route::get('/activity', [App\Http\Controllers\Admin\UserManagementController::class, 'activity'])->name('activity');
+        Route::get('/activity-debug', function() {
+            $loginActivities = \App\Models\LoginActivity::with('user')
+                ->orderBy('logged_in_at', 'desc')
+                ->paginate(50);
+            
+            $stats = [
+                'total_logins_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())->count(),
+                'unique_users_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())->distinct('user_id')->count(),
+                'total_logins_week' => \App\Models\LoginActivity::whereBetween('logged_in_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+                'total_login_activities' => \App\Models\LoginActivity::count(),
+            ];
+            
+            return view('admin.users.activity-debug', compact('loginActivities', 'stats'));
+        })->name('activity.debug');
         Route::get('/{user}/edit', [App\Http\Controllers\Admin\UserManagementController::class, 'edit'])->name('edit');
         Route::put('/{user}', [App\Http\Controllers\Admin\UserManagementController::class, 'update'])->name('update');
         Route::post('/roles/update', [App\Http\Controllers\Admin\UserManagementController::class, 'updateRolePermissions'])->name('roles.update');
@@ -1151,3 +1165,27 @@ Route::post('/klanten/{klant}/bikefit/{bikefit}/auto-save', [BikefitController::
 
 // Login activity logging is nu actief via middleware!
 // Check /admin/users/activity om alle login activiteiten te zien
+
+// Debug route for login activities
+Route::get('/debug/login-activities', function() {
+    if (!app()->environment('local')) abort(404);
+    
+    $activities = \App\Models\LoginActivity::with('user')->latest()->limit(20)->get();
+    $total = \App\Models\LoginActivity::count();
+    
+    return response()->json([
+        'total_activities' => $total,
+        'recent_activities' => $activities->map(function($activity) {
+            return [
+                'id' => $activity->id,
+                'user_id' => $activity->user_id,
+                'user_name' => $activity->user ? $activity->user->name : 'User not found',
+                'user_email' => $activity->user ? $activity->user->email : 'No email',
+                'logged_in_at' => $activity->logged_in_at,
+                'ip_address' => $activity->ip_address,
+                'user_agent' => $activity->user_agent,
+                'created_at' => $activity->created_at,
+            ];
+        })
+    ], 200, [], JSON_PRETTY_PRINT);
+})->name('debug.login.activities');
