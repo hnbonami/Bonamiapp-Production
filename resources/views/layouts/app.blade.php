@@ -54,28 +54,145 @@
         body {
             font-family: 'Figtree', Arial, sans-serif;
         }
-          /* Topbar: keep fixed height and z-index. Let the container pass pointer
-              events through so content beneath is clickable, but re-enable
-              pointer events for interactive header children only. */
-          #topbar { height:56px; z-index: 40; /* pointer-events: none; */ }
-          /* Make only actual header controls interactive so clicks on the
-              central header area pass through to the page beneath. */
-          #topbar button, #topbar a, #topbar img, #topbar input, #nav-toggle, #user-menu-button { pointer-events: auto; }
         
-        /* ALLEEN topbar avatar klein houden - nergens anders! */
+        /* MOBILE-FIRST TOPBAR FIXES */
+        #topbar { 
+            height: 56px; 
+            z-index: 40; 
+            pointer-events: auto;
+        }
+        
+        /* Mobile topbar grid - better alignment */
+        .topbar-grid {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            height: 56px;
+            padding: 0 1rem;
+            gap: 1rem;
+        }
+        
+        /* Hamburger button - ensure clickability */
+        #nav-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            pointer-events: auto;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #374151;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+        }
+        
+        #nav-toggle:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Logo center alignment */
+        .topbar-logo {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        /* User menu - fix mobile alignment */
+        .topbar-user {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        
+        #user-menu-button {
+            display: flex;
+            align-items: center;
+            height: 44px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            color: black;
+            padding: 0 8px;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+            pointer-events: auto;
+        }
+        
+        #user-menu-button:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Avatar specifieke sizing */
         #topbar-avatar, #topbar-avatar-placeholder {
             width: 36px !important;
             height: 36px !important;
-            max-width: 36px !important;
-            max-height: 36px !important;
-            min-width: 36px !important;
-            min-height: 36px !important;
+            border-radius: 50%;
+            margin-right: 8px;
+            flex-shrink: 0;
         }
         
-        /* Desktop: zorg dat de content rechts naast de sidebar staat */
-        @media (min-width: 768px) {
-            #app-main { margin-left: 240px; }
+        /* Remove the problematic profile click icon on mobile */
+        #profile-click-icon {
+            display: none;
         }
+        
+        /* Desktop adjustments */
+        @media (min-width: 768px) {
+            #app-main { 
+                margin-left: 240px; 
+            }
+            
+            .topbar-grid {
+                padding: 0 1.5rem;
+                /* Desktop: relatieve positionering voor container */
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center; /* Center everything, then position user menu absolute */
+            }
+            
+            #nav-toggle {
+                display: none;
+            }
+            
+            /* Hide hamburger container completely on desktop */
+            .topbar-grid > div:first-child {
+                display: none;
+            }
+            
+            /* Center logo on desktop - eenvoudiger zonder absolute */
+            .topbar-logo {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            /* Position user menu absolute to the right */
+            .topbar-user {
+                position: absolute;
+                right: 1.5rem;
+                top: 50%;
+                transform: translateY(-50%);
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+            }
+            
+            /* Desktop user menu fixes */
+            #user-menu-button {
+                gap: 8px;
+                padding: 0 12px;
+            }
+            
+            #topbar-avatar, #topbar-avatar-placeholder {
+                margin-right: 8px;
+            }
+        }
+        
         /* Nav tabs: underline ook onder icoon met offset */
         .nav-tab { position: relative; }
         .nav-tab.active-tab { padding-bottom: 8px; }
@@ -89,59 +206,105 @@
             background-color: #9bb3bd;
             border-radius: 1px;
         }
+        
+        /* Mobile nav improvements */
+        #mobile-nav {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling op iOS */
+        }
+        
+        #mobile-nav a {
+            display: flex;
+            align-items: center;
+            padding: 12px 24px;
+            font-weight: 600;
+            font-size: 16px;
+            color: #374151;
+            text-decoration: none;
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.2s;
+            min-height: 48px; /* Ensure touch-friendly size */
+        }
+        
+        #mobile-nav a:hover,
+        #mobile-nav a:active {
+            background-color: #f9fafb;
+        }
+        
+        #mobile-nav a.active,
+        #mobile-nav a[class*="bg-blue-50"] {
+            background-color: #f0f9ff;
+            color: #0369a1;
+            border-left: 4px solid #0369a1;
+        }
+        
+        /* Mobile nav section headers */
+        #mobile-nav .border-t {
+            margin-top: 8px;
+            padding-top: 8px;
+        }
     </style>
 </head>
 <body>
     <!-- Bovenste strook met logo, hamburger (mobile) en profielknop rechts -->
     @php $routeName = optional(request()->route())->getName() ?? ''; @endphp
     <div id="topbar" class="w-full fixed top-0 left-0 right-0 z-40" style="background:#c8e1eb;">
-        <div class="grid grid-cols-3 h-14 px-4 relative items-center">
-            <div class="flex items-center h-14">
-                <button id="nav-toggle" class="md:hidden text-gray-800 focus:outline-none p-2" aria-label="Menu">
-                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        <div class="topbar-grid">
+            <!-- Left: Hamburger (mobile only) -->
+            <div class="flex items-center">
+                <button id="nav-toggle" class="md:hidden text-gray-800 focus:outline-none" aria-label="Menu">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
                 </button>
             </div>
-            <div class="flex items-center justify-center h-14">
-                <img src="/logo_bonami.png" alt="Logo" class="block align-middle" style="height:35px; margin:0; display:block;" />
+            
+            <!-- Center: Logo -->
+            <div class="topbar-logo">
+                <img src="/logo_bonami.png" alt="Logo" style="height:35px;" />
             </div>
-            <div class="flex items-center justify-end h-14 relative">
+            
+            <!-- Right: User menu -->
+            <div class="topbar-user">
                 @auth
                     @php
                         $avatar = Auth::user()->avatar_path ?? null;
                         $voornaam = explode(' ', Auth::user()->name)[0] ?? '';
+                        $isStaff = Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']);
+                        $unreadNotes = $isStaff ? \App\Models\StaffNote::where('is_new', true)->count() : 0;
                     @endphp
                     <div class="relative">
-                        <button id="user-menu-button" class="inline-flex items-center h-9 bg-transparent border-none cursor-pointer font-bold text-base text-black px-3 py-0 focus:outline-none leading-none align-middle" style="margin-top:0;">
-                            @php
-                                $isStaff = Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']);
-                                $unreadNotes = $isStaff ? \App\Models\StaffNote::where('is_new', true)->count() : 0;
-                            @endphp
-                            <span class="relative" style="display:inline-block;margin-right:12px;">
+                        <button id="user-menu-button" class="flex items-center gap-2">
+                            <!-- Avatar -->
+                            <div class="relative">
                                 @if($avatar)
-                                    <img id="topbar-avatar" src="{{ asset('storage/'.$avatar) }}" alt="Avatar" class="w-9 h-9 rounded-full object-cover flex-none" style="width:36px;height:36px;border-radius:9999px;object-fit:cover;" />
+                                    <img id="topbar-avatar" src="{{ asset('storage/'.$avatar) }}" alt="Avatar" class="object-cover" />
                                 @else
-                                    <div id="topbar-avatar-placeholder" class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold flex-none" style="width:36px;height:36px;border-radius:9999px;">
+                                    <div id="topbar-avatar-placeholder" class="bg-gray-200 flex items-center justify-center text-gray-500 font-semibold">
                                         {{ strtoupper(substr($voornaam,0,1)) }}
                                     </div>
                                 @endif
+                                {{-- Verberg notification badge in topbar
                                 @if($unreadNotes > 0)
-                                    <span class="absolute" style="top:-6px;right:-6px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:#e11d48;color:#fff;font-size:13px;font-weight:700;border-radius:50%;z-index:20;line-height:20px;box-shadow:0 1px 4px #0002;">{{ $unreadNotes }}</span>
+                                    <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">{{ $unreadNotes }}</span>
                                 @endif
-                            </span>
-                            <span class="mr-1">{{ $voornaam }}</span>
-                            <svg class="w-3 h-3 text-gray-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
+                                --}}
+                            </div>
+                            
+                            <!-- Name + Arrow (desktop only) -->
+                            <div class="hidden md:flex items-center gap-1">
+                                <span>{{ $voornaam }}</span>
+                                <svg class="w-4 h-4 text-gray-700" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.27a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
                         </button>
 
-                        <!-- Subtiel, zichtbaar zwart icoon rechts van de profielknop; witte achtergrond + border voor contrast -->
-                        <button id="profile-click-icon" type="button" class="inline-flex items-center justify-center w-8 h-8 ml-0 text-black opacity-95 hover:opacity-100 focus:outline-none" aria-label="Open profielmenu" title="Open profielmenu" style="pointer-events:auto; transform: translate(-8px, 6px);">
-                            <!-- larger black caret only -->
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <polyline points="6 9 12 15 18 9" />
-                            </svg>
-                        </button>
-
+                        <!-- Dropdown menu -->
                         <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                            <a href="/instellingen" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">                                Mijn profiel</a>
+                            <a href="/instellingen" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Mijn profiel</a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="block w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50">Uitloggen</button>
@@ -152,17 +315,82 @@
             </div>
         </div>
     <!-- Mobile nav dropdown onder de bovenbalk (vast onder de header) -->
-    <div id="mobile-nav" class="md:hidden hidden fixed top-14 left-0 right-0 z-30 flex-col gap-2 pb-3 bg-gray-50 border-b border-gray-200" style="padding-left:2em;padding-right:1rem;">
-        <a href="{{ route('dashboard') }}" class="block font-semibold text-base py-2 border-b-2 {{ str_starts_with($routeName, 'dashboard') ? 'border-[#c8e1eb] text-black' : 'border-transparent text-gray-900' }} transition-all duration-200 hover:text-black">Dashboard</a>
-        @if(Auth::user() && Auth::user()->role !== 'klant')
-            <a href="/klanten" class="flex items-center justify-between font-semibold text-base py-2 border-b-2 {{ str_starts_with($routeName, 'klanten') ? 'border-[#c8e1eb] text-black' : 'border-transparent text-gray-900' }} transition-all duration-200 hover:text-black">Klanten <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Klant::count() }}</span></a>
-        @endif
-        @if(Auth::user() && Auth::user()->role === 'admin')
-            <a href="/medewerkers" class="flex items-center justify-between font-semibold text-base py-2 border-b-2 {{ str_starts_with($routeName, 'medewerkers') ? 'border-[#c8e1eb] text-black' : 'border-transparent text-gray-900' }} transition-all duration-200 hover:text-black">Medewerkers <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Medewerker::count() }}</span></a>
-        @endif
-        @if(Auth::user() && Auth::user()->role !== 'klant')
-            <a href="/sjabloon-manager" class="flex items-center justify-between font-semibold text-base py-2 border-b-2 {{ str_starts_with($routeName, 'sjabloon-manager') || str_starts_with($routeName, 'templates') ? 'border-[#c8e1eb] text-black' : 'border-transparent text-gray-900' }} transition-all duration-200 hover:text-black">Sjablonen <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Template::count() }}</span></a>
-        @endif
+    <div id="mobile-nav" class="md:hidden hidden fixed left-0 right-0 z-30 bg-white border-b border-gray-200 shadow-lg overflow-y-auto" style="top: 56px; max-height: calc(100vh - 56px);">
+        <div class="py-2">
+            <a href="{{ route('dashboard') }}" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ str_starts_with($routeName, 'dashboard') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                Dashboard
+            </a>
+            
+            @if(Auth::user() && Auth::user()->role === 'klant')
+                @php
+                    $sidebarKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
+                @endphp
+                <a href="{{ $sidebarKlant ? route('klanten.show', ['klanten' => $sidebarKlant->id]) : route('dashboard') }}" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('klanten/*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                    Profiel
+                </a>
+            @endif
+            
+            @if(Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']))
+                <a href="/staff-notes" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('staff-notes*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                    Notities
+                    @php $unreadNotes = \App\Models\StaffNote::where('is_new', true)->count(); @endphp
+                    @if($unreadNotes > 0)
+                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-red-500 text-white rounded-full">{{ $unreadNotes }}</span>
+                    @endif
+                </a>
+            @endif
+            
+            @if(Auth::user() && Auth::user()->role !== 'klant')
+                <a href="/klanten" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ str_starts_with($routeName, 'klanten') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                    Klanten 
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Klant::count() }}</span>
+                </a>
+            @endif
+            
+            @if(Auth::user() && Auth::user()->role === 'admin')
+                <a href="/medewerkers" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ str_starts_with($routeName, 'medewerkers') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                    Medewerkers 
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Medewerker::count() }}</span>
+                </a>
+            @endif
+            
+            @if(Auth::user() && Auth::user()->role !== 'klant')
+                <a href="/instagram" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('instagram*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                    Instagram
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\InstagramPost::count() }}</span>
+                </a>
+                
+                <a href="/nieuwsbrieven" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ (request()->is('nieuwsbrieven*') || request()->is('newsletters*') || request()->is('nieuwsbrief*')) ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                    Nieuwsbrief
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Newsletter::count() }}</span>
+                </a>
+                
+                <a href="/sjablonen" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('sjablonen*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                    Sjablonen 
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Sjabloon::count() }}</span>
+                </a>
+            @endif
+            
+            @if(Auth::user() && Auth::user()->role === 'admin')
+                <div class="border-t border-gray-200 mt-2 pt-2">
+                    <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Beheer</div>
+                    <a href="/users" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('users*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                        Gebruikers
+                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\User::count() }}</span>
+                    </a>
+                    <a href="/testzadels" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('testzadels*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                        Testzadels
+                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Testzadel::count() }}</span>
+                    </a>
+                    <a href="/email-integratie" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('email-integratie*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                        Email Integratie
+                    </a>
+                    <a href="/database-backup" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('database-backup*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                        Database Backup
+                    </a>
+                </div>
+            @endif
+        </div>
     </div>
     </div>
     <!-- Spacer zodat content niet onder vaste header valt; verhoogd met extra 15px op verzoek -->
@@ -256,7 +484,7 @@
                 </aside>
 
         <!-- Main content -->
-    <main id="app-main" class="flex-1 relative z-0" style="padding: 2em;">
+    <main id="app-main" class="flex-1 relative z-0 px-4 py-6 md:px-8">
                 {{-- Render optional header slot (used by <x-app-layout>) --}}
                 @if(View::hasSection('header') || isset($header))
                     <header class="mb-6">
@@ -273,25 +501,70 @@
     </div>
         <!-- Flowbite JS voor interactieve componenten -->
         <script src="https://unpkg.com/flowbite@2.3.0/dist/flowbite.min.js"></script>
-    {{-- Minimal profile dropdown JS (no AJAX/modal) --}}
+    {{-- Mobile + Profile dropdown JS --}}
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                console.log('🔧 Mobile JS loaded');
+                
+                // Mobile navigation toggle
+                const navToggle = document.getElementById('nav-toggle');
+                const mobileNav = document.getElementById('mobile-nav');
+                
+                console.log('🔧 Elements found:', {
+                    navToggle: !!navToggle,
+                    mobileNav: !!mobileNav,
+                    navToggleVisible: navToggle ? window.getComputedStyle(navToggle).display !== 'none' : false
+                });
+                
+                if (navToggle && mobileNav) {
+                    navToggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('🍔 Hamburger clicked!');
+                        
+                        const wasHidden = mobileNav.classList.contains('hidden');
+                        mobileNav.classList.toggle('hidden');
+                        
+                        console.log('📱 Mobile nav state:', {
+                            wasHidden: wasHidden,
+                            nowHidden: mobileNav.classList.contains('hidden'),
+                            topValue: window.getComputedStyle(mobileNav).top
+                        });
+                    });
+                    
+                    // Close mobile nav when clicking outside
+                    document.addEventListener('click', function(e) {
+                        if (!navToggle.contains(e.target) && !mobileNav.contains(e.target)) {
+                            mobileNav.classList.add('hidden');
+                        }
+                    });
+                }
+                
+                // Profile dropdown
                 const menuButton = document.getElementById('user-menu-button');
                 const userMenu = document.getElementById('user-menu');
-                const profileIcon = document.getElementById('profile-click-icon');
+                
+                console.log('🔧 Profile elements found:', {
+                    menuButton: !!menuButton,
+                    userMenu: !!userMenu
+                });
+                
                 if (menuButton && userMenu) {
                     menuButton.addEventListener('click', function(e) {
+                        e.preventDefault();
                         e.stopPropagation();
+                        console.log('👤 Profile button clicked!');
+                        
+                        const wasHidden = userMenu.classList.contains('hidden');
                         userMenu.classList.toggle('hidden');
-                    });
-                    if(profileIcon){
-                        profileIcon.addEventListener('click', function(e){
-                            e.stopPropagation();
-                            userMenu.classList.toggle('hidden');
-                            // focus the menu button for accessibility
-                            menuButton.focus();
+                        
+                        console.log('📋 Profile menu state:', {
+                            wasHidden: wasHidden,
+                            nowHidden: userMenu.classList.contains('hidden')
                         });
-                    }
+                    });
+                    
+                    // Close profile dropdown when clicking outside
                     document.addEventListener('click', function(event) {
                         if (!menuButton.contains(event.target) && !userMenu.contains(event.target)) {
                             userMenu.classList.add('hidden');
