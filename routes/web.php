@@ -1102,3 +1102,7 @@ Route::post('/unsubscribe/{token}', [App\Http\Controllers\Admin\EmailController:
 
 // Preview route for email templates
 Route::get('/admin/email/templates/{id}/preview', [App\Http\Controllers\Admin\EmailController::class, 'previewTemplateJson'])->middleware('auth');
+
+// Auto-save routes voor bikefit (voor create en edit)
+Route::post('/klanten/{klant}/bikefit/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save.create');
+Route::post('/klanten/{klant}/bikefit/{bikefit}/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save.edit');

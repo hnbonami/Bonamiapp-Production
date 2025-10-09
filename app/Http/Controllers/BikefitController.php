@@ -37,7 +37,11 @@ class BikefitController extends Controller
             'one_leg_squat_links' => '_',
             'one_leg_squat_rechts' => '_',
         ];
-        return view('bikefit.create', compact('klant', 'templates', 'templateMap', 'defaultMobility'));
+        
+        // Voor create is er geen testzadel, dus maken we een lege variabele
+        $testzadel = null;
+        
+        return view('bikefit.create', compact('klant', 'templates', 'templateMap', 'defaultMobility', 'testzadel'));
     }
 
     public function store(Request $request, $klantId)
@@ -127,7 +131,7 @@ class BikefitController extends Controller
 
         // Handle uitleensysteem data if provided
         if ($request->filled('onderdeel_type')) {
-            $this->handleUitleensysteem($request, $bikefit);
+            $this->handleUitleensysteemFields($request, $klant, $bikefit);
         }
         
         // Generate and save PDF report
@@ -194,7 +198,11 @@ class BikefitController extends Controller
     public function edit(Klant $klant, $bikefitId)
     {
         $bikefit = $klant->bikefits()->with('uploads')->findOrFail($bikefitId);
-        return view('bikefit.edit', compact('klant', 'bikefit'));
+        
+        // Haal ook de gekoppelde testzadel op voor uitleensysteem velden
+        $testzadel = \App\Models\Testzadel::where('bikefit_id', $bikefit->id)->first();
+        
+        return view('bikefit.edit', compact('klant', 'bikefit', 'testzadel'));
     }
 
     public function update(Request $request, Klant $klant, Bikefit $bikefit)
@@ -303,16 +311,7 @@ class BikefitController extends Controller
 
         // Handle uitleensysteem data if provided
         if ($request->filled('onderdeel_type')) {
-            // Check if there's already a testzadel for this bikefit
-            $existingTestzadel = \App\Models\Testzadel::where('bikefit_id', $bikefit->id)->first();
-            
-            if ($existingTestzadel) {
-                // Update existing testzadel
-                $this->updateTestzadel($request, $existingTestzadel);
-            } else {
-                // Create new testzadel
-                $this->handleUitleensysteem($request, $bikefit);
-            }
+            $this->handleUitleensysteemFields($request, Klant::find($bikefit->klant_id), $bikefit);
         }
 
         // Debug: Log wat er daadwerkelijk is opgeslagen
@@ -1466,7 +1465,7 @@ const fs = require('fs');
         $onderdeelType = $request->input('onderdeel_type');
         
         if (in_array($onderdeelType, ['testzadel', 'nieuw zadel'])) {
-            // Use zadel-specific fields
+            // Use zadel-specific fields with fallbacks
             $uitleenData['zadel_merk'] = $request->input('zadel_merk');
             $uitleenData['zadel_model'] = $request->input('zadel_model');
             $uitleenData['zadel_type'] = $request->input('zadel_type');
@@ -1746,6 +1745,42 @@ const fs = require('fs');
                 'success' => false,
                 'message' => 'Fout bij herstellen: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Handle uitleensysteem fields by creating/updating testzadel records
+     */
+    private function handleUitleensysteemFields(Request $request, $klant, $bikefit)
+    {
+        // Only create testzadel if required fields are filled
+        if ($request->filled('onderdeel_type') && $request->filled('uitgeleend_op') && $request->filled('verwachte_terugbring_datum')) {
+            
+            // Check if testzadel already exists for this bikefit
+            $existingTestzadel = \App\Models\Testzadel::where('bikefit_id', $bikefit->id)->first();
+            
+            $testzadelData = [
+                'klant_id' => $klant->id,
+                'bikefit_id' => $bikefit->id,
+                'onderdeel_type' => $request->onderdeel_type,
+                'zadel_merk' => $request->zadel_merk,
+                'zadel_model' => $request->zadel_model,
+                'zadel_type' => $request->zadel_type ?: $request->input('zadel_type'), 
+                'zadel_breedte' => $request->input('zadel_breedte') ?: $request->input('zadelbreedte') ?: $request->input('breedte'), // Probeer verschillende veldnamen
+                'uitleen_datum' => $request->uitgeleend_op,
+                'verwachte_retour_datum' => $request->verwachte_terugbring_datum,
+                'opmerkingen' => $request->onderdeel_opmerkingen ?: $request->input('onderdeel_opmerkingen') ?: $request->input('opmerkingen') ?: $request->input('testzadel_opmerkingen') ?: $request->input('uitleen_opmerkingen'),
+                'automatisch_mailtje' => $request->has('automatisch_mailtje') ? true : false,
+                'status' => $request->onderdeel_status ?: 'uitgeleend',
+            ];
+            
+            if ($existingTestzadel) {
+                // Update existing testzadel
+                $existingTestzadel->update($testzadelData);
+            } else {
+                // Create new testzadel
+                \App\Models\Testzadel::create($testzadelData);
+            }
         }
     }
 }
