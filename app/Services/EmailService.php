@@ -206,6 +206,7 @@ class EmailService
                 'voornaam' => $klant->voornaam,
                 'naam' => $klant->naam,
                 'email' => $klant->email,
+                'wachtwoord' => $temporaryPassword,
                 'temporary_password' => $temporaryPassword,
                 'bedrijf_naam' => 'Bonami Sportcoaching',
                 'datum' => now()->format('d/m/Y'),

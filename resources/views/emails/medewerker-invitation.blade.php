@@ -18,8 +18,8 @@
         <p>Je kunt inloggen via de volgende link:<br>
         <a href="{{ config('app.url') }}">Inloggen</a></p>
         
-        <p><strong>Login:</strong> {{ $medewerker->email }}<br>
-        <strong>Wachtwoord:</strong> {{ $temporaryPassword }}</p>
+        <p><strong>Login:</strong> @{{email}}<br>
+        <strong>Wachtwoord:</strong> @{{wachtwoord}}</p>
         
         <p>Gelieve je wachtwoord te wijzigen na de eerste login.</p>
         
