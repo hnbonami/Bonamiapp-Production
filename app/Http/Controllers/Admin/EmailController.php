@@ -16,7 +16,10 @@ class EmailController extends Controller
 {
     public function index()
     {
-        return view('admin.email-simple');
+        $templates = EmailTemplate::where('is_active', true)->get();
+        $subscriptionStats = $this->getSubscriptionStats();
+        
+        return view('admin.email-simple', compact('templates', 'subscriptionStats'));
     }
 
     public function templates()
@@ -758,6 +761,256 @@ Rol: @{{rol}}</p>
         } catch (\Exception $e) {
             \Log::error('Birthday trigger failed: ' . $e->getMessage());
             return 0;
+        }
+    }
+
+    /**
+     * Get subscription statistics
+     */
+    private function getSubscriptionStats()
+    {
+        try {
+            $totalKlanten = \App\Models\Klant::count();
+            $totalMedewerkers = \App\Models\Medewerker::count();
+            
+            $subscribedKlanten = \App\Models\EmailSubscription::where('subscriber_type', 'klant')
+                                                             ->where('status', 'subscribed')
+                                                             ->count();
+            $subscribedMedewerkers = \App\Models\EmailSubscription::where('subscriber_type', 'medewerker')
+                                                                  ->where('status', 'subscribed')
+                                                                  ->count();
+            
+            $unsubscribedTotal = \App\Models\EmailSubscription::where('status', 'unsubscribed')->count();
+            
+            return [
+                'total_klanten' => $totalKlanten,
+                'total_medewerkers' => $totalMedewerkers,
+                'subscribed_klanten' => $subscribedKlanten,
+                'subscribed_medewerkers' => $subscribedMedewerkers,
+                'unsubscribed_total' => $unsubscribedTotal,
+                'subscription_rate' => $totalKlanten > 0 ? round(($subscribedKlanten / $totalKlanten) * 100, 1) : 100
+            ];
+        } catch (\Exception $e) {
+            return [
+                'total_klanten' => 0,
+                'total_medewerkers' => 0,
+                'subscribed_klanten' => 0,
+                'subscribed_medewerkers' => 0,
+                'unsubscribed_total' => 0,
+                'subscription_rate' => 100
+            ];
+        }
+    }
+
+    /**
+     * Show bulk email form
+     */
+    public function bulkEmail()
+    {
+        $templates = EmailTemplate::where('is_active', true)
+                                  ->whereIn('type', ['newsletter', 'custom', 'general'])
+                                  ->get();
+        
+        $stats = $this->getSubscriptionStats();
+        
+        return view('admin.email-bulk', compact('templates', 'stats'));
+    }
+
+    /**
+     * Send bulk email to all customers
+     */
+    public function sendBulkToCustomers(Request $request)
+    {
+        $validated = $request->validate([
+            'template_id' => 'required|exists:email_templates,id',
+            'subject' => 'required|string|max:255',
+            'custom_message' => 'nullable|string'
+        ]);
+
+        try {
+            $template = EmailTemplate::findOrFail($validated['template_id']);
+            $customers = \App\Models\Klant::whereNotNull('email')->get();
+            
+            $emailsSent = 0;
+            $emailsSkipped = 0;
+
+            foreach ($customers as $customer) {
+                // Check subscription status
+                if (!\App\Models\EmailSubscription::isEmailSubscribed($customer->email)) {
+                    $emailsSkipped++;
+                    continue;
+                }
+
+                // Create/update subscription record
+                $subscription = \App\Models\EmailSubscription::getOrCreateForEmail(
+                    $customer->email, 
+                    'klant', 
+                    $customer->id
+                );
+
+                $this->sendBulkEmailToRecipient($customer, $template, $validated, $subscription);
+                $emailsSent++;
+            }
+
+            return redirect()->back()->with('success', 
+                "✅ Bulk email verstuurd naar {$emailsSent} klanten. {$emailsSkipped} overgeslagen (unsubscribed).");
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 
+                "❌ Fout bij versturen bulk email: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send bulk email to all employees
+     */
+    public function sendBulkToEmployees(Request $request)
+    {
+        $validated = $request->validate([
+            'template_id' => 'required|exists:email_templates,id',
+            'subject' => 'required|string|max:255',
+            'custom_message' => 'nullable|string'
+        ]);
+
+        try {
+            $template = EmailTemplate::findOrFail($validated['template_id']);
+            $employees = \App\Models\Medewerker::whereNotNull('email')->get();
+            
+            $emailsSent = 0;
+            $emailsSkipped = 0;
+
+            foreach ($employees as $employee) {
+                // Check subscription status
+                if (!\App\Models\EmailSubscription::isEmailSubscribed($employee->email)) {
+                    $emailsSkipped++;
+                    continue;
+                }
+
+                // Create/update subscription record
+                $subscription = \App\Models\EmailSubscription::getOrCreateForEmail(
+                    $employee->email, 
+                    'medewerker', 
+                    $employee->id
+                );
+
+                $this->sendBulkEmailToRecipient($employee, $template, $validated, $subscription);
+                $emailsSent++;
+            }
+
+            return redirect()->back()->with('success', 
+                "✅ Bulk email verstuurd naar {$emailsSent} medewerkers. {$emailsSkipped} overgeslagen (unsubscribed).");
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 
+                "❌ Fout bij versturen bulk email: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send email to individual recipient with unsubscribe link
+     */
+    private function sendBulkEmailToRecipient($recipient, $template, $data, $subscription)
+    {
+        $variables = [
+            'voornaam' => $recipient->voornaam ?? 'Beste klant',
+            'naam' => $recipient->naam ?? '',
+            'email' => $recipient->email,
+            'bedrijf_naam' => 'Bonami Sportcoaching',
+            'datum' => now()->format('d/m/Y'),
+            'jaar' => now()->format('Y'),
+            'custom_message' => $data['custom_message'] ?? '',
+            'unsubscribe_url' => route('email.unsubscribe', ['token' => $subscription->unsubscribe_token])
+        ];
+
+        $subject = $template->renderSubject($variables);
+        $body = $template->renderBody($variables);
+        
+        // Add unsubscribe footer
+        $unsubscribeFooter = '
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; text-align: center;">
+            <p>Je ontvangt deze email omdat je geabonneerd bent op onze nieuwsbrief.</p>
+            <p><a href="' . $variables['unsubscribe_url'] . '" style="color: #999;">Klik hier om je af te melden</a></p>
+        </div>';
+        
+        $body = str_replace('</body>', $unsubscribeFooter . '</body>', $body);
+
+        \Mail::html($body, function ($message) use ($recipient, $subject) {
+            $message->to($recipient->email)
+                    ->subject($subject);
+        });
+
+        // Log the email
+        \App\Models\EmailLog::create([
+            'recipient_email' => $recipient->email,
+            'subject' => $subject,
+            'template_id' => $template->id,
+            'trigger_name' => 'bulk_email',
+            'status' => 'sent',
+            'sent_at' => now(),
+            'variables' => $variables
+        ]);
+    }
+
+    /**
+     * Show unsubscribed users management
+     */
+    public function unsubscribed()
+    {
+        $unsubscribed = \App\Models\EmailSubscription::with('subscriber')
+                                                    ->where('status', 'unsubscribed')
+                                                    ->orderBy('unsubscribed_at', 'desc')
+                                                    ->paginate(20);
+        
+        $stats = $this->getSubscriptionStats();
+        
+        return view('admin.email-unsubscribed', compact('unsubscribed', 'stats'));
+    }
+
+    /**
+     * Unsubscribe page (public)
+     */
+    public function unsubscribePage($token)
+    {
+        $subscription = \App\Models\EmailSubscription::where('unsubscribe_token', $token)->first();
+        
+        if (!$subscription) {
+            abort(404, 'Ongeldige unsubscribe link');
+        }
+        
+        return view('emails.unsubscribe', compact('subscription'));
+    }
+
+    /**
+     * Process unsubscribe (public)
+     */
+    public function processUnsubscribe(Request $request, $token)
+    {
+        $subscription = \App\Models\EmailSubscription::where('unsubscribe_token', $token)->first();
+        
+        if (!$subscription) {
+            abort(404, 'Ongeldige unsubscribe link');
+        }
+
+        $reason = $request->input('reason', 'Geen reden opgegeven');
+        $subscription->unsubscribe($reason);
+        
+        return view('emails.unsubscribe-success', compact('subscription'));
+    }
+
+    /**
+     * Resubscribe a user (admin only)
+     */
+    public function resubscribe($id)
+    {
+        try {
+            $subscription = \App\Models\EmailSubscription::findOrFail($id);
+            $subscription->resubscribe();
+            
+            return redirect()->back()->with('success', 
+                "✅ {$subscription->email} is succesvol heraangemeld voor emails.");
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 
+                "❌ Fout bij heraanmelden: " . $e->getMessage());
         }
     }
 }

@@ -1044,24 +1044,17 @@ Route::get('/inspanningstest/{klant}/{test}/sjabloon-rapport', [App\Http\Control
 // API route voor sjabloon check
 Route::get('/api/check-sjabloon', [App\Http\Controllers\SjablonenController::class, 'checkSjabloon']);
 
-// Template routes (renamed to temp to avoid conflicts)
-Route::middleware(['auth'])->prefix('temp')->name('temp.')->group(function () {
-    Route::get('/', [App\Http\Controllers\TemplateController::class, 'index'])->name('index');
-    Route::get('/create', [App\Http\Controllers\TemplateController::class, 'create'])->name('create');
-    Route::post('/', [App\Http\Controllers\TemplateController::class, 'store'])->name('store');
-    Route::get('/{template}', [App\Http\Controllers\TemplateController::class, 'show'])->name('show');
-    Route::get('/{template}/edit', [App\Http\Controllers\TemplateController::class, 'edit'])->name('edit');
-    Route::put('/{template}', [App\Http\Controllers\TemplateController::class, 'update'])->name('update');
-    Route::delete('/{template}', [App\Http\Controllers\TemplateController::class, 'destroy'])->name('destroy');
-    Route::get('/{template}/preview', [App\Http\Controllers\TemplateController::class, 'preview'])->name('preview');
-    Route::get('/{template}/editor', [App\Http\Controllers\TemplateController::class, 'editor'])->name('editor');
-    Route::post('/{template}/save-content', [App\Http\Controllers\TemplateController::class, 'saveContent'])->name('save-content');
+// Email Bulk & Unsubscribe Routes
+Route::middleware(['auth'])->prefix('admin/email')->name('admin.email.')->group(function () {
+    // Bulk email routes
+    Route::post('/bulk/customers', [App\Http\Controllers\Admin\EmailController::class, 'sendBulkToCustomers'])->name('bulk.customers');
+    Route::post('/bulk/employees', [App\Http\Controllers\Admin\EmailController::class, 'sendBulkToEmployees'])->name('bulk.employees');
+    
+    // Unsubscribed management
+    Route::get('/unsubscribed', [App\Http\Controllers\Admin\EmailController::class, 'unsubscribed'])->name('unsubscribed');
+    Route::post('/resubscribe/{id}', [App\Http\Controllers\Admin\EmailController::class, 'resubscribe'])->name('resubscribe');
 });
 
-// Auto-save routes
-Route::post('/klanten/{klant}/bikefit/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save');
-Route::post('/klanten/{klant}/bikefit/{bikefit}/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save.update');
-
-// Custom results management routes
-Route::post('klanten/{klant}/bikefit/{bikefit}/save-custom-results', [BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results');
-Route::post('klanten/{klant}/bikefit/{bikefit}/reset-to-calculated', [BikefitController::class, 'resetToCalculated'])->name('bikefit.reset-to-calculated');
+// Public unsubscribe routes (no auth required)
+Route::get('/unsubscribe/{token}', [App\Http\Controllers\Admin\EmailController::class, 'unsubscribePage'])->name('email.unsubscribe');
+Route::post('/unsubscribe/{token}', [App\Http\Controllers\Admin\EmailController::class, 'processUnsubscribe'])->name('email.unsubscribe.process');
