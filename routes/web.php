@@ -573,6 +573,38 @@ Route::get('/api/klanten/{klant}/bikefits', function($klantId) {
     return response()->json($bikefits);
 })->middleware('auth')->name('api.klant.bikefits');
 
+// Check welke login controller wordt gebruikt
+Route::get('/test-routes', function() {
+    $routes = collect(Route::getRoutes())->filter(function($route) {
+        return str_contains($route->uri(), 'login');
+    })->map(function($route) {
+        return [
+            'uri' => $route->uri(),
+            'methods' => $route->methods(),
+            'action' => $route->getActionName(),
+            'name' => $route->getName(),
+        ];
+    });
+    
+    return "<pre>" . json_encode($routes->toArray(), JSON_PRETTY_PRINT) . "</pre>";
+});
+
+// Check alle admin routes
+Route::get('/check-admin-routes', function() {
+    $routes = collect(Route::getRoutes())->filter(function($route) {
+        return str_contains($route->uri(), 'admin');
+    })->map(function($route) {
+        return [
+            'uri' => $route->uri(),
+            'methods' => $route->methods(),
+            'action' => $route->getActionName(),
+            'name' => $route->getName(),
+        ];
+    });
+    
+    return "<pre>" . json_encode($routes->toArray(), JSON_PRETTY_PRINT) . "</pre>";
+});
+
 // Quick admin user creation route (local environment only)
 Route::get('/create-admin', function () {
     if (!app()->environment('local')) {
@@ -1116,3 +1148,6 @@ Route::get('/admin/email/templates/{id}/preview', [App\Http\Controllers\Admin\Em
 // Auto-save routes voor bikefit (voor create en edit)
 Route::post('/klanten/{klant}/bikefit/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save.create');
 Route::post('/klanten/{klant}/bikefit/{bikefit}/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save.edit');
+
+// Login activity logging is nu actief via middleware!
+// Check /admin/users/activity om alle login activiteiten te zien
