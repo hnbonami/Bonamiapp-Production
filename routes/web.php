@@ -171,6 +171,8 @@ Route::middleware('auth')->group(function () {
     Route::get('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview');
     // SAVE CUSTOM RESULTS ROUTE - ESSENTIAL FOR EDITABLE RESULTS FUNCTIONALITY
     Route::post('bikefit/{bikefit}/save-custom-results', [\App\Http\Controllers\BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results')->scopeBindings();
+    // RESET TO CALCULATED ROUTE - ESSENTIAL FOR RESET FUNCTIONALITY
+    Route::post('bikefit/{bikefit}/reset-to-calculated', [\App\Http\Controllers\BikefitController::class, 'resetToCalculated'])->name('bikefit.reset-to-calculated')->scopeBindings();
         Route::get('bikefit/nieuw', [BikefitController::class, 'create'])->name('bikefit.create');
         Route::post('bikefit', [BikefitController::class, 'store'])->name('bikefit.store');
         Route::get('bikefit/{bikefit}', [BikefitController::class, 'show'])->name('bikefit.show')->scopeBindings();
