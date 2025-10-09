@@ -9,6 +9,10 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\AccountCreatedMail;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\KlantenImport;
+use App\Exports\KlantenExport;
+use App\Exports\KlantenTemplateExport;
 
 class KlantController extends Controller
 {
@@ -179,5 +183,47 @@ class KlantController extends Controller
         $klant->update(['avatar_path' => $path]);
 
         return back()->with('success', 'Profielfoto bijgewerkt.');
+    }
+
+    /**
+     * Show import form for klanten
+     */
+    public function showImport()
+    {
+        return view('klanten.import');
+    }
+    
+    /**
+     * Import klanten from Excel file
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:10240'
+        ]);
+        
+        try {
+            Excel::import(new KlantenImport, $request->file('file'));
+            
+            return redirect()->back()->with('success', 'Klanten succesvol geïmporteerd!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Import mislukt: ' . $e->getMessage());
+        }
+    }
+    
+    /**
+     * Export all klanten to Excel
+     */
+    public function exportKlanten()
+    {
+        return Excel::download(new KlantenExport, 'klanten_export_' . date('Y-m-d') . '.xlsx');
+    }
+    
+    /**
+     * Download Excel template for klanten import
+     */
+    public function downloadTemplate()
+    {
+        return Excel::download(new KlantenTemplateExport, 'klanten_import_template.xlsx');
     }
 }

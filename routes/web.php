@@ -654,10 +654,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Direct route to admin database tools (bypassing view conflicts)
 Route::middleware(['auth', 'verified'])->group(function() {
     Route::get('/admin/database-tools', function() {
-        $notes = \App\Models\StaffNote::with('user')->latest()->paginate(10);
-        
-        // Explicitly load the view file with database tools
-        return view()->file(resource_path('views/admin/staff-notes/overview.blade.php'), compact('notes'));
+        return view('admin.database-tools');
     })->name('admin.database.tools');
 });
 
