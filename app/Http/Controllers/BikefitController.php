@@ -1685,18 +1685,36 @@ const fs = require('fs');
         try {
             $bikefit = Bikefit::where('klant_id', $klantId)->findOrFail($bikefitId);
             
+            \Log::info('Save Custom Results called', [
+                'klant_id' => $klantId,
+                'bikefit_id' => $bikefitId,
+                'request_data' => $request->all()
+            ]);
+
             $context = $request->input('context'); // 'prognose', 'voor', 'na'
             $customValues = $request->input('values', []);
             
+            \Log::info('Processing save with context system', [
+                'context' => $context,
+                'values' => $customValues
+            ]);
+
+            // Use the BikefitCalculator service to save custom results
             $calculator = app(\App\Services\BikefitCalculator::class);
-            $calculator->saveCustomResults($bikefit, $context, $customValues);
+            $result = $calculator->saveCustomResults($bikefit, $context, $customValues);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Aangepaste waarden opgeslagen voor ' . $context
+                'message' => 'Aangepaste waarden opgeslagen voor ' . $context,
+                'saved_count' => count($customValues)
             ]);
             
         } catch (Exception $e) {
+            \Log::error('Save Custom Results error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Fout bij opslaan: ' . $e->getMessage()
