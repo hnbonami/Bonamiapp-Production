@@ -507,6 +507,25 @@ Route::get('/import/bikefits/template', [\App\Http\Controllers\BikefitController
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'exportKlanten'])->name('klanten.export');
 Route::get('/export/bikefits', [\App\Http\Controllers\BikefitController::class, 'exportBikefits'])->name('bikefits.export');
 
+// Database admin routes - WERKENDE DATABASE IMPORT/EXPORT SYSTEEM
+Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/database-tools', function() {
+        return view('admin.database-tools');
+    })->name('database.tools');
+    
+    // Klanten database management
+    Route::get('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
+    Route::post('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+    Route::get('/klanten/export', [\App\Http\Controllers\KlantenController::class, 'exportKlanten'])->name('klanten.export');
+    Route::get('/klanten/template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
+    
+    // Bikefit database management  
+    Route::get('/bikefits/import', [\App\Http\Controllers\BikefitController::class, 'showImport'])->name('bikefits.import.form');
+    Route::post('/bikefits/import', [\App\Http\Controllers\BikefitController::class, 'importBikefits'])->name('bikefits.import');
+    Route::get('/bikefits/export', [\App\Http\Controllers\BikefitController::class, 'exportBikefits'])->name('bikefits.export');
+    Route::get('/bikefits/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefits.template');
+});
+
 // Klanten routes
 Route::middleware('auth')->group(function () {
     // Import routes moeten VOOR resource routes staan
