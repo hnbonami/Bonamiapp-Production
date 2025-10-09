@@ -1106,4 +1106,101 @@ Rol: @{{rol}}</p>
             ], 500);
         }
     }
+
+    /**
+     * Preview template for templates page
+     */
+    public function previewTemplate($id)
+    {
+        try {
+            $template = \App\Models\EmailTemplate::findOrFail($id);
+            
+            // Mock data for preview
+            $variables = [
+                'voornaam' => 'Jan',
+                'naam' => 'Janssen',
+                'email' => 'jan.janssen@example.com',
+                'bedrijf_naam' => 'Bonami Sportcoaching',
+                'datum' => now()->format('d/m/Y'),
+                'jaar' => now()->format('Y'),
+                'merk' => 'Selle Italia',
+                'model' => 'SLR Boost',
+                'uitgeleend_op' => now()->subDays(7)->format('d/m/Y'),
+                'unsubscribe_url' => route('email.unsubscribe', ['token' => 'preview-token'])
+            ];
+
+            $subject = $template->renderSubject($variables);
+            $body = $template->renderBody($variables);
+
+            return response()->json([
+                'success' => true,
+                'subject' => $subject,
+                'body' => $body
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete template
+     */
+    public function deleteTemplate($id)
+    {
+        try {
+            $template = \App\Models\EmailTemplate::findOrFail($id);
+            $templateName = $template->name;
+            $template->delete();
+
+            return redirect()->route('admin.email.templates')
+                           ->with('success', "Template '{$templateName}' succesvol verwijderd");
+
+        } catch (\Exception $e) {
+            return redirect()->route('admin.email.templates')
+                           ->with('error', 'Fout bij verwijderen: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Preview template for templates listing (JSON response)
+     */
+    public function previewTemplateJson($id)
+    {
+        try {
+            $template = \App\Models\EmailTemplate::findOrFail($id);
+            
+            // Mock data for preview
+            $variables = [
+                'voornaam' => 'Jan',
+                'naam' => 'Janssen',
+                'email' => 'jan.janssen@example.com',
+                'bedrijf_naam' => 'Bonami Sportcoaching',
+                'datum' => now()->format('d/m/Y'),
+                'jaar' => now()->format('Y'),
+                'merk' => 'Selle Italia',
+                'model' => 'SLR Boost',
+                'uitgeleend_op' => now()->subDays(7)->format('d/m/Y'),
+                'unsubscribe_url' => route('email.unsubscribe', ['token' => 'preview-token'])
+            ];
+
+            $subject = $template->renderSubject($variables);
+            $body = $template->renderBody($variables);
+
+            return response()->json([
+                'success' => true,
+                'subject' => $subject,
+                'body' => $body
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

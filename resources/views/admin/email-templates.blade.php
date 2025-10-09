@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@section('head')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@endsection
+
 @section('content')
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
@@ -62,8 +66,13 @@
                            class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 text-center">
                             Bewerken
                         </a>
-                        <button class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                        <button onclick="previewTemplate({{ $template->id }})" 
+                                class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
                             Preview
+                        </button>
+                        <button onclick="deleteTemplate({{ $template->id }}, '{{ $template->name }}')" 
+                                class="px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 hover:bg-red-50">
+                            🗑️
                         </button>
                     </div>
                 </div>
@@ -174,4 +183,38 @@
         </div>
     </div>
 </div>
+
+<script>
+function previewTemplate(templateId) {
+    // Simple approach: redirect to edit page with preview hash
+    window.open(`/admin/email/templates/${templateId}/edit#preview`, '_blank');
+}
+
+function deleteTemplate(templateId, templateName) {
+    if (confirm(`Weet je zeker dat je template "${templateName}" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+        // Create a form for DELETE request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/email/templates/${templateId}`;
+        form.style.display = 'none';
+        
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        form.appendChild(csrfInput);
+        
+        // Add method override for DELETE
+        const methodInput = document.createElement('input');
+        methodInput.type = 'hidden';
+        methodInput.name = '_method';
+        methodInput.value = 'DELETE';
+        form.appendChild(methodInput);
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
 @endsection

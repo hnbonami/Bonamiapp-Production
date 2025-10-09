@@ -1079,3 +1079,6 @@ Route::middleware(['auth'])->prefix('admin/email')->name('admin.email.')->group(
 // Public unsubscribe routes (no auth required)
 Route::get('/unsubscribe/{token}', [App\Http\Controllers\Admin\EmailController::class, 'unsubscribePage'])->name('email.unsubscribe');
 Route::post('/unsubscribe/{token}', [App\Http\Controllers\Admin\EmailController::class, 'processUnsubscribe'])->name('email.unsubscribe.process');
+
+// Preview route for email templates
+Route::get('/admin/email/templates/{id}/preview', [App\Http\Controllers\Admin\EmailController::class, 'previewTemplateJson'])->middleware('auth');
