@@ -4,7 +4,7 @@
             <table class="min-w-full divide-y divide-gray-200" style="table-layout: fixed;">
                 <thead class="bg-blue-100">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style="width: 33.33%;">Test</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider" style="width: 33.33%;"></th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider" style="width: 33.33%;">Links</th>
                         <th class="px-6 py-3 text-center text-xs font-medium text-gray-700 uppercase tracking-wider" style="width: 33.33%;">Rechts</th>
                     </tr>

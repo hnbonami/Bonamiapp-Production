@@ -34,7 +34,7 @@
     <table class="mobility-report-table" style="width:100%; border-collapse:separate; border-spacing:0; border:1px solid #d1d5db; border-radius:8px; overflow:hidden;">
         <thead>
             <tr style="background-color:#c8e1eb;">
-                <th class="test-name" style="border:1px solid #e5e7eb; padding:12px 16px; font-weight:600; text-align:left; width:33.33%;">Test</th>
+                <th class="test-name" style="border:1px solid #e5e7eb; padding:12px 16px; font-weight:600; text-align:left; width:33.33%;"></th>
                 <th class="score-cell" style="border:1px solid #e5e7eb; padding:12px 16px; font-weight:600; text-align:center; width:33.33%;">Links</th>
                 <th class="score-cell" style="border:1px solid #e5e7eb; padding:12px 16px; font-weight:600; text-align:center; width:33.33%;">Rechts</th>
             </tr>

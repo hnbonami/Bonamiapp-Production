@@ -74,7 +74,7 @@ $fields = [
     <table class="w-full border border-gray-200 rounded-xl bg-white shadow-sm mb-8">
         <thead>
             <tr style="background:rgba(193,223,235,0.85);">
-                <th class="py-4 px-4 text-left text-lg font-semibold">Test</th>
+                <th class="py-4 px-4 text-left text-lg font-semibold"></th>
                 <th class="py-4 px-4 text-center text-lg font-semibold">Links</th>
                 <th class="py-4 px-4 text-center text-lg font-semibold">Rechts</th>
             </tr>

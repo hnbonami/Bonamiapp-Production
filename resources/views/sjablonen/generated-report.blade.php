@@ -142,6 +142,114 @@
             height: auto !important;
         }
         
+        /* BUT: Preserve color styling and visual elements */
+        .page-content .scorebar,
+        .page-content .scorebar *,
+        .page-content .mobility-bar,
+        .page-content .mobility-bar *,
+        .page-content .mobility-bar-segment,
+        .page-content .mobility-bar-segment.heel-laag,
+        .page-content .mobility-bar-segment.laag,
+        .page-content .mobility-bar-segment.gemiddeld,
+        .page-content .mobility-bar-segment.hoog,
+        .page-content .mobility-bar-segment.heel-hoog,
+        .page-content .mobility-bar-segment.selected,
+        .page-content [style*="background"],
+        .page-content [style*="color"],
+        .page-content [class*="bg-"],
+        .page-content [class*="text-"] {
+            /* Keep original styling for colors and backgrounds */
+        }
+        
+        /* Specifically preserve mobility bar colors */
+        /* Specifically preserve mobility bar colors - EXACT from _mobility_table_report.blade.php */
+        .mobility-bar {
+            display: flex !important;
+            width: 120px !important;
+            height: 18px !important;
+            border-radius: 6px !important;
+            overflow: hidden !important;
+            margin: 0 auto 4px auto !important;
+            box-shadow: 0 1px 2px #ddd !important;
+        }
+        .mobility-bar-segment {
+            flex: 1 !important;
+            height: 100% !important;
+            position: relative !important;
+        }
+        .mobility-bar-segment.heel-laag,
+        .page-content .mobility-bar-segment.heel-laag,
+        .report-container .mobility-bar-segment.heel-laag { 
+            background: #ef4444 !important; 
+            background-color: #ef4444 !important;
+        }
+        .mobility-bar-segment.laag,
+        .page-content .mobility-bar-segment.laag,
+        .report-container .mobility-bar-segment.laag { 
+            background: #f59e42 !important; 
+            background-color: #f59e42 !important;
+        }
+        .mobility-bar-segment.gemiddeld,
+        .page-content .mobility-bar-segment.gemiddeld,
+        .report-container .mobility-bar-segment.gemiddeld { 
+            background: #fde047 !important; 
+            background-color: #fde047 !important;
+        }
+        .mobility-bar-segment.hoog,
+        .page-content .mobility-bar-segment.hoog,
+        .report-container .mobility-bar-segment.hoog { 
+            background: #4ade80 !important; 
+            background-color: #4ade80 !important;
+        }
+        .mobility-bar-segment.heel-hoog,
+        .page-content .mobility-bar-segment.heel-hoog,
+        .report-container .mobility-bar-segment.heel-hoog { 
+            background: #16a34a !important; 
+            background-color: #16a34a !important;
+        }
+        .mobility-bar-segment.selected::after,
+        .page-content .mobility-bar-segment.selected::after,
+        .report-container .mobility-bar-segment.selected::after {
+            content: '' !important;
+            position: absolute !important;
+            top: 2px !important;
+            left: 2px !important;
+            right: 2px !important;
+            bottom: 2px !important;
+            border: 2px solid #222 !important;
+            border-radius: 4px !important;
+            pointer-events: none !important;
+        }
+        .page-content .mobility-bar-segment.selected::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 2px;
+            bottom: 2px;
+            border: 2px solid #222;
+            border-radius: 4px;
+            pointer-events: none;
+        }
+        
+        /* Specifically preserve scorebar functionality */
+        .page-content .scorebar,
+        .page-content .scorebar div,
+        .report-container .scorebar,
+        .report-container .scorebar div {
+            background: inherit !important;
+            background-color: inherit !important;
+            box-shadow: inherit !important;
+            border-radius: inherit !important;
+            transition: inherit !important;
+            flex: inherit !important;
+            height: inherit !important;
+            display: inherit !important;
+            width: inherit !important;
+            border: inherit !important;
+            overflow: inherit !important;
+        }
+        
         /* Target specific CKEditor containers that might cause scroll */
         .page-content .cke_editable,
         .page-content .cke_contents,
@@ -677,11 +785,117 @@ document.addEventListener('DOMContentLoaded', function() {
     removeScrollContainers();
     fixDateFormatting();
     
+    // PRESERVE: Re-run scorebar coloring after our aggressive cleaning
+    preserveScorebarStyling();
+    
     // Run again after a short delay to catch dynamically loaded content
     setTimeout(() => {
         removeScrollContainers();
         fixDateFormatting();
+        preserveScorebarStyling();
     }, 500);
+    
+    // Function to preserve scorebar styling
+    function preserveScorebarStyling() {
+        // EXACT colors from _mobility_results.blade.php
+        const colors = ['#43a047','#aeea00','#fdd835','#fb8c00','#e53935'];
+        const labels = ['Heel hoog','Hoog','Gemiddeld','Laag','Heel laag'];
+        
+        document.querySelectorAll('.scorebar').forEach(function(bar) {
+            const score = bar.getAttribute('data-score');
+            if (!score) return;
+            
+            let idx = labels.indexOf(score);
+            if(idx === -1) idx = 2; // default: gemiddeld
+            
+            // Rebuild the scorebar with colors - EXACTLY like the original
+            bar.innerHTML = '';
+            bar.style.display = 'flex';
+            bar.style.width = '180px';
+            bar.style.height = '28px';
+            bar.style.borderRadius = '14px';
+            bar.style.overflow = 'hidden';
+            bar.style.border = '2px solid #ddd';
+            bar.style.boxShadow = '0 2px 8px rgba(0,0,0,0.07)';
+            
+            for(let i=0;i<5;i++) {
+                let seg = document.createElement('div');
+                seg.style.flex = '1';
+                seg.style.height = '100%';
+                seg.style.background = colors[i];
+                seg.style.backgroundColor = colors[i];
+                seg.style.setProperty('background', colors[i], 'important');
+                seg.style.setProperty('background-color', colors[i], 'important');
+                seg.style.transition = 'box-shadow 0.3s';
+                if(i === idx) {
+                    seg.style.boxShadow = '0 0 12px 2px #333';
+                    seg.style.borderRadius = '14px';
+                }
+                bar.appendChild(seg);
+            }
+        });
+        
+        // Preserve mobility-bar styling - EXACT from _mobility_table_report.blade.php
+        const mobilityColors = {
+            'heel-laag': '#ef4444',
+            'laag': '#f59e42', 
+            'gemiddeld': '#fde047',
+            'hoog': '#4ade80',
+            'heel-hoog': '#16a34a'
+        };
+        
+        // Force apply colors to all mobility segments
+        document.querySelectorAll('.mobility-bar-segment').forEach(function(segment) {
+            Object.keys(mobilityColors).forEach(function(className) {
+                if (segment.classList.contains(className)) {
+                    const color = mobilityColors[className];
+                    segment.style.background = color;
+                    segment.style.backgroundColor = color;
+                    segment.style.setProperty('background', color, 'important');
+                    segment.style.setProperty('background-color', color, 'important');
+                    segment.style.flex = '1';
+                    segment.style.height = '100%';
+                    segment.style.position = 'relative';
+                }
+            });
+            
+            // Handle selected styling
+            if (segment.classList.contains('selected')) {
+                segment.style.position = 'relative';
+                // Ensure the ::after pseudo-element works
+                const afterStyle = `
+                    .mobility-bar-segment.selected::after {
+                        content: '';
+                        position: absolute;
+                        top: 2px;
+                        left: 2px;
+                        right: 2px;
+                        bottom: 2px;
+                        border: 2px solid #222;
+                        border-radius: 4px;
+                        pointer-events: none;
+                    }
+                `;
+                if (!document.querySelector('#mobility-selected-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'mobility-selected-style';
+                    style.textContent = afterStyle;
+                    document.head.appendChild(style);
+                }
+            }
+        });
+        
+        // Ensure mobility-bar containers have correct styling
+        document.querySelectorAll('.mobility-bar').forEach(function(bar) {
+            bar.style.display = 'flex';
+            bar.style.width = '120px';
+            bar.style.height = '18px';
+            bar.style.borderRadius = '6px';
+            bar.style.overflow = 'hidden';
+            bar.style.margin = '0 auto 4px auto';
+            bar.style.boxShadow = '0 1px 2px #ddd';
+        });
+    }
 });
 </script>
 </html>
