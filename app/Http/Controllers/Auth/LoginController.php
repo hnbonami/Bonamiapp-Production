@@ -59,6 +59,33 @@ class LoginController extends Controller
      */
     public function logout(Request $request)
     {
+        $user = Auth::user();
+        
+        \Log::info('🔥 LOGOUT TRIGGERED', [
+            'user_id' => $user ? $user->id : 'NO_USER',
+            'user_name' => $user ? $user->name : 'NO_USER',
+        ]);
+        
+        // Update the most recent login activity with logout time
+        if ($user) {
+            $latestActivity = LoginActivity::where('user_id', $user->id)
+                ->whereNull('logged_out_at')
+                ->latest('logged_in_at')
+                ->first();
+                
+            if ($latestActivity) {
+                $latestActivity->update(['logged_out_at' => now()]);
+                \Log::info('🔥 LOGOUT TIME UPDATED', [
+                    'activity_id' => $latestActivity->id,
+                    'logged_out_at' => now(),
+                ]);
+            } else {
+                \Log::warning('🔥 NO ACTIVE SESSION FOUND FOR LOGOUT', [
+                    'user_id' => $user->id,
+                ]);
+            }
+        }
+        
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -68,6 +95,12 @@ class LoginController extends Controller
     private function logLoginActivity($request, $user)
     {
         $userAgent = $request->userAgent();
+
+        \Log::info('🔥 LOGIN ACTIVITY CREATED', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'ip_address' => $request->ip(),
+        ]);
 
         LoginActivity::create([
             'user_id' => $user->id,

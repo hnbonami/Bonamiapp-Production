@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Providers\RouteServiceProvider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,9 +17,6 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        if (Auth::check()) {
-            return redirect()->route('dashboard');
-        }
         return view('auth.login');
     }
 
@@ -31,20 +29,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $user = auth()->user();
-        if ($user->role === 'admin' || $user->role === 'coach') {
-            return redirect()->intended(route('dashboard', absolute: false));
-        } elseif ($user->role === 'klant') {
-            // Zoek de klant op basis van e-mail
-            $klant = \App\Models\Klant::where('email', $user->email)->first();
-            if ($klant) {
-                return redirect()->intended(route('klanten.show', ['klanten' => $klant->id]));
-            } else {
-                return redirect('/');
-            }
-        } else {
-            return redirect('/');
-        }
+        return redirect()->intended('/dashboard');
     }
 
     /**
@@ -52,6 +37,33 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+        
+        \Log::info('🔥 LOGOUT TRIGGERED IN AuthenticatedSessionController', [
+            'user_id' => $user ? $user->id : 'NO_USER',
+            'user_name' => $user ? $user->name : 'NO_USER',
+        ]);
+        
+        // Update the most recent login activity with logout time
+        if ($user) {
+            $latestActivity = \App\Models\LoginActivity::where('user_id', $user->id)
+                ->whereNull('logged_out_at')
+                ->latest('logged_in_at')
+                ->first();
+                
+            if ($latestActivity) {
+                $latestActivity->update(['logged_out_at' => now()]);
+                \Log::info('🔥 LOGOUT TIME UPDATED', [
+                    'activity_id' => $latestActivity->id,
+                    'logged_out_at' => now(),
+                ]);
+            } else {
+                \Log::warning('🔥 NO ACTIVE SESSION FOUND FOR LOGOUT', [
+                    'user_id' => $user->id,
+                ]);
+            }
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

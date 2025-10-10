@@ -231,6 +231,14 @@ class UserManagementController extends Controller
             $query->where('user_id', request('user_id'));
         }
         
+        if (request('search')) {
+            $search = request('search');
+            $query->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+        
         if (request('date_from')) {
             $query->whereDate('logged_in_at', '>=', request('date_from'));
         }
@@ -263,7 +271,7 @@ class UserManagementController extends Controller
             'total_logins_this_week' => \App\Models\LoginActivity::whereBetween('logged_in_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
             'total_login_activities' => \App\Models\LoginActivity::count(),
             'most_recent_login' => \App\Models\LoginActivity::latest('logged_in_at')->first(),
-            'average_session_time' => 1800,
+            'average_session_time' => $this->calculateAverageSessionTime(),
             'total_users' => \App\Models\User::count(),
             'active_users_today' => \App\Models\LoginActivity::whereDate('logged_in_at', today())->distinct('user_id')->count(),
         ];
@@ -275,6 +283,7 @@ class UserManagementController extends Controller
             'users_count' => $users->count(),
             'filters' => [
                 'user_id' => request('user_id'),
+                'search' => request('search'),
                 'date_from' => request('date_from'),
                 'date_to' => request('date_to')
             ],
@@ -284,10 +293,25 @@ class UserManagementController extends Controller
                 'user_id' => $loginActivities->first()->user_id,
                 'user_name' => $loginActivities->first()->user ? $loginActivities->first()->user->name : 'No user',
                 'logged_in_at' => $loginActivities->first()->logged_in_at,
+                'logged_out_at' => $loginActivities->first()->logged_out_at,
                 'ip_address' => $loginActivities->first()->ip_address
             ] : 'NO ACTIVITIES FOUND'
         ]);
         
         return view('admin.users.activity-clean', compact('loginActivities', 'users', 'logs', 'stats'));
+    }
+
+    /**
+     * Calculate average session time in seconds
+     */
+    private function calculateAverageSessionTime()
+    {
+        $sessions = \App\Models\LoginActivity::whereNotNull('logged_out_at')
+            ->get()
+            ->map(function($activity) {
+                return $activity->logged_out_at->diffInSeconds($activity->logged_in_at);
+            });
+
+        return $sessions->count() > 0 ? $sessions->average() : 1800; // Default 30 minutes
     }
 }

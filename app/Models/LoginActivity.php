@@ -20,10 +20,12 @@ class LoginActivity extends Model
         'location',
         'status',
         'logged_in_at',
+        'logged_out_at',
     ];
 
     protected $casts = [
         'logged_in_at' => 'datetime',
+        'logged_out_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
@@ -34,6 +36,11 @@ class LoginActivity extends Model
     public function getFormattedLoggedInAtAttribute()
     {
         return $this->logged_in_at->format('d-m-Y H:i:s');
+    }
+
+    public function getFormattedLoggedOutAtAttribute()
+    {
+        return $this->logged_out_at ? $this->logged_out_at->format('d-m-Y H:i:s') : null;
     }
 
     public function getDeviceIconAttribute()

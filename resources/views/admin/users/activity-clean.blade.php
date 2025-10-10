@@ -189,11 +189,35 @@
                                         {{ $activity->logged_in_at->format('d/m/Y H:i') }}
                                     </div>
                                 </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-400">
-                                    -
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    @if($activity->logged_out_at)
+                                        <div class="flex items-center text-sm text-gray-900">
+                                            <svg class="w-4 h-4 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013 3v1"/>
+                                            </svg>
+                                            {{ $activity->logged_out_at->format('d/m/Y H:i') }}
+                                        </div>
+                                    @else
+                                        <span class="text-sm text-gray-400">-</span>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="text-sm text-blue-600 font-medium">Actief</span>
+                                    @if($activity->logged_out_at)
+                                        @php
+                                            $duration = $activity->logged_out_at->diffInMinutes($activity->logged_in_at);
+                                            $hours = floor($duration / 60);
+                                            $minutes = $duration % 60;
+                                        @endphp
+                                        <span class="text-sm text-gray-600">
+                                            @if($hours > 0)
+                                                {{ $hours }}u {{ $minutes }}m
+                                            @else
+                                                {{ $minutes }}m
+                                            @endif
+                                        </span>
+                                    @else
+                                        <span class="text-sm text-blue-600 font-medium">Actief</span>
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
                                     <span class="inline-flex items-center px-2 py-1 rounded text-xs font-mono bg-gray-100 text-gray-800">
@@ -201,10 +225,17 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap">
-                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                        <div class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5 animate-pulse"></div>
-                                        Actief
-                                    </span>
+                                    @if($activity->logged_out_at)
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            <div class="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></div>
+                                            Uitgelogd
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <div class="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5 animate-pulse"></div>
+                                            Actief
+                                        </span>
+                                    @endif
                                 </td>
                             </tr>
                         @endforeach
