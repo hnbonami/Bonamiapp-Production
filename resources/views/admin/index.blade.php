@@ -69,15 +69,15 @@
         <!-- Rechten & Rollen Beheer -->
         <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
-                <div class="bg-orange-100 p-3 rounded-lg">
-                    <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="p-3 rounded-lg" style="background-color: #c8e1eb;">
+                    <svg class="w-6 h-6" style="color: #2563eb;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
                     </svg>
                 </div>
                 <h3 class="text-xl font-semibold text-gray-800 ml-3">Rechten & Rollen Beheer</h3>
             </div>
             <p class="text-gray-600 mb-4">Gebruikersbeheer & toegang. Beheer gebruikersrollen, tabblad toegang, test permissions en login activiteit.</p>
-            <a href="/admin/users" class="inline-flex items-center text-orange-600 hover:text-orange-800 font-medium">
+            <a href="/admin/users" class="inline-flex items-center font-medium" style="color: #2563eb; hover:color: #1d4ed8;">
                 Gebruikersbeheer Openen
                 <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>

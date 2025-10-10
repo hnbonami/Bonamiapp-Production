@@ -123,6 +123,54 @@
             overflow: visible !important;
         }
         
+        /* EXTRA: Remove scroll from specific container classes */
+        .page-content .container,
+        .page-content .scroll-container,
+        .page-content [class*="scroll"],
+        .page-content [class*="overflow"] {
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
+        }
+        
+        /* AGGRESSIVE: Force all elements to be visible */
+        .page-content * {
+            overflow: visible !important;
+            overflow-x: visible !important;
+            overflow-y: visible !important;
+            max-height: none !important;
+            height: auto !important;
+        }
+        
+        /* Target specific CKEditor containers that might cause scroll */
+        .page-content .cke_editable,
+        .page-content .cke_contents,
+        .page-content [contenteditable],
+        .page-content iframe,
+        .page-content .text-container,
+        .page-content .content-area {
+            overflow: visible !important;
+            max-height: none !important;
+            height: auto !important;
+            resize: none !important;
+        }
+        
+        /* Fix datum display - hide time part (00:00:00) */
+        .page-content [style*="date"],
+        .page-content time,
+        .page-content .date,
+        .page-content span:contains("00:00:00"),
+        .page-content div:contains("00:00:00") {
+            font-size: inherit !important;
+        }
+        
+        /* Hide time part that shows 00:00:00 */
+        .page-content *[title*="00:00:00"]::after,
+        .page-content span[title*="00:00:00"],
+        .page-content time[datetime*="00:00:00"] {
+            display: none !important;
+        }
+        
         .no-print {
             display: block;
         }
@@ -543,4 +591,97 @@
         });
     </script>
 </body>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Remove scroll containers and fix overflow
+    function removeScrollContainers() {
+        const allElements = document.querySelectorAll('.page-content, .page-content *');
+        allElements.forEach(element => {
+            // AGGRESSIVE: Remove ALL overflow styling
+            element.style.overflow = 'visible';
+            element.style.overflowY = 'visible';
+            element.style.overflowX = 'visible';
+            element.style.maxHeight = 'none';
+            element.style.height = 'auto';
+            
+            // Remove specific problematic attributes
+            if (element.hasAttribute('scrolling')) {
+                element.removeAttribute('scrolling');
+            }
+            
+            // Target CKEditor and contenteditable elements specifically
+            if (element.classList.contains('cke_editable') || 
+                element.hasAttribute('contenteditable') ||
+                element.tagName === 'IFRAME') {
+                element.style.overflow = 'visible';
+                element.style.resize = 'none';
+                element.style.maxHeight = 'none';
+                element.style.height = 'auto';
+            }
+            
+            // Remove scroll from any container with text content
+            if (element.textContent && element.textContent.trim().length > 0) {
+                element.style.overflow = 'visible';
+                element.style.overflowWrap = 'break-word';
+                element.style.wordWrap = 'break-word';
+            }
+        });
+        
+        // EXTRA: Force all computed styles to visible
+        const computedElements = document.querySelectorAll('.page-content *');
+        computedElements.forEach(element => {
+            const computedStyle = window.getComputedStyle(element);
+            if (computedStyle.overflow !== 'visible' || 
+                computedStyle.overflowY !== 'visible' || 
+                computedStyle.overflowX !== 'visible') {
+                element.style.setProperty('overflow', 'visible', 'important');
+                element.style.setProperty('overflow-x', 'visible', 'important');
+                element.style.setProperty('overflow-y', 'visible', 'important');
+            }
+        });
+    }
+    
+    // Fix datum formatting - remove time parts
+    function fixDateFormatting() {
+        const textNodes = document.createTreeWalker(
+            document.querySelector('.report-container'),
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        
+        let textNode;
+        while (textNode = textNodes.nextNode()) {
+            // Remove time part from dates (00:00:00)
+            if (textNode.textContent.includes('00:00:00')) {
+                textNode.textContent = textNode.textContent.replace(/ 00:00:00/g, '');
+                textNode.textContent = textNode.textContent.replace(/T00:00:00/g, '');
+            }
+            
+            // Clean up other common time formats
+            textNode.textContent = textNode.textContent.replace(/ 00:00$/g, '');
+            textNode.textContent = textNode.textContent.replace(/T00:00$/g, '');
+        }
+        
+        // Also check for datetime attributes and title attributes
+        const dateElements = document.querySelectorAll('[datetime], [title*="00:00"]');
+        dateElements.forEach(element => {
+            if (element.textContent.includes('00:00')) {
+                element.textContent = element.textContent.replace(/ 00:00:00/g, '');
+                element.textContent = element.textContent.replace(/T00:00:00/g, '');
+            }
+        });
+    }
+    
+    // Run fixes
+    removeScrollContainers();
+    fixDateFormatting();
+    
+    // Run again after a short delay to catch dynamically loaded content
+    setTimeout(() => {
+        removeScrollContainers();
+        fixDateFormatting();
+    }, 500);
+});
+</script>
 </html>

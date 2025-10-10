@@ -12,10 +12,10 @@
         </div>
         
         <div class="flex gap-4">
-            <a href="{{ route('admin.users.roles') }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+            <a href="{{ route('admin.users.roles') }}" class="text-white px-4 py-2 rounded-lg transition-colors" style="background-color: #c8e1eb; color: #1f2937;" onmouseover="this.style.backgroundColor='#b0d4e0'" onmouseout="this.style.backgroundColor='#c8e1eb'">
                 🔐 Rollen Beheren
             </a>
-            <a href="{{ route('admin.users.activity') }}" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+            <a href="{{ route('admin.users.activity') }}" class="text-white px-4 py-2 rounded-lg transition-colors" style="background-color: #c8e1eb; color: #1f2937;" onmouseover="this.style.backgroundColor='#b0d4e0'" onmouseout="this.style.backgroundColor='#c8e1eb'">
                 📊 Login Activiteit
             </a>
         </div>
