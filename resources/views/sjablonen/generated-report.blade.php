@@ -177,6 +177,35 @@
             height: 100% !important;
             position: relative !important;
         }
+        
+        /* Make sure ONLY the header row has consistent blue background */
+        .mobility-report-table thead tr,
+        .mobility-report-table thead th,
+        .mobility-report-table thead td,
+        .page-content table thead tr,
+        .page-content table thead th,
+        .page-content table thead td,
+        .report-container table thead tr,
+        .report-container table thead th,
+        .report-container table thead td {
+            background-color: #c8e1eb !important;
+        }
+        
+        /* Round the corners of mobility bars */
+        .mobility-bar {
+            border-radius: 8px !important;
+        }
+        
+        .mobility-bar-segment:first-child {
+            border-top-left-radius: 8px !important;
+            border-bottom-left-radius: 8px !important;
+        }
+        
+        .mobility-bar-segment:last-child {
+            border-top-right-radius: 8px !important;
+            border-bottom-right-radius: 8px !important;
+        }
+        
         .mobility-bar-segment.heel-laag,
         .page-content .mobility-bar-segment.heel-laag,
         .report-container .mobility-bar-segment.heel-laag { 
