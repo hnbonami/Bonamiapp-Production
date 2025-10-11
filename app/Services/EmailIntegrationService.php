@@ -3,214 +3,173 @@
 namespace App\Services;
 
 use App\Models\EmailTemplate;
-use Illuminate\Support\Facades\Log;
+use App\Models\EmailLog;
+use App\Models\Klant;
+use App\Models\Testzadel;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class EmailIntegrationService
 {
-    public function __construct()
-    {
-        // No email settings dependency
-    }
-
     /**
-     * Send email using specific template type
+     * Send testzadel reminder email using template system
      */
-    public function sendTemplateEmail($templateType, $recipient, $variables = [])
+    public function sendTestzadelReminderEmail($klant, $variables)
     {
         try {
-            $template = EmailTemplate::where('type', $templateType)
-                ->where('is_active', true)
-                ->first();
+            // Find active testzadel reminder template
+            $template = EmailTemplate::where('type', 'testzadel_reminder')
+                                    ->where('is_active', true)
+                                    ->first();
             
             if (!$template) {
-                Log::error("Template not found for type: {$templateType}");
+                Log::error('No active testzadel reminder template found');
                 return false;
             }
             
-            // Render template with variables
+            // Render subject and body with variables
             $subject = $template->renderSubject($variables);
-            $htmlBody = $template->renderBody($variables);
-            $textBody = strip_tags($htmlBody);
+            $body = $template->renderBody($variables);
             
-            // Send the email
-            $emailSent = $this->sendEmail(
-                $recipient['email'],
-                $recipient['name'],
-                $subject,
-                $htmlBody,
-                $textBody
-            );
+            Log::info('Sending testzadel reminder email', [
+                'to' => $klant->email,
+                'subject' => $subject,
+                'template_id' => $template->id
+            ]);
             
-            if ($emailSent) {
-                $this->logTrigger($templateType, $template->id, $recipient['email'], $variables);
-                return true;
-            }
-            
-            return false;
-            
-        } catch (\Exception $e) {
-            Log::error('Failed to send template email: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Send testzadel reminder email
-     */
-    public function sendTestzadelReminderEmail($klant, $variables = [])
-    {
-        $recipient = [
-            'email' => $klant->email,
-            'name' => $klant->voornaam . ' ' . $klant->naam
-        ];
-        
-        return $this->sendTemplateEmail('testzadel_reminder', $recipient, $variables);
-    }
-
-    /**
-     * Send birthday email
-     */
-    public function sendBirthdayEmail($klant, $variables = [])
-    {
-        $recipient = [
-            'email' => $klant->email,
-            'name' => $klant->voornaam . ' ' . $klant->naam
-        ];
-        
-        return $this->sendTemplateEmail('birthday', $recipient, $variables);
-    }
-
-    /**
-     * Send welcome email to new customer using EmailTemplate module
-     */
-    public function sendWelcomeEmail($klant, $variables = [])
-    {
-        try {
-            // Look for template in EmailTemplate table
-            $template = EmailTemplate::where('type', 'welcome_customer')
-                ->where('is_active', true)
-                ->first();
-            
-            if (!$template) {
-                Log::error('Welcome customer template not found in EmailTemplate module');
-                return false;
-            }
-            
-            // Merge klant data with variables
-            $allVariables = array_merge([
-                'voornaam' => $klant->voornaam,
-                'naam' => $klant->naam,
-                'email' => $klant->email,
-                'wachtwoord' => $variables['wachtwoord'] ?? $variables['temporary_password'] ?? '',
-                'temporary_password' => $variables['temporary_password'] ?? $variables['wachtwoord'] ?? '',
-                'bedrijf_naam' => 'Bonami Sportcoaching',
-                'datum' => now()->format('d/m/Y'),
-                'jaar' => now()->format('Y'),
-            ], $variables);
-            
-            $recipient = [
-                'email' => $klant->email,
-                'name' => $klant->voornaam . ' ' . $klant->naam
-            ];
-            
-            return $this->sendTemplateEmail('welcome_customer', $recipient, $allVariables);
-            
-        } catch (\Exception $e) {
-            Log::error('Failed to send welcome email: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Send welcome email to new employee using EmailTemplate module
-     */
-    public function sendEmployeeWelcomeEmail($medewerker, $variables = [])
-    {
-        try {
-            // Look for template in EmailTemplate table
-            $template = EmailTemplate::where('type', 'welcome_employee')
-                ->where('is_active', true)
-                ->first();
-            
-            if (!$template) {
-                Log::error('Welcome employee template not found in EmailTemplate module');
-                return false;
-            }
-            
-            // Merge medewerker data with variables
-            $allVariables = array_merge([
-                'voornaam' => $medewerker->voornaam,
-                'naam' => $medewerker->achternaam,
-                'email' => $medewerker->email,
-                'wachtwoord' => $variables['wachtwoord'] ?? $variables['temporary_password'] ?? '',
-                'temporary_password' => $variables['temporary_password'] ?? $variables['wachtwoord'] ?? '',
-                'functie' => $medewerker->functie ?? 'Medewerker',
-                'bedrijf_naam' => 'Bonami Sportcoaching',
-                'datum' => now()->format('d/m/Y'),
-                'jaar' => now()->format('Y'),
-            ], $variables);
-            
-            $recipient = [
-                'email' => $medewerker->email,
-                'name' => $medewerker->voornaam . ' ' . $medewerker->achternaam
-            ];
-            
-            return $this->sendTemplateEmail('welcome_employee', $recipient, $allVariables);
-            
-        } catch (\Exception $e) {
-            Log::error('Failed to send employee welcome email: ' . $e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Send actual email using Laravel Mail
-     */
-    private function sendEmail($toEmail, $toName, $subject, $htmlBody, $textBody = null)
-    {
-        try {
-            Mail::send([], [], function ($message) use ($toEmail, $toName, $subject, $htmlBody, $textBody) {
-                $message->to($toEmail, $toName)
-                    ->subject($subject)
-                    ->html($htmlBody);
-                
-                if ($textBody) {
-                    $message->text($textBody);
-                }
-                
-                // Set from address from config or default
-                $message->from(
-                    config('mail.from.address', 'info@bonami-sportcoaching.be'),
-                    config('mail.from.name', 'Bonami Sportcoaching')
-                );
+            // Send email
+            Mail::html($body, function ($message) use ($klant, $subject) {
+                $message->to($klant->email, $klant->voornaam . ' ' . $klant->naam)
+                        ->subject($subject);
             });
-
-            Log::info("Email sent successfully to {$toEmail}");
+            
+            // Try to log the email - don't fail if logging fails
+            try {
+                EmailLog::create([
+                    'recipient_email' => $klant->email,
+                    'subject' => $subject,
+                    'template_id' => $template->id,
+                    'trigger_name' => 'testzadel_reminder',
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                    'variables' => $variables
+                ]);
+            } catch (\Exception $logError) {
+                Log::warning('Failed to log email (email was sent successfully): ' . $logError->getMessage());
+            }
+            
+            Log::info('Testzadel reminder email sent successfully', [
+                'recipient' => $klant->email,
+                'template' => $template->name
+            ]);
+            
             return true;
             
         } catch (\Exception $e) {
-            Log::error("Failed to send email to {$toEmail}: " . $e->getMessage());
+            Log::error('Failed to send testzadel reminder email: ' . $e->getMessage(), [
+                'recipient' => $klant->email ?? 'unknown',
+                'variables' => $variables,
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Log failed email - don't fail the whole process if logging fails
+            try {
+                EmailLog::create([
+                    'recipient_email' => $klant->email ?? 'unknown',
+                    'subject' => $subject ?? 'Testzadel Herinnering',
+                    'template_id' => $template->id ?? null,
+                    'trigger_name' => 'testzadel_reminder',
+                    'status' => 'failed',
+                    'error_message' => $e->getMessage(),
+                    'variables' => $variables
+                ]);
+            } catch (\Exception $logError) {
+                Log::error('Failed to log email error: ' . $logError->getMessage());
+            }
+            
             return false;
         }
     }
-
+    
     /**
-     * Log email trigger for statistics
+     * Send birthday email
      */
-    private function logTrigger($triggerType, $templateId, $recipientEmail, $variables = [])
+    public function sendBirthdayEmail($klant, $variables)
     {
         try {
-            \App\Models\EmailLog::create([
-                'trigger_name' => $triggerType,
-                'template_id' => $templateId,
-                'recipient_email' => $recipientEmail,
-                'variables' => $variables,
+            $template = EmailTemplate::where('type', 'birthday')
+                                    ->where('is_active', true)
+                                    ->first();
+            
+            if (!$template) {
+                Log::error('No active birthday template found');
+                return false;
+            }
+            
+            $subject = $template->renderSubject($variables);
+            $body = $template->renderBody($variables);
+            
+            Mail::html($body, function ($message) use ($klant, $subject) {
+                $message->to($klant->email, $klant->voornaam . ' ' . $klant->naam)
+                        ->subject($subject);
+            });
+            
+            EmailLog::create([
+                'recipient_email' => $klant->email,
+                'subject' => $subject,
+                'template_id' => $template->id,
+                'trigger_name' => 'birthday',
+                'status' => 'sent',
                 'sent_at' => now(),
-                'status' => 'sent'
+                'variables' => $variables
             ]);
+            
+            return true;
+            
         } catch (\Exception $e) {
-            Log::error('Failed to log email trigger: ' . $e->getMessage());
+            Log::error('Failed to send birthday email: ' . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Send welcome customer email
+     */
+    public function sendWelcomeCustomerEmail($klant, $variables)
+    {
+        try {
+            $template = EmailTemplate::where('type', 'welcome_customer')
+                                    ->where('is_active', true)
+                                    ->first();
+            
+            if (!$template) {
+                Log::error('No active welcome customer template found');
+                return false;
+            }
+            
+            $subject = $template->renderSubject($variables);
+            $body = $template->renderBody($variables);
+            
+            Mail::html($body, function ($message) use ($klant, $subject) {
+                $message->to($klant->email, $klant->voornaam . ' ' . $klant->naam)
+                        ->subject($subject);
+            });
+            
+            EmailLog::create([
+                'recipient_email' => $klant->email,
+                'subject' => $subject,
+                'template_id' => $template->id,
+                'trigger_name' => 'welcome_customer',
+                'status' => 'sent',
+                'sent_at' => now(),
+                'variables' => $variables
+            ]);
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            Log::error('Failed to send welcome customer email: ' . $e->getMessage());
+            return false;
         }
     }
 }

@@ -81,9 +81,11 @@
             <label for="birth_date" class="block text-sm font-medium text-gray-700 mb-2">
                 Geboortedatum
             </label>
-            <input type="date" name="birth_date" id="birth_date" 
-                   value="{{ $user->geboortedatum ? $user->geboortedatum->format('Y-m-d') : '' }}"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                                <input type="date" 
+                                           id="geboortedatum" 
+                                           name="geboortedatum" 
+                                           value="@if($user->geboortedatum){{ is_string($user->geboortedatum) ? $user->geboortedatum : $user->geboortedatum->format('Y-m-d') }}@endif" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
         </div>
 
         <!-- Address -->

@@ -17,7 +17,7 @@ class EmailLog extends Model
     const TRIGGER_WELCOME_CUSTOMER = 'welcome_customer';
     const TRIGGER_WELCOME_EMPLOYEE = 'welcome_employee';
     
-    // Constants for status
+    // Status constants
     const STATUS_SENT = 'sent';
     const STATUS_FAILED = 'failed';
     const STATUS_PENDING = 'pending';
@@ -26,12 +26,14 @@ class EmailLog extends Model
     protected $table = 'email_logs'; // Use new table instead of conflicts
     
     protected $fillable = [
-        'trigger_name',
-        'template_id', 
         'recipient_email',
-        'variables',
+        'subject',
+        'template_id',
+        'trigger_name',
+        'status',
         'sent_at',
-        'status'
+        'error_message',
+        'variables'
     ];
     
     protected $casts = [

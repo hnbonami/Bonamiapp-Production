@@ -127,6 +127,22 @@ class TestzadelsController extends Controller
         }
         
         try {
+            \Log::info('Attempting to send testzadel reminder', [
+                'testzadel_id' => $testzadel->id,
+                'klant_email' => $testzadel->klant->email,
+                'klant_naam' => $testzadel->klant->naam
+            ]);
+
+            // Check if email template exists
+            $template = \App\Models\EmailTemplate::where('type', 'testzadel_reminder')
+                                                ->where('is_active', true)
+                                                ->first();
+            
+            if (!$template) {
+                \Log::error('No active testzadel_reminder template found');
+                return redirect()->back()->with('error', 'Geen actieve email template gevonden voor testzadel herinneringen. Ga naar Email Beheer om een template aan te maken.');
+            }
+
             // Use new Email Template Service
             $emailService = new \App\Services\EmailIntegrationService();
             
@@ -135,16 +151,18 @@ class TestzadelsController extends Controller
                 'voornaam' => $testzadel->klant->voornaam,
                 'naam' => $testzadel->klant->naam,
                 'email' => $testzadel->klant->email,
-                'merk' => $testzadel->zadel_merk,
-                'model' => $testzadel->zadel_model,
-                'type' => $testzadel->zadel_type,
-                'breedte' => $testzadel->zadel_breedte,
+                'merk' => $testzadel->zadel_merk ?? '',
+                'model' => $testzadel->zadel_model ?? '',
+                'type' => $testzadel->zadel_type ?? '',
+                'breedte' => $testzadel->zadel_breedte ?? '',
                 'uitgeleend_op' => $testzadel->uitleen_datum->format('d/m/Y'),
                 'verwachte_retour' => $testzadel->verwachte_retour_datum->format('d/m/Y'),
                 'bedrijf_naam' => 'Bonami Sportcoaching',
                 'datum' => now()->format('d/m/Y'),
                 'jaar' => now()->format('Y'),
             ];
+            
+            \Log::info('Sending testzadel reminder with variables', $variables);
             
             // Send using template system
             $result = $emailService->sendTestzadelReminderEmail($testzadel->klant, $variables);
@@ -157,14 +175,23 @@ class TestzadelsController extends Controller
                     'laatste_herinnering' => now()
                 ]);
                 
+                \Log::info('Testzadel reminder sent successfully', [
+                    'testzadel_id' => $testzadel->id,
+                    'recipient' => $testzadel->klant->email
+                ]);
+                
                 return redirect()->back()->with('success', 'Herinnering verstuurd naar ' . $testzadel->klant->voornaam . ' ' . $testzadel->klant->naam);
             } else {
+                \Log::error('EmailIntegrationService returned false');
                 return redirect()->back()->with('error', 'Er is een fout opgetreden bij het versturen van de herinnering');
             }
             
         } catch (\Exception $e) {
-            \Log::error('Failed to send testzadel reminder: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Er is een fout opgetreden bij het versturen van de herinnering');
+            \Log::error('Failed to send testzadel reminder: ' . $e->getMessage(), [
+                'testzadel_id' => $testzadel->id,
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('error', 'Er is een fout opgetreden bij het versturen van de herinnering: ' . $e->getMessage());
         }
     }
     
@@ -255,11 +282,32 @@ class TestzadelsController extends Controller
     
     public function sendReminderAjax(Testzadel $testzadel)
     {
+        \Log::info('=== AJAX REMINDER START ===', ['testzadel_id' => $testzadel->id]);
+        
         try {
             // Only send if automatic mailing is enabled
             if (!$testzadel->automatisch_mailtje) {
+                \Log::warning('Automatic mailing disabled for testzadel', ['testzadel_id' => $testzadel->id]);
                 return response()->json(['success' => false, 'message' => 'Automatische herinneringen zijn uitgeschakeld']);
             }
+            
+            \Log::info('AJAX: Attempting to send testzadel reminder', [
+                'testzadel_id' => $testzadel->id,
+                'klant_email' => $testzadel->klant->email,
+                'klant_naam' => $testzadel->klant->naam
+            ]);
+
+            // Check if email template exists
+            $template = \App\Models\EmailTemplate::where('type', 'testzadel_reminder')
+                                                ->where('is_active', true)
+                                                ->first();
+            
+            if (!$template) {
+                \Log::error('AJAX: No active testzadel_reminder template found');
+                return response()->json(['success' => false, 'message' => 'Geen actieve email template gevonden. Ga naar Email Beheer.']);
+            }
+            
+            \Log::info('Template found', ['template_id' => $template->id, 'template_name' => $template->name]);
             
             // Use new Email Template Service
             $emailService = new \App\Services\EmailIntegrationService();
@@ -269,10 +317,10 @@ class TestzadelsController extends Controller
                 'voornaam' => $testzadel->klant->voornaam,
                 'naam' => $testzadel->klant->naam,
                 'email' => $testzadel->klant->email,
-                'merk' => $testzadel->zadel_merk,
-                'model' => $testzadel->zadel_model,
-                'type' => $testzadel->zadel_type,
-                'breedte' => $testzadel->zadel_breedte,
+                'merk' => $testzadel->zadel_merk ?? '',
+                'model' => $testzadel->zadel_model ?? '',
+                'type' => $testzadel->zadel_type ?? '',
+                'breedte' => $testzadel->zadel_breedte ?? '',
                 'uitgeleend_op' => $testzadel->uitleen_datum->format('d/m/Y'),
                 'verwachte_retour' => $testzadel->verwachte_retour_datum->format('d/m/Y'),
                 'bedrijf_naam' => 'Bonami Sportcoaching',
@@ -280,25 +328,48 @@ class TestzadelsController extends Controller
                 'jaar' => now()->format('Y'),
             ];
             
+            \Log::info('AJAX: Sending testzadel reminder with variables', $variables);
+            
             // Send using template system
             $result = $emailService->sendTestzadelReminderEmail($testzadel->klant, $variables);
             
+            \Log::info('Email service result', ['result' => $result]);
+            
             if ($result) {
                 // Update reminder status
-                $testzadel->update([
+                $updateResult = $testzadel->update([
                     'herinnering_verstuurd' => true,
                     'herinnering_verstuurd_op' => now(),
                     'laatste_herinnering' => now()
                 ]);
                 
-                return response()->json(['success' => true, 'message' => 'Herinnering verstuurd']);
+                \Log::info('Testzadel update result', ['update_result' => $updateResult]);
+                
+                \Log::info('AJAX: Testzadel reminder sent successfully', [
+                    'testzadel_id' => $testzadel->id,
+                    'recipient' => $testzadel->klant->email
+                ]);
+                
+                \Log::info('=== AJAX REMINDER SUCCESS ===');
+                
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Herinnering verstuurd naar ' . $testzadel->klant->voornaam . ' ' . $testzadel->klant->naam
+                ]);
             } else {
-                return response()->json(['success' => false, 'message' => 'Er is een fout opgetreden']);
+                \Log::error('AJAX: EmailIntegrationService returned false');
+                return response()->json(['success' => false, 'message' => 'Email service geeft geen succes terug']);
             }
             
         } catch (\Exception $e) {
-            \Log::error('Failed to send testzadel reminder: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Er is een fout opgetreden']);
+            \Log::error('=== AJAX REMINDER ERROR ===', [
+                'testzadel_id' => $testzadel->id,
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Fout: ' . $e->getMessage()]);
         }
     }
     

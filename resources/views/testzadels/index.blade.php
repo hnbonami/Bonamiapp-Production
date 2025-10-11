@@ -1,18 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-@if(session('success'))
-    <<!-- Actions -->
-<div class="flex justify-between items-center mb-1">v style="background:#d1fae5;color:#065f46;padding:1em;margin-bottom:1em;border-radius:5px;">
-        {{ session('success') }}
-    </div>
-@endif
-
-@if(session('error'))
-    <div style="background:#fef2f2;color:#dc2626;padding:1em;margin-bottom:1em;border-radius:5px;">
-        {{ session('error') }}
-    </div>
-@endif
+@include('includes.flash-messages')
 
 <!-- Stats tiles -->
 <div class="grid grid-cols-4 gap-4 mb-4">
