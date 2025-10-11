@@ -528,6 +528,11 @@ class EmailIntegrationService
             '@{{bedrijf_naam}}',
             '@{{datum}}',
             '@{{jaar}}',
+            '@{{tijd}}',
+            '@{{unsubscribe_url}}',
+            '@{{marketing_unsubscribe_url}}',
+            '@{{preferences_url}}',
+            '@{{email_id}}',
             // Also support old format for compatibility
             '{{customer_name}}',
             '{{klant_naam}}',
@@ -544,6 +549,11 @@ class EmailIntegrationService
             config('app.name', 'Bonami'),
             now()->format('d-m-Y'),
             now()->format('Y'),
+            now()->format('H:i'),
+            route('unsubscribe', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
+            route('marketing.unsubscribe', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
+            route('email.preferences', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
+            'CUST-' . $customer->id . '-' . time(),
             // Old format values
             $customer->voornaam . ' ' . $customer->naam,
             $customer->voornaam . ' ' . $customer->naam,
@@ -577,6 +587,11 @@ class EmailIntegrationService
             '@{{bedrijf_naam}}',
             '@{{datum}}',
             '@{{jaar}}',
+            '@{{tijd}}',
+            '@{{unsubscribe_url}}',
+            '@{{marketing_unsubscribe_url}}',
+            '@{{preferences_url}}',
+            '@{{email_id}}',
             // Also support old format for compatibility
             '{{employee_name}}',
             '{{medewerker_naam}}',
@@ -592,6 +607,11 @@ class EmailIntegrationService
             config('app.name', 'Bonami'),
             now()->format('d-m-Y'),
             now()->format('Y'),
+            now()->format('H:i'),
+            route('unsubscribe', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
+            route('marketing.unsubscribe', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
+            route('email.preferences', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
+            'EMP-' . $employee->id . '-' . time(),
             // Old format values
             $employee->voornaam . ' ' . $employee->achternaam,
             $employee->voornaam . ' ' . $employee->achternaam,
@@ -815,5 +835,14 @@ class EmailIntegrationService
             \Log::error('Debug email logging failed: ' . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Generate secure unsubscribe token for email
+     */
+    private function generateUnsubscribeToken($email)
+    {
+        // Create a secure token based on email and app key
+        return hash('sha256', $email . config('app.key') . date('Y-m'));
     }
 }
