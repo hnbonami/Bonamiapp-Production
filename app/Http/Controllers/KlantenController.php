@@ -62,6 +62,45 @@ class KlantenController extends Controller
                 'adres', 'postcode', 'stad', 'land', 'opmerkingen', 'hoe_ontdekt'
             ]));
 
+            // STAP 1.5: BESTAANDE WELKOMSTMAIL SYSTEEM (MOET BLIJVEN WERKEN!)
+            try {
+                // Generate temporary password
+                $temporaryPassword = \Str::random(12);
+                
+                // Create user account (BESTAAND SYSTEEM)
+                $user = \App\Models\User::create([
+                    'name' => $klant->voornaam . ' ' . $klant->naam,
+                    'email' => $klant->email,
+                    'password' => \Hash::make($temporaryPassword),
+                    'role' => 'customer',
+                    'klant_id' => $klant->id,
+                ]);
+
+                // Create invitation token (BESTAAND SYSTEEM)
+                \App\Models\InvitationToken::create([
+                    'email' => $klant->email,
+                    'token' => \Str::random(60),
+                    'type' => 'klant',
+                    'temporary_password' => $temporaryPassword,
+                    'expires_at' => now()->addDays(7),
+                ]);
+
+                // BESTAANDE WELKOMSTMAIL VERSTUREN
+                $emailService = app(\App\Services\EmailIntegrationService::class);
+                $emailService->sendCustomerWelcomeEmail($klant, [
+                    'temporary_password' => $temporaryPassword,
+                    'voornaam' => $klant->voornaam,
+                    'naam' => $klant->naam,
+                    'email' => $klant->email
+                ]);
+                
+                \Log::info('✅ Welcome email sent to new customer');
+                
+            } catch (\Exception $welcomeError) {
+                \Log::error('❌ Welcome email failed (NON-CRITICAL): ' . $welcomeError->getMessage());
+                // Don't fail customer creation if welcome email fails
+            }
+
             // STAP 2: VEILIG verwerken van referral (NIEUWE FUNCTIONALITEIT)
             $referralMessage = '';
             if ($request->filled('referral_source')) {
@@ -87,7 +126,7 @@ class KlantenController extends Controller
             // STAP 3: Redirect met success (BESTAANDE FUNCTIONALITEIT + referral message)
             return redirect()
                 ->route('klanten.show', $klant)
-                ->with('success', 'Klant succesvol aangemaakt!' . $referralMessage);
+                ->with('success', 'Klant succesvol aangemaakt! Welkomstmail is verstuurd.' . $referralMessage);
                 
         } catch (\Exception $e) {
             \Log::error('Failed to create customer: ' . $e->getMessage());
