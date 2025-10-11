@@ -5,7 +5,7 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">⚙️ Trigger Bewerken</h1>
+            <h1 class="text-3xl font-bold text-gray-900">⚙️ Trigger Bewerken TEST</h1>
             <p class="text-gray-600 mt-1">Configureer wanneer en hoe vaak emails automatisch worden verstuurd</p>
         </div>
         <a href="{{ route('admin.email.triggers') }}" 
@@ -46,142 +46,141 @@
                 </div>
             @endif
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <!-- Basic Settings -->
+            <div class="space-y-6">
+                <!-- Naam -->
                 <div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">📋 Basis Instellingen</h3>
-                    
-                    <div class="space-y-6">
-                        <div>
-                            <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                                Trigger Naam <span class="text-red-500">*</span>
-                            </label>
-                            <input type="text" name="name" id="name" 
-                                   value="{{ old('name', $trigger->name) }}" required
-                                   class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            @error('name')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="email_template_id" class="block text-sm font-medium text-gray-700 mb-2">
-                                Email Template <span class="text-red-500">*</span>
-                            </label>
-                            <select name="email_template_id" id="email_template_id" required
-                                    class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                <option value="">Selecteer template...</option>
-                                @foreach($templates as $template)
-                                    <option value="{{ $template->id }}" 
-                                            {{ old('email_template_id', $trigger->email_template_id) == $template->id ? 'selected' : '' }}>
-                                        {{ $template->name }} ({{ $template->type_name }})
-                                    </option>
-                                @endforeach
-                            </select>
-                            @error('email_template_id')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div>
-                            <label for="frequency" class="block text-sm font-medium text-gray-700 mb-2">
-                                Controle Frequentie <span class="text-red-500">*</span>
-                            </label>
-                            <select name="frequency" id="frequency" required
-                                    class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                <option value="hourly" {{ old('frequency', $trigger->settings['frequency'] ?? 'daily') == 'hourly' ? 'selected' : '' }}>
-                                    Elk uur
-                                </option>
-                                <option value="daily" {{ old('frequency', $trigger->settings['frequency'] ?? 'daily') == 'daily' ? 'selected' : '' }}>
-                                    Dagelijks
-                                </option>
-                                <option value="weekly" {{ old('frequency', $trigger->settings['frequency'] ?? 'daily') == 'weekly' ? 'selected' : '' }}>
-                                    Wekelijks
-                                </option>
-                            </select>
-                            @error('frequency')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
-                        <div class="flex items-center">
-                            <input type="checkbox" name="is_active" id="is_active" value="1" 
-                                   {{ old('is_active', $trigger->is_active) ? 'checked' : '' }}
-                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                            <label for="is_active" class="ml-2 block text-sm text-gray-900">
-                                Trigger is actief
-                            </label>
-                        </div>
-                    </div>
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                        Naam <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" name="name" id="name" 
+                           value="{{ old('name', $trigger->name) }}" required
+                           class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    @error('name')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <!-- Specific Settings -->
+                <!-- Email Template -->
                 <div>
-                    <h3 class="text-lg font-medium text-gray-900 mb-4">🎯 Specifieke Instellingen</h3>
+                    <label for="email_template_id" class="block text-sm font-medium text-gray-700 mb-2">
+                        Email Template <span class="text-red-500">*</span>
+                    </label>
+                    <select name="email_template_id" id="email_template_id" required
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Selecteer template...</option>
+                        @foreach($templates as $template)
+                            <option value="{{ $template->id }}" 
+                                    {{ old('email_template_id', $trigger->email_template_id) == $template->id ? 'selected' : '' }}>
+                                {{ $template->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @error('email_template_id')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <!-- Trigger Actief -->
+                <div class="flex items-center">
+                    <input type="checkbox" name="is_active" id="is_active" value="1" 
+                           {{ old('is_active', $trigger->is_active) ? 'checked' : '' }}
+                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="is_active" class="ml-2 block text-sm text-gray-900">
+                        ✅ Trigger actief
+                    </label>
+                </div>
+
+                <!-- Testzadel Instellingen -->
+                <div class="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
+                    <h3 class="text-lg font-semibold text-blue-900 mb-4">🎯 Testzadel Herinnering Instellingen</h3>
                     
-                    <div class="space-y-6">
-                        <!-- Testzadel Reminder Settings -->
-                        @if($trigger->type === 'testzadel_reminder')
-                            <div class="bg-blue-50 p-4 rounded-lg">
-                                <h4 class="font-medium text-blue-900 mb-3">📧 Testzadel Herinnering</h4>
-                                
-                                <div class="space-y-4">
-                                    <div>
-                                        <label for="reminder_days" class="block text-sm font-medium text-blue-700 mb-2">
-                                            Verstuur herinnering na X dagen
-                                        </label>
-                                        <div class="flex items-center space-x-3">
-                                            <input type="number" name="reminder_days" id="reminder_days" 
-                                                   value="{{ old('reminder_days', $trigger->conditions['reminder_days'] ?? 7) }}"
-                                                   min="1" max="365"
-                                                   class="block w-20 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                            <span class="text-sm text-blue-600">dagen na uitlening</span>
-                                        </div>
-                                        <p class="mt-1 text-xs text-blue-600">
-                                            Huidige instelling: {{ $trigger->conditions['reminder_days'] ?? 7 }} dagen
-                                        </p>
-                                    </div>
-
-                                    <div>
-                                        <label for="max_reminders" class="block text-sm font-medium text-blue-700 mb-2">
-                                            Maximum aantal herinneringen
-                                        </label>
-                                        <select name="max_reminders" id="max_reminders"
-                                                class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                                            @for($i = 1; $i <= 10; $i++)
-                                                <option value="{{ $i }}" 
-                                                        {{ old('max_reminders', $trigger->settings['max_reminders'] ?? 3) == $i ? 'selected' : '' }}>
-                                                    {{ $i }} herinnering{{ $i > 1 ? 'en' : '' }}
-                                                </option>
-                                            @endfor
-                                        </select>
-                                    </div>
-                                </div>
+                    <div class="space-y-4">
+                        <!-- Herinnering Dagen -->
+                        <div>
+                            <label for="reminder_days" class="block text-sm font-medium text-blue-700 mb-2">
+                                📅 Verstuur herinnering na X dagen <span class="text-red-500">*</span>
+                            </label>
+                            <div class="flex items-center space-x-3">
+                                <input type="number" name="reminder_days" id="reminder_days" 
+                                       value="{{ old('reminder_days', $trigger->conditions['reminder_days'] ?? 7) }}"
+                                       min="1" max="365" required
+                                       class="block w-24 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-center font-medium">
+                                <span class="text-sm text-blue-600 font-medium">dagen na uitlening</span>
                             </div>
-                        @endif
+                            <p class="mt-1 text-xs text-blue-600">
+                                Huidig: {{ $trigger->conditions['reminder_days'] ?? 7 }} dagen
+                            </p>
+                            @error('reminder_days')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                        <!-- Birthday Settings -->
-                        @if($trigger->type === 'birthday')
-                            <div class="bg-purple-50 p-4 rounded-lg">
-                                <h4 class="font-medium text-purple-900 mb-3">🎂 Verjaardag Felicitaties</h4>
-                                <p class="text-sm text-purple-700">
-                                    Deze trigger controleert dagelijks welke klanten er jarig zijn en verstuurt automatisch felicitaties.
-                                </p>
+                        <!-- Herinnering Interval -->
+                        <div>
+                            <label for="reminder_interval" class="block text-sm font-medium text-blue-700 mb-2">
+                                ⏰ Interval tussen herinneringen
+                            </label>
+                            <div class="flex items-center space-x-3">
+                                <input type="number" name="reminder_interval" id="reminder_interval" 
+                                       value="{{ old('reminder_interval', $trigger->settings['reminder_interval'] ?? 7) }}"
+                                       min="1" max="30"
+                                       class="block w-24 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-center font-medium">
+                                <span class="text-sm text-blue-600 font-medium">dagen tussen herinneringen</span>
                             </div>
-                        @endif
+                            <p class="mt-1 text-xs text-blue-600">
+                                Voor meerdere herinneringen
+                            </p>
+                        </div>
 
-                        <!-- Welcome Customer Settings -->
-                        @if($trigger->type === 'welcome_customer')
-                            <div class="bg-green-50 p-4 rounded-lg">
-                                <h4 class="font-medium text-green-900 mb-3">👋 Welkom Nieuwe Klanten</h4>
-                                <p class="text-sm text-green-700">
-                                    Deze trigger verstuurt automatisch een welkomstmail wanneer een nieuwe klant wordt aangemaakt.
-                                </p>
+                        <!-- Maximum Herinneringen -->
+                        <div>
+                            <label for="max_reminders" class="block text-sm font-medium text-blue-700 mb-2">
+                                🔢 Maximum aantal herinneringen
+                            </label>
+                            <select name="max_reminders" id="max_reminders"
+                                    class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                @for($i = 1; $i <= 10; $i++)
+                                    <option value="{{ $i }}" 
+                                            {{ old('max_reminders', $trigger->settings['max_reminders'] ?? 3) == $i ? 'selected' : '' }}>
+                                        {{ $i }} herinnering{{ $i > 1 ? 'en' : '' }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        <!-- Live Preview -->
+                        <div class="mt-6 p-4 bg-blue-100 rounded-md border border-blue-300">
+                            <h4 class="font-medium text-blue-900 text-sm mb-3">� Herinnering Schema:</h4>
+                            <div class="text-xs text-blue-700 space-y-1" id="reminder-preview">
+                                <div>• 📦 Testzadel uitgeleend op dag 0</div>
+                                <div>• 📧 1e herinnering na <span id="first-reminder" class="font-bold">{{ $trigger->conditions['reminder_days'] ?? 7 }}</span> dagen</div>
+                                <div>• 📧 2e herinnering na <span id="second-reminder" class="font-bold">{{ ($trigger->conditions['reminder_days'] ?? 7) + ($trigger->settings['reminder_interval'] ?? 7) }}</span> dagen</div>
+                                <div>• 📧 3e herinnering na <span id="third-reminder" class="font-bold">{{ ($trigger->conditions['reminder_days'] ?? 7) + (2 * ($trigger->settings['reminder_interval'] ?? 7)) }}</span> dagen</div>
                             </div>
-                        @endif
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <script>
+                // Live preview update
+                document.addEventListener('DOMContentLoaded', function() {
+                    function updatePreview() {
+                        const reminderDays = parseInt(document.getElementById('reminder_days').value) || 7;
+                        const reminderInterval = parseInt(document.getElementById('reminder_interval').value) || 7;
+                        
+                        document.getElementById('first-reminder').textContent = reminderDays;
+                        document.getElementById('second-reminder').textContent = reminderDays + reminderInterval;
+                        document.getElementById('third-reminder').textContent = reminderDays + (2 * reminderInterval);
+                    }
+                    
+                    document.getElementById('reminder_days').addEventListener('input', updatePreview);
+                    document.getElementById('reminder_interval').addEventListener('input', updatePreview);
+                    
+                    // Initial update
+                    updatePreview();
+                });
+            </script>
 
             <!-- Stats -->
             <div class="mt-8 pt-6 border-t border-gray-200">
