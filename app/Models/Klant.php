@@ -87,11 +87,44 @@ class Klant extends Model
     // TODO: bikefit relatie toevoegen als het model en tabel bestaat
 
     /**
-     * Get the user account associated with this klant
+     * Get the user associated with this klant
      */
     public function user()
     {
-        return $this->hasOne(\App\Models\User::class, 'klant_id');
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    // NIEUWE REFERRAL RELATIES - VEILIG TOEGEVOEGD
+    /**
+     * Referrals this customer has made (customers they referred)
+     */
+    public function referralsMade()
+    {
+        return $this->hasMany(\App\Models\CustomerReferral::class, 'referring_customer_id');
+    }
+
+    /**
+     * The referral record for this customer (how they were referred)
+     */
+    public function referralReceived()
+    {
+        return $this->hasOne(\App\Models\CustomerReferral::class, 'referred_customer_id');
+    }
+
+    /**
+     * Get the customer who referred this customer
+     */
+    public function getReferredByAttribute()
+    {
+        return $this->referralReceived?->referringCustomer;
+    }
+
+    /**
+     * Get count of successful referrals this customer made
+     */
+    public function getReferralCountAttribute()
+    {
+        return $this->referralsMade()->count();
     }
 
     /**

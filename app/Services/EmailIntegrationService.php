@@ -935,4 +935,108 @@ class EmailIntegrationService
             return false;
         }
     }
+
+    /**
+     * Send customer referral thank you email - NIEUWE FUNCTIONALITEIT
+     * Voorzichtig toegevoegd zonder bestaande systeem te verstoren
+     */
+    public function sendReferralThankYouEmail($referringCustomer, $referredCustomer)
+    {
+        try {
+            \Log::info('🎉 SENDING REFERRAL THANK YOU EMAIL', [
+                'referring_customer' => $referringCustomer->email,
+                'referred_customer' => $referredCustomer->email
+            ]);
+
+            // Zoek active referral thank you template
+            $template = EmailTemplate::where('type', 'referral_thank_you')
+                                    ->where('is_active', true)
+                                    ->first();
+            
+            if (!$template) {
+                \Log::warning('⚠️ No active referral thank you template found');
+                return false;
+            }
+
+            // Bereid variabelen voor
+            $variables = [
+                'voornaam' => $referringCustomer->voornaam,
+                'naam' => $referringCustomer->naam,
+                'email' => $referringCustomer->email,
+                'referred_customer_name' => $referredCustomer->voornaam . ' ' . $referredCustomer->naam,
+                'referred_customer_email' => $referredCustomer->email,
+                'referral_date' => now()->format('d-m-Y'),
+                'datum' => now()->format('d-m-Y'),
+                'tijd' => now()->format('H:i'),
+                'bedrijf_naam' => config('app.name', 'Bonami'),
+                'website_url' => config('app.url', 'https://bonami-sportcoaching.be'),
+                'email_id' => 'REF-' . $referringCustomer->id . '-' . $referredCustomer->id . '-' . time(),
+                'unsubscribe_url' => $this->generateSafeRoute('unsubscribe', ['email' => $referringCustomer->email, 'token' => $this->generateUnsubscribeToken($referringCustomer->email)])
+            ];
+            
+            $subject = $template->renderSubject($variables);
+            $body = $template->renderBody($variables);
+            
+            // Verstuur email
+            Mail::html($body, function ($message) use ($referringCustomer, $subject) {
+                $message->to($referringCustomer->email, $referringCustomer->voornaam . ' ' . $referringCustomer->naam)
+                        ->subject($subject);
+            });
+            
+            // Log de email (gebruikt bestaand systeem)
+            try {
+                EmailLog::create([
+                    'recipient_email' => $referringCustomer->email,
+                    'recipient_name' => $referringCustomer->voornaam . ' ' . $referringCustomer->naam,
+                    'subject' => $subject,
+                    'body_html' => $body,
+                    'email_template_id' => $template->id,
+                    'trigger_name' => 'referral_thank_you',
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                    'variables' => $variables
+                ]);
+                \Log::info('✅ Referral thank you email logged successfully');
+            } catch (\Exception $logError) {
+                \Log::warning('Failed to log referral email (but email was sent): ' . $logError->getMessage());
+                
+                // Fallback: direct DB insert (bestaand systeem)
+                try {
+                    \DB::table('email_logs')->insert([
+                        'recipient_email' => $referringCustomer->email,
+                        'recipient_name' => $referringCustomer->voornaam . ' ' . $referringCustomer->naam,
+                        'subject' => $subject,
+                        'body_html' => $body ?? '',
+                        'email_template_id' => $template->id,
+                        'trigger_name' => 'referral_thank_you',
+                        'status' => 'sent',
+                        'sent_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    \Log::info('✅ Referral email logged via direct DB insert');
+                } catch (\Exception $dbError) {
+                    \Log::error('❌ All referral email logging failed: ' . $dbError->getMessage());
+                }
+            }
+            
+            // Update trigger statistics (gebruikt bestaand systeem)
+            $this->updateTriggerStats('referral_thank_you', true);
+            
+            \Log::info('✅ Referral thank you email sent successfully');
+            return true;
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Failed to send referral thank you email: ' . $e->getMessage(), [
+                'referring_customer' => $referringCustomer->email ?? 'unknown',
+                'referred_customer' => $referredCustomer->email ?? 'unknown',
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            // Update trigger statistics met failure
+            $this->updateTriggerStats('referral_thank_you', false);
+            
+            return false;
+        }
+    }
 }
