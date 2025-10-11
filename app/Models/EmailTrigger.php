@@ -31,7 +31,9 @@ class EmailTrigger extends Model
         'recipient_email',
         'variables',
         'sent_at',
-        'status'
+        'status',
+        'description',
+        'configuration'
     ];
     
     protected $casts = [
@@ -40,7 +42,8 @@ class EmailTrigger extends Model
         'variables' => 'array',
         'conditions' => 'array',
         'settings' => 'array',
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
+        'configuration' => 'array'
     ];
 
     public static function getTypes(): array
@@ -60,13 +63,19 @@ class EmailTrigger extends Model
         return self::getTypes()[$this->type] ?? 'Onbekend';
     }
     
+    /**
+     * Get the template associated with this trigger
+     */
     public function template()
     {
         return $this->belongsTo(EmailTemplate::class, 'template_id');
     }
 
-    public function emailTemplate()
+    /**
+     * Get the email logs for this trigger
+     */
+    public function emailLogs()
     {
-        return $this->belongsTo(EmailTemplate::class, 'email_template_id');
+        return $this->hasMany(EmailLog::class, 'trigger_name', 'type');
     }
 }

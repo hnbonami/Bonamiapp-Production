@@ -47,21 +47,45 @@ class EmailIntegrationService
             try {
                 EmailLog::create([
                     'recipient_email' => $klant->email,
+                    'recipient_name' => $klant->voornaam . ' ' . $klant->naam,
                     'subject' => $subject,
-                    'template_id' => $template->id,
+                    'body_html' => $body,
+                    'email_template_id' => $template->id,
                     'trigger_name' => 'testzadel_reminder',
                     'status' => 'sent',
                     'sent_at' => now(),
                     'variables' => $variables
                 ]);
+                Log::info('✅ Email logged successfully', ['recipient' => $klant->email]);
             } catch (\Exception $logError) {
                 Log::warning('Failed to log email (email was sent successfully): ' . $logError->getMessage());
+                // Fallback: direct DB insert
+                try {
+                    \DB::table('email_logs')->insert([
+                        'recipient_email' => $klant->email,
+                        'recipient_name' => $klant->voornaam . ' ' . $klant->naam,
+                        'subject' => $subject,
+                        'body_html' => $body ?? '',
+                        'email_template_id' => $template->id,
+                        'trigger_name' => 'testzadel_reminder',
+                        'status' => 'sent',
+                        'sent_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    Log::info('✅ Email logged via direct DB insert');
+                } catch (\Exception $dbError) {
+                    Log::error('❌ Both EmailLog model and direct DB insert failed: ' . $dbError->getMessage());
+                }
             }
             
             Log::info('Testzadel reminder email sent successfully', [
                 'recipient' => $klant->email,
                 'template' => $template->name
             ]);
+            
+            // Update trigger statistics
+            $this->updateTriggerStats('testzadel_reminder', true);
             
             return true;
             
@@ -77,7 +101,8 @@ class EmailIntegrationService
                 EmailLog::create([
                     'recipient_email' => $klant->email ?? 'unknown',
                     'subject' => $subject ?? 'Testzadel Herinnering',
-                    'template_id' => $template->id ?? null,
+                    'body_html' => '',
+                    'email_template_id' => $template->id ?? null,
                     'trigger_name' => 'testzadel_reminder',
                     'status' => 'failed',
                     'error_message' => $e->getMessage(),
@@ -86,6 +111,9 @@ class EmailIntegrationService
             } catch (\Exception $logError) {
                 Log::error('Failed to log email error: ' . $logError->getMessage());
             }
+            
+            // Update trigger statistics with failure
+            $this->updateTriggerStats('testzadel_reminder', false);
             
             return false;
         }
@@ -114,15 +142,44 @@ class EmailIntegrationService
                         ->subject($subject);
             });
             
-            EmailLog::create([
-                'recipient_email' => $klant->email,
-                'subject' => $subject,
-                'template_id' => $template->id,
-                'trigger_name' => 'birthday',
-                'status' => 'sent',
-                'sent_at' => now(),
-                'variables' => $variables
-            ]);
+            // Log the email
+            try {
+                EmailLog::create([
+                    'recipient_email' => $klant->email,
+                    'recipient_name' => $klant->voornaam . ' ' . $klant->naam,
+                    'subject' => $subject,
+                    'body_html' => $body,
+                    'email_template_id' => $template->id,
+                    'trigger_name' => 'birthday',
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                    'variables' => $variables
+                ]);
+                Log::info('✅ Birthday email logged successfully', ['recipient' => $klant->email]);
+            } catch (\Exception $logError) {
+                Log::warning('Failed to log birthday email: ' . $logError->getMessage());
+                // Fallback: direct DB insert
+                try {
+                    \DB::table('email_logs')->insert([
+                        'recipient_email' => $klant->email,
+                        'recipient_name' => $klant->voornaam . ' ' . $klant->naam,
+                        'subject' => $subject,
+                        'body_html' => $body ?? '',
+                        'email_template_id' => $template->id,
+                        'trigger_name' => 'birthday',
+                        'status' => 'sent',
+                        'sent_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    Log::info('✅ Birthday email logged via direct DB insert');
+                } catch (\Exception $dbError) {
+                    Log::error('❌ Birthday email logging failed completely: ' . $dbError->getMessage());
+                }
+            }
+            
+            // Update trigger statistics
+            $this->updateTriggerStats('birthday', true);
             
             return true;
             
@@ -155,15 +212,44 @@ class EmailIntegrationService
                         ->subject($subject);
             });
             
-            EmailLog::create([
-                'recipient_email' => $klant->email,
-                'subject' => $subject,
-                'template_id' => $template->id,
-                'trigger_name' => 'welcome_customer',
-                'status' => 'sent',
-                'sent_at' => now(),
-                'variables' => $variables
-            ]);
+            // Log the email
+            try {
+                EmailLog::create([
+                    'recipient_email' => $klant->email,
+                    'recipient_name' => $klant->voornaam . ' ' . $klant->naam,
+                    'subject' => $subject,
+                    'body_html' => $body,
+                    'email_template_id' => $template->id,
+                    'trigger_name' => 'welcome_customer',
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                    'variables' => $variables
+                ]);
+                Log::info('✅ Welcome customer email logged successfully', ['recipient' => $klant->email]);
+            } catch (\Exception $logError) {
+                Log::warning('Failed to log welcome customer email: ' . $logError->getMessage());
+                // Fallback: direct DB insert
+                try {
+                    \DB::table('email_logs')->insert([
+                        'recipient_email' => $klant->email,
+                        'recipient_name' => $klant->voornaam . ' ' . $klant->naam,
+                        'subject' => $subject,
+                        'body_html' => $body ?? '',
+                        'email_template_id' => $template->id,
+                        'trigger_name' => 'welcome_customer',
+                        'status' => 'sent',
+                        'sent_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    Log::info('✅ Welcome customer email logged via direct DB insert');
+                } catch (\Exception $dbError) {
+                    Log::error('❌ Welcome customer email logging failed completely: ' . $dbError->getMessage());
+                }
+            }
+            
+            // Update trigger statistics
+            $this->updateTriggerStats('welcome_customer', true);
             
             return true;
             
@@ -201,6 +287,9 @@ class EmailIntegrationService
                 'template_type' => is_array($template) ? 'array' : (is_object($template) ? get_class($template) : gettype($template)),
                 'template_id' => is_object($template) ? $template->id : 'none'
             ]);
+
+            
+            \Log::info('🚀 FORCE LOG ENTRY CREATED');
 
             if (empty($customer->email)) {
                 \Log::warning('Customer has no email address for welcome email', [
@@ -244,6 +333,43 @@ class EmailIntegrationService
                 'customer_name' => $customer->voornaam . ' ' . $customer->naam,
                 'subject' => $subject
             ]);
+
+            // Update trigger statistics directly
+            $this->updateTriggerStats('welcome_customer', true);
+            
+            // Also log manually for backup
+            try {
+                EmailLog::create([
+                    'recipient_email' => $customer->email,
+                    'recipient_name' => $customer->voornaam . ' ' . $customer->naam,
+                    'subject' => $subject,
+                    'body_html' => $content ?? '',
+                    'email_template_id' => $template->id ?? null,
+                    'trigger_name' => 'welcome_customer',
+                    'status' => 'sent',
+                    'sent_at' => now()
+                ]);
+                \Log::info('✅ Customer welcome email logged via EmailLog model');
+            } catch (\Exception $logError) {
+                \Log::warning('EmailLog model failed, trying direct DB insert: ' . $logError->getMessage());
+                try {
+                    \DB::table('email_logs')->insert([
+                        'recipient_email' => $customer->email,
+                        'recipient_name' => $customer->voornaam . ' ' . $customer->naam,
+                        'subject' => $subject,
+                        'body_html' => $content ?? '',
+                        'email_template_id' => $template->id ?? null,
+                        'trigger_name' => 'welcome_customer',
+                        'status' => 'sent',
+                        'sent_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    \Log::info('✅ Customer welcome email logged via direct DB insert');
+                } catch (\Exception $dbError) {
+                    \Log::error('❌ All logging methods failed: ' . $dbError->getMessage());
+                }
+            }
 
             return true;
 
@@ -313,6 +439,43 @@ class EmailIntegrationService
                 'employee_name' => $employee->voornaam . ' ' . $employee->achternaam,
                 'subject' => $subject
             ]);
+
+            // Update trigger statistics
+            $this->updateTriggerStats('welcome_employee', true);
+            
+            // Also log manually for backup
+            try {
+                EmailLog::create([
+                    'recipient_email' => $employee->email,
+                    'recipient_name' => $employee->voornaam . ' ' . $employee->achternaam,
+                    'subject' => $subject,
+                    'body_html' => $content ?? '',
+                    'email_template_id' => $template->id ?? null,
+                    'trigger_name' => 'welcome_employee',
+                    'status' => 'sent',
+                    'sent_at' => now()
+                ]);
+                \Log::info('✅ Employee welcome email logged via EmailLog model');
+            } catch (\Exception $logError) {
+                \Log::warning('EmailLog model failed, trying direct DB insert: ' . $logError->getMessage());
+                try {
+                    \DB::table('email_logs')->insert([
+                        'recipient_email' => $employee->email,
+                        'recipient_name' => $employee->voornaam . ' ' . $employee->achternaam,
+                        'subject' => $subject,
+                        'body_html' => $content ?? '',
+                        'email_template_id' => $template->id ?? null,
+                        'trigger_name' => 'welcome_employee',
+                        'status' => 'sent',
+                        'sent_at' => now(),
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                    \Log::info('✅ Employee welcome email logged via direct DB insert');
+                } catch (\Exception $dbError) {
+                    \Log::error('❌ All employee logging methods failed: ' . $dbError->getMessage());
+                }
+            }
 
             return true;
 
@@ -467,6 +630,189 @@ class EmailIntegrationService
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
+            return false;
+        }
+    }
+
+    /**
+     * Update trigger statistics after sending email
+     */
+    private function updateTriggerStats($triggerType, $success = true)
+    {
+        try {
+            // Find or create trigger record
+            $trigger = \App\Models\EmailTrigger::firstOrCreate(
+                ['type' => $triggerType],
+                [
+                    'name' => ucfirst(str_replace('_', ' ', $triggerType)),
+                    'description' => 'Auto-generated trigger for ' . $triggerType,
+                    'is_active' => true,
+                    'emails_sent' => 0
+                ]
+            );
+            
+            // Update statistics
+            if ($success) {
+                $trigger->increment('emails_sent');
+            }
+            $trigger->update(['last_run_at' => now()]);
+            
+            \Log::info('Trigger statistics updated', [
+                'trigger_type' => $triggerType,
+                'emails_sent' => $trigger->emails_sent,
+                'success' => $success
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::warning('Failed to update trigger statistics', [
+                'trigger_type' => $triggerType,
+                'error' => $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Manual trigger stats update - use this after sending any email
+     */
+    public function incrementTriggerStats($triggerType)
+    {
+        $this->updateTriggerStats($triggerType, true);
+    }
+
+    /**
+     * Force update trigger statistics with actual email counts
+     */
+    public function forceUpdateTriggerStats()
+    {
+        try {
+            // Count emails by trigger_name from email_logs
+            $triggers = [
+                'welcome_customer' => \App\Models\EmailLog::where('trigger_name', 'welcome_customer')->count(),
+                'welcome_employee' => \App\Models\EmailLog::where('trigger_name', 'welcome_employee')->count(),
+                'testzadel_reminder' => \App\Models\EmailLog::where('trigger_name', 'testzadel_reminder')->count(),
+                'birthday' => \App\Models\EmailLog::where('trigger_name', 'birthday')->count(),
+            ];
+            
+            foreach ($triggers as $type => $count) {
+                if ($count > 0) {
+                    $trigger = \App\Models\EmailTrigger::firstOrCreate(
+                        ['type' => $type],
+                        [
+                            'name' => ucfirst(str_replace('_', ' ', $type)),
+                            'description' => 'Auto-generated trigger for ' . $type,
+                            'is_active' => true,
+                        ]
+                    );
+                    
+                    $trigger->update([
+                        'emails_sent' => $count,
+                        'last_run_at' => now()
+                    ]);
+                    
+                    \Log::info("Updated trigger {$type}: {$count} emails");
+                }
+            }
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            \Log::error('Force update trigger stats failed: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Debug email logging issues
+     */
+    public function debugEmailLogging()
+    {
+        try {
+            \Log::info('🔍 DEBUGGING EMAIL LOGGING SYSTEM');
+            
+            // Check if EmailLog model exists and is accessible
+            $emailLogExists = class_exists(\App\Models\EmailLog::class);
+            \Log::info('EmailLog model exists: ' . ($emailLogExists ? 'YES' : 'NO'));
+            
+            // Check database connection
+            try {
+                $dbConnected = \DB::connection()->getPdo();
+                \Log::info('Database connection: OK');
+            } catch (\Exception $e) {
+                \Log::error('Database connection: FAILED - ' . $e->getMessage());
+                return false;
+            }
+            
+            // Check if email_logs table exists
+            try {
+                $tableExists = \Schema::hasTable('email_logs');
+                \Log::info('email_logs table exists: ' . ($tableExists ? 'YES' : 'NO'));
+                
+                if ($tableExists) {
+                    // Check table structure
+                    $columns = \Schema::getColumnListing('email_logs');
+                    \Log::info('email_logs columns: ' . implode(', ', $columns));
+                    
+                    // Count existing records
+                    $count = \DB::table('email_logs')->count();
+                    \Log::info('Existing email_logs count: ' . $count);
+                    
+                    // Get latest records
+                    $latest = \DB::table('email_logs')->latest('created_at')->limit(3)->get();
+                    \Log::info('Latest 3 records: ', $latest->toArray());
+                }
+                
+            } catch (\Exception $e) {
+                \Log::error('email_logs table check failed: ' . $e->getMessage());
+            }
+            
+            // Test direct insert
+            try {
+                \DB::table('email_logs')->insert([
+                    'recipient_email' => 'debug@test.com',
+                    'recipient_name' => 'Debug Test',
+                    'subject' => 'Debug Test Email',
+                    'body_html' => '<p>Debug test email content</p>',
+                    'trigger_name' => 'debug_test',
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+                \Log::info('✅ Direct DB insert test: SUCCESS');
+                
+                // Clean up test record
+                \DB::table('email_logs')->where('recipient_email', 'debug@test.com')->delete();
+                
+            } catch (\Exception $e) {
+                \Log::error('❌ Direct DB insert test: FAILED - ' . $e->getMessage());
+            }
+            
+            // Test EmailLog model
+            if ($emailLogExists) {
+                try {
+                    $testLog = \App\Models\EmailLog::create([
+                        'recipient_email' => 'model-test@test.com',
+                        'recipient_name' => 'Model Test',
+                        'subject' => 'Model Test Email',
+                        'body_html' => '<p>Model test email content</p>',
+                        'trigger_name' => 'model_test',
+                        'status' => 'sent',
+                        'sent_at' => now()
+                    ]);
+                    \Log::info('✅ EmailLog model test: SUCCESS');
+                    
+                    // Clean up
+                    $testLog->delete();
+                    
+                } catch (\Exception $e) {
+                    \Log::error('❌ EmailLog model test: FAILED - ' . $e->getMessage());
+                }
+            }
+            
+            return true;
+            
+        } catch (\Exception $e) {
+            \Log::error('Debug email logging failed: ' . $e->getMessage());
             return false;
         }
     }

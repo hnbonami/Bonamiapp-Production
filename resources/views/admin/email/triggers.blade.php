@@ -161,7 +161,7 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ $trigger->emails_sent ?? 0 }}
+                            {{ \DB::table('email_logs')->where('trigger_name', $trigger->type)->count() }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $trigger->last_run_at ? \Carbon\Carbon::parse($trigger->last_run_at)->diffForHumans() : 'Nog nooit' }}
