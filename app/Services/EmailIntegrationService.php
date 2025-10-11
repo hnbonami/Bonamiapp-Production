@@ -526,6 +526,7 @@ class EmailIntegrationService
             '@{{wachtwoord}}',
             '@{{temporary_password}}',
             '@{{bedrijf_naam}}',
+            '@{{website_url}}',
             '@{{datum}}',
             '@{{jaar}}',
             '@{{tijd}}',
@@ -547,12 +548,13 @@ class EmailIntegrationService
             $temporaryPassword,
             $temporaryPassword,
             config('app.name', 'Bonami'),
+            config('app.url', 'https://bonami-sportcoaching.be'),
             now()->format('d-m-Y'),
             now()->format('Y'),
             now()->format('H:i'),
-            route('unsubscribe', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
-            route('marketing.unsubscribe', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
-            route('email.preferences', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
+            $this->generateSafeRoute('unsubscribe', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
+            $this->generateSafeRoute('marketing.unsubscribe', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
+            $this->generateSafeRoute('email.preferences', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
             'CUST-' . $customer->id . '-' . time(),
             // Old format values
             $customer->voornaam . ' ' . $customer->naam,
@@ -585,6 +587,7 @@ class EmailIntegrationService
             '@{{achternaam}}', 
             '@{{email}}',
             '@{{bedrijf_naam}}',
+            '@{{website_url}}',
             '@{{datum}}',
             '@{{jaar}}',
             '@{{tijd}}',
@@ -605,12 +608,13 @@ class EmailIntegrationService
             $employee->achternaam,
             $employee->email,
             config('app.name', 'Bonami'),
+            config('app.url', 'https://bonami-sportcoaching.be'),
             now()->format('d-m-Y'),
             now()->format('Y'),
             now()->format('H:i'),
-            route('unsubscribe', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
-            route('marketing.unsubscribe', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
-            route('email.preferences', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
+            $this->generateSafeRoute('unsubscribe', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
+            $this->generateSafeRoute('marketing.unsubscribe', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
+            $this->generateSafeRoute('email.preferences', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
             'EMP-' . $employee->id . '-' . time(),
             // Old format values
             $employee->voornaam . ' ' . $employee->achternaam,
@@ -844,5 +848,91 @@ class EmailIntegrationService
     {
         // Create a secure token based on email and app key
         return hash('sha256', $email . config('app.key') . date('Y-m'));
+    }
+
+    /**
+     * Generate safe route URLs that don't crash if routes don't exist
+     */
+    private function generateSafeRoute($routeName, $parameters = [])
+    {
+        try {
+            if (\Route::has($routeName)) {
+                return route($routeName, $parameters);
+            } else {
+                // Fallback URLs
+                $email = $parameters['email'] ?? 'unknown';
+                $token = $parameters['token'] ?? 'no-token';
+                
+                switch($routeName) {
+                    case 'unsubscribe':
+                        return config('app.url') . '/unsubscribe?email=' . urlencode($email) . '&token=' . $token;
+                    case 'marketing.unsubscribe':
+                        return config('app.url') . '/marketing/unsubscribe?email=' . urlencode($email) . '&token=' . $token;
+                    case 'email.preferences':
+                        return config('app.url') . '/email/preferences?email=' . urlencode($email) . '&token=' . $token;
+                    default:
+                        return config('app.url') . '/unsubscribe?email=' . urlencode($email);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Route generation failed for ' . $routeName . ': ' . $e->getMessage());
+            return config('app.url') . '/unsubscribe';
+        }
+    }
+
+    /**
+     * Quick test method to debug welcome email issues
+     */
+    public function testWelcomeEmailSending()
+    {
+        try {
+            \Log::info('🧪 TESTING WELCOME EMAIL SYSTEM');
+            
+            // Test 1: Check if we can find customers
+            $customer = \App\Models\Klant::first();
+            if (!$customer) {
+                \Log::error('❌ No customers found for testing');
+                return false;
+            }
+            
+            \Log::info('✅ Found test customer: ' . $customer->email);
+            
+            // Test 2: Check if we can find welcome template
+            $template = \App\Models\EmailTemplate::where('type', 'welcome_customer')
+                                               ->where('is_active', true)
+                                               ->first();
+            
+            if (!$template) {
+                \Log::warning('⚠️ No active welcome_customer template found');
+                
+                // Check if any welcome template exists
+                $anyTemplate = \App\Models\EmailTemplate::where('type', 'welcome_customer')->first();
+                if ($anyTemplate) {
+                    \Log::info('Found inactive welcome template: ' . $anyTemplate->name);
+                } else {
+                    \Log::error('❌ No welcome_customer template exists at all');
+                }
+            } else {
+                \Log::info('✅ Found active welcome template: ' . $template->name);
+            }
+            
+            // Test 3: Try to send test email
+            \Log::info('🚀 Attempting to send test welcome email...');
+            $result = $this->sendCustomerWelcomeEmail($customer);
+            
+            if ($result) {
+                \Log::info('✅ Test welcome email sent successfully!');
+            } else {
+                \Log::error('❌ Test welcome email failed');
+            }
+            
+            return $result;
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Welcome email test failed: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return false;
+        }
     }
 }
