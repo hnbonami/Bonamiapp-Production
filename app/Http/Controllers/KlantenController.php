@@ -133,4 +133,65 @@ class KlantenController extends Controller
         $klant->delete();
         return redirect()->route('klanten.index')->with('success', 'Klant succesvol verwijderd!');
     }
+
+    /**
+     * Send invitation email to customer - VEILIG TOEGEVOEGD
+     */
+    public function sendInvitation(Request $request, Klant $klant)
+    {
+        try {
+            \Log::info('🎯 SENDING INVITATION EMAIL', [
+                'klant_id' => $klant->id,
+                'klant_email' => $klant->email
+            ]);
+
+            // Generate temporary password
+            $temporaryPassword = \Str::random(12);
+            
+            // Check if user already exists, if not create one
+            $user = \App\Models\User::where('email', $klant->email)->first();
+            if (!$user) {
+                $user = \App\Models\User::create([
+                    'name' => $klant->voornaam . ' ' . $klant->naam,
+                    'email' => $klant->email,
+                    'password' => \Hash::make($temporaryPassword),
+                    'role' => 'customer',
+                    'klant_id' => $klant->id,
+                ]);
+            } else {
+                // Update existing user password
+                $user->update([
+                    'password' => \Hash::make($temporaryPassword),
+                ]);
+            }
+            
+            // Create invitation token
+            $invitationToken = \App\Models\InvitationToken::create([
+                'email' => $klant->email,
+                'token' => \Str::random(60),
+                'type' => 'klant',
+                'temporary_password' => $temporaryPassword,
+                'expires_at' => now()->addDays(7),
+            ]);
+            
+            // Send invitation email using our EmailIntegrationService
+            $emailService = app(\App\Services\EmailIntegrationService::class);
+            $emailResult = $emailService->sendCustomerWelcomeEmail($klant, [
+                'temporary_password' => $temporaryPassword,
+                'voornaam' => $klant->voornaam,
+                'naam' => $klant->naam,
+                'email' => $klant->email
+            ]);
+            
+            if ($emailResult) {
+                return redirect()->back()->with('success', 'Uitnodiging verstuurd naar ' . $klant->voornaam . ' ' . $klant->naam . ' (' . $klant->email . ')');
+            } else {
+                return redirect()->back()->with('error', 'Uitnodiging kon niet worden verstuurd naar ' . $klant->naam);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Invitation sending failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Fout bij versturen uitnodiging: ' . $e->getMessage());
+        }
+    }
 }
