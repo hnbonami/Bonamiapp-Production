@@ -50,6 +50,29 @@
             margin-bottom: 20px;
             position: relative;
             z-index: 2;
+            display: block;
+            /* Email client specific fixes */
+            border: none;
+            outline: none;
+            text-decoration: none;
+        }
+        
+        /* Fallback if logo doesn't load */
+        .logo-fallback {
+            display: none;
+            width: 200px;
+            height: 60px;
+            background-color: rgba(255,255,255,0.9);
+            border: 2px solid rgba(255,255,255,0.8);
+            border-radius: 12px;
+            color: #0f4c5c;
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 56px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 2;
         }
         .header-title {
             color: white;
@@ -299,7 +322,21 @@
         <div class="email-container">
             <!-- Header -->
             <div class="header">
-                <img src="{{ asset('logo_bonami.png') }}" alt="Bonami Sportcoaching" class="logo">
+                <!-- Logo with fallback -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <!-- Try multiple logo sources for better compatibility -->
+                    <img src="https://bonami-sportcoaching.be/logo_bonami.png" 
+                         alt="Bonami Sportcoaching" 
+                         class="logo"
+                         style="max-width: 200px; height: auto; display: block; margin: 0 auto; border: none;"
+                         onerror="this.onerror=null; this.src='https://bonamiapp.test/logo_bonami.png'; if(this.complete && this.naturalHeight === 0) { this.style.display='none'; this.nextElementSibling.style.display='block'; }">
+                    
+                    <!-- Fallback logo text -->
+                    <div style="display: none; width: 200px; height: 60px; background: rgba(255,255,255,0.9); border: 2px solid rgba(255,255,255,0.8); border-radius: 12px; color: #0f4c5c; font-size: 20px; font-weight: bold; text-align: center; line-height: 56px; margin: 0 auto; position: relative; z-index: 2;">
+                        🚴‍♂️ BONAMI SPORTCOACHING
+                    </div>
+                </div>
+                
                 <h1 class="header-title">Bonami Sportcoaching</h1>
                 <p class="header-subtitle">Welkom @{{voornaam}}! 👋</p>
             </div>
