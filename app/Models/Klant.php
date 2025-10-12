@@ -56,6 +56,54 @@ class Klant extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    /**
+     * Helper om te checken of klant een user account heeft
+     */
+    public function hasUserAccount()
+    {
+        return !is_null($this->user_id);
+    }
+
+    /**
+     * Maak een user account aan voor deze klant
+     */
+    public function createUserAccount($password = null)
+    {
+        if ($this->hasUserAccount()) {
+            return $this->user;
+        }
+
+        $password = $password ?: \Str::random(8);
+
+        $user = User::create([
+            'name' => $this->naam,
+            'email' => $this->email,
+            'password' => \Hash::make($password),
+            'role' => 'klant', // Consistent gebruik van 'klant' in plaats van 'customer'
+            'email_verified_at' => now()
+        ]);
+
+        $this->update(['user_id' => $user->id]);
+
+        \Log::info("User account aangemaakt voor klant {$this->id}: {$user->email} met rol 'klant'");
+
+        return $user;
+    }
+
+    /**
+     * Sync klant data naar user account
+     */
+    public function syncToUserAccount()
+    {
+        if ($this->hasUserAccount()) {
+            $this->user->update([
+                'name' => $this->naam,
+                'email' => $this->email,
+                'role' => 'klant'
+            ]);
+        }
+    }
+
     // NIEUWE REFERRAL RELATIES - VEILIG TOEGEVOEGD
     /**
      * Referrals this customer has made (customers they referred)

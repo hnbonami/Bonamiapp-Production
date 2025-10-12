@@ -82,15 +82,19 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the klant associated with the user (if klant_id column exists)
+     * Relationship naar Klant model
      */
     public function klant()
     {
-        try {
-            return $this->belongsTo(\App\Models\Klant::class, 'klant_id');
-        } catch (\Exception $e) {
-            return null;
-        }
+        return $this->hasOne(Klant::class);
+    }
+
+    /**
+     * Relationship naar Medewerker model
+     */
+    public function medewerker()
+    {
+        return $this->hasOne(Medewerker::class);
     }
 
     /**
@@ -224,6 +228,22 @@ class User extends Authenticatable
     public function isStaff()
     {
         return in_array($this->role, ['admin', 'medewerker']);
+    }
+
+    /**
+     * Check of user een klant is
+     */
+    public function isKlant()
+    {
+        return $this->role === 'klant';
+    }
+
+    /**
+     * Check of user een medewerker is
+     */
+    public function isMedewerker()
+    {
+        return $this->role === 'medewerker';
     }
 
     /**

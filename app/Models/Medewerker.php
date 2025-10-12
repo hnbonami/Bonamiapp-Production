@@ -138,6 +138,62 @@ class Medewerker extends Authenticatable
     {
         return $this->voornaam . ' ' . $this->achternaam;
     }
+
+    /**
+     * Get the user associated with this medewerker
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Helper om te checken of medewerker een user account heeft
+     */
+    public function hasUserAccount()
+    {
+        return !is_null($this->user_id);
+    }
+
+    /**
+     * Maak een user account aan voor deze medewerker
+     */
+    public function createUserAccount($password = null)
+    {
+        if ($this->hasUserAccount()) {
+            return $this->user;
+        }
+
+        $password = $password ?: \Str::random(8);
+
+        $user = User::create([
+            'name' => $this->naam,
+            'email' => $this->email,
+            'password' => \Hash::make($password),
+            'role' => 'medewerker',
+            'email_verified_at' => now()
+        ]);
+
+        $this->update(['user_id' => $user->id]);
+
+        \Log::info("User account aangemaakt voor medewerker {$this->id}: {$user->email} met rol 'medewerker'");
+
+        return $user;
+    }
+
+    /**
+     * Sync medewerker data naar user account
+     */
+    public function syncToUserAccount()
+    {
+        if ($this->hasUserAccount()) {
+            $this->user->update([
+                'name' => $this->naam,
+                'email' => $this->email,
+                'role' => 'medewerker'
+            ]);
+        }
+    }
 }
 
 
