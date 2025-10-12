@@ -6,7 +6,7 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">🚀 Trigger Beheer</h1>
+            <h1 class="text-3xl font-bold text-gray-900">🚀 Trigger Beheer TEST</h1>
             <p class="text-gray-600 mt-2">Test alle automatische triggers en verstuur emails indien nodig. Veilig om te gebruiken - er worden alleen emails verstuurd aan mensen die ze daadwerkelijk nodig hebben.</p>
         </div>
         <a href="{{ route('admin.email.index') }}" 

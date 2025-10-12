@@ -447,18 +447,54 @@ class EmailController extends Controller
                     }
                     
                     if ($typeEmailCount > 0 || $template) {
-                        $triggers[] = (object)[
-                            'id' => null,
-                            'name' => $name,
-                            'type' => $type,
-                            'type_name' => $name,
-                            'emails_sent' => $typeEmailCount,
-                            'is_active' => true,
-                            'last_run_at' => $typeLastRun ? \Carbon\Carbon::parse($typeLastRun) : null,
-                            'emailTemplate' => $template,
-                            'conditions' => [],
-                            'settings' => []
-                        ];
+                        // Zoek of er al een trigger bestaat voor dit type
+                        $existingTrigger = \App\Models\EmailTrigger::where('trigger_type', $type)->first();
+                        
+                        if ($existingTrigger) {
+                            // Gebruik bestaande trigger met echte ID
+                            $triggers[] = (object)[
+                                'id' => $existingTrigger->id,
+                                'name' => $existingTrigger->name,
+                                'type' => $existingTrigger->trigger_type,
+                                'type_name' => $this->getTriggerTypeName($existingTrigger->trigger_type),
+                                'emails_sent' => $typeEmailCount,
+                                'is_active' => $existingTrigger->is_active,
+                                'last_run_at' => $typeLastRun ? \Carbon\Carbon::parse($typeLastRun) : null,
+                                'emailTemplate' => $existingTrigger->emailTemplate,
+                                'conditions' => $existingTrigger->conditions ?? [],
+                                'settings' => $existingTrigger->settings ?? []
+                            ];
+                        } else {
+                            // Maak nieuwe trigger aan zodat deze een ID heeft
+                            $newTrigger = \App\Models\EmailTrigger::create([
+                                'trigger_key' => $type . '_auto_' . time(),
+                                'name' => $name,
+                                'type' => $type,
+                                'trigger_type' => $type,
+                                'description' => 'Automatisch aangemaakte trigger voor ' . $type,
+                                'is_active' => true,
+                                'email_template_id' => $template ? $template->id : null,
+                                'emails_sent' => $typeEmailCount,
+                                'conditions' => $this->getDefaultConditions($type),
+                                'settings' => $this->getDefaultSettings($type),
+                                'trigger_data' => json_encode($this->getDefaultTriggerData($type)),
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ]);
+                            
+                            $triggers[] = (object)[
+                                'id' => $newTrigger->id,
+                                'name' => $newTrigger->name,
+                                'type' => $newTrigger->trigger_type,
+                                'type_name' => $this->getTriggerTypeName($newTrigger->trigger_type),
+                                'emails_sent' => $typeEmailCount,
+                                'is_active' => true,
+                                'last_run_at' => $typeLastRun ? \Carbon\Carbon::parse($typeLastRun) : null,
+                                'emailTemplate' => $template,
+                                'conditions' => $newTrigger->conditions ?? [],
+                                'settings' => $newTrigger->settings ?? []
+                            ];
+                        }
                     }
                 }
             }
@@ -493,6 +529,102 @@ class EmailController extends Controller
         ];
         
         return $typeNames[$triggerType] ?? ucfirst(str_replace('_', ' ', $triggerType));
+    }
+
+    /**
+     * Helper method om default conditions te krijgen voor trigger type
+     */
+    private function getDefaultConditions($triggerType)
+    {
+        switch ($triggerType) {
+            case 'testzadel_reminder':
+                return [
+                    'reminder_days' => 7,
+                    'frequency' => 'daily'
+                ];
+            case 'birthday':
+                return [
+                    'send_on_birthday' => true
+                ];
+            case 'welcome_customer':
+            case 'welcome_employee':
+                return [
+                    'trigger_on' => str_replace('welcome_', '', $triggerType) . '_created'
+                ];
+            default:
+                return [];
+        }
+    }
+
+    /**
+     * Helper method om default settings te krijgen voor trigger type
+     */
+    private function getDefaultSettings($triggerType)
+    {
+        switch ($triggerType) {
+            case 'testzadel_reminder':
+                return [
+                    'frequency' => 'daily',
+                    'max_reminders' => 3,
+                    'reminder_interval' => 7
+                ];
+            case 'birthday':
+                return [
+                    'frequency' => 'daily',
+                    'send_time' => '09:00'
+                ];
+            case 'welcome_customer':
+            case 'welcome_employee':
+                return [
+                    'delay_minutes' => 0
+                ];
+            case 'referral_thank_you':
+                return [
+                    'send_immediately' => true,
+                    'track_opens' => true,
+                    'track_clicks' => true
+                ];
+            default:
+                return ['frequency' => 'manual'];
+        }
+    }
+
+    /**
+     * Helper method om default trigger data te krijgen voor trigger type
+     */
+    private function getDefaultTriggerData($triggerType)
+    {
+        switch ($triggerType) {
+            case 'testzadel_reminder':
+                return [
+                    'time' => '10:00',
+                    'schedule' => 'daily',
+                    'days_before_due' => 7
+                ];
+            case 'birthday':
+                return [
+                    'time' => '09:00',
+                    'schedule' => 'daily'
+                ];
+            case 'welcome_customer':
+                return [
+                    'event' => 'customer_created',
+                    'delay_minutes' => 0
+                ];
+            case 'welcome_employee':
+                return [
+                    'event' => 'employee_created',
+                    'delay_minutes' => 0
+                ];
+            case 'referral_thank_you':
+                return [
+                    'event' => 'customer_referred',
+                    'delay_minutes' => 0,
+                    'automatic' => true
+                ];
+            default:
+                return ['frequency' => 'manual'];
+        }
     }
 
     private function createDefaultTriggers()

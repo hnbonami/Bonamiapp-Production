@@ -14,68 +14,58 @@ class EmailTrigger extends Model
     const TYPE_BIRTHDAY = 'birthday';
     const TYPE_WELCOME_CUSTOMER = 'welcome_customer';
     const TYPE_WELCOME_EMPLOYEE = 'welcome_employee';
+    const TYPE_REFERRAL_THANK_YOU = 'referral_thank_you';
     const TYPE_KLANT_INVITATION = 'klant_invitation';
     const TYPE_MEDEWERKER_INVITATION = 'medewerker_invitation';
 
     protected $fillable = [
+        'trigger_key',
         'name',
         'type',
+        'trigger_type',
+        'description',
         'email_template_id',
         'is_active',
         'conditions',
         'settings',
-        'emails_sent',
+        'trigger_data',
         'last_run_at',
-        'trigger_name',
-        'template_id', 
-        'recipient_email',
-        'variables',
-        'sent_at',
-        'status',
-        'description',
-        'configuration'
+        'emails_sent',
+        'created_by'
     ];
     
     protected $casts = [
-        'sent_at' => 'datetime',
-        'last_run_at' => 'datetime',
-        'variables' => 'array',
         'conditions' => 'array',
         'settings' => 'array',
+        'trigger_data' => 'array',
         'is_active' => 'boolean',
-        'configuration' => 'array'
+        'last_run_at' => 'datetime',
     ];
 
-    public static function getTypes(): array
+    /**
+     * Relationship naar EmailTemplate
+     */
+    public function emailTemplate()
     {
-        return [
-            self::TYPE_TESTZADEL_REMINDER => 'Testzadel Herinnering',
-            self::TYPE_BIRTHDAY => 'Verjaardag',
-            self::TYPE_WELCOME_CUSTOMER => 'Welkom Klant',
-            self::TYPE_WELCOME_EMPLOYEE => 'Welkom Medewerker',
-            self::TYPE_KLANT_INVITATION => 'Klant Uitnodiging',
-            self::TYPE_MEDEWERKER_INVITATION => 'Medewerker Uitnodiging',
+        return $this->belongsTo(EmailTemplate::class, 'email_template_id');
+    }
+
+    /**
+     * Trigger type namen voor display
+     */
+    public function getTypeNameAttribute()
+    {
+        $typeNames = [
+            'testzadel_reminder' => 'Testzadel Herinneringen',
+            'birthday' => 'Verjaardag Felicitaties',
+            'welcome_customer' => 'Welkom Nieuwe Klanten',
+            'welcome_employee' => 'Welkom Nieuwe Medewerkers',
+            'referral_thank_you' => 'Doorverwijzing Dankje Email',
+            'klant_invitation' => 'Klant Uitnodigingen',
+            'medewerker_invitation' => 'Medewerker Uitnodigingen',
         ];
-    }
-
-    public function getTypeNameAttribute(): string
-    {
-        return self::getTypes()[$this->type] ?? 'Onbekend';
-    }
-    
-    /**
-     * Get the template associated with this trigger
-     */
-    public function template()
-    {
-        return $this->belongsTo(EmailTemplate::class, 'template_id');
-    }
-
-    /**
-     * Get the email logs for this trigger
-     */
-    public function emailLogs()
-    {
-        return $this->hasMany(EmailLog::class, 'trigger_name', 'type');
+        
+        $triggerType = $this->trigger_type ?? $this->type;
+        return $typeNames[$triggerType] ?? ucfirst(str_replace('_', ' ', $triggerType));
     }
 }

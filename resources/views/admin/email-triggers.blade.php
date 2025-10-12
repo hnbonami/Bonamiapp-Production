@@ -243,11 +243,16 @@
                                         {{ $trigger->last_run_at ? $trigger->last_run_at->diffForHumans() : 'Nog nooit' }}
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        @if($trigger->id)
+                                        @if($trigger->id && !empty($trigger->id))
                                             <a href="{{ route('admin.email.triggers.edit', $trigger->id) }}" 
-                                               class="text-blue-600 hover:text-blue-900">
+                                               class="text-blue-600 hover:text-blue-900 mr-3">
                                                 Bewerken
                                             </a>
+                                            <!-- Test Trigger Knop -->
+                                            <button onclick="testTrigger('{{ $trigger->type }}')" 
+                                                    class="text-green-600 hover:text-green-900">
+                                                Test
+                                            </button>
                                         @else
                                             <span class="text-gray-400">Auto-gegenereerd</span>
                                         @endif
@@ -280,4 +285,31 @@
         </div>
     </div>
 </div>
+
+<script>
+function testTrigger(triggerType) {
+    if (confirm('Weet je zeker dat je deze trigger wilt testen? Dit kan echte emails versturen.')) {
+        fetch(`/admin/email/triggers/run/${triggerType}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`✅ Trigger succesvol uitgevoerd! ${data.emails_sent} emails verstuurd.`);
+                location.reload();
+            } else {
+                alert(`❌ Fout: ${data.message}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Er is een fout opgetreden bij het uitvoeren van de trigger.');
+        });
+    }
+}
+</script>
 @endsection
