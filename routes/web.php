@@ -139,7 +139,10 @@ Route::middleware('auth')->group(function () {
 
     // Authenticated routes (profile endpoints are intentionally omitted)
 
+    // KLANTEN ROUTES - DEBUG WELKE CONTROLLER WORDT GEBRUIKT
     Route::resource('klanten', KlantController::class)->parameters(['klanten' => 'klant']);
+    \Log::info('🔍 ROUTE REGISTERED: klanten using KlantController');
+    
     Route::post('klanten/{klant}/uitnodiging', [KlantController::class, 'sendInvitation'])->name('klanten.sendInvitation');
     Route::post('klanten/{klant}/verwijder', [KlantController::class, 'verwijderViaPost'])->name('klanten.verwijderViaPost');
     // Alleen profielfoto wijzigen (klant)
@@ -1189,3 +1192,9 @@ Route::get('/debug/login-activities', function() {
         })
     ], 200, [], JSON_PRETTY_PRINT);
 })->name('debug.login.activities');
+
+// EMERGENCY DEBUG - Check of routes überhaupt werken
+Route::get('/debug-routes', function() {
+    \Log::info('🚨 DEBUG ROUTE CALLED!');
+    return 'Debug route works!';
+});

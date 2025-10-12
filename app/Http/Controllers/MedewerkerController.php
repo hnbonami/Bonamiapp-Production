@@ -79,6 +79,7 @@ class MedewerkerController extends Controller
     {
         // DEBUG: Check wat er wordt verstuurd
         \Log::info('Medewerker update data:', $request->all());
+        \Log::info('Medewerker before update:', $medewerker->toArray());
 
         $validatedData = $request->validate([
             'voornaam' => 'required|string|max:255',
@@ -119,6 +120,9 @@ class MedewerkerController extends Controller
         \Log::info('Validated data:', $validatedData);
 
         $medewerker->update($validatedData);
+        
+        // DEBUG: Check het resultaat na update
+        \Log::info('Medewerker after update:', $medewerker->fresh()->toArray());
 
         return redirect()->route('medewerkers.show', $medewerker)
                          ->with('success', 'Medewerker succesvol bijgewerkt!');

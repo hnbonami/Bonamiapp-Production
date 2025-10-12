@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Klant;
 use App\Services\ReferralService;
 use App\Models\CustomerReferral;
+use Illuminate\Support\Facades\Log;
 
 class KlantenController extends Controller
 {
@@ -43,12 +44,20 @@ class KlantenController extends Controller
             'email' => 'required|email|unique:klanten,email',
             'telefoonnummer' => 'nullable|string|max:20',
             'geboortedatum' => 'nullable|date',
+            'straatnaam' => 'nullable|string|max:255',
+            'huisnummer' => 'nullable|string|max:10',
             'adres' => 'nullable|string|max:255',
             'postcode' => 'nullable|string|max:10',
             'stad' => 'nullable|string|max:255',
             'land' => 'nullable|string|max:255',
-            'opmerkingen' => 'nullable|string',
+            'geslacht' => 'nullable|in:Man,Vrouw,Andere',
+            'status' => 'nullable|in:Actief,Inactief,Prospect',
+            'sport' => 'nullable|string|max:255',
+            'niveau' => 'nullable|string|max:255',
+            'club' => 'nullable|string|max:255',
+            'herkomst' => 'nullable|string|max:255',
             'hoe_ontdekt' => 'nullable|string|max:255',
+            'opmerkingen' => 'nullable|string',
             // NIEUWE REFERRAL VALIDATIE - VEILIG TOEGEVOEGD
             'referral_source' => 'nullable|string|max:50',
             'referring_customer_id' => 'nullable|exists:klanten,id',
@@ -56,10 +65,12 @@ class KlantenController extends Controller
         ]);
 
         try {
-            // STAP 1: Maak klant aan (BESTAANDE FUNCTIONALITEIT - ONGEWIJZIGD)
+            // STAP 1: Maak klant aan met ALLE velden (HERSTELD)
             $klant = Klant::create($request->only([
                 'voornaam', 'naam', 'email', 'telefoonnummer', 'geboortedatum',
-                'adres', 'postcode', 'stad', 'land', 'opmerkingen', 'hoe_ontdekt'
+                'straatnaam', 'huisnummer', 'adres', 'postcode', 'stad', 'land',
+                'geslacht', 'status', 'sport', 'niveau', 'club', 'herkomst',
+                'hoe_ontdekt', 'opmerkingen'
             ]));
 
             // STAP 1.5: BESTAANDE WELKOMSTMAIL SYSTEEM (MOET BLIJVEN WERKEN!)
@@ -148,23 +159,45 @@ class KlantenController extends Controller
 
     public function update(Request $request, Klant $klant)
     {
-        $request->validate([
+        // DIRECTE TEST - DEZE MOET JE ZIEN!
+        \Log::info('🚨🚨🚨 ORIGINELE KLANTEN CONTROLLER AANGEROEPEN!');
+        
+        // SIMPLE DEBUG TEST
+        \Log::info('🚨 KLANT CONTROLLER UPDATE CALLED!');
+        
+        // DEBUG: Check wat er wordt verstuurd
+        \Log::info('🔍 KLANT UPDATE - Incoming data:', $request->all());
+        \Log::info('🔍 KLANT UPDATE - Before update:', $klant->toArray());
+
+        $validatedData = $request->validate([
             'voornaam' => 'required|string|max:255',
-            'naam' => 'required|string|max:255',
-            'email' => 'required|email|unique:klanten,email,' . $klant->id,
-            'telefoonnummer' => 'nullable|string|max:20',
+            'achternaam' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255',
+            'telefoonnummer' => 'nullable|string|max:255',
             'geboortedatum' => 'nullable|date',
-            'adres' => 'nullable|string|max:255',
+            'geslacht' => 'nullable|in:Man,Vrouw,Anders',
+            'straatnaam' => 'nullable|string|max:255',
+            'huisnummer' => 'nullable|string|max:50',
             'postcode' => 'nullable|string|max:10',
             'stad' => 'nullable|string|max:255',
-            'land' => 'nullable|string|max:255',
-            'opmerkingen' => 'nullable|string',
-            'hoe_ontdekt' => 'nullable|string|max:255',
         ]);
 
-        $klant->update($request->all());
+        // DEBUG: Check validated data
+        \Log::info('🔍 KLANT UPDATE - Validated data:', $validatedData);
 
-        return redirect()->route('klanten.show', $klant)->with('success', 'Klant succesvol bijgewerkt!');
+        // Handle avatar upload
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $validatedData['avatar_path'] = $avatarPath;
+        }
+
+        $klant->update($validatedData);
+        
+        // DEBUG: Check het resultaat na update
+        \Log::info('🔍 KLANT UPDATE - After update:', $klant->fresh()->toArray());
+
+        return redirect()->route('klanten.show', $klant)
+                         ->with('success', 'Klant succesvol bijgewerkt!');
     }
 
     public function destroy(Klant $klant)

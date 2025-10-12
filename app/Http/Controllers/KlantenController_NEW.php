@@ -109,7 +109,11 @@ class KlantenController extends Controller
 
     public function update(Request $request, Klant $klant)
     {
-        $request->validate([
+        // DEBUG: Check wat er wordt verstuurd
+        \Log::info('🔍 KLANT UPDATE - Incoming data:', $request->all());
+        \Log::info('🔍 KLANT UPDATE - Before update:', $klant->toArray());
+
+        $validatedData = $request->validate([
             'voornaam' => 'required|string|max:255',
             'naam' => 'required|string|max:255',
             'email' => 'required|email|unique:klanten,email,' . $klant->id,
@@ -123,7 +127,14 @@ class KlantenController extends Controller
             'hoe_ontdekt' => 'nullable|string|max:255',
         ]);
 
-        $klant->update($request->all());
+        // DEBUG: Check validated data
+        \Log::info('🔍 KLANT UPDATE - Validated data:', $validatedData);
+
+        // ✅ FIXED: Gebruik alleen validated data (niet $request->all())
+        $klant->update($validatedData);
+        
+        // DEBUG: Check het resultaat na update
+        \Log::info('🔍 KLANT UPDATE - After update:', $klant->fresh()->toArray());
 
         return redirect()->route('klanten.show', $klant)->with('success', 'Klant succesvol bijgewerkt!');
     }
