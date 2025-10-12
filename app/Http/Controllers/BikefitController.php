@@ -44,10 +44,11 @@ class BikefitController extends Controller
         return view('bikefit.create', compact('klant', 'templates', 'templateMap', 'defaultMobility', 'testzadel'));
     }
 
-    public function store(Request $request, $klantId)
+    public function store(Request $request, Klant $klant)
     {
-    $data = $request->validate([
-            'datum' => 'nullable|date',
+        // Validate the request
+        $validated = $request->validate([
+            'datum' => 'required|date',
             'testtype' => 'required|string',
             'lengte_cm' => 'nullable|numeric',
             'binnenbeenlengte_cm' => 'nullable|numeric',
@@ -112,22 +113,22 @@ class BikefitController extends Controller
             'type_fiets' => 'nullable|string',
             'frametype' => 'nullable|string',
         ]);
-        if (empty($data['datum'])) {
-            $data['datum'] = now();
+        if (empty($validated['datum'])) {
+            $validated['datum'] = now();
         }
-        $data['klant_id'] = $klantId;
+        $validated['klant_id'] = $klant->id;
         // Add the current user's ID to track who performed the test
-        $data['user_id'] = auth()->id();
+        $validated['user_id'] = auth()->id();
         
         // Verwerk stuurpen data correct
-        $data['aanpassingen_stuurpen_aan'] = $request->has('aanpassingen_stuurpen_aan') ? 1 : 0;
-        $data['aanpassingen_stuurpen_pre'] = !empty($data['aanpassingen_stuurpen_pre']) ? (float) $data['aanpassingen_stuurpen_pre'] : null;
-        $data['aanpassingen_stuurpen_post'] = !empty($data['aanpassingen_stuurpen_post']) ? (float) $data['aanpassingen_stuurpen_post'] : null;
+        $validated['aanpassingen_stuurpen_aan'] = $request->has('aanpassingen_stuurpen_aan') ? 1 : 0;
+        $validated['aanpassingen_stuurpen_pre'] = !empty($validated['aanpassingen_stuurpen_pre']) ? (float) $validated['aanpassingen_stuurpen_pre'] : null;
+        $validated['aanpassingen_stuurpen_post'] = !empty($validated['aanpassingen_stuurpen_post']) ? (float) $validated['aanpassingen_stuurpen_post'] : null;
 
         // Remove debug logging to fix error
         
         // Save the bikefit
-        $bikefit = Bikefit::create($data);
+        $bikefit = Bikefit::create($validated);
 
         // Handle uitleensysteem data if provided
         if ($request->filled('onderdeel_type')) {
@@ -147,7 +148,7 @@ class BikefitController extends Controller
         }
 
         return redirect()->route('bikefit.results', [
-            'klant' => $klantId,
+            'klant' => $klant->id,
             'bikefit' => $bikefit->id
         ]);
     }
