@@ -4,93 +4,163 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class Testzadel extends Model
 {
     use HasFactory;
 
-    protected $attributes = [
-        'zadel_model' => '',
-        'zadel_merk' => '',
-        'zadel_type' => '',
-        'zadel_breedte' => null,
-        'opmerkingen' => '',
-    ];
-
-    // Automatically set zadel_model to empty string if null
-    public function setZadelModelAttribute($value)
-    {
-        $this->attributes['zadel_model'] = $value ?? '';
-    }
-
-    // Automatically set zadel_merk to empty string if null
-    public function setZadelMerkAttribute($value)
-    {
-        $this->attributes['zadel_merk'] = $value ?? '';
-    }
-
-    // Automatically set zadel_type to empty string if null
-    public function setZadelTypeAttribute($value)
-    {
-        $this->attributes['zadel_type'] = $value ?? '';
-    }
-
-    // Automatically set zadel_breedte to null if empty (it's an integer field)
-    public function setZadelBreedteAttribute($value)
-    {
-        $this->attributes['zadel_breedte'] = ($value === '' || $value === null) ? null : $value;
-    }
-
-    // Automatically set opmerkingen to empty string if null
-    public function setOpmerkingenAttribute($value)
-    {
-        $this->attributes['opmerkingen'] = $value ?? '';
-    }
+    protected $table = 'testzadels';
 
     protected $fillable = [
+        'merk',
+        'model', 
+        'type',
+        'breedte_mm',
         'klant_id',
         'bikefit_id',
-        // Nieuwe uitleensysteem kolommen
-        'onderdeel_type',
-        'onderdeel_status', 
-        'automatisch_mailtje',
-        'onderdeel_omschrijving',
-        // Bestaande kolommen (origineel)
+        'status',
+        'uitgeleend_op',
+        'verwachte_retour_datum',
+        'teruggegeven_op',
+        'automatisch_herinneringsmails_versturen',
+        'opmerkingen',
+        // Legacy kolommen voor backward compatibility
         'zadel_merk',
         'zadel_model',
         'zadel_type',
         'zadel_breedte',
-        'zadel_beschrijving',
-        'foto_path',
         'uitleen_datum',
-        'verwachte_retour_datum',
         'werkelijke_retour_datum',
-        'status',
+        'automatisch_mailtje',
         'herinnering_verstuurd',
         'herinnering_verstuurd_op',
-        'opmerkingen',
-        'gearchiveerd',
-        'gearchiveerd_op',
-        'laatste_herinnering',
-        'feedback'
+        'laatste_herinnering'
     ];
 
     protected $casts = [
-        // Bestaande datum kolommen
+        'verwachte_retour_datum' => 'datetime',
         'uitleen_datum' => 'date',
-        'verwachte_retour_datum' => 'date',
-        'werkelijke_retour_datum' => 'date',
-        'gearchiveerd_op' => 'datetime',
-        'laatste_herinnering' => 'datetime',
+        'werkelijke_retour_datum' => 'datetime',
         'herinnering_verstuurd_op' => 'datetime',
-        // Boolean kolommen
+        'laatste_herinnering' => 'datetime',
         'automatisch_mailtje' => 'boolean',
-        'herinnering_verstuurd' => 'boolean',
-        'gearchiveerd' => 'boolean'
+        'automatisch_herinneringsmails_versturen' => 'boolean'
     ];
 
-    // Relationships
+    /**
+     * Accessor voor uitgeleend_op - valt terug op uitleen_datum
+     */
+    public function getUitgeleendOpAttribute()
+    {
+        return $this->uitleen_datum ? Carbon::parse($this->uitleen_datum) : null;
+    }
+
+    /**
+     * Accessor voor teruggegeven_op - valt terug op werkelijke_retour_datum
+     */
+    public function getTeruggegeven_opAttribute()
+    {
+        return $this->werkelijke_retour_datum ? Carbon::parse($this->werkelijke_retour_datum) : null;
+    }
+
+    /**
+     * Accessor voor merk - valt terug op zadel_merk
+     */
+    public function getMerkAttribute($value)
+    {
+        return $value ?: $this->zadel_merk;
+    }
+
+    /**
+     * Accessor voor model - valt terug op zadel_model
+     */
+    public function getModelAttribute($value)
+    {
+        return $value ?: $this->zadel_model;
+    }
+
+    /**
+     * Accessor voor type - valt terug op zadel_type
+     */
+    public function getTypeAttribute($value)
+    {
+        return $value ?: $this->zadel_type;
+    }
+
+    /**
+     * Accessor voor breedte_mm - valt terug op zadel_breedte
+     */
+    public function getBreedteMmAttribute($value)
+    {
+        return $value ?: $this->zadel_breedte;
+    }
+
+    // Mogelijke statussen voor testzadels
+    const STATUS_UITGELEEND = 'uitgeleend';
+    const STATUS_TERUGGEGEVEN = 'teruggegeven'; 
+    const STATUS_GEARCHIVEERD = 'gearchiveerd';
+    
+    /**
+     * Verkrijg alle mogelijke statussen
+     */
+    public static function getStatussen()
+    {
+        return [
+            self::STATUS_UITGELEEND => 'Uitgeleend',
+            self::STATUS_TERUGGEGEVEN => 'Teruggegeven',
+            self::STATUS_GEARCHIVEERD => 'Gearchiveerd'
+        ];
+    }
+    
+    /**
+     * Check of testzadel uitgeleend is
+     */
+    public function isUitgeleend()
+    {
+        return $this->status === self::STATUS_UITGELEEND;
+    }
+    
+    /**
+     * Check of testzadel te laat is
+     */
+    public function isTeLaat()
+    {
+        return $this->isUitgeleend() && 
+               $this->verwachte_retour_datum && 
+               $this->verwachte_retour_datum->isPast();
+    }
+    
+    /**
+     * Fix voor bestaande testzadels met status "nieuw"
+     */
+    public static function fixNieuweStatussen()
+    {
+        $testzadelsMetNieuweStatus = self::where('status', 'nieuw')->get();
+        
+        foreach ($testzadelsMetNieuweStatus as $testzadel) {
+            // Als er een klant gekoppeld is, waarschijnlijk uitgeleend
+            if ($testzadel->klant_id) {
+                $testzadel->update([
+                    'status' => self::STATUS_UITGELEEND,
+                ]);
+                \Log::info("Testzadel {$testzadel->id} status gefixed van 'nieuw' naar 'uitgeleend'");
+            } else {
+                // Geen klant, waarschijnlijk teruggegeven
+                $testzadel->update([
+                    'status' => self::STATUS_TERUGGEGEVEN,
+                ]);
+                \Log::info("Testzadel {$testzadel->id} status gefixed van 'nieuw' naar 'teruggegeven'");
+            }
+        }
+        
+        return $testzadelsMetNieuweStatus->count();
+    }
+
+    /**
+     * Relationships
+     */
     public function klant()
     {
         return $this->belongsTo(Klant::class);
@@ -101,191 +171,27 @@ class Testzadel extends Model
         return $this->belongsTo(Bikefit::class);
     }
 
-    // Scopes
-    public function scopeActive($query)
+    /**
+     * Scopes
+     */
+    public function scopeUitgeleend($query)
     {
-        return $query->where('gearchiveerd', false);
+        return $query->where('status', self::STATUS_UITGELEEND);
     }
 
-    public function scopeArchived($query)
+    public function scopeTeLaat($query)
     {
-        return $query->where('gearchiveerd', true);
+        return $query->where('status', self::STATUS_UITGELEEND)
+                    ->where('verwachte_retour_datum', '<', now());
     }
 
-    // Accessors voor backwards compatibility - gebruik bestaande kolommen
-    public function getZadelMerkAttribute()
+    public function scopeTeruggegeven($query)
     {
-        return $this->attributes['zadel_merk'] ?? null;
+        return $query->where('status', self::STATUS_TERUGGEGEVEN);
     }
 
-    public function getZadelModelAttribute() 
+    public function scopeGearchiveerd($query)
     {
-        return $this->attributes['zadel_model'] ?? null;
-    }
-
-    public function getZadelTypeAttribute()
-    {
-        return $this->attributes['zadel_type'] ?? null;
-    }
-
-    public function getZadelBreedteAttribute()
-    {
-        return $this->attributes['zadel_breedte'] ?? null;
-    }
-
-    public function getUitleenDatumAttribute()
-    {
-        return $this->attributes['uitleen_datum'] ?? null;
-    }
-
-    public function getVerwachteRetourDatumAttribute()
-    {
-        return $this->attributes['verwachte_retour_datum'] ?? null;
-    }
-    
-    // Nieuwe accessors die de bestaande kolommen gebruiken voor nieuwe velden
-    public function getMerkAttribute()
-    {
-        return $this->attributes['merk'] ?? $this->attributes['zadel_merk'] ?? null;
-    }
-    
-    public function getModelAttribute()
-    {
-        return $this->attributes['model'] ?? $this->attributes['zadel_model'] ?? null;
-    }
-    
-    public function getTypeAttribute()
-    {
-        return $this->attributes['type'] ?? $this->attributes['zadel_type'] ?? null;
-    }
-    
-    public function getBreedteAttribute()
-    {
-        return $this->attributes['breedte'] ?? $this->attributes['zadel_breedte'] ?? null;
-    }
-    
-    public function getUitgeleendOpAttribute()
-    {
-        return $this->attributes['uitgeleend_op'] ?? $this->attributes['uitleen_datum'] ?? null;
-    }
-    
-    public function getVerwachteTeugbringDatumAttribute()
-    {
-        return $this->attributes['verwachte_terugbring_datum'] ?? $this->attributes['verwachte_retour_datum'] ?? null;
-    }
-    
-    public function getBeschrijvingAttribute()
-    {
-        return $this->attributes['beschrijving'] ?? $this->attributes['zadel_beschrijving'] ?? null;
-    }
-    
-    public function getFotoPadAttribute()
-    {
-        return $this->attributes['foto_pad'] ?? $this->attributes['foto_path'] ?? null;
-    }
-    
-    // Helper method voor veilige datum formatting
-    public function formatDatum($datumVeld, $format = 'd/m/Y')
-    {
-        $datum = $this->{$datumVeld};
-        
-        if (!$datum) {
-            return null;
-        }
-        
-        // Als het al een Carbon instance is
-        if ($datum instanceof \Carbon\Carbon) {
-            return $datum->format($format);
-        }
-        
-        // Als het een string is, probeer het te parsen
-        if (is_string($datum)) {
-            try {
-                return \Carbon\Carbon::parse($datum)->format($format);
-            } catch (\Exception $e) {
-                return $datum; // Return original string als parsing faalt
-            }
-        }
-        
-        return $datum;
-    }
-
-    // Helper methods
-    public function isOverdue()
-    {
-        $datum = $this->verwachte_terugbring_datum ?: $this->verwachte_retour_datum;
-        
-        if (!$datum) {
-            return false;
-        }
-        
-        // Zorg ervoor dat we een Carbon instance hebben
-        if (is_string($datum)) {
-            try {
-                $datum = \Carbon\Carbon::parse($datum);
-            } catch (\Exception $e) {
-                return false;
-            }
-        }
-        
-        return $datum && $datum->isPast() && $this->status !== 'teruggegeven';
-    }
-
-    public function getDisplayNaam()
-    {
-        $onderdeelType = $this->onderdeel_type ?? 'testzadel';
-        
-        switch($onderdeelType) {
-            case 'testzadel':
-                $merk = $this->zadel_merk ?? '';
-                $model = $this->zadel_model ?? '';
-                return trim($merk . ' ' . $model);
-            case 'nieuw zadel':
-                $merk = $this->zadel_merk ?? '';
-                $model = $this->zadel_model ?? '';
-                return 'Nieuw zadel: ' . trim($merk . ' ' . $model);
-            case 'zooltjes':
-                return 'Zooltjes: ' . ($this->onderdeel_omschrijving ?: $this->zadel_merk ?: 'Onbekend');
-            case 'Lake schoenen':
-                return 'Lake schoenen: ' . ($this->onderdeel_omschrijving ?: $this->zadel_merk ?: 'Onbekend');
-            default:
-                return $this->onderdeel_omschrijving ?: $this->zadel_merk ?: 'Onbekend onderdeel';
-        }
-    }
-    
-    // Override getAttribute om veilige datum handling te garanderen
-    public function getAttribute($key)
-    {
-        $value = parent::getAttribute($key);
-        
-        // Voor datum velden, zorg ervoor dat we altijd een Carbon instance teruggeven of null
-        $dateFields = [
-            'uitleen_datum', 'verwachte_retour_datum', 'werkelijke_retour_datum',
-            'gearchiveerd_op', 'laatste_herinnering', 'herinnering_verstuurd_op'
-        ];
-        
-        if (in_array($key, $dateFields) && $value && !($value instanceof \Carbon\Carbon)) {
-            try {
-                return \Carbon\Carbon::parse($value);
-            } catch (\Exception $e) {
-                return null;
-            }
-        }
-        
-        return $value;
-    }
-    public function getFormattedUitleenDatum()
-    {
-        return $this->formatDatum('uitleen_datum');
-    }
-    
-    public function getFormattedVerwachteRetourDatum()
-    {
-        return $this->formatDatum('verwachte_retour_datum');
-    }
-    
-    public function getFormattedWerkelijkeRetourDatum()
-    {
-        return $this->formatDatum('werkelijke_retour_datum');
+        return $query->where('status', self::STATUS_GEARCHIVEERD);
     }
 }

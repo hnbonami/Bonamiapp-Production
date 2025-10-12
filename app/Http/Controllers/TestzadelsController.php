@@ -84,27 +84,47 @@ class TestzadelsController extends Controller
         return view('testzadels.edit', compact('testzadel', 'klanten', 'bikefits'));
     }
 
-    public function update(Request $request, Testzadel $testzadel)
+    public function update(Request $request, $id)
     {
-        $validatedData = $request->validate([
-            'klant_id' => 'required|exists:klanten,id',
+        $testzadel = Testzadel::findOrFail($id);
+        
+        // Valideer de input met correcte status opties
+        $validated = $request->validate([
+            'klant_id' => 'nullable|exists:klanten,id',
             'bikefit_id' => 'nullable|exists:bikefits,id',
+            'status' => 'required|in:' . implode(',', array_keys(Testzadel::getStatussen())),
             'merk' => 'required|string|max:255',
             'model' => 'required|string|max:255',
             'type' => 'nullable|string|max:255',
-            'breedte' => 'required|integer',
-            'uitgeleend_op' => 'required|date',
-            'verwachte_terugbring_datum' => 'required|date',
-            'werkelijke_terugbring_datum' => 'nullable|date',
-            'status' => 'required|string|max:50',
-            'beschrijving' => 'nullable|string',
-            'opmerkingen' => 'nullable|string',
+            'breedte_mm' => 'nullable|integer|min:50|max:400',
+            'automatisch_herinneringsmails_versturen' => 'boolean'
         ]);
-
-        $testzadel->update($validatedData);
-
+        
+        $oldStatus = $testzadel->status;
+        
+        // Update testzadel gegevens
+        $testzadel->update($validated);
+        
+        // Log status wijziging voor debugging
+        \Log::info("Testzadel {$testzadel->id} status gewijzigd van '{$oldStatus}' naar '{$validated['status']}'");
+        
+        // Als status wijzigt naar uitgeleend, zet uitgeleend_op datum
+        if ($validated['status'] === Testzadel::STATUS_UITGELEEND && $oldStatus !== Testzadel::STATUS_UITGELEEND) {
+            $testzadel->update([
+                'uitgeleend_op' => now(),
+                'verwachte_retour_datum' => now()->addDays(14) // 2 weken standaard
+            ]);
+        }
+        
+        // Als status wijzigt naar teruggegeven, zet teruggegeven_op datum
+        if ($validated['status'] === Testzadel::STATUS_TERUGGEGEVEN && $oldStatus !== Testzadel::STATUS_TERUGGEGEVEN) {
+            $testzadel->update([
+                'teruggegeven_op' => now()
+            ]);
+        }
+        
         return redirect()->route('testzadels.index')
-            ->with('success', 'Testzadel succesvol bijgewerkt.');
+                        ->with('success', 'Testzadel succesvol bijgewerkt.');
     }
 
     public function destroy(Testzadel $testzadel)
