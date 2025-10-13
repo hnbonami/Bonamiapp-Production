@@ -197,9 +197,6 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6"/></svg>
                                     </button>
                                 </form>
-                                <a href="{{ route('bikefit.generate-pdf', [$klant->id, $test->id]) }}" aria-label="Download PDF" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" title="Download PDF">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 5v12"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 13l6 6 6-6"/></svg>
-                                </a>
                             @else
                                 @php
                                     $inspPdfPath = 'reports/' . $klant->id . '/inspanningstest_' . $test->id . '_report.pdf';
@@ -235,62 +232,4 @@
         <div style="color:#6b7280;">Nog geen testen geregistreerd.</div>
     @endif
 </div>
-
-<!-- JavaScript om download links te vervangen door rapport afdruk links -->
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Vervang alle download links door rapport afdruk links
-    const downloadLinks = document.querySelectorAll('a[href*="download"]');
-    
-    downloadLinks.forEach(function(link) {
-        const href = link.getAttribute('href');
-        
-        // Voor bikefit downloads
-        if (href.includes('bikefit') && href.includes('download')) {
-            // Extract bikefit ID from the URL
-            const bikefitMatch = href.match(/bikefit\/(\d+)/);
-            if (bikefitMatch) {
-                const bikefitId = bikefitMatch[1];
-                link.setAttribute('href', `/sjablonen/bikefit-rapport/${bikefitId}`);
-                link.setAttribute('target', '_blank');
-                
-                // Update tekst
-                const downloadText = link.querySelector('span, text()');
-                if (link.textContent.includes('Download')) {
-                    link.innerHTML = link.innerHTML.replace('Download', 'Rapport Afdrukken');
-                }
-                
-                // Update SVG icoon naar print icoon
-                const svg = link.querySelector('svg');
-                if (svg) {
-                    svg.innerHTML = '<path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>';
-                    svg.setAttribute('viewBox', '0 0 24 24');
-                }
-            }
-        }
-        
-        // Voor inspanningstest downloads
-        if (href.includes('inspanningstest') && href.includes('download')) {
-            const inspanningstestMatch = href.match(/inspanningstest\/(\d+)/);
-            if (inspanningstestMatch) {
-                const inspanningstestId = inspanningstestMatch[1];
-                link.setAttribute('href', `/sjablonen/inspanningstest-rapport/${inspanningstestId}`);
-                link.setAttribute('target', '_blank');
-                
-                // Update tekst
-                if (link.textContent.includes('Download')) {
-                    link.innerHTML = link.innerHTML.replace('Download', 'Rapport Afdrukken');
-                }
-                
-                // Update SVG icoon naar print icoon
-                const svg = link.querySelector('svg');
-                if (svg) {
-                    svg.innerHTML = '<path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>';
-                    svg.setAttribute('viewBox', '0 0 24 24');
-                }
-            }
-        }
-    });
-});
-</script>
 @endsection
