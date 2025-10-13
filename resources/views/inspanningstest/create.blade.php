@@ -244,6 +244,28 @@
                             </select>
                         </div>
                         
+                        <!-- D-max Modified configuratie veld -->
+                        <div id="dmax-modified-config" class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg" style="display: none;">
+                            <label for="dmax_modified_threshold" class="block text-sm font-medium text-blue-800 mb-2">
+                                🔧 D-max Modified Drempelwaarde (mmol/L)
+                            </label>
+                            <div class="flex items-center gap-3">
+                                <span class="text-sm text-gray-600">Baseline +</span>
+                                <input type="number" 
+                                       step="0.1" 
+                                       min="0.1" 
+                                       max="2.0" 
+                                       name="dmax_modified_threshold" 
+                                       id="dmax_modified_threshold"
+                                       value="{{ old('dmax_modified_threshold', '0.4') }}"
+                                       class="w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-center">
+                                <span class="text-sm text-gray-600">mmol/L</span>
+                            </div>
+                            <p class="text-xs text-blue-600 mt-1">
+                                💡 Standaard: 0.4 mmol/L (aanpasbaar per 0.1 mmol/L)
+                            </p>
+                        </div>
+                        
                         <!-- Grafiek container -->
                         <div id="grafiek-container" class="bg-gray-50 border border-gray-300 rounded-lg p-4 mb-4" style="height: 400px; display: none;">
                             <canvas id="hartslagLactaatGrafiek" width="800" height="350"></canvas>
@@ -957,6 +979,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const analyseMethodeSelect = document.getElementById('analyse_methode');
     analyseMethodeSelect.addEventListener('change', handleAnalyseMethodeChange);
     
+    // Event listener voor D-max Modified drempelwaarde wijziging
+    const dmaxThresholdInput = document.getElementById('dmax_modified_threshold');
+    if (dmaxThresholdInput) {
+        dmaxThresholdInput.addEventListener('input', function() {
+            const selectedMethod = document.getElementById('analyse_methode').value;
+            if (selectedMethod === 'dmax_modified') {
+                console.log('🔧 D-max Modified drempelwaarde gewijzigd naar:', this.value, 'mmol/L');
+                // Regenereer grafiek met nieuwe drempelwaarde
+                generateChart();
+            }
+        });
+    }
+    
     // Initiële update bij het laden van de pagina
     updateProtocolFields();
 });
@@ -971,10 +1006,20 @@ function handleAnalyseMethodeChange() {
     const selectedMethod = document.getElementById('analyse_methode').value;
     const grafiekContainer = document.getElementById('grafiek-container');
     const grafiekInstructies = document.getElementById('grafiek-instructies');
+    const dmaxModifiedConfig = document.getElementById('dmax-modified-config');
     
     console.log('Analyse methode gewijzigd naar:', selectedMethod);
     console.log('Container gevonden:', !!grafiekContainer);
     console.log('Instructies gevonden:', !!grafiekInstructies);
+    
+    // Toon/verberg D-max Modified configuratie
+    if (selectedMethod === 'dmax_modified') {
+        dmaxModifiedConfig.style.display = 'block';
+        console.log('✅ D-max Modified configuratie getoond');
+    } else {
+        dmaxModifiedConfig.style.display = 'none';
+        console.log('❌ D-max Modified configuratie verborgen');
+    }
     
     if (selectedMethod && selectedMethod !== '') {
         grafiekContainer.style.display = 'block';
@@ -984,6 +1029,7 @@ function handleAnalyseMethodeChange() {
     } else {
         grafiekContainer.style.display = 'none';
         grafiekInstructies.style.display = 'none';
+        dmaxModifiedConfig.style.display = 'none';
         if (hartslagLactaatChart) {
             hartslagLactaatChart.destroy();
             hartslagLactaatChart = null;
@@ -1163,9 +1209,15 @@ function calculateDmaxModified(validData, xField) {
     validData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
     console.log('Data punten:', validData.map(d => `${d[xField]}W: ${d.lactaat.toFixed(2)}mmol/L`));
     
-    // STAP 1: Aërobe drempel = laagste lactaat + 0.4 mmol/L
+    // STAP 1: Haal configureerbare drempelwaarde op
+    const thresholdInput = document.getElementById('dmax_modified_threshold');
+    const configurableThreshold = thresholdInput ? parseFloat(thresholdInput.value) || 0.4 : 0.4;
+    
+    console.log(`🔧 Configureerbare drempelwaarde: ${configurableThreshold.toFixed(1)} mmol/L`);
+    
+    // STAP 2: Aërobe drempel = laagste lactaat + configureerbare waarde
     const minLactaat = Math.min(...validData.map(d => d.lactaat));
-    const aerobeThreshold = minLactaat + 0.4;
+    const aerobeThreshold = minLactaat + configurableThreshold;
     let aerobePoint = interpolatePointAtLactaat(validData, xField, aerobeThreshold);
     
     if (!aerobePoint) {
@@ -1176,7 +1228,7 @@ function calculateDmaxModified(validData, xField) {
         };
     }
     
-    console.log(`✅ Modified Aërobe drempel: ${aerobePoint[xField].toFixed(1)}W bij ${aerobeThreshold.toFixed(2)}mmol/L`);
+    console.log(`✅ Modified Aërobe drempel: ${aerobePoint[xField].toFixed(1)}W bij ${aerobeThreshold.toFixed(2)}mmol/L (baseline +${configurableThreshold.toFixed(1)})`);
     
     // STAP 2: Bereken parabool coëfficiënten voor lactaatcurve
     const xArray = validData.map(d => d[xField]);
