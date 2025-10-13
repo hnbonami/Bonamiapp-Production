@@ -1480,16 +1480,9 @@ const fs = require('fs');
         $uitleenData['uitleen_datum'] = $request->input('uitgeleend_op');
         $uitleenData['verwachte_retour_datum'] = $request->input('verwachte_terugbring_datum');
         $uitleenData['opmerkingen'] = $request->input('onderdeel_opmerkingen');
-        $uitleenData['status'] = 'uitgeleend'; // EXPLICIET uitgeleend zetten
+        $uitleenData['status'] = 'uitgeleend';
 
-        // Create testzadel record met logging
-        \Log::info('🔧 Creating new testzadel with status uitgeleend', [
-            'klant_id' => $uitleenData['klant_id'] ?? 'missing',
-            'bikefit_id' => $uitleenData['bikefit_id'] ?? 'missing', 
-            'status' => $uitleenData['status'],
-            'onderdeel_type' => $uitleenData['onderdeel_type'] ?? 'missing'
-        ]);
-        
+        // Create testzadel record
         \App\Models\Testzadel::create($uitleenData);
     }
 
@@ -1779,7 +1772,7 @@ const fs = require('fs');
                 'verwachte_retour_datum' => $request->verwachte_terugbring_datum,
                 'opmerkingen' => $request->onderdeel_opmerkingen ?: $request->input('onderdeel_opmerkingen') ?: $request->input('opmerkingen') ?: $request->input('testzadel_opmerkingen') ?: $request->input('uitleen_opmerkingen'),
                 'automatisch_mailtje' => $request->has('automatisch_mailtje') ? true : false,
-                'status' => 'uitgeleend', // ALTIJD uitgeleend bij aanmaak vanuit bikefit
+                'status' => $request->onderdeel_status ?: 'uitgeleend',
             ];
             
             if ($existingTestzadel) {
