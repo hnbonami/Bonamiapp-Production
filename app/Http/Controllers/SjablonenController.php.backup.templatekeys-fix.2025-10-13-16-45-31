@@ -79,7 +79,7 @@ class SjablonenController extends Controller
         // Get template keys from database - alle beschikbare velden
         $templateKeys = \App\Models\TemplateKey::all()->groupBy('category');
 
-        return view('sjablonen.edit', ['sjabloon' => $sjabloon, 'templateKeys' => $templateKeys]);
+return view('sjablonen.edit', compact('sjabloon'));
     }
 
     /**
