@@ -315,6 +315,44 @@ class EmailIntegrationService
             // Use the template subject and body_html from database
             $subject = $template ? $template->subject : 'Welkom bij ' . config('app.name', 'Bonami');
             $content = $this->processCustomerWelcomeTemplate($template, $customer);
+            
+            // Vervang ook placeholders in het onderwerp (subject)
+            if ($template && $template->subject) {
+                // Haal temporary password op voor subject
+                $temporaryPassword = 'N/A';
+                try {
+                    $invitationToken = \App\Models\InvitationToken::where('email', $customer->email)
+                                                                 ->where('type', 'klant')
+                                                                 ->latest()
+                                                                 ->first();
+                    if ($invitationToken && $invitationToken->temporary_password) {
+                        $temporaryPassword = $invitationToken->temporary_password;
+                    }
+                } catch (\Exception $e) {
+                    // Geen probleem, gebruik N/A
+                }
+                
+                // Vervang placeholders in subject
+                $subject = str_replace('@{{voornaam}}', $customer->voornaam ?? 'Onbekend', $subject);
+                $subject = str_replace('@{{naam}}', $customer->naam ?? 'Onbekend', $subject);
+                $subject = str_replace('@{{email}}', $customer->email ?? '', $subject);
+                $subject = str_replace('@{{temporary_password}}', $temporaryPassword, $subject);
+                $subject = str_replace('@{{wachtwoord}}', $temporaryPassword, $subject);
+                $subject = str_replace('@{{bedrijf_naam}}', 'Bonami Sportcoaching', $subject);
+                $subject = str_replace('@{{datum}}', now()->format('d-m-Y'), $subject);
+                
+                // Ondersteuning voor oude formaten in subject
+                $subject = str_replace('{{customer_name}}', ($customer->voornaam ?? '') . ' ' . ($customer->naam ?? ''), $subject);
+                $subject = str_replace('{{klant_naam}}', ($customer->voornaam ?? '') . ' ' . ($customer->naam ?? ''), $subject);
+                $subject = str_replace('{{company_name}}', 'Bonami Sportcoaching', $subject);
+                $subject = str_replace('{{app_name}}', 'Bonami Sportcoaching', $subject);
+                
+                \Log::info('✅ CUSTOMER SUBJECT PLACEHOLDERS VERVANGEN', [
+                    'original_subject' => $template->subject ?? 'none',
+                    'processed_subject' => $subject,
+                    'temporary_password_used' => $temporaryPassword
+                ]);
+            }
 
             \Log::info('Email content prepared', [
                 'subject' => $subject,
@@ -421,6 +459,45 @@ class EmailIntegrationService
             // Use the template subject and body_html from database
             $subject = $template ? $template->subject : 'Welkom in het team van ' . config('app.name', 'Bonami');
             $content = $this->processEmployeeWelcomeTemplate($template, $employee);
+            
+            // Vervang ook placeholders in het onderwerp (subject) voor medewerkers
+            if ($template && $template->subject) {
+                // Haal temporary password op voor subject
+                $temporaryPassword = 'N/A';
+                try {
+                    $invitationToken = \App\Models\InvitationToken::where('email', $employee->email)
+                                                                 ->where('type', 'medewerker')
+                                                                 ->latest()
+                                                                 ->first();
+                    if ($invitationToken && $invitationToken->temporary_password) {
+                        $temporaryPassword = $invitationToken->temporary_password;
+                    }
+                } catch (\Exception $e) {
+                    // Geen probleem, gebruik N/A
+                }
+                
+                // Vervang placeholders in subject
+                $subject = str_replace('@{{voornaam}}', $employee->voornaam ?? 'Onbekend', $subject);
+                $subject = str_replace('@{{naam}}', ($employee->achternaam ?? $employee->naam ?? 'Onbekend'), $subject);
+                $subject = str_replace('@{{achternaam}}', $employee->achternaam ?? 'Onbekend', $subject);
+                $subject = str_replace('@{{email}}', $employee->email ?? '', $subject);
+                $subject = str_replace('@{{temporary_password}}', $temporaryPassword, $subject);
+                $subject = str_replace('@{{wachtwoord}}', $temporaryPassword, $subject);
+                $subject = str_replace('@{{bedrijf_naam}}', 'Bonami Sportcoaching', $subject);
+                $subject = str_replace('@{{datum}}', now()->format('d-m-Y'), $subject);
+                
+                // Ondersteuning voor oude formaten in subject
+                $subject = str_replace('{{employee_name}}', ($employee->voornaam ?? '') . ' ' . ($employee->achternaam ?? ''), $subject);
+                $subject = str_replace('{{medewerker_naam}}', ($employee->voornaam ?? '') . ' ' . ($employee->achternaam ?? ''), $subject);
+                $subject = str_replace('{{company_name}}', 'Bonami Sportcoaching', $subject);
+                $subject = str_replace('{{app_name}}', 'Bonami Sportcoaching', $subject);
+                
+                \Log::info('✅ EMPLOYEE SUBJECT PLACEHOLDERS VERVANGEN', [
+                    'original_subject' => $template->subject ?? 'none',
+                    'processed_subject' => $subject,
+                    'temporary_password_used' => $temporaryPassword
+                ]);
+            }
 
             \Log::info('Email content prepared', [
                 'subject' => $subject,
