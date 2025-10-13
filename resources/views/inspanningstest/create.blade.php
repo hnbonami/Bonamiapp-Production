@@ -369,6 +369,35 @@
 let rowCount = 0;
 let currentTableType = '';
 
+// Functie om huidige tabeldata te bewaren voordat tabel wordt gecleared
+function preserveCurrentTableData() {
+    const tbody = document.getElementById('testresultaten-body');
+    const rows = tbody.getElementsByTagName('tr');
+    const preservedData = [];
+    
+    for (let i = 0; i < rows.length; i++) {
+        const inputs = rows[i].getElementsByTagName('input');
+        const rowData = {};
+        let hasData = false;
+        
+        for (let j = 0; j < inputs.length; j++) {
+            const value = inputs[j].value;
+            const name = inputs[j].name;
+            if (value.trim() !== '') {
+                hasData = true;
+            }
+            rowData[j] = value;
+            rowData.fieldName = name;
+        }
+        
+        if (hasData) {
+            preservedData.push(rowData);
+        }
+    }
+    
+    return preservedData;
+}
+
 // Functie om inspanningstest rijen te genereren op basis van protocol
 function generateInspanningstestRows(testType) {
     const startValue = parseFloat(document.getElementById('startwattage').value) || 0;
@@ -517,11 +546,15 @@ function generateTableRow(testType, rowIndex, data = {}) {
     return rowHtml;
 }
 
-// Functie om tabel te updaten
+// Functie om tabel te updaten - ALLEEN bij testtype wijziging
 function updateTable(testType) {
     currentTableType = testType;
     const header = document.getElementById('testresultaten-header');
     const tbody = document.getElementById('testresultaten-body');
+    
+    // Bewaar huidige data voordat we clearen
+    const currentData = preserveCurrentTableData();
+    console.log('Bewaarde data voor testtype wijziging:', currentData);
     
     // Clear existing content
     header.innerHTML = '';
@@ -598,22 +631,57 @@ function updateTable(testType) {
     rowCount++;
 }
 
-// Functie om nieuwe rij toe te voegen
+// Functie om nieuwe rij toe te voegen ZONDER bestaande data te wissen
 function addRow() {
     if (!currentTableType) return;
     
     const tbody = document.getElementById('testresultaten-body');
-    tbody.innerHTML += generateTableRow(currentTableType, rowCount);
+    
+    // Maak nieuwe rij element aan
+    const newRow = document.createElement('tr');
+    newRow.innerHTML = generateTableRowContent(currentTableType, rowCount);
+    
+    // Voeg toe aan tbody zonder bestaande content te overschrijven
+    tbody.appendChild(newRow);
     rowCount++;
+    
+    console.log('Nieuwe rij toegevoegd. Totaal rijen nu:', tbody.getElementsByTagName('tr').length);
 }
 
-// Functie om laatste rij te verwijderen
+// Hulpfunctie om alleen de innerHTML van een rij te genereren
+function generateTableRowContent(testType, rowIndex, data = {}) {
+    const config = tableConfigs[testType];
+    if (!config) return '';
+    
+    let content = '';
+    config.fields.forEach((field, index) => {
+        const stepAttr = config.steps[index] ? `step="${config.steps[index]}"` : '';
+        const value = data[field] !== undefined ? data[field] : '';
+        content += `<td class="border border-gray-300 p-1">
+            <input type="${config.inputTypes[index]}" 
+                   name="testresultaten[${rowIndex}][${field}]" 
+                   value="${value}"
+                   class="w-full p-1 text-sm border-0" 
+                   ${stepAttr}>
+        </td>`;
+    });
+    return content;
+}
+
+// Functie om laatste rij te verwijderen ZONDER andere data te beïnvloeden
 function removeLastRow() {
     const tbody = document.getElementById('testresultaten-body');
     const rows = tbody.getElementsByTagName('tr');
+    
+    // Zorg dat er altijd minstens één rij blijft staan
     if (rows.length > 1) {
+        // Verwijder alleen de laatste rij
         tbody.removeChild(rows[rows.length - 1]);
-        rowCount--;
+        rowCount = Math.max(0, rowCount - 1);
+        
+        console.log('Laatste rij verwijderd. Aantal rijen nu:', rows.length - 1);
+    } else {
+        console.log('Kan laatste rij niet verwijderen - minimaal 1 rij nodig');
     }
 }
 
@@ -735,36 +803,35 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Event listeners voor protocol wijzigingen bij veldtesten
+    // Event listeners voor protocol wijzigingen bij veldtesten - alleen bij echte protocol wijziging
     document.getElementById('protocol').addEventListener('change', function() {
-        if (testtypeSelect.value === 'veldtest_lopen') {
+        if (testtypeSelect.value === 'veldtest_lopen' && this.value !== '') {
+            console.log('Protocol gewijzigd naar:', this.value, '- tabel wordt ververst');
             updateTable('veldtest_lopen');
         }
     });
     
     document.getElementById('protocol_zwemmen').addEventListener('change', function() {
-        if (testtypeSelect.value === 'veldtest_zwemmen') {
+        if (testtypeSelect.value === 'veldtest_zwemmen' && this.value !== '') {
+            console.log('Zwemprotocol gewijzigd naar:', this.value, '- tabel wordt ververst');
             updateTable('veldtest_zwemmen');
         }
     });
     
-    // Event listeners voor protocol veld wijzigingen (inspanningstesten en veldtest fietsen)
+    // Event listeners voor protocol veld wijzigingen - GEEN automatische table refresh meer
     document.getElementById('startwattage').addEventListener('input', function() {
-        if (testtypeSelect.value === 'fietstest' || testtypeSelect.value === 'looptest' || testtypeSelect.value === 'veldtest_fietsen') {
-            updateTable(testtypeSelect.value);
-        }
+        console.log('Startwattage gewijzigd - tabel wordt NIET automatisch ververst');
+        // Gebruiker kan handmatig rijen toevoegen als nodig
     });
     
     document.getElementById('stappen_min').addEventListener('input', function() {
-        if (testtypeSelect.value === 'fietstest' || testtypeSelect.value === 'looptest' || testtypeSelect.value === 'veldtest_fietsen') {
-            updateTable(testtypeSelect.value);
-        }
+        console.log('Stappen minuten gewijzigd - tabel wordt NIET automatisch ververst');
+        // Gebruiker kan handmatig rijen toevoegen als nodig
     });
     
     document.getElementById('stappen_watt').addEventListener('input', function() {
-        if (testtypeSelect.value === 'fietstest' || testtypeSelect.value === 'looptest' || testtypeSelect.value === 'veldtest_fietsen') {
-            updateTable(testtypeSelect.value);
-        }
+        console.log('Stappen watt gewijzigd - tabel wordt NIET automatisch ververst');
+        // Gebruiker kan handmatig rijen toevoegen als nodig
     });
     
     // Event listener voor testtype wijzigingen
