@@ -83,7 +83,7 @@ class KlantenController extends Controller
                     'name' => $klant->voornaam . ' ' . $klant->naam,
                     'email' => $klant->email,
                     'password' => \Hash::make($temporaryPassword),
-                    'role' => 'customer',
+                    'role' => 'klant', // NIET 'customer'
                     'klant_id' => $klant->id,
                 ]);
 
@@ -227,7 +227,7 @@ class KlantenController extends Controller
                     'name' => $klant->voornaam . ' ' . $klant->naam,
                     'email' => $klant->email,
                     'password' => \Hash::make($temporaryPassword),
-                    'role' => 'customer',
+                    'role' => 'klant', // NIET 'customer'
                     'klant_id' => $klant->id,
                 ]);
             } else {
