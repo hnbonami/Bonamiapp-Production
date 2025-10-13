@@ -84,45 +84,56 @@ class TestzadelsController extends Controller
         return view('testzadels.edit', compact('testzadel', 'klanten', 'bikefits'));
     }
 
-    public function update(Request $request, $id)
+    /**
+     * Update testzadel met correcte validation en automatische datum logica
+     */
+    public function update(Request $request, Testzadel $testzadel)
     {
-        $testzadel = Testzadel::findOrFail($id);
-        
-        // Valideer de input met correcte status opties
+        \Log::info('🔧 TestzadelsController@update CALLED', [
+            'testzadel_id' => $testzadel->id,
+            'request_data' => $request->all(),
+            'current_onderdeel_type' => $testzadel->onderdeel_type,
+            'current_status' => $testzadel->status
+        ]);
+
         $validated = $request->validate([
             'klant_id' => 'nullable|exists:klanten,id',
-            'bikefit_id' => 'nullable|exists:bikefits,id',
+            'bikefit_id' => 'nullable|exists:bikefits,id', 
+            'onderdeel_type' => 'required|string|in:testzadel,zooltjes,cleats,stuurpen',
             'status' => 'required|in:' . implode(',', array_keys(Testzadel::getStatussen())),
-            'merk' => 'required|string|max:255',
-            'model' => 'required|string|max:255',
-            'type' => 'nullable|string|max:255',
-            'breedte_mm' => 'nullable|integer|min:50|max:400',
-            'automatisch_herinneringsmails_versturen' => 'boolean'
+            'zadel_merk' => 'nullable|string|max:255',
+            'zadel_model' => 'nullable|string|max:255',
+            'zadel_type' => 'nullable|string|max:255', 
+            'zadel_breedte' => 'nullable|integer|min:50|max:400',
+            'automatisch_mailtje' => 'boolean',
+            'uitleen_datum' => 'required|date',
+            'verwachte_retour_datum' => 'required|date',
+            'opmerkingen' => 'nullable|string',
         ]);
-        
-        $oldStatus = $testzadel->status;
-        
-        // Update testzadel gegevens
+
+        // Zet werkelijke_retour_datum automatisch bij status wijziging naar teruggegeven
+        if ($request->status === 'teruggegeven' && $testzadel->status !== 'teruggegeven') {
+            $validated['werkelijke_retour_datum'] = now();
+            \Log::info('✅ Werkelijke retour datum automatisch gezet', [
+                'testzadel_id' => $testzadel->id,
+                'werkelijke_retour_datum' => now()->format('Y-m-d H:i:s')
+            ]);
+        }
+
+        \Log::info('🔄 Updating testzadel met validated data', [
+            'testzadel_id' => $testzadel->id,
+            'validated_onderdeel_type' => $validated['onderdeel_type'],
+            'validated_status' => $validated['status']
+        ]);
+
         $testzadel->update($validated);
-        
-        // Log status wijziging voor debugging
-        \Log::info("Testzadel {$testzadel->id} status gewijzigd van '{$oldStatus}' naar '{$validated['status']}'");
-        
-        // Als status wijzigt naar uitgeleend, zet uitgeleend_op datum
-        if ($validated['status'] === Testzadel::STATUS_UITGELEEND && $oldStatus !== Testzadel::STATUS_UITGELEEND) {
-            $testzadel->update([
-                'uitgeleend_op' => now(),
-                'verwachte_retour_datum' => now()->addDays(14) // 2 weken standaard
-            ]);
-        }
-        
-        // Als status wijzigt naar teruggegeven, zet teruggegeven_op datum
-        if ($validated['status'] === Testzadel::STATUS_TERUGGEGEVEN && $oldStatus !== Testzadel::STATUS_TERUGGEGEVEN) {
-            $testzadel->update([
-                'teruggegeven_op' => now()
-            ]);
-        }
-        
+
+        \Log::info('✅ Testzadel updated successfully', [
+            'testzadel_id' => $testzadel->id,
+            'new_onderdeel_type' => $testzadel->fresh()->onderdeel_type,
+            'new_status' => $testzadel->fresh()->status
+        ]);
+
         return redirect()->route('testzadels.index')
                         ->with('success', 'Testzadel succesvol bijgewerkt.');
     }
