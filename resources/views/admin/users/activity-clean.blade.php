@@ -5,7 +5,7 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
         <div>
-            <h1 class="text-3xl font-bold text-gray-800">📊 Login Activiteit</h1>
+            <h1 class="text-3xl font-bold text-gray-800">📊 Login Activiteit TEST</h1>
             <p class="text-gray-600 mt-2">Monitor gebruikers activiteit en sessies</p>
         </div>
         
