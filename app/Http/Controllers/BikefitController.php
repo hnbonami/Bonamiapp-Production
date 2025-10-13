@@ -67,7 +67,7 @@ class BikefitController extends Controller
             'aanpassingen_stuurpen_pre' => 'nullable|numeric',
             'aanpassingen_stuurpen_post' => 'nullable|numeric',
             'type_zadel' => 'nullable|string',
-            'zadeltil' => 'nullable|numeric',
+            'zadeltil' => 'nullable|numeric|between:-90,90|regex:/^\-?\d{1,2}(\.\d{1,2})?$/',
             'zadelbreedte' => 'nullable|numeric',
             'rotatie_aanpassingen' => 'nullable|string',
             'inclinatie_aanpassingen' => 'nullable|string',
@@ -236,7 +236,7 @@ class BikefitController extends Controller
             'aanpassingen_stuurpen_post' => 'nullable|numeric',
             // old free-text aanpassingen_stuurpen removed
             'type_zadel' => 'nullable|string',
-            'zadeltil' => 'nullable|numeric',
+            'zadeltil' => 'nullable|numeric|regex:/^\d*\.?\d{0,2}$/',
             'zadelbreedte' => 'nullable|numeric',
             'rotatie_aanpassingen' => 'nullable|string',
             'inclinatie_aanpassingen' => 'nullable|string',

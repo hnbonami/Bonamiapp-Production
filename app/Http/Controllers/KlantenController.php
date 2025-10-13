@@ -171,7 +171,7 @@ class KlantenController extends Controller
 
         $validatedData = $request->validate([
             'voornaam' => 'required|string|max:255',
-            'achternaam' => 'required|string|max:255',
+            'naam' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'telefoonnummer' => 'nullable|string|max:255',
             'geboortedatum' => 'nullable|date',
@@ -180,6 +180,10 @@ class KlantenController extends Controller
             'huisnummer' => 'nullable|string|max:50',
             'postcode' => 'nullable|string|max:10',
             'stad' => 'nullable|string|max:255',
+            'sport' => 'nullable|string|max:255',
+            'niveau' => 'nullable|string|max:255',
+            'club' => 'nullable|string|max:255',
+            'herkomst' => 'nullable|string|max:255',
         ]);
 
         // DEBUG: Check validated data

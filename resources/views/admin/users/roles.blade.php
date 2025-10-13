@@ -77,229 +77,34 @@
         </div>
     </div>
 
-    <!-- Roles & Permissions Management -->
+    <!-- Roles Overview -->
     <div class="bg-white rounded-xl shadow-lg overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-800">Rollen & Rechten Beheer</h2>
-            <p class="text-sm text-gray-600 mt-1">Pas rechten per rol aan voor verschillende onderdelen van de applicatie</p>
+            <h2 class="text-lg font-semibold text-gray-800">Beschikbare Rollen</h2>
         </div>
         
         <div class="p-6">
-            <form method="POST" action="{{ route('admin.users.roles.update') }}">
-                @csrf
-                
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 @foreach($roles as $role)
-                    <div class="border rounded-lg p-6 mb-6 hover:shadow-md transition-shadow">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <span class="inline-flex px-3 py-1 text-sm font-semibold rounded-full mr-3
-                                    {{ $role['color'] === 'purple' ? 'bg-purple-100 text-purple-800' : '' }}
-                                    {{ $role['color'] === 'orange' ? 'bg-orange-100 text-orange-800' : '' }}
-                                    {{ $role['color'] === 'cyan' ? 'bg-cyan-100 text-cyan-800' : '' }}">
-                                    {{ $role['name'] }}
-                                </span>
-                                <span class="text-sm text-gray-500">({{ $roleStats[$role['key']] ?? 0 }} gebruikers)</span>
-                            </div>
+                    <div class="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="flex items-center mb-3">
+                            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full
+                                {{ $role['color'] === 'purple' ? 'bg-purple-100 text-purple-800' : '' }}
+                                {{ $role['color'] === 'orange' ? 'bg-orange-100 text-orange-800' : '' }}
+                                {{ $role['color'] === 'cyan' ? 'bg-cyan-100 text-cyan-800' : '' }}">
+                                {{ $role['name'] }}
+                            </span>
                         </div>
-                        
-                        <p class="text-sm text-gray-600 mb-4">{{ $role['description'] }}</p>
-                        
-                        <!-- Rechten Grid -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            
-                            <!-- Algemene Rechten -->
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-medium text-gray-900 mb-3">📊 Dashboard & Navigatie</h4>
-                                <div class="space-y-2">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][dashboard]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] !== 'klant' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Dashboard toegang</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][admin_panel]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Admin panel</span>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <!-- Klanten Rechten -->
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-medium text-gray-900 mb-3">👥 Klantenbeheer</h4>
-                                <div class="space-y-2">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][klanten_view]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] !== 'klant' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Klanten bekijken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][klanten_create]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' || $role['key'] === 'medewerker' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Klanten aanmaken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][klanten_edit]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' || $role['key'] === 'medewerker' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Klanten bewerken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][klanten_delete]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Klanten verwijderen</span>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <!-- Bikefit Rechten -->
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-medium text-gray-900 mb-3">🚴‍♂️ Bikefit</h4>
-                                <div class="space-y-2">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][bikefit_view]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] !== 'klant' ? 'checked' : ($role['key'] === 'klant' ? 'checked' : '') }}>
-                                        <span class="ml-2 text-sm">Bikefits bekijken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][bikefit_create]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' || $role['key'] === 'medewerker' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Bikefits uitvoeren</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][bikefit_edit]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' || $role['key'] === 'medewerker' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Bikefits bewerken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][bikefit_delete]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Bikefits verwijderen</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][bikefit_reports]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] !== 'klant' ? 'checked' : ($role['key'] === 'klant' ? 'checked' : '') }}>
-                                        <span class="ml-2 text-sm">Rapporten genereren</span>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <!-- Inspanningstests Rechten -->
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-medium text-gray-900 mb-3">🏃‍♂️ Inspanningstests</h4>
-                                <div class="space-y-2">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][inspanningstest_view]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] !== 'klant' ? 'checked' : ($role['key'] === 'klant' ? 'checked' : '') }}>
-                                        <span class="ml-2 text-sm">Inspanningstests bekijken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][inspanningstest_create]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' || $role['key'] === 'medewerker' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Inspanningstests uitvoeren</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][inspanningstest_edit]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' || $role['key'] === 'medewerker' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Inspanningstests bewerken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][inspanningstest_delete]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Inspanningstests verwijderen</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][inspanningstest_reports]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] !== 'klant' ? 'checked' : ($role['key'] === 'klant' ? 'checked' : '') }}>
-                                        <span class="ml-2 text-sm">Rapporten genereren</span>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <!-- Sjablonen & Systeem -->
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-medium text-gray-900 mb-3">📄 Sjablonen & Systeem</h4>
-                                <div class="space-y-2">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][sjablonen_view]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Sjablonen bekijken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][sjablonen_edit]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Sjablonen bewerken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][testzadels]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' || $role['key'] === 'medewerker' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Testzadels beheren</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][user_management]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Gebruikerbeheer</span>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <!-- Profiel & Privacy -->
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <h4 class="font-medium text-gray-900 mb-3">👤 Profiel & Privacy</h4>
-                                <div class="space-y-2">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][own_profile]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-                                               checked disabled>
-                                        <span class="ml-2 text-sm">Eigen profiel bewerken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][own_data_view]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-                                               checked disabled>
-                                        <span class="ml-2 text-sm">Eigen gegevens bekijken</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" name="permissions[{{ $role['key'] }}][data_export]" 
-                                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                               {{ $role['key'] === 'admin' ? 'checked' : '' }}>
-                                        <span class="ml-2 text-sm">Data export (GDPR)</span>
-                                    </label>
-                                </div>
-                            </div>
+                        <p class="text-sm text-gray-600 mb-3">{{ $role['description'] }}</p>
+                        <div class="text-xs text-gray-500">
+                            <strong>Rechten:</strong> {{ $role['permissions'] }}
+                        </div>
+                        <div class="mt-3 text-sm font-medium text-gray-700">
+                            Gebruikers: {{ $roleStats[$role['key']] ?? 0 }}
                         </div>
                     </div>
                 @endforeach
-                
-                <!-- Opslaan Knop -->
-                <div class="flex justify-end pt-6 border-t border-gray-200">
-                    <button type="submit" class="px-6 py-3 text-white rounded-lg transition-colors font-medium" 
-                            style="background-color: #c8e1eb; color: #1f2937;" 
-                            onmouseover="this.style.backgroundColor='#b0d4e0'" 
-                            onmouseout="this.style.backgroundColor='#c8e1eb'">
-                        💾 Rechten Opslaan
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
