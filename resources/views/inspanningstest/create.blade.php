@@ -633,19 +633,135 @@ function updateTable(testType) {
 
 // Functie om nieuwe rij toe te voegen ZONDER bestaande data te wissen
 function addRow() {
-    if (!currentTableType) return;
+    console.log('🟢 addRow() gestart');
+    console.log('currentTableType:', currentTableType);
+    
+    if (!currentTableType) {
+        console.log('❌ Geen currentTableType - kan geen rij toevoegen');
+        alert('Selecteer eerst een testtype voordat je rijen toevoegt');
+        return;
+    }
     
     const tbody = document.getElementById('testresultaten-body');
+    if (!tbody) {
+        console.log('❌ Geen tbody gevonden');
+        return;
+    }
     
-    // Maak nieuwe rij element aan
+    console.log('📊 Aantal rijen voor toevoegen:', tbody.getElementsByTagName('tr').length);
+    
+    // Tel bestaande data
+    const existingInputs = tbody.querySelectorAll('input');
+    let filledInputs = 0;
+    existingInputs.forEach(input => {
+        if (input.value.trim() !== '') filledInputs++;
+    });
+    console.log('📝 Bestaande ingevulde velden:', filledInputs);
+    
+    // Bereken automatische waarden voor de nieuwe rij op basis van protocol
+    const autoValues = calculateNextRowValues(tbody.getElementsByTagName('tr').length);
+    console.log('🧮 Berekende waarden voor nieuwe rij:', autoValues);
+    
+    // Maak nieuwe rij element aan met automatische waarden
     const newRow = document.createElement('tr');
-    newRow.innerHTML = generateTableRowContent(currentTableType, rowCount);
+    newRow.innerHTML = generateTableRowContent(currentTableType, rowCount, autoValues);
     
     // Voeg toe aan tbody zonder bestaande content te overschrijven
     tbody.appendChild(newRow);
     rowCount++;
     
-    console.log('Nieuwe rij toegevoegd. Totaal rijen nu:', tbody.getElementsByTagName('tr').length);
+    // Verifieer dat bestaande data er nog is
+    const finalInputs = tbody.querySelectorAll('input');
+    let finalFilledInputs = 0;
+    finalInputs.forEach(input => {
+        if (input.value.trim() !== '') finalFilledInputs++;
+    });
+    
+    console.log('✅ Rij toegevoegd! Totaal rijen nu:', tbody.getElementsByTagName('tr').length);
+    console.log('📝 Ingevulde velden na toevoegen:', finalFilledInputs);
+    
+    if (finalFilledInputs < filledInputs) {
+        console.log('🚨 DATA VERLOREN! Voor:', filledInputs, 'Na:', finalFilledInputs);
+    } else {
+        console.log('✅ Alle data behouden!');
+    }
+}
+
+// Functie om automatische waarden te berekenen voor de volgende rij
+function calculateNextRowValues(currentRowIndex) {
+    const config = tableConfigs[currentTableType];
+    if (!config) return {};
+    
+    console.log('🔢 Berekenen waarden voor rij', currentRowIndex, 'van type', currentTableType);
+    
+    // Voor inspanningstesten (fiets en loop): bereken op basis van protocol
+    if (currentTableType === 'fietstest' || currentTableType === 'looptest') {
+        const startValue = parseFloat(document.getElementById('startwattage').value) || 0;
+        const stappenMin = parseFloat(document.getElementById('stappen_min').value) || 3;
+        const stappenIncrement = parseFloat(document.getElementById('stappen_watt').value) || 
+                                (currentTableType === 'looptest' ? 1 : 40);
+        
+        const nextTime = stappenMin * (currentRowIndex + 1);
+        const nextValue = startValue + (stappenIncrement * currentRowIndex);
+        
+        console.log('📊 Protocol waarden:', {
+            startValue,
+            stappenMin, 
+            stappenIncrement,
+            nextTime,
+            nextValue
+        });
+        
+        if (currentTableType === 'fietstest') {
+            return {
+                tijd: nextTime,
+                vermogen: nextValue,
+                lactaat: '',
+                hartslag: '',
+                borg: ''
+            };
+        } else { // looptest
+            return {
+                tijd: nextTime,
+                snelheid: nextValue.toFixed(1),
+                lactaat: '',
+                hartslag: '',
+                borg: ''
+            };
+        }
+    }
+    
+    // Voor veldtest fietsen: ook op basis van protocol
+    if (currentTableType === 'veldtest_fietsen') {
+        const startValue = parseFloat(document.getElementById('startwattage').value) || 100;
+        const stappenMin = parseFloat(document.getElementById('stappen_min').value) || 3;
+        const stappenIncrement = parseFloat(document.getElementById('stappen_watt').value) || 40;
+        
+        const nextTime = stappenMin * (currentRowIndex + 1);
+        const nextValue = startValue + (stappenIncrement * currentRowIndex);
+        
+        return {
+            tijd: nextTime,
+            vermogen: nextValue,
+            lactaat: '',
+            hartslag: '',
+            borg: ''
+        };
+    }
+    
+    // Voor veldtesten (lopen/zwemmen): lege waarden, gebruiker vult handmatig in
+    if (currentTableType === 'veldtest_lopen' || currentTableType === 'veldtest_zwemmen') {
+        return {
+            afstand: '',
+            tijd_min: '',
+            tijd_sec: '',
+            hartslag: '',
+            borg: ''
+        };
+    }
+    
+    // Fallback: lege waarden
+    return {};
 }
 
 // Hulpfunctie om alleen de innerHTML van een rij te genereren
