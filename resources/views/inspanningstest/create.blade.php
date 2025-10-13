@@ -640,10 +640,14 @@ function updateTable(testType) {
         }
     }
     
-    if (testType === '5') {
+    // Voor veldtest zwemmen met protocol, voeg vooringevulde rijen toe
+    if (testType === 'veldtest_zwemmen') {
         const protocolSelect = document.getElementById('protocol_zwemmen');
         const selectedProtocol = protocolSelect ? protocolSelect.value : '';
+        console.log('🏊 Veldtest zwemmen - geselecteerd protocol:', selectedProtocol);
+        
         if (selectedProtocol && veldtestZwemmenProtocols[selectedProtocol]) {
+            console.log('📊 Voorinvullen zwemprotocol data:', veldtestZwemmenProtocols[selectedProtocol]);
             veldtestZwemmenProtocols[selectedProtocol].forEach(data => {
                 tbody.innerHTML += generateTableRow(testType, rowCount, data);
                 rowCount++;
@@ -1007,11 +1011,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else if (selectedType === 'veldtest_zwemmen') {
             // Veldtest zwemmen: toon zwem protocol dropdown, verberg standaard velden
+            console.log('🏊 Veldtest zwemmen geselecteerd');
             protocolFieldZwemmen.style.display = 'block';
             weersomstandighedenField.style.display = 'block';
             standardProtocolField1.style.display = 'none';
             standardProtocolField2.style.display = 'none';
             standardProtocolField3.style.display = 'none';
+            
+            // Automatisch eerste protocol selecteren als er geen is geselecteerd
+            const protocolZwemSelect = document.getElementById('protocol_zwemmen');
+            if (protocolZwemSelect && !protocolZwemSelect.value) {
+                protocolZwemSelect.value = '5 x 200m'; // Standaard eerste protocol
+                console.log('📋 Automatisch eerste zwemprotocol geselecteerd');
+                
+                // Update tabel met standaard protocol
+                setTimeout(() => {
+                    updateTable('veldtest_zwemmen');
+                }, 100);
+            }
         } else if (selectedType === 'veldtest_fietsen') {
             // Veldtest fietsen: toon standaard velden + weersomstandigheden
             weersomstandighedenField.style.display = 'block';
@@ -1076,7 +1093,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('protocol_zwemmen').addEventListener('change', function() {
         if (testtypeSelect.value === 'veldtest_zwemmen' && this.value !== '') {
-            console.log('Zwemprotocol gewijzigd naar:', this.value, '- tabel wordt ververst');
+            console.log('🏊 Zwemprotocol gewijzigd naar:', this.value, '- tabel wordt ververst');
             updateTable('veldtest_zwemmen');
         }
     });
