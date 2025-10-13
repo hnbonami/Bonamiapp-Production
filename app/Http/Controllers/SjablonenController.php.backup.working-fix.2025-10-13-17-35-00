@@ -346,7 +346,7 @@ class SjablonenController extends Controller
             }
         }
         
-        // Debug: Log hoe veel pagina's we naar de view sturen
+        // Debug: Log how many pages we're sending to view
         \Log::info("Sending " . count($generatedPages) . " pages to view");
         
         return view('sjablonen.generated-report', [
@@ -676,10 +676,6 @@ class SjablonenController extends Controller
      */
     private function generatePagesForBikefit($sjabloon, $bikefit)
     {
-        \Log::info("🔥 generatePagesForBikefit CALLED", [
-            "bikefit_id" => $bikefit->id ?? "unknown",
-            "rotatie_aanpassingen_value" => $bikefit->rotatie_aanpassingen ?? "EMPTY_OR_NULL"
-        ]);
         // Bereken eerst de results
         $bikefitCalculator = new \App\Services\BikefitCalculator();
         $results = $bikefitCalculator->calculate($bikefit);
@@ -753,7 +749,6 @@ class SjablonenController extends Controller
                 $content = str_replace('{{bikefit.conclusie}}', $bikefit->conclusie ?? '', $content);
                 $content = str_replace('{{bikefit.aanbevelingen}}', $bikefit->aanbevelingen ?? '', $content);
                 $content = str_replace('{{bikefit.opmerkingen}}', $bikefit->opmerkingen ?? '', $content);
-                \Log::info('🔥 WORKING REPLACEMENT EXECUTED', ['opmerkingen' => $bikefit->opmerkingen ?? 'EMPTY']);
                 $content = str_replace('{{bikefit.follow_up}}', $bikefit->follow_up ?? '', $content);
                 
                 // Nieuwe bikefit velden toegevoegd - aanpassingen
@@ -765,7 +760,6 @@ class SjablonenController extends Controller
                 $content = str_replace('{{bikefit.aanpassingen_stuurpen_pre}}', $bikefit->aanpassingen_stuurpen_pre ?? '', $content);
                 $content = str_replace('{{bikefit.aanpassingen_stuurpen_post}}', $bikefit->aanpassingen_stuurpen_post ?? '', $content);
                 $content = str_replace('{{bikefit.rotatie_aanpassingen}}', $bikefit->rotatie_aanpassingen ?? '', $content);
-                \Log::info('🔥 NEW REPLACEMENT EXECUTED', ['rotatie_aanpassingen' => $bikefit->rotatie_aanpassingen ?? 'EMPTY']);
                 $content = str_replace('{{bikefit.inclinatie_aanpassingen}}', $bikefit->inclinatie_aanpassingen ?? '', $content);
                 $content = str_replace('{{bikefit.ophoging_li}}', $bikefit->ophoging_li ?? '', $content);
                 $content = str_replace('{{bikefit.ophoging_re}}', $bikefit->ophoging_re ?? '', $content);
@@ -796,41 +790,6 @@ class SjablonenController extends Controller
                 $content = str_replace('{{bikefit.one_leg_squat_links}}', $bikefit->one_leg_squat_links ?? '', $content);
                 $content = str_replace('{{bikefit.one_leg_squat_rechts}}', $bikefit->one_leg_squat_rechts ?? '', $content);
                 $content = str_replace('{{bikefit.interne_opmerkingen}}', $bikefit->interne_opmerkingen ?? '', $content);
-                // ONTBREKENDE TEMPLATE KEYS uit edit_fixed.blade.php - automatisch gegenereerd
-                $content = str_replace('{{bikefit.fietsmerk}}', $bikefit->fietsmerk ?? '', $content);
-                
-                // EXACTE TEMPLATE KEYS uit screenshot - PROBEER VERSCHILLENDE MOGELIJKE VELDEN
-                $stuurpenVoor = $bikefit->stuurpenlengte_voor ?? $bikefit->aanpassingen_stuurpen_pre ?? $bikefit->aanpassingen_stuurpen_aan ?? '6.00';
-                $stuurpenNa = $bikefit->stuurpenlengte_na ?? $bikefit->aanpassingen_stuurpen_post ?? $bikefit->aanpassing_stuurpen ?? '12.00';
-                
-                $content = str_replace('{{bikefit.stuurpen_voor}}', $stuurpenVoor, $content);
-                $content = str_replace('{{bikefit.stuurpen_na}}', $stuurpenNa, $content);
-                $content = str_replace('{{bikefit.inclinatie_zadel}}', $bikefit->zadeltil ?? '', $content);
-                $content = str_replace('{{bikefit.rotatie_schoenplaatjes}}', $bikefit->rotatie_aanpassingen ?? '', $content);
-                $content = str_replace('{{inclinatie.rotatie_schoenplaatjes}}', $bikefit->inclinatie_aanpassingen ?? '', $content);
-                
-                \Log::info('🔍 STUURPEN DEBUG VALUES', [
-                    'stuurpen_voor_used' => $stuurpenVoor,
-                    'stuurpen_na_used' => $stuurpenNa,
-                    'bikefit_id' => $bikefit->id
-                ]);
-                
-                // Debug alle beschikbare velden in het bikefit model
-                \Log::info('🔍 ALLE BIKEFIT VELDEN', [
-                    'bikefit_attributes' => $bikefit->getAttributes(),
-                    'stuurpen_related_fields' => [
-                        'stuurpenlengte_voor' => $bikefit->stuurpenlengte_voor ?? 'niet gevonden',
-                        'stuurpenlengte_na' => $bikefit->stuurpenlengte_na ?? 'niet gevonden',
-                        'stuur_trapas_hoek' => $bikefit->stuur_trapas_hoek ?? 'niet gevonden', 
-                        'stuur_trapas_afstand' => $bikefit->stuur_trapas_afstand ?? 'niet gevonden'
-                    ],
-                    'possible_stuur_fields' => [
-                        'aanpassingen_stuurpen_pre' => $bikefit->aanpassingen_stuurpen_pre ?? 'niet gevonden',
-                        'aanpassingen_stuurpen_post' => $bikefit->aanpassingen_stuurpen_post ?? 'niet gevonden',
-                        'aanpassingen_stuurpen_aan' => $bikefit->aanpassingen_stuurpen_aan ?? 'niet gevonden',
-                        'aanpassing_stuurpen' => $bikefit->aanpassing_stuurpen ?? 'niet gevonden'
-                    ]
-                ]);
                 
                 // Systeem variabelen
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
