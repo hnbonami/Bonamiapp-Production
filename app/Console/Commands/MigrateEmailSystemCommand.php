@@ -126,68 +126,11 @@ class MigrateEmailSystemCommand extends Command
     {
         $results = $service->testNewEmailSystem();
         
-        $this->newLine();
-        $this->info('  📊 Test Resultaten:');
-        
-        // Groepeer resultaten
-        $templateResults = [];
-        $triggerResults = [];
-        $systemResults = [];
-        $statistics = [];
-        
         foreach ($results as $test => $result) {
-            if (str_starts_with($test, 'template_')) {
-                $templateResults[str_replace('template_', '', $test)] = $result;
-            } elseif (str_starts_with($test, 'trigger_')) {
-                $triggerResults[str_replace('trigger_', '', $test)] = $result;
-            } elseif (in_array($test, ['total_templates', 'active_templates', 'total_triggers', 'active_triggers'])) {
-                $statistics[$test] = $result;
+            if ($result === 'OK') {
+                $this->info("  ✅ {$test}: {$result}");
             } else {
-                $systemResults[$test] = $result;
-            }
-        }
-        
-        // Toon template resultaten
-        if (!empty($templateResults)) {
-            $this->line('    📧 Templates:');
-            foreach ($templateResults as $test => $result) {
-                if ($result === 'OK') {
-                    $this->info("      ✅ {$test}");
-                } else {
-                    $this->error("      ❌ {$test}: {$result}");
-                }
-            }
-        }
-        
-        // Toon trigger resultaten
-        if (!empty($triggerResults)) {
-            $this->line('    ⚡ Triggers:');
-            foreach ($triggerResults as $test => $result) {
-                if ($result === 'OK') {
-                    $this->info("      ✅ {$test}");
-                } else {
-                    $this->error("      ❌ {$test}: {$result}");
-                }
-            }
-        }
-        
-        // Toon systeem resultaten
-        if (!empty($systemResults)) {
-            $this->line('    🗄️  Database:');
-            foreach ($systemResults as $test => $result) {
-                if ($result === 'OK') {
-                    $this->info("      ✅ {$test}");
-                } else {
-                    $this->error("      ❌ {$test}: {$result}");
-                }
-            }
-        }
-        
-        // Toon statistieken
-        if (!empty($statistics)) {
-            $this->line('    📈 Statistieken:');
-            foreach ($statistics as $stat => $value) {
-                $this->line("      📊 {$stat}: {$value}");
+                $this->error("  ❌ {$test}: {$result}");
             }
         }
     }

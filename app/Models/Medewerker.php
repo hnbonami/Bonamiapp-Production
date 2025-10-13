@@ -178,7 +178,7 @@ class Medewerker extends Authenticatable
 
         \Log::info("User account aangemaakt voor medewerker {$this->id}: {$user->email} met rol 'medewerker'");
 
-        return $user;
+        return ['user' => $user, 'temporary_password' => $password];
     }
 
     /**

@@ -518,52 +518,49 @@ class EmailIntegrationService
             ]);
         }
 
-        // Replace placeholders using the @{{}} format
-        $content = str_replace([
-            '@{{voornaam}}',
-            '@{{naam}}', 
-            '@{{email}}',
-            '@{{wachtwoord}}',
-            '@{{temporary_password}}',
-            '@{{bedrijf_naam}}',
-            '@{{website_url}}',
-            '@{{datum}}',
-            '@{{jaar}}',
-            '@{{tijd}}',
-            '@{{unsubscribe_url}}',
-            '@{{marketing_unsubscribe_url}}',
-            '@{{preferences_url}}',
-            '@{{email_id}}',
-            // Also support old format for compatibility
-            '{{customer_name}}',
-            '{{klant_naam}}',
-            '{{customer_email}}',
-            '{{klant_email}}',
-            '{{company_name}}',
-            '{{app_name}}'
-        ], [
-            $customer->voornaam,
-            $customer->naam,
-            $customer->email,
-            $temporaryPassword,
-            $temporaryPassword,
-            config('app.name', 'Bonami'),
-            config('app.url', 'https://bonami-sportcoaching.be'),
-            now()->format('d-m-Y'),
-            now()->format('Y'),
-            now()->format('H:i'),
-            $this->generateSafeRoute('unsubscribe', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
-            $this->generateSafeRoute('marketing.unsubscribe', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
-            $this->generateSafeRoute('email.preferences', ['email' => $customer->email, 'token' => $this->generateUnsubscribeToken($customer->email)]),
-            'CUST-' . $customer->id . '-' . time(),
-            // Old format values
-            $customer->voornaam . ' ' . $customer->naam,
-            $customer->voornaam . ' ' . $customer->naam,
-            $customer->email,
-            $customer->email,
-            config('app.name', 'Bonami'),
-            config('app.name', 'Bonami')
-        ], $content);
+        // Log de originele content en placeholder waarden voor debugging
+        \Log::info('🔍 CUSTOMER PLACEHOLDER DEBUGGING', [
+            'original_content_sample' => substr($content, 0, 200),
+            'voornaam' => $customer->voornaam,
+            'naam' => $customer->naam,
+            'email' => $customer->email,
+            'temporary_password' => $temporaryPassword,
+            'contains_voornaam_placeholder' => strpos($content, '@{{voornaam}}') !== false,
+            'contains_temp_password_placeholder' => strpos($content, '@{{temporary_password}}') !== false
+        ]);
+
+        // Vervang placeholders stap voor stap voor betere debugging
+        $content = str_replace('@{{voornaam}}', $customer->voornaam ?? 'Onbekend', $content);
+        $content = str_replace('@{{naam}}', $customer->naam ?? 'Onbekend', $content);
+        $content = str_replace('@{{email}}', $customer->email ?? '', $content);
+        $content = str_replace('@{{temporary_password}}', $temporaryPassword, $content);
+        $content = str_replace('@{{wachtwoord}}', $temporaryPassword, $content);
+        $content = str_replace('@{{bedrijf_naam}}', 'Bonami Sportcoaching', $content);
+        $content = str_replace('@{{website_url}}', config('app.url', 'https://bonami-sportcoaching.be'), $content);
+        $content = str_replace('@{{datum}}', now()->format('d-m-Y'), $content);
+        $content = str_replace('@{{jaar}}', now()->format('Y'), $content);
+        $content = str_replace('@{{tijd}}', now()->format('H:i'), $content);
+        
+        // Genereer unsubscribe URLs veilig
+        $unsubscribeUrl = config('app.url') . '/unsubscribe?email=' . urlencode($customer->email);
+        $content = str_replace('@{{unsubscribe_url}}', $unsubscribeUrl, $content);
+        $content = str_replace('@{{marketing_unsubscribe_url}}', $unsubscribeUrl, $content);
+        $content = str_replace('@{{preferences_url}}', $unsubscribeUrl, $content);
+        $content = str_replace('@{{email_id}}', 'CUST-' . $customer->id . '-' . time(), $content);
+        
+        // Ondersteuning voor oude formaten
+        $content = str_replace('{{customer_name}}', ($customer->voornaam ?? '') . ' ' . ($customer->naam ?? ''), $content);
+        $content = str_replace('{{klant_naam}}', ($customer->voornaam ?? '') . ' ' . ($customer->naam ?? ''), $content);
+        $content = str_replace('{{customer_email}}', $customer->email ?? '', $content);
+        $content = str_replace('{{klant_email}}', $customer->email ?? '', $content);
+        $content = str_replace('{{company_name}}', 'Bonami Sportcoaching', $content);
+        $content = str_replace('{{app_name}}', 'Bonami Sportcoaching', $content);
+
+        \Log::info('✅ CUSTOMER PLACEHOLDERS VERVANGEN', [
+            'processed_content_sample' => substr($content, 0, 200),
+            'still_contains_placeholders' => preg_match('/@\{\{|\{\{/', $content),
+            'temporary_password_used' => $temporaryPassword
+        ]);
 
         return $content;
     }
@@ -580,50 +577,67 @@ class EmailIntegrationService
         // Use body_html from the EmailTemplate model
         $content = $template->body_html ?? $template->content ?? $template->inhoud ?? 'Welkom in het team!';
 
-        // Replace placeholders using the @{{}} format
-        $content = str_replace([
-            '@{{voornaam}}',
-            '@{{naam}}',
-            '@{{achternaam}}', 
-            '@{{email}}',
-            '@{{bedrijf_naam}}',
-            '@{{website_url}}',
-            '@{{datum}}',
-            '@{{jaar}}',
-            '@{{tijd}}',
-            '@{{unsubscribe_url}}',
-            '@{{marketing_unsubscribe_url}}',
-            '@{{preferences_url}}',
-            '@{{email_id}}',
-            // Also support old format for compatibility
-            '{{employee_name}}',
-            '{{medewerker_naam}}',
-            '{{employee_email}}',
-            '{{medewerker_email}}',
-            '{{company_name}}',
-            '{{app_name}}'
-        ], [
-            $employee->voornaam,
-            $employee->achternaam,
-            $employee->achternaam,
-            $employee->email,
-            config('app.name', 'Bonami'),
-            config('app.url', 'https://bonami-sportcoaching.be'),
-            now()->format('d-m-Y'),
-            now()->format('Y'),
-            now()->format('H:i'),
-            $this->generateSafeRoute('unsubscribe', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
-            $this->generateSafeRoute('marketing.unsubscribe', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
-            $this->generateSafeRoute('email.preferences', ['email' => $employee->email, 'token' => $this->generateUnsubscribeToken($employee->email)]),
-            'EMP-' . $employee->id . '-' . time(),
-            // Old format values
-            $employee->voornaam . ' ' . $employee->achternaam,
-            $employee->voornaam . ' ' . $employee->achternaam,
-            $employee->email,
-            $employee->email,
-            config('app.name', 'Bonami'),
-            config('app.name', 'Bonami')
-        ], $content);
+        // Haal temporary password op voor medewerker
+        $temporaryPassword = 'N/A';
+        try {
+            $invitationToken = \App\Models\InvitationToken::where('email', $employee->email)
+                                                         ->where('type', 'medewerker')
+                                                         ->latest()
+                                                         ->first();
+            if ($invitationToken && $invitationToken->temporary_password) {
+                $temporaryPassword = $invitationToken->temporary_password;
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Could not retrieve temporary password for employee email template', [
+                'employee_email' => $employee->email,
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // Log de originele content en placeholder waarden voor debugging
+        \Log::info('🔍 EMPLOYEE PLACEHOLDER DEBUGGING', [
+            'original_content_sample' => substr($content, 0, 200),
+            'voornaam' => $employee->voornaam,
+            'achternaam' => $employee->achternaam,
+            'email' => $employee->email,
+            'temporary_password' => $temporaryPassword,
+            'contains_voornaam_placeholder' => strpos($content, '@{{voornaam}}') !== false,
+            'contains_temp_password_placeholder' => strpos($content, '@{{temporary_password}}') !== false
+        ]);
+
+        // Vervang placeholders stap voor stap voor betere debugging
+        $content = str_replace('@{{voornaam}}', $employee->voornaam ?? 'Onbekend', $content);
+        $content = str_replace('@{{naam}}', ($employee->achternaam ?? $employee->naam ?? 'Onbekend'), $content);
+        $content = str_replace('@{{achternaam}}', $employee->achternaam ?? 'Onbekend', $content);
+        $content = str_replace('@{{email}}', $employee->email ?? '', $content);
+        $content = str_replace('@{{temporary_password}}', $temporaryPassword, $content);
+        $content = str_replace('@{{wachtwoord}}', $temporaryPassword, $content);
+        $content = str_replace('@{{bedrijf_naam}}', 'Bonami Sportcoaching', $content);
+        $content = str_replace('@{{website_url}}', config('app.url', 'https://bonami-sportcoaching.be'), $content);
+        $content = str_replace('@{{datum}}', now()->format('d-m-Y'), $content);
+        $content = str_replace('@{{jaar}}', now()->format('Y'), $content);
+        $content = str_replace('@{{tijd}}', now()->format('H:i'), $content);
+        
+        // Genereer unsubscribe URLs veilig
+        $unsubscribeUrl = config('app.url') . '/unsubscribe?email=' . urlencode($employee->email);
+        $content = str_replace('@{{unsubscribe_url}}', $unsubscribeUrl, $content);
+        $content = str_replace('@{{marketing_unsubscribe_url}}', $unsubscribeUrl, $content);
+        $content = str_replace('@{{preferences_url}}', $unsubscribeUrl, $content);
+        $content = str_replace('@{{email_id}}', 'EMP-' . $employee->id . '-' . time(), $content);
+        
+        // Ondersteuning voor oude formaten
+        $content = str_replace('{{employee_name}}', ($employee->voornaam ?? '') . ' ' . ($employee->achternaam ?? ''), $content);
+        $content = str_replace('{{medewerker_naam}}', ($employee->voornaam ?? '') . ' ' . ($employee->achternaam ?? ''), $content);
+        $content = str_replace('{{employee_email}}', $employee->email ?? '', $content);
+        $content = str_replace('{{medewerker_email}}', $employee->email ?? '', $content);
+        $content = str_replace('{{company_name}}', 'Bonami Sportcoaching', $content);
+        $content = str_replace('{{app_name}}', 'Bonami Sportcoaching', $content);
+
+        \Log::info('✅ EMPLOYEE PLACEHOLDERS VERVANGEN', [
+            'processed_content_sample' => substr($content, 0, 200),
+            'still_contains_placeholders' => preg_match('/@\{\{|\{\{/', $content),
+            'temporary_password_used' => $temporaryPassword
+        ]);
 
         return $content;
     }

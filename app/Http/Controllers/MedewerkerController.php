@@ -190,4 +190,36 @@ class MedewerkerController extends Controller
             return redirect()->back()->with('error', 'Fout bij versturen uitnodiging: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Maak user account aan voor medewerker
+     */
+    public function createUserAccount(Medewerker $medewerker)
+    {
+        try {
+            if ($medewerker->hasUserAccount()) {
+                return back()->with('error', 'Medewerker heeft al een user account.');
+            }
+
+            $result = $medewerker->createUserAccount();
+            
+            if (is_array($result) && isset($result['temporary_password'])) {
+                // Verstuur welkomst email met inloggegevens via de gefixte methode
+                $emailService = app(\App\Services\EmailIntegrationService::class);
+                $emailService->sendEmployeeWelcomeEmailFixed($medewerker, null, [
+                    'temporary_password' => $result['temporary_password'],
+                    'tijdelijk_wachtwoord' => $result['temporary_password'],
+                    'login_url' => route('login')
+                ]);
+                
+                return back()->with('success', 'User account aangemaakt en welkomst email verzonden.');
+            }
+
+            return back()->with('success', 'User account aangemaakt.');
+
+        } catch (\Exception $e) {
+            \Log::error("Fout bij aanmaken user account voor medewerker {$medewerker->id}: " . $e->getMessage());
+            return back()->with('error', 'Er is een fout opgetreden bij het aanmaken van het user account.');
+        }
+    }
 }

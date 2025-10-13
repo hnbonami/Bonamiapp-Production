@@ -265,34 +265,6 @@ class EmailMigrationService
                 'description' => 'Welkomstmail voor nieuwe klanten',
                 'is_active' => true,
                 'created_by' => auth()->id() ?? 1,
-            ],
-            [
-                'template_key' => 'doorverwijzing',
-                'name' => 'Doorverwijzing Email',
-                'type' => 'doorverwijzing',
-                'subject' => 'Doorverwijzing naar {{specialist_naam}} - {{voornaam}} {{naam}}',
-                'content' => '
-                <!DOCTYPE html>
-                <html>
-                <head><title>Doorverwijzing</title></head>
-                <body style="font-family: Arial, sans-serif; padding: 20px;">
-                    <h2>Doorverwijzing voor {{voornaam}} {{naam}}</h2>
-                    <p>Beste {{specialist_naam}},</p>
-                    <p>Hierbij verwijs ik {{voornaam}} {{naam}} door voor verder onderzoek/behandeling.</p>
-                    <p><strong>Klantgegevens:</strong></p>
-                    <ul>
-                        <li>Naam: {{voornaam}} {{naam}}</li>
-                        <li>Email: {{email}}</li>
-                        <li>Telefoon: {{telefoon}}</li>
-                        <li>Geboortedatum: {{geboortedatum}}</li>
-                    </ul>
-                    <p><strong>Reden doorverwijzing:</strong><br>{{doorverwijzing_reden}}</p>
-                    <p>Met vriendelijke groet,<br>{{doorverwijzer_naam}}<br>Bonami Sportcoaching</p>
-                </body>
-                </html>',
-                'description' => 'Template voor doorverwijzing naar specialisten',
-                'is_active' => true,
-                'created_by' => auth()->id() ?? 1,
             ]
         ];
         
