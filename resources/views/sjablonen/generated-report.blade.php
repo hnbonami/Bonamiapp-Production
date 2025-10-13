@@ -568,9 +568,12 @@
         <div class="header-buttons">
             <button class="btn btn-primary" onclick="window.print()">🖨️ Afdrukken</button>
             <button class="btn btn-success" onclick="printToPDF()">📄 Afdruk PDF</button>
+            {{-- Verborgen knoppen: Download PDF en Sjabloon Bewerken --}}
+            {{--
             <a href="/sjablonen/{{ $template->id }}/pdf?klant={{ $klantModel->id ?? '' }}&context=generated-report" 
                class="btn btn-danger">📄 Download PDF</a>
             <a href="/sjablonen/{{ $template->id }}/edit" class="btn btn-secondary">✏️ Sjabloon Bewerken</a>
+            --}}
         </div>
     </div>
 
