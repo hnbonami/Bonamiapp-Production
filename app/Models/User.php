@@ -32,6 +32,9 @@ class User extends Authenticatable
         'avatar_path',
         'role',
         'klant_id',
+        'achternaam', // Voeg achternaam toe voor medewerkers
+        'email_verified_at',
+        'telefoon', // Voeg telefoon toe voor medewerkers
     ];
 
     /**

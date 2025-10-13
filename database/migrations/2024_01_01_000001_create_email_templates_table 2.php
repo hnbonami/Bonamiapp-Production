@@ -6,8 +6,18 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     * Deze migratie is al uitgevoerd - email_templates tabel bestaat al.
+     */
     public function up(): void
     {
+        // Skip - tabel bestaat al
+        if (Schema::hasTable('email_templates')) {
+            \Log::info('email_templates tabel bestaat al - migratie overgeslagen');
+            return;
+        }
+
         Schema::create('email_templates', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -24,8 +34,11 @@ return new class extends Migration
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
-        Schema::dropIfExists('email_templates');
+        // Niets te doen
     }
 };

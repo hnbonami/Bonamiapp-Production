@@ -2,224 +2,335 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Medewerker;
 use App\Models\User;
 use App\Models\InvitationToken;
 use App\Services\EmailIntegrationService;
-use App\Helpers\MailHelper;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Log;
 
 class MedewerkerController extends Controller
 {
+    /**
+     * Display a listing of medewerkers
+     */
     public function index()
     {
-        $medewerkers = \App\Models\Medewerker::all();
+        $medewerkers = User::where('role', '!=', 'klant')
+                          ->orderBy('created_at', 'desc')
+                          ->get();
+        
         return view('medewerkers.index', compact('medewerkers'));
     }
 
+    /**
+     * Show the form for creating a new medewerker
+     */
     public function create()
     {
-    // Toon het formulier om een medewerker toe te voegen
-    return view('medewerkers.create');
+        return view('medewerkers.create');
     }
 
+    /**
+     * Store a newly created medewerker in storage
+     */
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
+        // EERSTE TEST: Check of deze method überhaupt wordt aangeroepen
+        \Log::info('🚨 MedewerkerController@store CALLED', [
+            'request_method' => $request->method(),
+            'all_input' => $request->all(),
+            'url' => $request->url(),
+            'route_name' => $request->route() ? $request->route()->getName() : 'NO_ROUTE'
+        ]);
+
+        $validated = $request->validate([
             'voornaam' => 'required|string|max:255',
             'achternaam' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'telefoonnummer' => 'nullable|string|max:255',
-            'geboortedatum' => 'nullable|date',
-            'geslacht' => 'nullable|in:Man,Vrouw,Anders',
-            'straatnaam' => 'nullable|string|max:255',
-            'huisnummer' => 'nullable|string|max:50',
-            'postcode' => 'nullable|string|max:10',
-            'stad' => 'nullable|string|max:255',
-            'functie' => 'nullable|string|max:255',
-            'rol' => 'nullable|string|max:255',
-            'afdeling' => 'nullable|string|max:255',
-            'salaris' => 'nullable|numeric',
-            'toegangsniveau' => 'nullable|in:admin,manager,medewerker,gast',
-            'toegangsrechten' => 'nullable|array',
-            'uurloon' => 'nullable|numeric',
-            'status' => 'nullable|string|max:255',
-            'contract_type' => 'nullable|string|max:255',
-            'startdatum' => 'nullable|date',
-            'bikefit' => 'nullable|boolean',
-            'inspanningstest' => 'nullable|boolean',
-            'notities' => 'nullable|string',
-            'avatar' => 'nullable|image|max:5120',
+            'email' => 'required|email|unique:users,email',
+            'telefoon' => 'nullable|string|max:20',
+            'rol' => 'required|in:admin,medewerker'
         ]);
 
-        // Handle avatar upload
-        if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $validatedData['avatar_path'] = $avatarPath;
-        }
-
-        $medewerker = Medewerker::create($validatedData);
-
-        return redirect()->route('medewerkers.show', $medewerker)
-                         ->with('success', 'Medewerker succesvol aangemaakt!');
-    }    public function show(\App\Models\Medewerker $medewerker)
-    {
-        return view('medewerkers.show', compact('medewerker'));
-    }
-
-    public function edit(\App\Models\Medewerker $medewerker)
-    {
-        return view('medewerkers.edit', compact('medewerker'));
-    }
-
-    public function update(Request $request, Medewerker $medewerker)
-    {
-        // DEBUG: Check wat er wordt verstuurd
-        \Log::info('Medewerker update data:', $request->all());
-        \Log::info('Medewerker before update:', $medewerker->toArray());
-
-        $validatedData = $request->validate([
-            'voornaam' => 'required|string|max:255',
-            'achternaam' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
-            'telefoonnummer' => 'nullable|string|max:255',
-            'geboortedatum' => 'nullable|date',
-            'geslacht' => 'nullable|in:Man,Vrouw,Anders',
-            'straatnaam' => 'nullable|string|max:255',
-            'huisnummer' => 'nullable|string|max:50',
-            'postcode' => 'nullable|string|max:10',
-            'stad' => 'nullable|string|max:255',
-            'functie' => 'nullable|string|max:255',
-            'rol' => 'nullable|string|max:255',
-            'afdeling' => 'nullable|string|max:255',
-            'salaris' => 'nullable|numeric',
-            'toegangsniveau' => 'nullable|in:admin,manager,medewerker,gast',
-            'toegangsrechten' => 'nullable|array',
-            'uurloon' => 'nullable|numeric',
-            'status' => 'nullable|string|max:255',
-            'contract_type' => 'nullable|string|max:255',
-            'startdatum' => 'nullable|date',
-            'bikefit' => 'nullable|boolean',
-            'inspanningstest' => 'nullable|boolean',
-            'notities' => 'nullable|string',
-            'avatar' => 'nullable|image|max:5120',
-        ]);
-
-        // Handle avatar upload
-        if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $validatedData['avatar_path'] = $avatarPath;
-        }
-
-        // Remove any 'naam' from the data if it exists
-        unset($validatedData['naam']);
-
-        \Log::info('Validated data:', $validatedData);
-
-        $medewerker->update($validatedData);
-        
-        // DEBUG: Check het resultaat na update
-        \Log::info('Medewerker after update:', $medewerker->fresh()->toArray());
-
-        return redirect()->route('medewerkers.show', $medewerker)
-                         ->with('success', 'Medewerker succesvol bijgewerkt!');
-    }
-
-    public function destroy(\App\Models\Medewerker $medewerker)
-    {
-        // Verwijder gekoppelde user
-        if ($medewerker->email) {
-            $user = \App\Models\User::where('email', $medewerker->email)->first();
-            if ($user) {
-                $user->delete();
-            }
-        }
-        $medewerker->delete();
-        return redirect()->route('medewerkers.index')->with('success', 'Medewerker en gekoppelde gebruiker verwijderd!');
-    }
-
-    public function updateAvatar(Request $request, \App\Models\Medewerker $medewerker)
-    {
-        $request->validate([
-            'avatar' => 'required|image|max:5120',
-        ]);
-
-        if ($medewerker->avatar_path && \Storage::disk('public')->exists($medewerker->avatar_path)) {
-            \Storage::disk('public')->delete($medewerker->avatar_path);
-        }
-
-        $path = $request->file('avatar')->store('avatars/medewerkers', 'public');
-        $medewerker->update(['avatar_path' => $path]);
-
-        return back()->with('success', 'Profielfoto bijgewerkt.');
-    }
-
-    // Add invitation functionality for medewerkers
-    public function sendInvitation(Request $request, \App\Models\Medewerker $medewerker)
-    {
         try {
-            // Generate temporary password
-            $temporaryPassword = \Str::random(12);
+            \Log::info('🔄 Creating new employee (medewerker)', [
+                'email' => $validated['email'],
+                'role' => $validated['rol'],
+                'name' => $validated['voornaam'] . ' ' . $validated['achternaam']
+            ]);
+
+            // Generate a temporary password
+            $temporaryPassword = Str::random(12);
             
-            // Create or update User record for login
-            $user = \App\Models\User::updateOrCreate(
-                ['email' => $medewerker->email],
-                [
-                    'name' => $medewerker->voornaam . ' ' . $medewerker->achternaam,
-                    'password' => \Hash::make($temporaryPassword),
-                    'email_verified_at' => now(),
-                ]
-            );
+            // Create user record with ALL required fields for medewerkers
+            $user = User::create([
+                'name' => $validated['voornaam'] . ' ' . $validated['achternaam'],
+                'voornaam' => $validated['voornaam'], // BELANGRIJK: voornaam voor email templates
+                'achternaam' => $validated['achternaam'], // BELANGRIJK: achternaam voor email templates
+                'email' => $validated['email'],
+                'password' => Hash::make($temporaryPassword),
+                'role' => $validated['rol'],
+                'telefoon' => $validated['telefoon'] ?? null, // BELANGRIJK: telefoon veld
+                'email_verified_at' => now(), // Auto-verify employee emails
+            ]);
+
+            \Log::info('✅ User record created successfully with all fields', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'role' => $user->role,
+                'voornaam' => $user->voornaam,
+                'achternaam' => $user->achternaam,
+                'telefoon' => $user->telefoon,
+                'name' => $user->name,
+                'created_at' => $user->created_at,
+                'user_exists_check' => $user->exists ? 'YES' : 'NO'
+            ]);
+
+            // IMMEDIATE CHECK: Verify user exists in database right after creation
+            $immediateCheck = User::find($user->id);
+            \Log::info('🔍 IMMEDIATE DATABASE CHECK after User::create()', [
+                'user_found' => $immediateCheck ? 'YES' : 'NO',
+                'user_id' => $user->id,
+                'email' => $validated['email']
+            ]);
+
+            // Create invitation token for password setup
+            $token = Str::random(60);
             
-            // Create invitation token
-            $invitationToken = \App\Models\InvitationToken::createForMedewerker($medewerker->email, $temporaryPassword);
-            
-            // Send invitation email
-            $emailSent = \App\Helpers\MailHelper::sendMedewerkerInvitation($medewerker, $temporaryPassword, $invitationToken);
-            
-            // Update medewerker to show invitation was sent
-            $medewerker->update(['laatste_uitnodiging' => now()]);
-            
-            return redirect()->back()->with('success', 'Uitnodiging verstuurd naar ' . $medewerker->naam);
-            
+            InvitationToken::create([
+                'email' => $validated['email'],
+                'token' => $token,
+                'temporary_password' => $temporaryPassword,
+                'type' => 'medewerker',
+                'expires_at' => now()->addDays(7),
+                'created_by' => auth()->id()
+            ]);
+
+            \Log::info('✅ Invitation token created', [
+                'email' => $validated['email'],
+                'token_length' => strlen($token),
+                'expires_at' => now()->addDays(7)->format('Y-m-d H:i:s')
+            ]);
+
+            // Send welcome email using EmailIntegrationService
+            try {
+                $emailService = app(EmailIntegrationService::class);
+                $emailSent = $emailService->sendEmployeeWelcomeEmail($user);
+                
+                if ($emailSent) {
+                    \Log::info('✅ Welcome email sent to new employee', ['email' => $user->email]);
+                } else {
+                    \Log::warning('⚠️ Welcome email failed to send', ['email' => $user->email]);
+                }
+            } catch (\Exception $emailError) {
+                \Log::error('❌ Welcome email system error: ' . $emailError->getMessage(), [
+                    'email' => $user->email,
+                    'trace' => $emailError->getTraceAsString()
+                ]);
+            }
+
+            // EXTRA VERIFICATIE: Check of user daadwerkelijk is aangemaakt
+            $verifyUser = User::where('email', $validated['email'])->first();
+            if ($verifyUser) {
+                \Log::info('✅ VERIFICATION: User was successfully created and saved', [
+                    'user_id' => $verifyUser->id,
+                    'email' => $verifyUser->email,
+                    'role' => $verifyUser->role,
+                    'database_check' => 'SUCCESS'
+                ]);
+            } else {
+                \Log::error('❌ VERIFICATION FAILED: User was created but not found in database!', [
+                    'email' => $validated['email'],
+                    'database_check' => 'FAILED'
+                ]);
+            }
+
+            return redirect()->route('medewerkers.index')
+                           ->with('success', 'Medewerker succesvol aangemaakt en uitnodiging verstuurd naar ' . $validated['email']);
+
         } catch (\Exception $e) {
-            \Log::error('Medewerker invitation sending failed: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Fout bij versturen uitnodiging: ' . $e->getMessage());
+            \Log::error('❌ Failed to create employee: ' . $e->getMessage(), [
+                'email' => $validated['email'] ?? 'unknown',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                           ->withInput()
+                           ->with('error', 'Er is een fout opgetreden bij het aanmaken van de medewerker: ' . $e->getMessage());
         }
     }
 
     /**
-     * Maak user account aan voor medewerker
+     * Display the specified medewerker
      */
-    public function createUserAccount(Medewerker $medewerker)
+    public function show(User $medewerker)
     {
+        if ($medewerker->role === 'klant') {
+            abort(404);
+        }
+        
+        return view('medewerkers.show', compact('medewerker'));
+    }
+
+    /**
+     * Show the form for editing the specified medewerker
+     */
+    public function edit(User $medewerker)
+    {
+        if ($medewerker->role === 'klant') {
+            abort(404);
+        }
+        
+        return view('medewerkers.edit', compact('medewerker'));
+    }
+
+    /**
+     * Update the specified medewerker in storage
+     */
+    public function update(Request $request, User $medewerker)
+    {
+        if ($medewerker->role === 'klant') {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'voornaam' => 'required|string|max:255',
+            'achternaam' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $medewerker->id,
+            'telefoon' => 'nullable|string|max:20',
+            'rol' => 'required|in:admin,medewerker'
+        ]);
+
         try {
-            if ($medewerker->hasUserAccount()) {
-                return back()->with('error', 'Medewerker heeft al een user account.');
-            }
+            $medewerker->update([
+                'name' => $validated['voornaam'] . ' ' . $validated['achternaam'],
+                'voornaam' => $validated['voornaam'],
+                'achternaam' => $validated['achternaam'],
+                'email' => $validated['email'],
+                'role' => $validated['rol'],
+                'telefoon' => $validated['telefoon'] ?? null,
+            ]);
 
-            $result = $medewerker->createUserAccount();
-            
-            if (is_array($result) && isset($result['temporary_password'])) {
-                // Verstuur welkomst email met inloggegevens via de gefixte methode
-                $emailService = app(\App\Services\EmailIntegrationService::class);
-                $emailService->sendEmployeeWelcomeEmailFixed($medewerker, null, [
-                    'temporary_password' => $result['temporary_password'],
-                    'tijdelijk_wachtwoord' => $result['temporary_password'],
-                    'login_url' => route('login')
-                ]);
-                
-                return back()->with('success', 'User account aangemaakt en welkomst email verzonden.');
-            }
+            \Log::info('✅ Employee updated successfully', [
+                'user_id' => $medewerker->id,
+                'email' => $medewerker->email,
+                'role' => $medewerker->role
+            ]);
 
-            return back()->with('success', 'User account aangemaakt.');
+            return redirect()->route('medewerkers.index')
+                           ->with('success', 'Medewerker succesvol bijgewerkt.');
 
         } catch (\Exception $e) {
-            \Log::error("Fout bij aanmaken user account voor medewerker {$medewerker->id}: " . $e->getMessage());
-            return back()->with('error', 'Er is een fout opgetreden bij het aanmaken van het user account.');
+            \Log::error('❌ Failed to update employee: ' . $e->getMessage(), [
+                'user_id' => $medewerker->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                           ->withInput()
+                           ->with('error', 'Er is een fout opgetreden bij het bijwerken van de medewerker: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove the specified medewerker from storage
+     */
+    public function destroy(User $medewerker)
+    {
+        if ($medewerker->role === 'klant') {
+            abort(404);
+        }
+
+        try {
+            $email = $medewerker->email;
+            $medewerker->delete();
+
+            \Log::info('✅ Employee deleted successfully', [
+                'email' => $email
+            ]);
+
+            return redirect()->route('medewerkers.index')
+                           ->with('success', 'Medewerker succesvol verwijderd.');
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Failed to delete employee: ' . $e->getMessage(), [
+                'user_id' => $medewerker->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                           ->with('error', 'Er is een fout opgetreden bij het verwijderen van de medewerker: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Send invitation email to medewerker
+     */
+    public function sendInvitation(User $medewerker)
+    {
+        if ($medewerker->role === 'klant') {
+            abort(404);
+        }
+
+        try {
+            \Log::info('🚨 Sending invitation to medewerker', [
+                'medewerker_id' => $medewerker->id,
+                'email' => $medewerker->email,
+                'name' => $medewerker->name
+            ]);
+
+            // Check if there's already an active invitation token
+            $existingToken = InvitationToken::where('email', $medewerker->email)
+                                           ->where('expires_at', '>', now())
+                                           ->first();
+
+            if (!$existingToken) {
+                // Generate a new temporary password and token
+                $temporaryPassword = Str::random(12);
+                $token = Str::random(60);
+                
+                InvitationToken::create([
+                    'email' => $medewerker->email,
+                    'token' => $token,
+                    'temporary_password' => $temporaryPassword,
+                    'type' => 'medewerker',
+                    'expires_at' => now()->addDays(7),
+                    'created_by' => auth()->id()
+                ]);
+
+                \Log::info('✅ New invitation token created', [
+                    'email' => $medewerker->email,
+                    'expires_at' => now()->addDays(7)->format('Y-m-d H:i:s')
+                ]);
+            }
+
+            // Send welcome email using EmailIntegrationService
+            $emailService = app(EmailIntegrationService::class);
+            $emailSent = $emailService->sendEmployeeWelcomeEmail($medewerker);
+            
+            if ($emailSent) {
+                \Log::info('✅ Invitation email sent successfully', ['email' => $medewerker->email]);
+                
+                return redirect()->route('medewerkers.index')
+                               ->with('success', 'Uitnodiging succesvol verstuurd naar ' . $medewerker->email);
+            } else {
+                \Log::warning('⚠️ Invitation email failed to send', ['email' => $medewerker->email]);
+                
+                return redirect()->back()
+                               ->with('error', 'Er is een probleem opgetreden bij het versturen van de uitnodiging.');
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Failed to send invitation: ' . $e->getMessage(), [
+                'medewerker_id' => $medewerker->id,
+                'email' => $medewerker->email,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                           ->with('error', 'Er is een fout opgetreden bij het versturen van de uitnodiging: ' . $e->getMessage());
         }
     }
 }

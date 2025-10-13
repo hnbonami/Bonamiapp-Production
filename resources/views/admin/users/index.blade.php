@@ -74,7 +74,8 @@
                 </div>
                 <div>
                     <p class="text-xs font-medium text-gray-500 uppercase">Medewerkers</p>
-                    <p class="text-xl font-bold text-gray-900">{{ $stats['medewerker_count'] }}</p>
+                    <p class="text-xl font-bold text-gray-900">{{ ($stats['admin_count'] + $stats['medewerker_count']) }}</p>
+                    <p class="text-xs text-gray-400">{{ $stats['admin_count'] }} admin + {{ $stats['medewerker_count'] }} medewerker</p>
                 </div>
             </div>
         </div>
