@@ -998,6 +998,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 stappenWattLabel.textContent = 'Stappen (km/h)';
                 document.getElementById('startwattage').value = 8;
                 document.getElementById('stappen_watt').value = 1;
+                
+                // BELANGRIJKE TOEVOEGING: Update tabel naar loopsnelheden na protocol instelling
+                console.log('🔄 Updating tabel naar loopsnelheden...');
+                setTimeout(() => {
+                    updateTableSafely('looptest');
+                }, 100); // Kleine delay om ervoor te zorgen dat velden zijn bijgewerkt
             } else {
                 // Default: wattage velden
                 console.log('🔧 Default protocol instellingen');
