@@ -145,8 +145,11 @@
                                     id="protocol"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Selecteer protocol</option>
-                                <option value="4 x 1600m en 1 x 600m" {{ old('protocol') == '4 x 1600m en 1 x 600m' ? 'selected' : '' }}>4 x 1600m en 1 x 600m</option>
                                 <option value="4 x 2000m en 1 x 600m" {{ old('protocol') == '4 x 2000m en 1 x 600m' ? 'selected' : '' }}>4 x 2000m en 1 x 600m</option>
+                                <option value="4 x 1600m en 1 x 600m" {{ old('protocol') == '4 x 1600m en 1 x 600m' ? 'selected' : '' }}>4 x 1600m en 1 x 600m</option>
+                                <option value="3 x 1600m en 1 x 600m" {{ old('protocol') == '3 x 1600m en 1 x 600m' ? 'selected' : '' }}>3 x 1600m en 1 x 600m</option>
+                                <option value="4 x 1200m en 1 x 600m" {{ old('protocol') == '4 x 1200m en 1 x 600m' ? 'selected' : '' }}>4 x 1200m en 1 x 600m</option>
+                                <option value="4 x 800m en 1 x 400m" {{ old('protocol') == '4 x 800m en 1 x 400m' ? 'selected' : '' }}>4 x 800m en 1 x 400m</option>
                             </select>
                         </div>
 
@@ -506,8 +509,15 @@ const tableConfigs = {
     }
 };
 
-// Protocol voorinstellingen voor veldtest lopen
+// Protocol voorinstellingen voor veldtest lopen (chronologisch: lang naar kort)
 const veldtestLopenProtocols = {
+    '4 x 2000m en 1 x 600m': [
+        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+    ],
     '4 x 1600m en 1 x 600m': [
         {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
         {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
@@ -515,12 +525,25 @@ const veldtestLopenProtocols = {
         {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
         {afstand: 600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
     ],
-    '4 x 2000m en 1 x 600m': [
-        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+    '3 x 1600m en 1 x 600m': [
+        {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
         {afstand: 600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+    ],
+    '4 x 1200m en 1 x 600m': [
+        {afstand: 1200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 1200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 1200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 1200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+    ],
+    '4 x 800m en 1 x 400m': [
+        {afstand: 800, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 800, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 800, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 800, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
+        {afstand: 400, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
     ]
 };
 
@@ -601,11 +624,14 @@ function updateTable(testType) {
     // Set header
     header.innerHTML = generateTableHeader(testType);
     
-    // Voor veldtesten met protocol, voeg vooringevulde rijen toe
-    if (testType === '3') {
+    // Voor veldtest lopen met protocol, voeg vooringevulde rijen toe
+    if (testType === 'veldtest_lopen') {
         const protocolSelect = document.getElementById('protocol');
         const selectedProtocol = protocolSelect ? protocolSelect.value : '';
+        console.log('🏃 Veldtest lopen - geselecteerd protocol:', selectedProtocol);
+        
         if (selectedProtocol && veldtestLopenProtocols[selectedProtocol]) {
+            console.log('📊 Voorinvullen met protocol data:', veldtestLopenProtocols[selectedProtocol]);
             veldtestLopenProtocols[selectedProtocol].forEach(data => {
                 tbody.innerHTML += generateTableRow(testType, rowCount, data);
                 rowCount++;
@@ -961,11 +987,24 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (selectedType === 'veldtest_lopen') {
             // Veldtest lopen: toon loop protocol dropdown, verberg standaard velden
+            console.log('🏃 Veldtest lopen geselecteerd');
             protocolFieldLopen.style.display = 'block';
             weersomstandighedenField.style.display = 'block';
             standardProtocolField1.style.display = 'none';
             standardProtocolField2.style.display = 'none';
             standardProtocolField3.style.display = 'none';
+            
+            // Automatisch eerste protocol selecteren als er geen is geselecteerd
+            const protocolSelect = document.getElementById('protocol');
+            if (protocolSelect && !protocolSelect.value) {
+                protocolSelect.value = '4 x 2000m en 1 x 600m'; // Standaard eerste protocol
+                console.log('📋 Automatisch eerste protocol geselecteerd');
+                
+                // Update tabel met standaard protocol
+                setTimeout(() => {
+                    updateTable('veldtest_lopen');
+                }, 100);
+            }
         } else if (selectedType === 'veldtest_zwemmen') {
             // Veldtest zwemmen: toon zwem protocol dropdown, verberg standaard velden
             protocolFieldZwemmen.style.display = 'block';
@@ -980,6 +1019,12 @@ document.addEventListener('DOMContentLoaded', function() {
             stappenWattLabel.textContent = 'Stappen (watt)';
             document.getElementById('startwattage').value = 100;
             document.getElementById('stappen_watt').value = 40;
+            
+            // VELDTEST FIETS: Update tabel naar fietswattages na protocol instelling
+            console.log('🔄 Updating tabel naar veldtest fietswattages...');
+            setTimeout(() => {
+                updateTableSafely('veldtest_fietsen');
+            }, 100);
         } else {
             // Andere testen: toon alleen standaard velden
             console.log('🔧 Standaard protocol velden voor type:', selectedType);
@@ -991,6 +1036,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 stappenWattLabel.textContent = 'Stappen (watt)';
                 document.getElementById('startwattage').value = 100;
                 document.getElementById('stappen_watt').value = 40;
+                
+                // CONSISTENTIE: Update tabel naar fietswattages na protocol instelling
+                console.log('🔄 Updating tabel naar fietswattages...');
+                setTimeout(() => {
+                    updateTableSafely('fietstest');
+                }, 100); // Kleine delay om ervoor te zorgen dat velden zijn bijgewerkt
             } else if (selectedType === 'looptest') {
                 // Inspanningstest lopen: snelheid velden  
                 console.log('🏃 Looptest protocol instellingen');
