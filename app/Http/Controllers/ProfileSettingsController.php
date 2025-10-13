@@ -132,30 +132,38 @@ class ProfileSettingsController extends Controller
     public function updateAvatar(Request $request)
     {
         $request->validate([
-            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
-        
-        $user = Auth::user();
-        
-        // Delete old avatar
+
+        $user = auth()->user();
+
+        // Verwijder oude avatar als die bestaat
         if ($user->avatar_path) {
             Storage::disk('public')->delete($user->avatar_path);
         }
-        
-        // Store new avatar
+
+        // Upload nieuwe avatar
         $path = $request->file('avatar')->store('avatars', 'public');
+        
+        // Update user avatar
         $user->update(['avatar_path' => $path]);
-        
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Avatar succesvol bijgewerkt',
-                'avatar_url' => asset('storage/' . $path),
-                'completion' => $this->calculateProfileCompletion($user->fresh())
-            ]);
-        }
-        
-        return back()->with('success', 'Avatar succesvol bijgewerkt');
+
+    // Update gekoppelde klant record indien aanwezig
+    if ($user->role === 'klant' && $user->klant) {
+        $user->klant->update(['avatar_path' => $path]);
+    }        // Log de actie
+        \Log::info('🖼️ Avatar bijgewerkt', [
+            'user_id' => $user->id,
+            'user_email' => $user->email,
+            'user_role' => $user->role,
+            'avatar_path' => $path
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profielfoto succesvol bijgewerkt',
+            'avatar_url' => asset('storage/' . $path)
+        ]);
     }
     
     public function updatePassword(Request $request)

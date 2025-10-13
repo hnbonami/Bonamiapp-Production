@@ -22,6 +22,8 @@
         <div class="flex flex-col items-start gap-2">
             @if($klant->avatar_path)
                 <img src="{{ asset('storage/'.$klant->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover flex-none" style="width:200px;height:200px;" />
+            @elseif($klant->user && $klant->user->avatar_path)
+                <img src="{{ asset('storage/'.$klant->user->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover flex-none" style="width:200px;height:200px;" />
             @else
                 <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold flex-none" style="width:200px;height:200px;font-size:72px;">
                     {{ strtoupper(substr($klant->voornaam,0,1)) }}

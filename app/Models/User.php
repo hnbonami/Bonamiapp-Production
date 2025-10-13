@@ -89,7 +89,7 @@ class User extends Authenticatable
      */
     public function klant()
     {
-        return $this->hasOne(Klant::class);
+        return $this->hasOne(\App\Models\Klant::class, 'email', 'email');
     }
 
     /**
