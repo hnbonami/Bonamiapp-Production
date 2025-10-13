@@ -93,7 +93,9 @@ class TestzadelsController extends Controller
             'testzadel_id' => $testzadel->id,
             'request_data' => $request->all(),
             'current_onderdeel_type' => $testzadel->onderdeel_type,
-            'current_status' => $testzadel->status
+            'current_status' => $testzadel->status,
+            'request_has_onderdeel_type' => $request->has('onderdeel_type'),
+            'request_onderdeel_type_value' => $request->input('onderdeel_type')
         ]);
 
         $validated = $request->validate([
@@ -101,15 +103,39 @@ class TestzadelsController extends Controller
             'bikefit_id' => 'nullable|exists:bikefits,id', 
             'onderdeel_type' => 'required|string|in:testzadel,zooltjes,cleats,stuurpen',
             'status' => 'required|in:' . implode(',', array_keys(Testzadel::getStatussen())),
+            // Nieuwe veldnamen (voorkeur)
             'zadel_merk' => 'nullable|string|max:255',
             'zadel_model' => 'nullable|string|max:255',
             'zadel_type' => 'nullable|string|max:255', 
             'zadel_breedte' => 'nullable|integer|min:50|max:400',
+            // Oude veldnamen (backward compatibility)
+            'merk' => 'nullable|string|max:255',
+            'model' => 'nullable|string|max:255',
+            'type' => 'nullable|string|max:255', 
+            'breedte_mm' => 'nullable|integer|min:50|max:400',
             'automatisch_mailtje' => 'boolean',
+            'automatisch_herinneringsmails_versturen' => 'boolean',
             'uitleen_datum' => 'required|date',
             'verwachte_retour_datum' => 'required|date',
             'opmerkingen' => 'nullable|string',
         ]);
+
+        // Map oude velden naar nieuwe velden als de nieuwe leeg zijn
+        if (empty($validated['zadel_merk']) && !empty($validated['merk'])) {
+            $validated['zadel_merk'] = $validated['merk'];
+        }
+        if (empty($validated['zadel_model']) && !empty($validated['model'])) {
+            $validated['zadel_model'] = $validated['model'];
+        }
+        if (empty($validated['zadel_type']) && !empty($validated['type'])) {
+            $validated['zadel_type'] = $validated['type'];
+        }
+        if (empty($validated['zadel_breedte']) && !empty($validated['breedte_mm'])) {
+            $validated['zadel_breedte'] = $validated['breedte_mm'];
+        }
+        if (!isset($validated['automatisch_mailtje']) && isset($validated['automatisch_herinneringsmails_versturen'])) {
+            $validated['automatisch_mailtje'] = $validated['automatisch_herinneringsmails_versturen'];
+        }
 
         // Zet werkelijke_retour_datum automatisch bij status wijziging naar teruggegeven
         if ($request->status === 'teruggegeven' && $testzadel->status !== 'teruggegeven') {
@@ -120,18 +146,54 @@ class TestzadelsController extends Controller
             ]);
         }
 
-        \Log::info('🔄 Updating testzadel met validated data', [
+        // Fix lege string waarden naar NULL voor proper database storage
+        foreach (['zadel_merk', 'zadel_model', 'zadel_type', 'merk', 'model', 'type'] as $field) {
+            if (isset($validated[$field]) && $validated[$field] === '') {
+                $validated[$field] = null;
+            }
+        }
+
+        // Zorg ervoor dat onderdeel_type nooit leeg is
+        if (empty($validated['onderdeel_type'])) {
+            $validated['onderdeel_type'] = 'testzadel'; // fallback
+        }
+
+        // Verwijder oude velden die niet in database bestaan
+        unset($validated['merk'], $validated['model'], $validated['type'], $validated['breedte_mm'], $validated['automatisch_herinneringsmails_versturen']);
+
+        \Log::info('🔄 BEFORE UPDATE - Current testzadel state', [
             'testzadel_id' => $testzadel->id,
-            'validated_onderdeel_type' => $validated['onderdeel_type'],
-            'validated_status' => $validated['status']
+            'current_onderdeel_type' => $testzadel->onderdeel_type,
+            'current_status' => $testzadel->status
         ]);
+
+        \Log::info('🔄 VALIDATED DATA being used for update', [
+            'testzadel_id' => $testzadel->id,
+            'validated_onderdeel_type' => $validated['onderdeel_type'] ?? 'MISSING',
+            'validated_status' => $validated['status'] ?? 'MISSING',
+            'all_validated_keys' => array_keys($validated),
+            'all_validated_data' => $validated
+        ]);
+
+        // Expliciet zetten van onderdeel_type als extra zekerheid
+        if (isset($validated['onderdeel_type'])) {
+            $testzadel->onderdeel_type = $validated['onderdeel_type'];
+            \Log::info('🔧 Explicitly setting onderdeel_type', [
+                'testzadel_id' => $testzadel->id,
+                'setting_to' => $validated['onderdeel_type']
+            ]);
+        }
 
         $testzadel->update($validated);
 
-        \Log::info('✅ Testzadel updated successfully', [
+        // Refresh from database en controleer
+        $testzadel->refresh();
+        
+        \Log::info('✅ AFTER UPDATE - New testzadel state', [
             'testzadel_id' => $testzadel->id,
-            'new_onderdeel_type' => $testzadel->fresh()->onderdeel_type,
-            'new_status' => $testzadel->fresh()->status
+            'new_onderdeel_type' => $testzadel->onderdeel_type,
+            'new_status' => $testzadel->status,
+            'update_successful' => true
         ]);
 
         return redirect()->route('testzadels.index')
