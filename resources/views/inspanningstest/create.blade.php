@@ -1344,6 +1344,17 @@ function getTableData() {
             }
         }
         
+        // SPECIALE BEHANDELING voor veldtest zwemmen: bereken snelheid (min/100m)
+        if (currentTableType === 'veldtest_zwemmen' && rowData.afstand && rowData.tijd_min) {
+            // Bereken totale tijd in seconden
+            const totaleTijdSec = (rowData.tijd_min * 60) + (rowData.tijd_sec || 0);
+            if (totaleTijdSec > 0 && rowData.afstand > 0) {
+                // Bereken min/100m (zwemnotatie)
+                rowData.snelheid = (totaleTijdSec / 60) * (100 / rowData.afstand); // min/100m
+                console.log(`  🏊 Berekende zwemsnelheid: ${rowData.snelheid.toFixed(2)} min/100m (${rowData.afstand}m in ${totaleTijdSec}sec)`);
+            }
+        }
+        
         console.log('RowData:', rowData);
         
         // Only add row if it has useful data
@@ -1371,7 +1382,8 @@ function calculateThresholds(data, method) {
     const xField = currentTableType === 'fietstest' ? 'vermogen' : 
                    currentTableType === 'looptest' ? 'snelheid' : 
                    currentTableType === 'veldtest_lopen' ? 'snelheid' :
-                   currentTableType === 'veldtest_fietsen' ? 'vermogen' : 'tijd';
+                   currentTableType === 'veldtest_fietsen' ? 'vermogen' : 
+                   currentTableType === 'veldtest_zwemmen' ? 'snelheid' : 'tijd';
     
     validData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
     
@@ -2109,11 +2121,13 @@ function generateChart() {
     const xField = currentTableType === 'fietstest' ? 'vermogen' : 
                    currentTableType === 'looptest' ? 'snelheid' : 
                    currentTableType === 'veldtest_lopen' ? 'snelheid' :
-                   currentTableType === 'veldtest_fietsen' ? 'vermogen' : 'tijd';
+                   currentTableType === 'veldtest_fietsen' ? 'vermogen' : 
+                   currentTableType === 'veldtest_zwemmen' ? 'snelheid' : 'tijd';
     const xLabel = currentTableType === 'fietstest' ? 'Vermogen (Watt)' : 
                    currentTableType === 'looptest' ? 'Snelheid (km/h)' : 
                    currentTableType === 'veldtest_lopen' ? 'Snelheid (km/h)' :
-                   currentTableType === 'veldtest_fietsen' ? 'Vermogen (Watt)' : 'Tijd (min)';
+                   currentTableType === 'veldtest_fietsen' ? 'Vermogen (Watt)' : 
+                   currentTableType === 'veldtest_zwemmen' ? 'Snelheid (min/100m)' : 'Tijd (min)';
     
     // Bereken drempels met geselecteerde methode
     const selectedMethod = document.getElementById('analyse_methode').value;
@@ -2446,6 +2460,16 @@ function generateChart() {
                     borderColor: 'rgba(255, 255, 255, 0.1)',
                     borderWidth: 1,
                     callbacks: {
+                        title: function(context) {
+                            const value = context[0].parsed.x;
+                            // SPECIALE FORMATTING VOOR ZWEMMEN TOOLTIP
+                            if (currentTableType === 'veldtest_zwemmen') {
+                                const minuten = Math.floor(value);
+                                const seconden = Math.round((value - minuten) * 60);
+                                return `Snelheid: ${minuten}:${seconden.toString().padStart(2, '0')} min/100m`;
+                            }
+                            return context[0].label;
+                        },
                         afterBody: function(context) {
                             if (selectedMethod === 'dmax') {
                                 const point = context[0];
@@ -2495,9 +2519,17 @@ function generateChart() {
                                  currentTableType === 'veldtest_fietsen' ? 20 :
                                  currentTableType === 'veldtest_lopen' ? 1 : 1,
                         callback: function(value) {
+                            // SPECIALE FORMATTING VOOR ZWEMMEN: mm:ss
+                            if (currentTableType === 'veldtest_zwemmen') {
+                                const minuten = Math.floor(value);
+                                const seconden = Math.round((value - minuten) * 60);
+                                return `${minuten}:${seconden.toString().padStart(2, '0')}`;
+                            }
                             return Math.round(value);
                         }
                     },
+                    // OMKEREN X-AS VOOR ZWEMMEN (snel naar langzaam)
+                    reverse: currentTableType === 'veldtest_zwemmen',
                     min: minX - (maxX - minX) * 0.05,
                     max: maxX + (maxX - minX) * 0.05
                 },
