@@ -13,9 +13,9 @@ return [
 
     'model' => env('AI_MODEL', 'gpt-4o-mini'),
     
-    'temperature' => env('AI_TEMPERATURE', 0.4),
+    'temperature' => env('AI_TEMPERATURE', 0.7),
     
-    'max_tokens' => env('AI_MAX_TOKENS', 1500),
+    'max_tokens' => env('AI_MAX_TOKENS', 3000),
     
     /*
     |--------------------------------------------------------------------------
@@ -48,33 +48,73 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'analysis_template' => "Analyseer de volgende inspanningstestdata en geef een uitgebreide evaluatie volgens deze structuur:
+    'analysis_template' => "Analyseer de volgende inspanningstestdata en geef een ZEER UITGEBREIDE evaluatie volgens deze structuur:
 
-## 1. TESTOVERZICHT
+## 1. TESTOVERZICHT & CONTEXT
 - Testtype, datum en omstandigheden
 - Atlet profiel (leeftijd, gewicht, doelstellingen)
+- Wat wilde de atleet bereiken met deze test?
 
-## 2. GEMETEN DREMPELWAARDEN
+## 2. GEMETEN DREMPELWAARDEN (GEDETAILLEERD)
 - **Aërobe drempel (LT1):** [vermogen/snelheid] bij [hartslag] bpm
+  - Wat betekent dit voor de atleet?
+  - Hoe verhoudt dit zich tot zijn/haar doelen?
 - **Anaërobe drempel (LT2):** [vermogen/snelheid] bij [hartslag] bpm
+  - Interpretatie en betekenis
+  - Praktische implicaties
 
-## 3. PRESTATIECLASSIFICATIE
-Vergelijk met populatienormen
+## 3. PRESTATIECLASSIFICATIE & VERGELIJKING
+- Vergelijk met populatienormen (leeftijdsgroep, geslacht)
+- Sterktes en verbeterpunten
+- Realistische verwachtingen
 
-## 4. FYSIOLOGISCHE ANALYSE
-Aerobe en anaerobe capaciteit
+## 4. DIEPGAANDE FYSIOLOGISCHE ANALYSE
+- Aerobe capaciteit en uithoudingsvermogen
+- Anaerobe capaciteit en sprintvermogen
+- Lactaatclearance en herstelcapaciteit
+- Efficiëntie en loopeconomie/fietseconomie
+- Hartslagrespons en cardiovasculaire fitness
 
-## 5. TRAININGSZONES UITLEG
-Praktische training voorbeelden
+## 5. TRAININGSZONES UITLEG (PRAKTISCH)
+Voor elke zone:
+- Doel van de zone
+- Praktische voorbeelden
+- Hoe voelt het aan? (RPE/Borg)
+- Voorbeeldworkouts
 
-## 6. TRAININGSADVIES
-Concrete adviezen op basis van doelstellingen
+## 6. GEDETAILLEERD TRAININGSADVIES
+Op basis van de doelstellingen:
+- **Periodisering:** Hoe de training opbouwen?
+- **Weekstructuur:** Concrete week voorbeelden
+- **Specifieke workouts:** Exacte intervallen en duur
+- **Volume vs Intensiteit:** Balans vinden
+- **Herstelprotocol:** Rust en regeneratie
+- **Voeding:** Pre/tijdens/post training
+- **Cross-training:** Aanvullende activiteiten
 
-## 7. PROGRESSIE & HERTEST
-Verwachte verbeteringen
+## 7. PROGRESSIE ROADMAP
+- **Korte termijn (4-6 weken):** Eerste aanpassingen
+- **Middellange termijn (3-4 maanden):** Build-up fase
+- **Lange termijn (6-12 maanden):** Grote doelen
+- **Wanneer hertesten?** Timing en redenen
+
+## 8. PRAKTISCHE TIPS & TRICKS
+- Veelgemaakte fouten om te vermijden
+- Mentale aspecten en motivatie
+- Equipment en technologie suggesties
+- Wanneer moet je bijsturen?
 
 **TESTDATA:**
-{testdata}",
+{testdata}
+
+**BELANGRIJKE INSTRUCTIES:**
+- Wees ZEER SPECIFIEK en GEDETAILLEERD
+- Gebruik CONCRETE CIJFERS en VOORBEELDEN
+- Geef PRAKTISCHE, IMPLEMENTEERBARE adviezen
+- Motiveer WAAROM bepaalde keuzes gemaakt worden
+- Schrijf in een TOEGANKELIJKE maar PROFESSIONELE toon
+- Minimaal 2000 woorden
+- Gebruik EMOJI's waar passend voor leesbaarheid",
 
     /*
     |--------------------------------------------------------------------------
