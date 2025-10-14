@@ -196,7 +196,7 @@ class BikefitController extends Controller
         return view('bikefit.show', compact('klant', 'bikefit', 'hasMatchingTemplate', 'matchingTemplate'));
     }
 
-    public function edit(Klant $klant, $bikefitId)
+    public function edit(Klant $klant, $bikefitId) 
     {
         $bikefit = $klant->bikefits()->with('uploads')->findOrFail($bikefitId);
         
@@ -208,14 +208,6 @@ class BikefitController extends Controller
 
     public function update(Request $request, Klant $klant, Bikefit $bikefit)
     {
-        // Debug aan het begin
-        \Log::info('Update method called for bikefit:', [
-            'bikefit_id' => $bikefit->id,
-            'has_stuurpen_pre' => $request->has('aanpassingen_stuurpen_pre'),
-            'has_stuurpen_post' => $request->has('aanpassingen_stuurpen_post'),
-            'stuurpen_pre_value' => $request->input('aanpassingen_stuurpen_pre'),
-            'stuurpen_post_value' => $request->input('aanpassingen_stuurpen_post'),
-        ]);
 
         $data = $request->validate([
             'lengte_cm' => 'nullable|numeric',
@@ -236,7 +228,7 @@ class BikefitController extends Controller
             'aanpassingen_stuurpen_post' => 'nullable|numeric',
             // old free-text aanpassingen_stuurpen removed
             'type_zadel' => 'nullable|string',
-            'zadeltil' => 'nullable|numeric|regex:/^\d*\.?\d{0,2}$/',
+            'zadeltil' => 'nullable|numeric|between:-90,90|regex:/^\-?\d{1,2}(\.\d{1,2})?$/',
             'zadelbreedte' => 'nullable|numeric',
             'rotatie_aanpassingen' => 'nullable|string',
             'inclinatie_aanpassingen' => 'nullable|string',
