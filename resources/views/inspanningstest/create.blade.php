@@ -398,6 +398,7 @@
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="hartslag" {{ old('zones_eenheid', 'hartslag') == 'hartslag' ? 'selected' : '' }}>Hartslag (bpm)</option>
                                 <option value="vermogen" {{ old('zones_eenheid') == 'vermogen' ? 'selected' : '' }}>Vermogen (Watt)</option>
+                                <option value="snelheid" {{ old('zones_eenheid') == 'snelheid' ? 'selected' : '' }}>Snelheid (km/h)</option>
                                 <option value="combinatie" {{ old('zones_eenheid') == 'combinatie' ? 'selected' : '' }}>Combinatie Alle</option>
                             </select>
                         </div>
@@ -1073,6 +1074,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update drempelwaarden labels op basis van testtype
         updateDrempelwaardenLabels(selectedType);
+        
+        // 🎯 UPDATE TRAININGSZONES bij testtype wijziging
+        setTimeout(() => {
+            console.log('🔄 Zones updaten na testtype wijziging naar:', selectedType);
+            updateTrainingszones();
+        }, 200); // Kleine delay om ervoor te zorgen dat currentTableType is bijgewerkt
         
         console.log('🔍 updateProtocolFields - selectedType:', selectedType);
         console.log('🔍 currentTableType na updateTable:', currentTableType);
@@ -2966,11 +2973,21 @@ function updateTrainingszones() {
         return;
     }
     
+    // 🏃 AUTOMATISCHE EENHEID AANPASSING voor looptesten
+    const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
+    if (isLooptest && eenheidSelektor.value !== 'snelheid') {
+        console.log('🏃 Automatisch snelheid selecteren voor looptest');
+        eenheidSelektor.value = 'snelheid';
+    } else if (!isLooptest && eenheidSelektor.value === 'snelheid') {
+        console.log('🚴 Automatisch hartslag selecteren voor fietstest');
+        eenheidSelektor.value = 'hartslag';
+    }
+    
     const methode = methodeSelektor.value;
     const aantal = parseInt(aantalSelektor.value) || 5;
     const eenheid = eenheidSelektor.value;
     
-    console.log('🔧 Zone configuratie:', { methode, aantal, eenheid });
+    console.log('🔧 Zone configuratie:', { methode, aantal, eenheid, isLooptest, testType: currentTableType });
     
     // Toon/verberg container
     const container = document.getElementById('trainingszones-container');
@@ -3013,6 +3030,7 @@ function updateTrainingszones() {
 // Bonami specifieke zones berekening - VEREENVOUDIGD VOOR STAP 2
 function berekenBonamiZones(aantal, eenheid) {
     console.log('🚀 berekenBonamiZones() - aantal:', aantal, 'eenheid:', eenheid);
+    console.log('🏃 Huidige testtype voor zones:', currentTableType);
     
     // Controleer of er drempel data beschikbaar is
     const LT1 = parseFloat(document.getElementById('aerobe_drempel_vermogen').value) || 0;
@@ -3023,10 +3041,13 @@ function berekenBonamiZones(aantal, eenheid) {
     
     console.log('📊 Drempel waarden:', { LT1, LT2, LT1_HR, LT2_HR, HRmax });
     
+    // 🏃 SPECIALE BEHANDELING VOOR LOOPTESTEN: Gebruik snelheden in plaats van wattages
+    const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
+    
     // Als er geen drempel data is, maak voorbeeldzones
     if (LT1 === 0 || LT2 === 0) {
-        console.log('⚠️ Geen drempel data - genereer voorbeeldzones');
-        return createVoorbeeldBonamiZones(aantal);
+        console.log('⚠️ Geen drempel data - genereer voorbeeldzones voor:', isLooptest ? 'LOOP' : 'FIETS');
+        return createVoorbeeldBonamiZones(aantal, isLooptest);
     }
     
     // Echte Bonami zones berekening
@@ -3099,7 +3120,7 @@ function berekenBonamiZones(aantal, eenheid) {
         }
     ];
     
-    console.log('✅ Bonami zones berekend:', bonamiZones.length, 'zones');
+    console.log('✅ Bonami zones berekend voor:', isLooptest ? 'LOOPTEST' : 'FIETSTEST', bonamiZones.length, 'zones');
     
     // Pas aan naar gewenst aantal zones
     if (aantal !== 6) {
@@ -3110,15 +3131,34 @@ function berekenBonamiZones(aantal, eenheid) {
 }
 
 // Hulpfunctie om voorbeeldzones te maken als er geen drempel data is
-function createVoorbeeldBonamiZones(aantal) {
-    const voorbeeldZones = [
-        { naam: 'HERSTEL', minVermogen: 120, maxVermogen: 160, minHartslag: 110, maxHartslag: 130, beschrijving: 'Herstel (voorbeeld)', kleur: '#E3F2FD', borgMin: null, borgMax: 7 },
-        { naam: 'DUUR', minVermogen: 161, maxVermogen: 200, minHartslag: 131, maxHartslag: 150, beschrijving: 'Duur training (voorbeeld)', kleur: '#E8F5E8', borgMin: null, borgMax: 12 },
-        { naam: 'TEMPO', minVermogen: 201, maxVermogen: 240, minHartslag: 151, maxHartslag: 170, beschrijving: 'Tempo training (voorbeeld)', kleur: '#FFF3E0', borgMin: 12, borgMax: 15 },
-        { naam: 'INTERVAL', minVermogen: 241, maxVermogen: 280, minHartslag: 171, maxHartslag: 185, beschrijving: 'Interval training (voorbeeld)', kleur: '#FFEBEE', borgMin: 15, borgMax: 18 },
-        { naam: 'MAXIMAAL', minVermogen: 281, maxVermogen: 320, minHartslag: 186, maxHartslag: 200, beschrijving: 'Maximale training (voorbeeld)', kleur: '#FFCDD2', borgMin: 18, borgMax: 20 }
-    ];
+function createVoorbeeldBonamiZones(aantal, isLooptest = false) {
+    console.log('🎯 createVoorbeeldBonamiZones voor:', isLooptest ? 'LOOPTEST' : 'FIETSTEST');
     
+    let voorbeeldZones;
+    
+    if (isLooptest) {
+        // 🏃 LOOPTEST VOORBEELDEN: Gebruik snelheden in km/h
+        voorbeeldZones = [
+            { naam: 'HERSTEL', minVermogen: 8.0, maxVermogen: 10.0, minHartslag: 110, maxHartslag: 130, beschrijving: 'Herstel (voorbeeld)', kleur: '#E3F2FD', borgMin: 6, borgMax: 8 },
+            { naam: 'LANGE DUUR', minVermogen: 10.0, maxVermogen: 11.5, minHartslag: 131, maxHartslag: 145, beschrijving: 'Lange duur training (voorbeeld)', kleur: '#E8F5E8', borgMin: 8, borgMax: 10 },
+            { naam: 'EXTENSIEF', minVermogen: 11.5, maxVermogen: 13.0, minHartslag: 146, maxHartslag: 160, beschrijving: 'Extensieve duur training (voorbeeld)', kleur: '#F1F8E9', borgMin: 10, borgMax: 12 },
+            { naam: 'INTENSIEF', minVermogen: 13.0, maxVermogen: 15.0, minHartslag: 161, maxHartslag: 175, beschrijving: 'Intensieve duur training (voorbeeld)', kleur: '#FFF3E0', borgMin: 12, borgMax: 15 },
+            { naam: 'TEMPO', minVermogen: 15.0, maxVermogen: 17.0, minHartslag: 176, maxHartslag: 185, beschrijving: 'Tempo training (voorbeeld)', kleur: '#FFEBEE', borgMin: 15, borgMax: 18 },
+            { naam: 'MAXIMAAL', minVermogen: 17.0, maxVermogen: 20.0, minHartslag: 186, maxHartslag: 200, beschrijving: 'Maximale training (voorbeeld)', kleur: '#FFCDD2', borgMin: 18, borgMax: 20 }
+        ];
+    } else {
+        // 🚴 FIETSTEST VOORBEELDEN: Gebruik wattages
+        voorbeeldZones = [
+            { naam: 'HERSTEL', minVermogen: 120, maxVermogen: 160, minHartslag: 110, maxHartslag: 130, beschrijving: 'Herstel (voorbeeld)', kleur: '#E3F2FD', borgMin: 6, borgMax: 8 },
+            { naam: 'LANGE DUUR', minVermogen: 161, maxVermogen: 185, minHartslag: 131, maxHartslag: 145, beschrijving: 'Lange duur training (voorbeeld)', kleur: '#E8F5E8', borgMin: 8, borgMax: 10 },
+            { naam: 'EXTENSIEF', minVermogen: 186, maxVermogen: 210, minHartslag: 146, maxHartslag: 160, beschrijving: 'Extensieve duur training (voorbeeld)', kleur: '#F1F8E9', borgMin: 10, borgMax: 12 },
+            { naam: 'INTENSIEF', minVermogen: 211, maxVermogen: 250, minHartslag: 161, maxHartslag: 175, beschrijving: 'Intensieve duur training (voorbeeld)', kleur: '#FFF3E0', borgMin: 12, borgMax: 15 },
+            { naam: 'TEMPO', minVermogen: 251, maxVermogen: 290, minHartslag: 176, maxHartslag: 185, beschrijving: 'Tempo training (voorbeeld)', kleur: '#FFEBEE', borgMin: 15, borgMax: 18 },
+            { naam: 'MAXIMAAL', minVermogen: 291, maxVermogen: 350, minHartslag: 186, maxHartslag: 200, beschrijving: 'Maximale training (voorbeeld)', kleur: '#FFCDD2', borgMin: 18, borgMax: 20 }
+        ];
+    }
+    
+    console.log('✅ Voorbeeldzones gemaakt voor:', isLooptest ? 'LOOP (km/h)' : 'FIETS (Watt)');
     return voorbeeldZones.slice(0, aantal);
 }
 
@@ -3160,6 +3200,10 @@ function berekenKarvonenZones(aantal, eenheid) {
 
 function createHandmatigeZones(aantal, eenheid) {
     console.log('🔧 Handmatige zones - gebruik Bonami als basis en maak bewerkbaar');
+    console.log('🏃 Testtype voor handmatige zones:', currentTableType);
+    
+    // Bepaal of het een looptest is
+    const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
     
     // Gebruik Bonami zones als basis voor handmatige aanpassing
     let baseZones = berekenBonamiZones(6, eenheid); // Altijd start met 6 Bonami zones
@@ -3180,29 +3224,50 @@ function createHandmatigeZones(aantal, eenheid) {
     // Als er meer zones gewenst zijn dan Bonami basis, voeg extra zones toe
     if (aantal > baseZones.length) {
         for (let i = baseZones.length; i < aantal; i++) {
-            const extraZone = {
-                naam: `Zone ${i + 1}`,
-                minVermogen: 100 + (i * 50),
-                maxVermogen: 150 + (i * 50),
-                minHartslag: 120 + (i * 15),
-                maxHartslag: 135 + (i * 15),
-                beschrijving: `Handmatige zone ${i + 1} (aanpasbaar)`,
-                kleur: '#F8F9FA',
-                borgMin: 6 + i,
-                borgMax: 8 + i,
-                bewerkbaar: true
-            };
+            let extraZone;
+            
+            if (isLooptest) {
+                // 🏃 Looptest: gebruik snelheden
+                extraZone = {
+                    naam: `Zone ${i + 1}`,
+                    minVermogen: 8.0 + (i * 2.0),
+                    maxVermogen: 10.0 + (i * 2.0),
+                    minHartslag: 120 + (i * 15),
+                    maxHartslag: 135 + (i * 15),
+                    beschrijving: `Handmatige zone ${i + 1} (aanpasbaar)`,
+                    kleur: '#F8F9FA',
+                    borgMin: 6 + i,
+                    borgMax: 8 + i,
+                    bewerkbaar: true
+                };
+            } else {
+                // 🚴 Fietstest: gebruik wattages
+                extraZone = {
+                    naam: `Zone ${i + 1}`,
+                    minVermogen: 100 + (i * 50),
+                    maxVermogen: 150 + (i * 50),
+                    minHartslag: 120 + (i * 15),
+                    maxHartslag: 135 + (i * 15),
+                    beschrijving: `Handmatige zone ${i + 1} (aanpasbaar)`,
+                    kleur: '#F8F9FA',
+                    borgMin: 6 + i,
+                    borgMax: 8 + i,
+                    bewerkbaar: true
+                };
+            }
+            
             handmatigeZones.push(extraZone);
         }
     }
     
-    console.log('✅ Handmatige zones voorbereid met Bonami kleuren:', handmatigeZones);
+    console.log('✅ Handmatige zones voorbereid met Bonami kleuren voor:', isLooptest ? 'LOOP' : 'FIETS', handmatigeZones);
     return handmatigeZones;
 }
 
 // Functie om zones tabel te genereren
 function genereerZonesTabel(zonesData, eenheid) {
     console.log('📊 genereerZonesTabel() met', zonesData.length, 'zones');
+    console.log('🏃 Huidige testtype:', currentTableType);
     
     const tabel = document.getElementById('trainingszones-tabel');
     const header = document.getElementById('zones-header');
@@ -3213,11 +3278,14 @@ function genereerZonesTabel(zonesData, eenheid) {
         return;
     }
     
-    const eenheidLabel = currentTableType === 'looptest' ? 'km/h' : 'Watt';
+    // 🏃 DYNAMISCHE EENHEID DETECTIE op basis van testtype
+    const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
+    const eenheidLabel = isLooptest ? 'km/h' : 'Watt';
     const isHandmatig = document.getElementById('zones_methode').value === 'handmatig';
     
+    console.log('🔍 Eenheid bepaling:', { isLooptest, eenheidLabel, testType: currentTableType });
+    
     // Voor looptesten: voeg extra kolom toe voor min/km
-    const isLooptest = currentTableType === 'looptest';
     const extraKolomHeaders = isLooptest ? '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" colspan="2">min/km</th>' : '';
     const extraKolomSubHeaders = isLooptest ? '<th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">min</th><th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">max</th>' : '';
     
@@ -3239,6 +3307,8 @@ function genereerZonesTabel(zonesData, eenheid) {
             <th class="px-2 py-2 text-xs text-gray-600">schaal</th>
         </tr>
     `;
+    
+    console.log('✅ Header gegenereerd met eenheid:', eenheidLabel);
     
     body.innerHTML = '';
     
