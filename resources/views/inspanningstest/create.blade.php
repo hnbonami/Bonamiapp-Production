@@ -1333,6 +1333,16 @@ function getTableData() {
             }
         });
         
+        // SPECIALE BEHANDELING voor veldtest lopen: bereken snelheid
+        if (currentTableType === 'veldtest_lopen' && rowData.afstand && rowData.tijd_min) {
+            const afstandKm = rowData.afstand / 1000; // meter naar km
+            const tijdUur = rowData.tijd_min / 60; // minuten naar uur
+            if (tijdUur > 0) {
+                rowData.snelheid = afstandKm / tijdUur; // km/h
+                console.log(`  🏃 Berekende snelheid: ${rowData.snelheid.toFixed(2)} km/h (${rowData.afstand}m in ${rowData.tijd_min}min)`);
+            }
+        }
+        
         console.log('RowData:', rowData);
         
         // Only add row if it has useful data
@@ -1356,9 +1366,11 @@ function calculateThresholds(data, method) {
     const validData = data.filter(row => row.lactaat !== null && row.lactaat > 0);
     if (validData.length < 3) return null;
     
-    // Sorteer op basis van tijd of vermogen/snelheid
+    // Bepaal X-as veld op basis van testtype
     const xField = currentTableType === 'fietstest' ? 'vermogen' : 
-                   currentTableType === 'looptest' ? 'snelheid' : 'tijd';
+                   currentTableType === 'looptest' ? 'snelheid' : 
+                   currentTableType === 'veldtest_lopen' ? 'snelheid' :
+                   currentTableType === 'veldtest_fietsen' ? 'vermogen' : 'tijd';
     
     validData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
     
@@ -2094,9 +2106,13 @@ function generateChart() {
     
     // Bepaal X-as veld op basis van testtype
     const xField = currentTableType === 'fietstest' ? 'vermogen' : 
-                   currentTableType === 'looptest' ? 'snelheid' : 'tijd';
+                   currentTableType === 'looptest' ? 'snelheid' : 
+                   currentTableType === 'veldtest_lopen' ? 'snelheid' :
+                   currentTableType === 'veldtest_fietsen' ? 'vermogen' : 'tijd';
     const xLabel = currentTableType === 'fietstest' ? 'Vermogen (Watt)' : 
-                   currentTableType === 'looptest' ? 'Snelheid (km/h)' : 'Tijd (min)';
+                   currentTableType === 'looptest' ? 'Snelheid (km/h)' : 
+                   currentTableType === 'veldtest_lopen' ? 'Snelheid (km/h)' :
+                   currentTableType === 'veldtest_fietsen' ? 'Vermogen (Watt)' : 'Tijd (min)';
     
     // Bereken drempels met geselecteerde methode
     const selectedMethod = document.getElementById('analyse_methode').value;
@@ -2474,7 +2490,9 @@ function generateChart() {
                         }
                     },
                     ticks: {
-                        stepSize: currentTableType === 'fietstest' ? 20 : 1,
+                        stepSize: currentTableType === 'fietstest' ? 20 : 
+                                 currentTableType === 'veldtest_fietsen' ? 20 :
+                                 currentTableType === 'veldtest_lopen' ? 1 : 1,
                         callback: function(value) {
                             return Math.round(value);
                         }
@@ -2802,8 +2820,8 @@ function berekenBonamiZones(aantal, eenheid) {
             maxHartslag: Math.round(LT1_HR * 0.85),
             beschrijving: 'Herstel en regeneratie',
             kleur: '#E3F2FD',
-            borgMin: null,
-            borgMax: 7
+            borgMin: 6,
+            borgMax: 8
         },
         {
             naam: 'LANGE DUUR',
@@ -2813,8 +2831,8 @@ function berekenBonamiZones(aantal, eenheid) {
             maxHartslag: Math.round(LT1_HR * 0.92),
             beschrijving: 'Lange duur training',
             kleur: '#E8F5E8',
-            borgMin: null,
-            borgMax: 9
+            borgMin: 8,
+            borgMax: 10
         },
         {
             naam: 'EXTENSIEF',
@@ -2824,7 +2842,7 @@ function berekenBonamiZones(aantal, eenheid) {
             maxHartslag: Math.round(LT1_HR),
             beschrijving: 'Extensieve duur training',
             kleur: '#F1F8E9',
-            borgMin: null,
+            borgMin: 10,
             borgMax: 12
         },
         {
