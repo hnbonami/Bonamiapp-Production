@@ -426,7 +426,7 @@
                             
                             <div class="bg-gray-50 px-4 py-3 border-t border-gray-300">
                                 <div class="flex justify-between items-center">
-                                    <p class="text-xs text-gray-600">
+                                    <p class="text-xs text-gray-600" id="zones-tip-text">
                                         💡 <strong>Tip:</strong> Deze zones zijn automatisch berekend. Bij 'Handmatig' kun je waarden aanpassen.
                                     </p>
                                     <button type="button" onclick="exportZonesData()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
@@ -2903,6 +2903,51 @@ function exportZonesData() {
     alert('Export functionaliteit komt in de volgende stap!');
 }
 
+// 🔧 NIEUWE FUNCTIE: Update handmatige zone waarden
+function updateHandmatigeZone(zoneIndex, field, value) {
+    console.log(`🔧 updateHandmatigeZone: Zone ${zoneIndex}, veld ${field} = ${value}`);
+    
+    if (!huidigeZonesData || !huidigeZonesData[zoneIndex]) {
+        console.log('❌ Geen zones data beschikbaar voor update');
+        return;
+    }
+    
+    // Update de waarde in de zones data
+    huidigeZonesData[zoneIndex][field] = parseFloat(value) || 0;
+    
+    console.log(`✅ Zone ${zoneIndex} bijgewerkt:`, huidigeZonesData[zoneIndex]);
+    
+    // Update de hidden input met de nieuwe data
+    document.getElementById('trainingszones_data').value = JSON.stringify(huidigeZonesData);
+    
+    // Herbereken min/km voor looptesten als vermogen wijzigt
+    if (currentTableType === 'looptest' && (field === 'minVermogen' || field === 'maxVermogen')) {
+        console.log('🏃 Herbereken min/km voor looptest na vermogen wijziging');
+        updateMinKmDisplay(zoneIndex);
+    }
+}
+
+// 🏃 HULPFUNCTIE: Update min/km display voor looptesten
+function updateMinKmDisplay(zoneIndex) {
+    if (currentTableType !== 'looptest' || !huidigeZonesData[zoneIndex]) return;
+    
+    const zone = huidigeZonesData[zoneIndex];
+    const minMinPerKm = zone.maxVermogen > 0 ? (60 / zone.maxVermogen).toFixed(1) : '∞';
+    const maxMinPerKm = zone.minVermogen > 0 ? (60 / zone.minVermogen).toFixed(1) : '∞';
+    
+    // Update de min/km cellen in de tabel (als ze bestaan)
+    const rows = document.getElementById('zones-body').getElementsByTagName('tr');
+    if (rows[zoneIndex]) {
+        const cells = rows[zoneIndex].getElementsByTagName('td');
+        if (cells.length >= 7) { // Controleer of min/km kolommen bestaan
+            cells[5].textContent = minMinPerKm; // min min/km
+            cells[6].textContent = maxMinPerKm; // max min/km
+        }
+    }
+    
+    console.log(`🔄 Min/km bijgewerkt voor zone ${zoneIndex}: ${minMinPerKm} - ${maxMinPerKm}`);
+}
+
 // === TRAININGSZONES BEREKENING FUNCTIONALITEIT ===
 
 // Globale variabele voor huidige zones data
@@ -3114,24 +3159,45 @@ function berekenKarvonenZones(aantal, eenheid) {
 }
 
 function createHandmatigeZones(aantal, eenheid) {
-    console.log('🔧 Handmatige zones - placeholder');
-    const zones = [];
+    console.log('🔧 Handmatige zones - gebruik Bonami als basis en maak bewerkbaar');
     
-    for (let i = 0; i < aantal; i++) {
-        zones.push({
-            naam: `Zone ${i + 1}`,
-            minVermogen: 100 + (i * 50),
-            maxVermogen: 150 + (i * 50),
-            minHartslag: 120 + (i * 15),
-            maxHartslag: 135 + (i * 15),
-            beschrijving: `Handmatige zone ${i + 1} (aanpasbaar)`,
-            kleur: '#F8F9FA',
-            borgMin: 6 + i,
-            borgMax: 8 + i
-        });
+    // Gebruik Bonami zones als basis voor handmatige aanpassing
+    let baseZones = berekenBonamiZones(6, eenheid); // Altijd start met 6 Bonami zones
+    
+    // Als er minder zones gewenst zijn, neem de eerste X
+    if (aantal < baseZones.length) {
+        baseZones = baseZones.slice(0, aantal);
     }
     
-    return zones;
+    // Maak zones bewerkbaar door naam aan te passen
+    const handmatigeZones = baseZones.map((zone, index) => ({
+        ...zone,
+        naam: zone.naam, // Behoud originele Bonami namen
+        beschrijving: `${zone.beschrijving} (aanpasbaar)`,
+        bewerkbaar: true // Flag voor bewerkbare zones
+    }));
+    
+    // Als er meer zones gewenst zijn dan Bonami basis, voeg extra zones toe
+    if (aantal > baseZones.length) {
+        for (let i = baseZones.length; i < aantal; i++) {
+            const extraZone = {
+                naam: `Zone ${i + 1}`,
+                minVermogen: 100 + (i * 50),
+                maxVermogen: 150 + (i * 50),
+                minHartslag: 120 + (i * 15),
+                maxHartslag: 135 + (i * 15),
+                beschrijving: `Handmatige zone ${i + 1} (aanpasbaar)`,
+                kleur: '#F8F9FA',
+                borgMin: 6 + i,
+                borgMax: 8 + i,
+                bewerkbaar: true
+            };
+            handmatigeZones.push(extraZone);
+        }
+    }
+    
+    console.log('✅ Handmatige zones voorbereid met Bonami kleuren:', handmatigeZones);
+    return handmatigeZones;
 }
 
 // Functie om zones tabel te genereren
@@ -3148,6 +3214,7 @@ function genereerZonesTabel(zonesData, eenheid) {
     }
     
     const eenheidLabel = currentTableType === 'looptest' ? 'km/h' : 'Watt';
+    const isHandmatig = document.getElementById('zones_methode').value === 'handmatig';
     
     // Voor looptesten: voeg extra kolom toe voor min/km
     const isLooptest = currentTableType === 'looptest';
@@ -3200,15 +3267,55 @@ function genereerZonesTabel(zonesData, eenheid) {
             `;
         }
         
+        // 🔧 HANDMATIGE ZONES: Maak velden bewerkbaar
+        let hartslagMinCel, hartslagMaxCel, vermogenMinCel, vermogenMaxCel;
+        
+        if (isHandmatig) {
+            // Bewerkbare inputvelden voor handmatige aanpassing
+            hartslagMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                <input type="number" value="${zone.minHartslag}" 
+                       class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                       onchange="updateHandmatigeZone(${index}, 'minHartslag', this.value)"
+                       min="50" max="220">
+            </td>`;
+            
+            hartslagMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                <input type="number" value="${zone.maxHartslag}" 
+                       class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                       onchange="updateHandmatigeZone(${index}, 'maxHartslag', this.value)"
+                       min="50" max="220">
+            </td>`;
+            
+            vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                <input type="number" value="${isLooptest ? zone.minVermogen.toFixed(1) : Math.round(zone.minVermogen)}" 
+                       class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                       onchange="updateHandmatigeZone(${index}, 'minVermogen', this.value)"
+                       min="0" step="${isLooptest ? '0.1' : '1'}">
+            </td>`;
+            
+            vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                <input type="number" value="${isLooptest ? zone.maxVermogen.toFixed(1) : Math.round(zone.maxVermogen)}" 
+                       class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                       onchange="updateHandmatigeZone(${index}, 'maxVermogen', this.value)"
+                       min="0" step="${isLooptest ? '0.1' : '1'}">
+            </td>`;
+        } else {
+            // Normale statische cellen voor andere methodes
+            hartslagMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.minHartslag}</td>`;
+            hartslagMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.maxHartslag}</td>`;
+            vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.minVermogen.toFixed(1) : Math.round(zone.minVermogen)}</td>`;
+            vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.maxVermogen.toFixed(1) : Math.round(zone.maxVermogen)}</td>`;
+        }
+        
         row.innerHTML = `
             <td class="px-4 py-3 border-r border-gray-200">
                 <div class="font-bold text-sm text-gray-900">${zone.naam}</div>
                 <div class="text-xs text-gray-600 mt-1">${zone.beschrijving}</div>
             </td>
-            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.minHartslag}</td>
-            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.maxHartslag}</td>
-            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.minVermogen.toFixed(1) : Math.round(zone.minVermogen)}</td>
-            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.maxVermogen.toFixed(1) : Math.round(zone.maxVermogen)}</td>
+            ${hartslagMinCel}
+            ${hartslagMaxCel}
+            ${vermogenMinCel}
+            ${vermogenMaxCel}
             ${extraKolomCellen}
             <td class="px-2 py-3 text-center text-sm">${borgText}</td>
         `;
@@ -3216,7 +3323,17 @@ function genereerZonesTabel(zonesData, eenheid) {
         body.appendChild(row);
     });
     
-    console.log('✅ Zones tabel succesvol gegenereerd');
+    // 💡 Update tip tekst op basis van methode
+    const tipElement = document.getElementById('zones-tip-text');
+    if (tipElement) {
+        if (isHandmatig) {
+            tipElement.innerHTML = '🔧 <strong>Handmatig:</strong> Klik in de velden om waarden aan te passen. Wijzigingen worden automatisch opgeslagen.';
+        } else {
+            tipElement.innerHTML = '💡 <strong>Tip:</strong> Deze zones zijn automatisch berekend. Bij \'Handmatig\' kun je waarden aanpassen.';
+        }
+    }
+    
+    console.log('✅ Zones tabel succesvol gegenereerd' + (isHandmatig ? ' (BEWERKBAAR)' : ''));
 }
 
 // Error functie
