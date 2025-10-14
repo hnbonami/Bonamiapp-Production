@@ -3,6 +3,8 @@
 @section('content')
 <!-- Chart.js library -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- CSRF Token voor AI AJAX calls -->
+<meta name="csrf-token" content="{{ csrf_token() }}">
 @if ($errors->any())
     <div class="bg-red-50 border border-red-200 text-red-700 p-4 rounded mb-6">
         <ul class="list-disc pl-5 m-0">
@@ -338,22 +340,29 @@
                                   placeholder="Conclusies over lichaamssamenstelling...">{{ old('besluit_lichaamssamenstelling') }}</textarea>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="advies_aerobe_drempel" class="block text-sm font-medium text-gray-700 mb-2">Advies Aërobe Drempel</label>
-                        <textarea name="advies_aerobe_drempel" 
-                                  id="advies_aerobe_drempel"
-                                  rows="3"
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                  placeholder="Trainingsadvies voor aërobe zone...">{{ old('advies_aerobe_drempel') }}</textarea>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="advies_anaerobe_drempel" class="block text-sm font-medium text-gray-700 mb-2">Advies Anaërobe Drempel</label>
-                        <textarea name="advies_anaerobe_drempel" 
-                                  id="advies_anaerobe_drempel"
-                                  rows="3"
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                  placeholder="Trainingsadvies voor anaërobe zone...">{{ old('advies_anaerobe_drempel') }}</textarea>
+                    <!-- Complete AI Analyse Sectie -->
+                    <div class="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex items-center gap-3 mb-4">
+                            <h4 class="text-lg font-bold text-blue-900">🧠 Complete AI Performance Analyse</h4>
+                            <button type="button" 
+                                    onclick="generateCompleteAIAnalysis()" 
+                                    id="ai-complete-btn"
+                                    class="inline-flex items-center px-4 py-2 border border-blue-400 rounded-md text-sm font-bold text-blue-800 bg-blue-100 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition duration-200 shadow-sm">
+                                🤖 Genereer Complete Analyse
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <p class="text-sm text-blue-700 mb-2">
+                                <strong>💡 Deze AI analyseert ALLE ingevulde parameters:</strong> doelstellingen, drempelwaarden, lichaamssamenstelling, hartslaggegevens, testtype, etc. en geeft uitgebreide populatievergelijkingen en specifieke trainingsadvies.
+                            </p>
+                        </div>
+                        
+                        <textarea name="complete_ai_analyse" 
+                                  id="complete_ai_analyse"
+                                  rows="20"
+                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono"
+                                  placeholder="Klik op 'Genereer Complete Analyse' om een uitgebreide AI-analyse te krijgen van alle testparameters, inclusief populatievergelijkingen, prestatieclassificatie, fysiologische interpretatie en specifieke trainingsadvies op basis van je doelstellingen...">{{ old('complete_ai_analyse') }}</textarea>
                     </div>
 
                     <!-- Trainingszones Configuratie - NIEUWE SECTIE -->
@@ -442,13 +451,17 @@
                     <input type="hidden" name="trainingszones_data" id="trainingszones_data" value="{{ old('trainingszones_data') }}">
 
                     <!-- Debug informatie -->
-                    <div class="mt-4 p-4 bg-gray-100 rounded" style="display: none;" id="debug-info">
-                        <h4 class="font-bold">Debug Info:</h4>
+                    <div class="mt-4 p-4 bg-gray-100 rounded" id="debug-info">
+                        <h4 class="font-bold">🔧 Debug & Test Sectie</h4>
                         <p>Datum: <span id="debug-datum"></span></p>
                         <p>Testtype: <span id="debug-testtype"></span></p>
-                    </div>
-
-                    <!-- Sjabloon notificatie - EENVOUDIGE VERSIE -->
+        <button type="button" onclick="testJavaScript()" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">
+            🔧 Test JavaScript
+        </button>
+        <button type="button" onclick="generateCompleteAIAnalysis()" class="mt-2 ml-2 px-3 py-1 bg-green-500 text-white rounded text-sm">
+            � Test Complete AI Analyse
+        </button>
+    </div>                    <!-- Sjabloon notificatie - EENVOUDIGE VERSIE -->
                     <div id="sjabloon-notificatie" class="mt-6 mb-6" style="background: #e3f2fd; border: 2px solid #2196f3; padding: 15px; border-radius: 8px;">
                         <strong style="color: #1976d2;">📋 Selecteer een testtype om te zien of er een sjabloon beschikbaar is voor rapportgeneratie.</strong>
                     </div>
@@ -2826,6 +2839,57 @@ function drawDraggableThresholds(chart) {
     }
 }
 
+// === TEST FUNCTIE VOOR DEBUGGING ===
+function testJavaScript() {
+    console.log('🔧 JavaScript test gestart...');
+    
+    // Test basisselectors
+    const aerobeBtn = document.getElementById('ai-aerobe-btn');
+    const anaerobeBtn = document.getElementById('ai-anaerobe-btn');
+    const aerobeTextarea = document.getElementById('advies_aerobe_drempel');
+    const anaerobeTextarea = document.getElementById('advies_anaerobe_drempel');
+    
+    console.log('Elements gevonden:');
+    console.log('- Aërobe knop:', !!aerobeBtn, aerobeBtn);
+    console.log('- Anaërobe knop:', !!anaerobeBtn, anaerobeBtn);
+    console.log('- Aërobe textarea:', !!aerobeTextarea, aerobeTextarea);
+    console.log('- Anaërobe textarea:', !!anaerobeTextarea, anaerobeTextarea);
+    
+    // Test CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    console.log('- CSRF token:', !!csrfToken, csrfToken ? csrfToken.substring(0, 10) + '...' : 'GEEN');
+    
+    // Test fetch functionaliteit
+    console.log('🌐 Test fetch functionaliteit...');
+    
+    fetch('/api/ai-advice', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken || '',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            type: 'test',
+            testtype: 'fietstest'
+        })
+    })
+    .then(response => {
+        console.log('📡 Test response:', response.status, response.statusText);
+        return response.text();
+    })
+    .then(text => {
+        console.log('📄 Response body:', text);
+        alert('JavaScript test voltooid! Check console voor details.');
+    })
+    .catch(error => {
+        console.error('❌ Test fetch error:', error);
+        alert('Fetch test gefaald: ' + error.message);
+    });
+    
+    alert('JavaScript functionaliteit test gestart! Check console (F12) voor details.');
+}
+
 // Debug functie
 function debugForm() {
     const debugInfo = document.getElementById('debug-info');
@@ -2847,6 +2911,259 @@ function debugForm() {
     for (let [key, value] of formData.entries()) {
         console.log(key + ':', value);
     }
+}
+
+// === AI ADVIES FUNCTIONALITEIT ===
+
+// === COMPLETE AI ANALYSE FUNCTIONALITEIT ===
+
+/**
+ * Genereer complete AI analyse van alle testparameters
+ */
+function generateCompleteAIAnalysis() {
+    console.log('� Genereren complete AI analyse...');
+    
+    const button = document.getElementById('ai-complete-btn');
+    const textarea = document.getElementById('complete_ai_analyse');
+    
+    if (!button || !textarea) {
+        console.error('AI knop of textarea niet gevonden');
+        return;
+    }
+    
+    // Update knop status
+    const originalText = button.innerHTML;
+    button.innerHTML = '🔄 Analyseren...';
+    button.disabled = true;
+    
+    // Verzamel ALLE beschikbare testdata
+    const completeTestData = collectCompleteTestData();
+    
+    console.log('📊 Complete testdata verzameld:', completeTestData);
+    
+    // Verstuur naar complete AI analyse endpoint
+    fetch('/api/ai-advice', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify(completeTestData)
+    })
+    .then(response => {
+        console.log('📡 Response ontvangen:', response.status);
+        
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Response body:', text);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('✅ Complete analyse ontvangen:', data);
+        
+        if (data.success) {
+            // Update textarea met complete analyse
+            textarea.value = data.analysis;
+            
+            // Success feedback
+            button.innerHTML = '✅ Analyse Compleet';
+            button.style.backgroundColor = '#dcfce7';
+            button.style.borderColor = '#16a34a';
+            button.style.color = '#16a34a';
+            
+            console.log('✅ Complete AI analyse succesvol gegenereerd');
+            
+            // Reset knop na 5 seconden
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.style.backgroundColor = '';
+                button.style.borderColor = '';
+                button.style.color = '';
+                button.disabled = false;
+            }, 5000);
+            
+        } else {
+            throw new Error(data.message || 'Onbekende fout');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Fout bij complete AI analyse:', error);
+        
+        // Error feedback
+        button.innerHTML = '❌ Fout';
+        button.style.backgroundColor = '#fef2f2';
+        button.style.borderColor = '#dc2626';
+        button.style.color = '#dc2626';
+        
+        // Toon fallback analyse
+        textarea.value = getCompleteAnalysisFallback(completeTestData);
+        
+        // Reset knop na 5 seconden
+        setTimeout(() => {
+            button.innerHTML = originalText;
+            button.style.backgroundColor = '';
+            button.style.borderColor = '';
+            button.style.color = '';
+            button.disabled = false;
+        }, 5000);
+        
+        alert(`Er ging iets mis bij het genereren van de AI analyse: ${error.message}\n\nEr is een standaard analyse ingevuld.`);
+    });
+}
+
+/**
+ * Verzamel ALLE beschikbare testdata voor complete analyse
+ */
+function collectCompleteTestData() {
+    // Bepaal leeftijd (fallback van 35 jaar indien niet beschikbaar)
+    let leeftijd = 35;
+    
+    return {
+        // Testtype en protocol
+        testtype: document.getElementById('testtype')?.value || 'fietstest',
+        analyse_methode: document.getElementById('analyse_methode')?.value || '',
+        testlocatie: document.getElementById('testlocatie')?.value || '',
+        
+        // Doelstellingen - ZEER BELANGRIJK voor AI
+        specifieke_doelstellingen: document.getElementById('specifieke_doelstellingen')?.value || 'Algemene fitheid verbetering',
+        
+        // Persoonlijke gegevens
+        leeftijd: leeftijd,
+        lichaamsgewicht_kg: parseFloat(document.getElementById('lichaamsgewicht_kg')?.value) || null,
+        lichaamslengte_cm: parseFloat(document.getElementById('lichaamslengte_cm')?.value) || null,
+        bmi: parseFloat(document.getElementById('bmi')?.value) || null,
+        buikomtrek_cm: parseFloat(document.getElementById('buikomtrek_cm')?.value) || null,
+        
+        // Drempelwaarden - KERN van de analyse
+        aerobe_drempel_vermogen: parseFloat(document.getElementById('aerobe_drempel_vermogen')?.value) || null,
+        aerobe_drempel_hartslag: parseFloat(document.getElementById('aerobe_drempel_hartslag')?.value) || null,
+        anaerobe_drempel_vermogen: parseFloat(document.getElementById('anaerobe_drempel_vermogen')?.value) || null,
+        anaerobe_drempel_hartslag: parseFloat(document.getElementById('anaerobe_drempel_hartslag')?.value) || null,
+        
+        // Hartslaggegevens
+        maximale_hartslag_bpm: parseFloat(document.getElementById('maximale_hartslag_bpm')?.value) || null,
+        hartslag_rust_bpm: parseFloat(document.getElementById('hartslag_rust_bpm')?.value) || null,
+        
+        // Besluit velden (indien ingevuld)
+        besluit_lichaamssamenstelling: document.getElementById('besluit_lichaamssamenstelling')?.value || ''
+    };
+}
+
+/**
+ * Fallback complete analyse bij fouten
+ */
+function getCompleteAnalysisFallback(testData) {
+    const testtype = testData.testtype || 'fietstest';
+    const doelstellingen = testData.specifieke_doelstellingen || 'algemene fitheid';
+    const lt1 = testData.aerobe_drempel_vermogen || 'niet gemeten';
+    const lt2 = testData.anaerobe_drempel_vermogen || 'niet gemeten';
+    
+    return `COMPLETE INSPANNINGSTEST ANALYSE
+
+🎯 DOELSTELLINGEN: ${doelstellingen}
+
+📊 GEMETEN DREMPELS:
+• Aërobe drempel (LT1): ${lt1} Watt
+• Anaërobe drempel (LT2): ${lt2} Watt
+
+🏆 PRESTATIECLASSIFICATIE:
+Uw drempelwaardes worden geanalyseerd in de context van uw specifieke doelstellingen voor ${testtype}.
+
+💪 BELANGRIJKE BEVINDINGEN:
+• Uw aërobe basis vormt de foundation voor langdurige prestaties
+• De anaërobe drempel bepaalt uw tempo-capaciteit
+• Training moet afgestemd worden op uw gestelde doelen
+
+🎯 TRAININGSAANBEVELINGEN:
+1. Focus op 80% training onder LT1 voor aerobe ontwikkeling
+2. Voeg specifieke intervaltraining toe rond LT2
+3. Periodiseer training naar uw doelstellingen toe
+4. Monitor progressie met regelmatige hertesten
+
+Voor een uitgebreidere AI-analyse probeer het opnieuw wanneer de verbinding hersteld is.`;
+}
+
+/**
+ * Verzamel alle relevante testdata voor AI analyse
+ */
+function collectTestDataForAI(type) {
+    // Probeer leeftijd uit geboortedatum te berekenen (uit klant context indien beschikbaar)
+    const today = new Date();
+    let leeftijd = 45; // Default fallback
+    
+    // Probeer uit pagina context te halen (bijv. uit hidden fields of klant info)
+    const klantLeeftijdElement = document.querySelector('[data-klant-leeftijd]');
+    if (klantLeeftijdElement) {
+        leeftijd = parseInt(klantLeeftijdElement.getAttribute('data-klant-leeftijd')) || 45;
+    }
+    
+    // Verzamel alle beschikbare data
+    const testData = {
+        type: type,
+        testtype: document.getElementById('testtype')?.value || 'fietstest',
+        
+        // Drempelwaarden
+        aerobe_drempel_vermogen: parseFloat(document.getElementById('aerobe_drempel_vermogen')?.value) || null,
+        aerobe_drempel_hartslag: parseFloat(document.getElementById('aerobe_drempel_hartslag')?.value) || null,
+        anaerobe_drempel_vermogen: parseFloat(document.getElementById('anaerobe_drempel_vermogen')?.value) || null,
+        anaerobe_drempel_hartslag: parseFloat(document.getElementById('anaerobe_drempel_hartslag')?.value) || null,
+        
+        // Persoonlijke gegevens
+        specifieke_doelstellingen: document.getElementById('specifieke_doelstellingen')?.value || 'Algemene fitheid verbetering',
+        lichaamsgewicht_kg: parseFloat(document.getElementById('lichaamsgewicht_kg')?.value) || null,
+        lichaamslengte_cm: parseFloat(document.getElementById('lichaamslengte_cm')?.value) || null,
+        leeftijd: leeftijd,
+        
+        // Extra context
+        maximale_hartslag_bpm: parseFloat(document.getElementById('maximale_hartslag_bpm')?.value) || null,
+        hartslag_rust_bpm: parseFloat(document.getElementById('hartslag_rust_bpm')?.value) || null,
+        bmi: parseFloat(document.getElementById('bmi')?.value) || null
+    };
+    
+    console.log('🔍 Verzamelde testdata voor AI:', testData);
+    
+    return testData;
+}
+
+/**
+ * Fallback advies bij AI fouten
+ */
+function getFallbackAdvice(type, testData) {
+    const testtype = testData.testtype || 'fietstest';
+    
+    if (type === 'aerobe') {
+        const vermogen = testData.aerobe_drempel_vermogen;
+        
+        if (testtype.includes('loop')) {
+            return `Uw aërobe drempel ligt op ${vermogen || 'uw gemeten'} km/h. Train voornamelijk onder deze intensiteit voor optimale vetverbranding en basisuithoudingsvermogen. Bouw geleidelijk op in volume en frequentie.`;
+        }
+        
+        if (testtype.includes('zwem')) {
+            return `Uw aërobe drempel is bepaald op ${vermogen || 'uw gemeten'} min/100m. Focus op lange, gestage zwemsessies net onder dit tempo voor aerobe ontwikkeling.`;
+        }
+        
+        return `Uw aërobe drempel bedraagt ${vermogen || 'uw gemeten'} Watt. Train 80% van de tijd onder deze intensiteit voor optimale vetverbranding en basisfitheid.`;
+    }
+    
+    if (type === 'anaerobe') {
+        const vermogen = testData.anaerobe_drempel_vermogen;
+        
+        if (testtype.includes('loop')) {
+            return `Uw anaërobe drempel is ${vermogen || 'uw gemeten'} km/h. Gebruik dit als basis voor intervaltraining en tempowerk. Limiteer hoogintensieve training tot 20% van totale trainingstijd.`;
+        }
+        
+        if (testtype.includes('zwem')) {
+            return `Uw anaërobe drempel ligt op ${vermogen || 'uw gemeten'} min/100m. Train intervallen rond dit tempo voor snelheidsverbetering.`;
+        }
+        
+        return `Uw anaërobe drempel is ${vermogen || 'uw gemeten'} Watt. Gebruik dit vermogen voor intervaltraining en tempowerk ter voorbereiding op wedstrijden.`;
+    }
+    
+    return 'Advies kon niet worden gegenereerd. Consulteer uw trainer voor specifieke aanbevelingen.';
 }
 
 // Toon alle form data zonder te submitten

@@ -1198,3 +1198,8 @@ Route::get('/debug-routes', function() {
     \Log::info('🚨 DEBUG ROUTE CALLED!');
     return 'Debug route works!';
 });
+
+// AI Advies API route voor inspanningstesten
+Route::post('/api/ai-advice', [App\Http\Controllers\InspanningstestController::class, 'generateAIAdvice'])
+    ->name('api.ai-advice')
+    ->middleware('auth');

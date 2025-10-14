@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 use App\Models\Inspanningstest;
 use App\Models\Klant;
 use App\Helpers\SjabloonHelper;
+use App\Services\AIAnalysisService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class InspanningstestController extends Controller {
     public function results($klantId, $testId)
@@ -163,6 +165,76 @@ class InspanningstestController extends Controller {
             \Log::error('Inspanningstest sjabloon report generation failed: ' . $e->getMessage());
             return redirect()->back()
                 ->with('error', 'Er is een fout opgetreden bij het genereren van het rapport.');
+        }
+    }
+
+    /**
+     * Genereer AI-gedreven complete analyse van de inspanningstest
+     */
+    public function generateAIAdvice(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'testtype' => 'required|string',
+                'aerobe_drempel_vermogen' => 'nullable|numeric',
+                'aerobe_drempel_hartslag' => 'nullable|numeric',
+                'anaerobe_drempel_vermogen' => 'nullable|numeric', 
+                'anaerobe_drempel_hartslag' => 'nullable|numeric',
+                'specifieke_doelstellingen' => 'nullable|string',
+                'lichaamsgewicht_kg' => 'nullable|numeric',
+                'lichaamslengte_cm' => 'nullable|numeric',
+                'leeftijd' => 'nullable|numeric',
+                'maximale_hartslag_bpm' => 'nullable|numeric',
+                'hartslag_rust_bpm' => 'nullable|numeric',
+                'bmi' => 'nullable|numeric',
+                'buikomtrek_cm' => 'nullable|numeric',
+                'analyse_methode' => 'nullable|string',
+                'testlocatie' => 'nullable|string',
+                'besluit_lichaamssamenstelling' => 'nullable|string',
+            ]);
+
+            // Check of AI enabled is
+            if (!config('ai.enabled', true)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'AI analyse is momenteel uitgeschakeld'
+                ], 503);
+            }
+
+            $aiService = new AIAnalysisService();
+            
+            // Genereer complete analyse
+            $analysis = $aiService->genereerCompleteAnalyse($validated);
+
+            \Log::info('Complete AI analyse succesvol gegenereerd', [
+                'testtype' => $validated['testtype'],
+                'goals' => $validated['specifieke_doelstellingen'] ?? 'geen doelstellingen',
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'analysis' => $analysis,
+                'type' => 'complete'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validatie fout: ' . $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            \Log::error('Fout bij AI analyse generatie: ' . $e->getMessage(), [
+                'request_data' => $request->all(),
+                'user_id' => auth()->id()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Er is een fout opgetreden bij het genereren van AI analyse. Probeer het opnieuw.'
+            ], 500);
         }
     }
 }

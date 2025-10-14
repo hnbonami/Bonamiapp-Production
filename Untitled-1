@@ -1,0 +1,39 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "15c3e920",
+   "metadata": {
+    "vscode": {
+     "languageId": "html"
+    }
+   },
+   "outputs": [],
+   "source": [
+    "<!-- Zadeltil veld test -->\n",
+    "<div class=\"mb-4\">\n",
+    "    <label for=\"zadeltil\" class=\"block text-sm font-medium text-gray-700\">\n",
+    "        Zadeltil (graden)\n",
+    "    </label>\n",
+    "    <input type=\"number\" \n",
+    "           step=\"0.01\"\n",
+    "           name=\"zadeltil\" \n",
+    "           id=\"zadeltil\"\n",
+    "           value=\"{{ old('zadeltil', $bikefit->zadeltil ?? '') }}\"\n",
+    "           class=\"mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500\">\n",
+    "    @error('zadeltil')\n",
+    "        <p class=\"mt-1 text-sm text-red-600\">{{ $message }}</p>\n",
+    "    @enderror\n",
+    "</div>"
+   ]
+  }
+ ],
+ "metadata": {
+  "language_info": {
+   "name": "python"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}
