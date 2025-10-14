@@ -1071,6 +1071,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update sjabloon notificatie
         updateSjabloonNotificatie();
         
+        // Update drempelwaarden labels op basis van testtype
+        updateDrempelwaardenLabels(selectedType);
+        
         console.log('🔍 updateProtocolFields - selectedType:', selectedType);
         console.log('🔍 currentTableType na updateTable:', currentTableType);
         
@@ -1166,6 +1169,40 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('stappen_watt').value = 40;
             }
         }
+    }
+    
+    // 🏷️ NIEUWE FUNCTIE: Update drempelwaarden labels op basis van testtype
+    function updateDrempelwaardenLabels(selectedType) {
+        console.log('🏷️ updateDrempelwaardenLabels aangeroepen voor:', selectedType);
+        
+        const aerobeVermogenLabel = document.querySelector('label[for="aerobe_drempel_vermogen"]');
+        const anaerobeVermogenLabel = document.querySelector('label[for="anaerobe_drempel_vermogen"]');
+        
+        if (!aerobeVermogenLabel || !anaerobeVermogenLabel) {
+            console.log('❌ Drempelwaarden labels niet gevonden');
+            return;
+        }
+        
+        // Bepaal het juiste label op basis van testtype
+        let vermogenLabel = '';
+        
+        if (selectedType === 'looptest' || selectedType === 'veldtest_lopen') {
+            vermogenLabel = 'Snelheid (km/h)';
+            console.log('🏃 Looptest: labels naar snelheid (km/h)');
+        } else if (selectedType === 'veldtest_zwemmen') {
+            vermogenLabel = 'Snelheid (min/100m)';
+            console.log('🏊 Zwemtest: labels naar snelheid (min/100m)');
+        } else {
+            // fietstest, veldtest_fietsen, of andere
+            vermogenLabel = 'Vermogen (Watt)';
+            console.log('🚴 Fietstest: labels naar vermogen (Watt)');
+        }
+        
+        // Update de labels
+        aerobeVermogenLabel.textContent = `Aërobe drempel - ${vermogenLabel}`;
+        anaerobeVermogenLabel.textContent = `Anaërobe drempel - ${vermogenLabel}`;
+        
+        console.log('✅ Drempelwaarden labels bijgewerkt naar:', vermogenLabel);
     }
     
     // Event listeners voor protocol wijzigingen bij veldtesten - alleen bij echte protocol wijziging
