@@ -2741,9 +2741,19 @@ function updateThresholdValues(thresholds, xField) {
         const aerobeVermogen = thresholds.aerobe[xField];
         const aerobeHartslag = thresholds.aerobe.hartslag;
         
-        console.log('Aërobe drempel:', aerobeVermogen, 'W,', aerobeHartslag, 'bpm');
+        console.log('Aërobe drempel:', aerobeVermogen, 'eenheid,', aerobeHartslag, 'bpm');
         
-        if (aerobeVermogen) document.getElementById('aerobe_drempel_vermogen').value = parseFloat(aerobeVermogen.toFixed(1)); // 1 decimaal
+        if (aerobeVermogen) {
+            // 🏊 ZWEM DEBUG: Check of we een zwemtest hebben
+            if (currentTableType === 'veldtest_zwemmen') {
+                console.log('🏊 ZWEM: Aërobe waarde voor input:', aerobeVermogen.toFixed(3));
+                // Voor zwemmen: gebruik decimale waarde in input, maar toon later als mm:ss
+                document.getElementById('aerobe_drempel_vermogen').value = parseFloat(aerobeVermogen.toFixed(3));
+            } else {
+                // Voor andere testen: normale decimale waarde
+                document.getElementById('aerobe_drempel_vermogen').value = parseFloat(aerobeVermogen.toFixed(1));
+            }
+        }
         if (aerobeHartslag) document.getElementById('aerobe_drempel_hartslag').value = Math.round(aerobeHartslag);
     }
     
@@ -2751,9 +2761,19 @@ function updateThresholdValues(thresholds, xField) {
         const anaerobeVermogen = thresholds.anaerobe[xField];
         const anaerobeHartslag = thresholds.anaerobe.hartslag;
         
-        console.log('Anaërobe drempel:', anaerobeVermogen, 'W,', anaerobeHartslag, 'bpm');
+        console.log('Anaërobe drempel:', anaerobeVermogen, 'eenheid,', anaerobeHartslag, 'bpm');
         
-        if (anaerobeVermogen) document.getElementById('anaerobe_drempel_vermogen').value = parseFloat(anaerobeVermogen.toFixed(1)); // 1 decimaal
+        if (anaerobeVermogen) {
+            // 🏊 ZWEM DEBUG: Check of we een zwemtest hebben
+            if (currentTableType === 'veldtest_zwemmen') {
+                console.log('🏊 ZWEM: Anaërobe waarde voor input:', anaerobeVermogen.toFixed(3));
+                // Voor zwemmen: gebruik decimale waarde in input, maar toon later als mm:ss
+                document.getElementById('anaerobe_drempel_vermogen').value = parseFloat(anaerobeVermogen.toFixed(3));
+            } else {
+                // Voor andere testen: normale decimale waarde
+                document.getElementById('anaerobe_drempel_vermogen').value = parseFloat(anaerobeVermogen.toFixed(1));
+            }
+        }
         if (anaerobeHartslag) document.getElementById('anaerobe_drempel_hartslag').value = Math.round(anaerobeHartslag);
     }
 }
@@ -3043,14 +3063,94 @@ function berekenBonamiZones(aantal, eenheid) {
     
     // 🏃 SPECIALE BEHANDELING VOOR LOOPTESTEN: Gebruik snelheden in plaats van wattages
     const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
+    const isZwemtest = currentTableType === 'veldtest_zwemmen';
     
     // Als er geen drempel data is, maak voorbeeldzones
     if (LT1 === 0 || LT2 === 0) {
-        console.log('⚠️ Geen drempel data - genereer voorbeeldzones voor:', isLooptest ? 'LOOP' : 'FIETS');
-        return createVoorbeeldBonamiZones(aantal, isLooptest);
+        console.log('⚠️ Geen drempel data - genereer voorbeeldzones voor:', isZwemtest ? 'ZWEM' : isLooptest ? 'LOOP' : 'FIETS');
+        return createVoorbeeldBonamiZones(aantal, isLooptest, isZwemtest);
     }
     
-    // Echte Bonami zones berekening
+    // 🏊 SPECIALE ZWEM ZONES BEREKENING
+    if (isZwemtest) {
+        console.log('🏊 ZWEM ZONES BEREKENING met LT1:', LT1, 'LT2:', LT2);
+        
+        // Voor zwemmen: LANGZAMERE tijd = LAGERE intensiteit
+        // We maken zones van LANGZAAM (hoge waarde) naar SNEL (lage waarde)
+        const bonamiZwemZones = [
+            {
+                naam: 'HERSTEL',
+                minVermogen: LT1 * 1.25, // Langzamer dan LT1 (lagere intensiteit)
+                maxVermogen: LT1 * 1.10,
+                minHartslag: Math.round(LT1_HR * 0.75),
+                maxHartslag: Math.round(LT1_HR * 0.85),
+                beschrijving: 'Herstel en regeneratie',
+                kleur: '#E3F2FD',
+                borgMin: 6,
+                borgMax: 8
+            },
+            {
+                naam: 'LANGE DUUR',
+                minVermogen: LT1 * 1.10, // Iets langzamer dan LT1
+                maxVermogen: LT1 * 1.05,
+                minHartslag: Math.round(LT1_HR * 0.85),
+                maxHartslag: Math.round(LT1_HR * 0.92),
+                beschrijving: 'Lange duur training',
+                kleur: '#E8F5E8',
+                borgMin: 8,
+                borgMax: 10
+            },
+            {
+                naam: 'EXTENSIEF',
+                minVermogen: LT1 * 1.05, // Net onder LT1
+                maxVermogen: LT1,
+                minHartslag: Math.round(LT1_HR * 0.92),
+                maxHartslag: Math.round(LT1_HR),
+                beschrijving: 'Extensieve duur training',
+                kleur: '#F1F8E9',
+                borgMin: 10,
+                borgMax: 12
+            },
+            {
+                naam: 'INTENSIEF',
+                minVermogen: LT1, // Van LT1 naar LT2
+                maxVermogen: LT2,
+                minHartslag: Math.round(LT1_HR),
+                maxHartslag: Math.round(LT2_HR),
+                beschrijving: 'Intensieve duur training',
+                kleur: '#FFF3E0',
+                borgMin: 12,
+                borgMax: 15
+            },
+            {
+                naam: 'TEMPO',
+                minVermogen: LT2, // Van LT2 naar sneller
+                maxVermogen: LT2 * 0.90, // Sneller dan LT2 (lagere tijd)
+                minHartslag: Math.round(LT2_HR),
+                maxHartslag: Math.round(HRmax * 0.95),
+                beschrijving: 'Tempo training',
+                kleur: '#FFEBEE',
+                borgMin: 15,
+                borgMax: 18
+            },
+            {
+                naam: 'MAXIMAAL',
+                minVermogen: LT2 * 0.90, // Sneller dan tempo
+                maxVermogen: LT2 * 0.75, // Maximaal snelle tijd
+                minHartslag: Math.round(HRmax * 0.95),
+                maxHartslag: Math.round(HRmax),
+                beschrijving: 'Maximale training',
+                kleur: '#FFCDD2',
+                borgMin: 18,
+                borgMax: 20
+            }
+        ];
+        
+        console.log('✅ Zwem zones berekend:', bonamiZwemZones.length, 'zones');
+        return bonamiZwemZones.slice(0, aantal);
+    }
+    
+    // Normale Bonami zones berekening voor fiets/loop
     const bonamiZones = [
         {
             naam: 'HERSTEL',
@@ -3131,12 +3231,22 @@ function berekenBonamiZones(aantal, eenheid) {
 }
 
 // Hulpfunctie om voorbeeldzones te maken als er geen drempel data is
-function createVoorbeeldBonamiZones(aantal, isLooptest = false) {
-    console.log('🎯 createVoorbeeldBonamiZones voor:', isLooptest ? 'LOOPTEST' : 'FIETSTEST');
+function createVoorbeeldBonamiZones(aantal, isLooptest = false, isZwemtest = false) {
+    console.log('🎯 createVoorbeeldBonamiZones voor:', isZwemtest ? 'ZWEMTEST' : isLooptest ? 'LOOPTEST' : 'FIETSTEST');
     
     let voorbeeldZones;
     
-    if (isLooptest) {
+    if (isZwemtest) {
+        // 🏊 ZWEMTEST VOORBEELDEN: Gebruik tijden in min/100m (langzaam naar snel)
+        voorbeeldZones = [
+            { naam: 'HERSTEL', minVermogen: 2.50, maxVermogen: 2.20, minHartslag: 110, maxHartslag: 130, beschrijving: 'Herstel (voorbeeld)', kleur: '#E3F2FD', borgMin: 6, borgMax: 8 },
+            { naam: 'LANGE DUUR', minVermogen: 2.20, maxVermogen: 2.00, minHartslag: 131, maxHartslag: 145, beschrijving: 'Lange duur training (voorbeeld)', kleur: '#E8F5E8', borgMin: 8, borgMax: 10 },
+            { naam: 'EXTENSIEF', minVermogen: 2.00, maxVermogen: 1.85, minHartslag: 146, maxHartslag: 160, beschrijving: 'Extensieve duur training (voorbeeld)', kleur: '#F1F8E9', borgMin: 10, borgMax: 12 },
+            { naam: 'INTENSIEF', minVermogen: 1.85, maxVermogen: 1.65, minHartslag: 161, maxHartslag: 175, beschrijving: 'Intensieve duur training (voorbeeld)', kleur: '#FFF3E0', borgMin: 12, borgMax: 15 },
+            { naam: 'TEMPO', minVermogen: 1.65, maxVermogen: 1.50, minHartslag: 176, maxHartslag: 185, beschrijving: 'Tempo training (voorbeeld)', kleur: '#FFEBEE', borgMin: 15, borgMax: 18 },
+            { naam: 'MAXIMAAL', minVermogen: 1.50, maxVermogen: 1.30, minHartslag: 186, maxHartslag: 200, beschrijving: 'Maximale training (voorbeeld)', kleur: '#FFCDD2', borgMin: 18, borgMax: 20 }
+        ];
+    } else if (isLooptest) {
         // 🏃 LOOPTEST VOORBEELDEN: Gebruik snelheden in km/h
         voorbeeldZones = [
             { naam: 'HERSTEL', minVermogen: 8.0, maxVermogen: 10.0, minHartslag: 110, maxHartslag: 130, beschrijving: 'Herstel (voorbeeld)', kleur: '#E3F2FD', borgMin: 6, borgMax: 8 },
@@ -3158,7 +3268,7 @@ function createVoorbeeldBonamiZones(aantal, isLooptest = false) {
         ];
     }
     
-    console.log('✅ Voorbeeldzones gemaakt voor:', isLooptest ? 'LOOP (km/h)' : 'FIETS (Watt)');
+    console.log('✅ Voorbeeldzones gemaakt voor:', isZwemtest ? 'ZWEM (min/100m)' : isLooptest ? 'LOOP (km/h)' : 'FIETS (Watt)');
     return voorbeeldZones.slice(0, aantal);
 }
 
@@ -3202,8 +3312,9 @@ function createHandmatigeZones(aantal, eenheid) {
     console.log('🔧 Handmatige zones - gebruik Bonami als basis en maak bewerkbaar');
     console.log('🏃 Testtype voor handmatige zones:', currentTableType);
     
-    // Bepaal of het een looptest is
+    // Bepaal of het een looptest of zwemtest is
     const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
+    const isZwemtest = currentTableType === 'veldtest_zwemmen';
     
     // Gebruik Bonami zones als basis voor handmatige aanpassing
     let baseZones = berekenBonamiZones(6, eenheid); // Altijd start met 6 Bonami zones
@@ -3226,7 +3337,21 @@ function createHandmatigeZones(aantal, eenheid) {
         for (let i = baseZones.length; i < aantal; i++) {
             let extraZone;
             
-            if (isLooptest) {
+            if (isZwemtest) {
+                // 🏊 Zwemtest: gebruik zwemtijden (min/100m)
+                extraZone = {
+                    naam: `Zone ${i + 1}`,
+                    minVermogen: 2.5 - (i * 0.2), // Langzaam naar snel
+                    maxVermogen: 2.3 - (i * 0.2),
+                    minHartslag: 120 + (i * 15),
+                    maxHartslag: 135 + (i * 15),
+                    beschrijving: `Handmatige zone ${i + 1} (aanpasbaar)`,
+                    kleur: '#F8F9FA',
+                    borgMin: 6 + i,
+                    borgMax: 8 + i,
+                    bewerkbaar: true
+                };
+            } else if (isLooptest) {
                 // 🏃 Looptest: gebruik snelheden
                 extraZone = {
                     naam: `Zone ${i + 1}`,
@@ -3260,7 +3385,7 @@ function createHandmatigeZones(aantal, eenheid) {
         }
     }
     
-    console.log('✅ Handmatige zones voorbereid met Bonami kleuren voor:', isLooptest ? 'LOOP' : 'FIETS', handmatigeZones);
+    console.log('✅ Handmatige zones voorbereid met Bonami kleuren voor:', isZwemtest ? 'ZWEM' : isLooptest ? 'LOOP' : 'FIETS', handmatigeZones);
     return handmatigeZones;
 }
 
@@ -3280,10 +3405,28 @@ function genereerZonesTabel(zonesData, eenheid) {
     
     // 🏃 DYNAMISCHE EENHEID DETECTIE op basis van testtype
     const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
-    const eenheidLabel = isLooptest ? 'km/h' : 'Watt';
+    const isZwemtest = currentTableType === 'veldtest_zwemmen';
+    
+    let eenheidLabel = 'Watt';
+    if (isLooptest) {
+        eenheidLabel = 'km/h';
+    } else if (isZwemtest) {
+        eenheidLabel = 'min/100m';
+    }
+    
     const isHandmatig = document.getElementById('zones_methode').value === 'handmatig';
     
-    console.log('🔍 Eenheid bepaling:', { isLooptest, eenheidLabel, testType: currentTableType });
+    console.log('🔍 Eenheid bepaling:', { isLooptest, isZwemtest, eenheidLabel, testType: currentTableType });
+    
+    // 🏊 Hulpfunctie om minuten naar mm:ss formaat te converteren voor zwemmen
+    function formatZwemTijdVoorZones(minuten) {
+        if (!isZwemtest) return minuten;
+        
+        const totalSecondenPer100m = minuten * 60;
+        const min = Math.floor(totalSecondenPer100m / 60);
+        const sec = Math.round(totalSecondenPer100m % 60);
+        return `${min}:${sec.toString().padStart(2, '0')}`;
+    }
     
     // Voor looptesten: voeg extra kolom toe voor min/km
     const extraKolomHeaders = isLooptest ? '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" colspan="2">min/km</th>' : '';
@@ -3356,25 +3499,49 @@ function genereerZonesTabel(zonesData, eenheid) {
                        min="50" max="220">
             </td>`;
             
-            vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
-                <input type="number" value="${isLooptest ? zone.minVermogen.toFixed(1) : Math.round(zone.minVermogen)}" 
-                       class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
-                       onchange="updateHandmatigeZone(${index}, 'minVermogen', this.value)"
-                       min="0" step="${isLooptest ? '0.1' : '1'}">
-            </td>`;
-            
-            vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
-                <input type="number" value="${isLooptest ? zone.maxVermogen.toFixed(1) : Math.round(zone.maxVermogen)}" 
-                       class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
-                       onchange="updateHandmatigeZone(${index}, 'maxVermogen', this.value)"
-                       min="0" step="${isLooptest ? '0.1' : '1'}">
-            </td>`;
+            if (isZwemtest) {
+                // Voor zwemtesten: toon mm:ss formaat maar bewaar decimale waarden intern
+                vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                    <input type="text" value="${formatZwemTijdVoorZones(zone.minVermogen)}" 
+                           class="w-20 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                           onchange="updateHandmatigeZone(${index}, 'minVermogen', this.value)"
+                           placeholder="mm:ss">
+                </td>`;
+                
+                vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                    <input type="text" value="${formatZwemTijdVoorZones(zone.maxVermogen)}" 
+                           class="w-20 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                           onchange="updateHandmatigeZone(${index}, 'maxVermogen', this.value)"
+                           placeholder="mm:ss">
+                </td>`;
+            } else {
+                vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                    <input type="number" value="${isLooptest ? zone.minVermogen.toFixed(1) : Math.round(zone.minVermogen)}" 
+                           class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                           onchange="updateHandmatigeZone(${index}, 'minVermogen', this.value)"
+                           min="0" step="${isLooptest ? '0.1' : '1'}">
+                </td>`;
+                
+                vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                    <input type="number" value="${isLooptest ? zone.maxVermogen.toFixed(1) : Math.round(zone.maxVermogen)}" 
+                           class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                           onchange="updateHandmatigeZone(${index}, 'maxVermogen', this.value)"
+                           min="0" step="${isLooptest ? '0.1' : '1'}">
+                </td>`;
+            }
         } else {
             // Normale statische cellen voor andere methodes
             hartslagMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.minHartslag}</td>`;
             hartslagMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.maxHartslag}</td>`;
-            vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.minVermogen.toFixed(1) : Math.round(zone.minVermogen)}</td>`;
-            vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.maxVermogen.toFixed(1) : Math.round(zone.maxVermogen)}</td>`;
+            
+            if (isZwemtest) {
+                // Voor zwemtesten: toon mm:ss formaat
+                vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${formatZwemTijdVoorZones(zone.minVermogen)}</td>`;
+                vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${formatZwemTijdVoorZones(zone.maxVermogen)}</td>`;
+            } else {
+                vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.minVermogen.toFixed(1) : Math.round(zone.minVermogen)}</td>`;
+                vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.maxVermogen.toFixed(1) : Math.round(zone.maxVermogen)}</td>`;
+            }
         }
         
         row.innerHTML = `
@@ -3403,7 +3570,7 @@ function genereerZonesTabel(zonesData, eenheid) {
         }
     }
     
-    console.log('✅ Zones tabel succesvol gegenereerd' + (isHandmatig ? ' (BEWERKBAAR)' : ''));
+    console.log('✅ Zones tabel succesvol gegenereerd' + (isHandmatig ? ' (BEWERKBAAR)' : '') + (isZwemtest ? ' (ZWEM mm:ss FORMAAT)' : ''));
 }
 
 // Error functie
