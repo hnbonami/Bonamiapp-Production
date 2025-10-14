@@ -2957,11 +2957,17 @@ function genereerZonesTabel(zonesData, eenheid) {
     
     const eenheidLabel = currentTableType === 'looptest' ? 'km/h' : 'Watt';
     
+    // Voor looptesten: voeg extra kolom toe voor min/km
+    const isLooptest = currentTableType === 'looptest';
+    const extraKolomHeaders = isLooptest ? '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" colspan="2">min/km</th>' : '';
+    const extraKolomSubHeaders = isLooptest ? '<th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">min</th><th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">max</th>' : '';
+    
     header.innerHTML = `
         <tr>
             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Zone</th>
             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" colspan="2">Hartslag (bpm)</th>
             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" colspan="2">${eenheidLabel}</th>
+            ${extraKolomHeaders}
             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Borg</th>
         </tr>
         <tr class="bg-gray-50">
@@ -2970,6 +2976,7 @@ function genereerZonesTabel(zonesData, eenheid) {
             <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">max</th>
             <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">min</th>
             <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">max</th>
+            ${extraKolomSubHeaders}
             <th class="px-2 py-2 text-xs text-gray-600">schaal</th>
         </tr>
     `;
@@ -2990,6 +2997,17 @@ function genereerZonesTabel(zonesData, eenheid) {
             borgText = `${zone.borgMin} - ${zone.borgMax}`;
         }
         
+        // Bereken min/km voor looptesten (60 / snelheid_kmh = min_per_km)
+        let extraKolomCellen = '';
+        if (isLooptest) {
+            const minMinPerKm = zone.maxVermogen > 0 ? (60 / zone.maxVermogen).toFixed(1) : '∞';
+            const maxMinPerKm = zone.minVermogen > 0 ? (60 / zone.minVermogen).toFixed(1) : '∞';
+            extraKolomCellen = `
+                <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${minMinPerKm}</td>
+                <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${maxMinPerKm}</td>
+            `;
+        }
+        
         row.innerHTML = `
             <td class="px-4 py-3 border-r border-gray-200">
                 <div class="font-bold text-sm text-gray-900">${zone.naam}</div>
@@ -2997,8 +3015,9 @@ function genereerZonesTabel(zonesData, eenheid) {
             </td>
             <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.minHartslag}</td>
             <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.maxHartslag}</td>
-            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.minVermogen}</td>
-            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.maxVermogen}</td>
+            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.minVermogen.toFixed(1) : zone.minVermogen}</td>
+            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.maxVermogen.toFixed(1) : zone.maxVermogen}</td>
+            ${extraKolomCellen}
             <td class="px-2 py-3 text-center text-sm">${borgText}</td>
         `;
         
