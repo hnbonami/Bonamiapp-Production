@@ -574,10 +574,10 @@ const tableConfigs = {
         steps: ['', '0.1', '0.1', '', '']
     },
     'veldtest_lopen': { // Veldtest lopen
-        headers: ['Afstand (m)', 'Tijd (min)', 'Tijd (sec)', 'Hartslag (bpm)', 'Borg'],
-        fields: ['afstand', 'tijd_min', 'tijd_sec', 'hartslag', 'borg'],
-        inputTypes: ['number', 'number', 'number', 'number', 'number'],
-        steps: ['', '', '', '', '']
+        headers: ['Afstand (m)', 'Tijd (min)', 'Tijd (sec)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'],
+        fields: ['afstand', 'tijd_min', 'tijd_sec', 'lactaat', 'hartslag', 'borg'],
+        inputTypes: ['number', 'number', 'number', 'number', 'number', 'number'],
+        steps: ['', '', '', '0.1', '', '']
     },
     'veldtest_fietsen': { // Veldtest fietsen
         headers: ['Tijd (min)', 'Vermogen (Watt)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'],
@@ -586,71 +586,71 @@ const tableConfigs = {
         steps: ['', '', '0.1', '', '']
     },
     'veldtest_zwemmen': { // Veldtest zwemmen
-        headers: ['Afstand (m)', 'Tijd (min)', 'Tijd (sec)', 'Hartslag (bpm)', 'Borg'],
-        fields: ['afstand', 'tijd_min', 'tijd_sec', 'hartslag', 'borg'],
-        inputTypes: ['number', 'number', 'number', 'number', 'number'],
-        steps: ['', '', '', '', '']
+        headers: ['Afstand (m)', 'Tijd (min)', 'Tijd (sec)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'],
+        fields: ['afstand', 'tijd_min', 'tijd_sec', 'lactaat', 'hartslag', 'borg'],
+        inputTypes: ['number', 'number', 'number', 'number', 'number', 'number'],
+        steps: ['', '', '', '0.1', '', '']
     }
 };
 
 // Protocol voorinstellingen voor veldtest lopen (chronologisch: lang naar kort)
 const veldtestLopenProtocols = {
     '4 x 2000m en 1 x 600m': [
-        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 2000, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+        {afstand: 2000, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 2000, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 2000, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 2000, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''}
     ],
     '4 x 1600m en 1 x 600m': [
-        {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+        {afstand: 1600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 1600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 1600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 1600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''}
     ],
     '3 x 1600m en 1 x 600m': [
-        {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 1600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+        {afstand: 1600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 1600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 1600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''}
     ],
     '4 x 1200m en 1 x 600m': [
-        {afstand: 1200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 1200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 1200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 1200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 600, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+        {afstand: 1200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 1200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 1200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 1200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 600, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''}
     ],
     '4 x 800m en 1 x 400m': [
-        {afstand: 800, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 800, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 800, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 800, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 400, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+        {afstand: 800, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 800, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 800, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 800, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 400, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''}
     ]
 };
 
 // Protocol voorinstellingen voor veldtest zwemmen
 const veldtestZwemmenProtocols = {
     '4 x 200m': [
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''}
     ],
     '5 x 200m': [
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''}
     ],
     '3 x 200m en 1 x 400m': [
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 200, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''},
-        {afstand: 400, tijd_min: '', tijd_sec: '', hartslag: '', borg: ''}
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 200, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''},
+        {afstand: 400, tijd_min: '', tijd_sec: '', lactaat: '', hartslag: '', borg: ''}
     ]
 };
 
@@ -951,6 +951,7 @@ function calculateNextRowValues(currentRowIndex) {
             afstand: '',
             tijd_min: '',
             tijd_sec: '',
+            lactaat: '',
             hartslag: '',
             borg: ''
         };
