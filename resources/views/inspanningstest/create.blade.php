@@ -1499,6 +1499,9 @@ function calculateDmaxModified(validData, xField) {
     validData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
     console.log('Data punten:', validData.map(d => `${d[xField]}W: ${d.lactaat.toFixed(2)}mmol/L`));
     
+    // SPECIALE BEHANDELING VOOR ZWEMMEN
+    const isSwimming = currentTableType === 'veldtest_zwemmen';
+    
     // STAP 1: Haal configureerbare drempelwaarde op
     const thresholdInput = document.getElementById('dmax_modified_threshold');
     const configurableThreshold = thresholdInput ? parseFloat(thresholdInput.value) || 0.4 : 0.4;
@@ -1520,24 +1523,40 @@ function calculateDmaxModified(validData, xField) {
     
     console.log(`✅ Modified Aërobe drempel: ${aerobePoint[xField].toFixed(1)}W bij ${aerobeThreshold.toFixed(2)}mmol/L (baseline +${configurableThreshold.toFixed(1)})`);
     
-    // STAP 2: Bereken parabool coëfficiënten voor lactaatcurve
+    // STAP 3: Voor zwemmen, gebruik de andere richting voor de hulplijn
+    let startPoint, endPoint;
+    if (isSwimming) {
+        // Voor zwemmen: van laatste punt (langzaamste = hoogste X) naar aërobe punt
+        startPoint = validData[validData.length - 1]; // Langzaamste tijd (hoogste lactaat verwacht)
+        endPoint = aerobePoint; // Aërobe punt
+        console.log(`🏊 ZWEM: Hulplijn van laatste punt naar aërobe punt`);
+    } else {
+        // Voor andere sporten: van aërobe punt naar laatste punt
+        startPoint = aerobePoint;
+        endPoint = validData[validData.length - 1];
+        console.log(`🚴 NORMAAL: Hulplijn van aërobe punt naar laatste punt`);
+    }
+    
+    // STAP 4: Bereken parabool coëfficiënten voor lactaatcurve
     const xArray = validData.map(d => d[xField]);
     const yArray = validData.map(d => d.lactaat);
     const paraboolCoeff = fitParabola(xArray, yArray);
     
     console.log(`📐 Modified Parabool: y = ${paraboolCoeff.a.toFixed(6)}x² + ${paraboolCoeff.b.toFixed(6)}x + ${paraboolCoeff.c.toFixed(6)}`);
     
-    // STAP 3: Bereken hulplijn (van aërobe punt naar laatste punt)
-    const lastPoint = validData[validData.length - 1];
-    const m = (lastPoint.lactaat - aerobePoint.lactaat) / (lastPoint[xField] - aerobePoint[xField]);
-    const bLine = aerobePoint.lactaat - m * aerobePoint[xField];
+    // STAP 5: Bereken hulplijn tussen start en eind punt
+    const m = (endPoint.lactaat - startPoint.lactaat) / (endPoint[xField] - startPoint[xField]);
+    const bLine = startPoint.lactaat - m * startPoint[xField];
     
     console.log(`📏 Modified Hulplijn: y = ${m.toFixed(6)}x + ${bLine.toFixed(6)}`);
-    console.log(`📏 Van aërobe punt: ${aerobePoint[xField].toFixed(1)}W, ${aerobePoint.lactaat.toFixed(2)}mmol/L`);
-    console.log(`📏 Naar laatste punt: ${lastPoint[xField]}W, ${lastPoint.lactaat.toFixed(2)}mmol/L`);
+    console.log(`📏 Van punt: ${startPoint[xField].toFixed(2)}W, ${startPoint.lactaat.toFixed(2)}mmol/L`);
+    console.log(`📏 Naar punt: ${endPoint[xField].toFixed(2)}W, ${endPoint.lactaat.toFixed(2)}mmol/L`);
     
-    // STAP 4: Bereken D-max punt (maximum afstand parabool tot hulplijn van aërobe naar laatste punt)
-    const dmaxX = computeDmaxFromBaseline(xArray, yArray, paraboolCoeff.a, paraboolCoeff.b, paraboolCoeff.c, m, bLine, aerobePoint[xField], lastPoint[xField]);
+    // STAP 6: Bereken D-max punt tussen de juiste grenzen
+    const searchStartX = Math.min(startPoint[xField], endPoint[xField]);
+    const searchEndX = Math.max(startPoint[xField], endPoint[xField]);
+    
+    const dmaxX = computeDmaxFromBaseline(xArray, yArray, paraboolCoeff.a, paraboolCoeff.b, paraboolCoeff.c, m, bLine, searchStartX, searchEndX);
     const dmaxLactaat = paraboolCoeff.a * (dmaxX * dmaxX) + paraboolCoeff.b * dmaxX + paraboolCoeff.c;
     const dmaxHartslag = interpolateLinear(validData, dmaxX, 'hartslag', xField) || 160;
     
@@ -1833,16 +1852,20 @@ function calculatePointToLineDistance(px, py, x1, y1, x2, y2) {
 
 // Functie om exponentiële curve te genereren voor lactaat
 function generateSmoothLactaatCurve(lactaatData) {
-    console.log('generateSmoothLactaatCurve aangeroepen met:', lactaatData);
+    console.log('🏊 === ZWEM DEBUG === generateSmoothLactaatCurve aangeroepen voor testtype:', currentTableType);
+    console.log('🏊 Raw lactaat data:', lactaatData);
     
     if (!lactaatData || lactaatData.length < 2) {
         console.log('Niet genoeg lactaat data voor curve generatie');
         return lactaatData || [];
     }
     
+    // ZWEM DEBUG: Check data voor en na sortering
+    console.log('🏊 Data VOOR sortering:', lactaatData.map(d => `${d.x.toFixed(2)} min/100m: ${d.y.toFixed(2)} mmol/L`));
+    
     // Sorteer data op X-waarde
     const sortedData = [...lactaatData].sort((a, b) => a.x - b.x);
-    console.log('Gesorteerde data:', sortedData);
+    console.log('🏊 Data NA sortering:', sortedData.map(d => `${d.x.toFixed(2)} min/100m: ${d.y.toFixed(2)} mmol/L`));
     
     const smoothData = [];
     const minX = sortedData[0].x;
@@ -1854,11 +1877,18 @@ function generateSmoothLactaatCurve(lactaatData) {
     for (let i = 0; i <= steps; i++) {
         const x = minX + (maxX - minX) * (i / steps);
         
-        // Gebruik exponentiële interpolatie voor realistische lactaatcurve
-        let y = interpolateExponentialForCurve(sortedData, x);
+        // SPECIALE BEHANDELING VOOR ZWEMMEN: gebruik aangepaste interpolatie
+        let y;
+        if (currentTableType === 'veldtest_zwemmen') {
+            y = interpolateExponentialForSwimming(sortedData, x);
+            console.log(`🏊 ZWEM curve punt ${i}: ${x.toFixed(2)} min/100m -> ${y.toFixed(2)} mmol/L`);
+        } else {
+            // Gebruik normale exponentiële interpolatie voor andere testen
+            y = interpolateExponentialForCurve(sortedData, x);
+        }
         
-        // Debug eerste paar punten
-        if (i < 5) {
+        // Debug eerste paar punten voor niet-zwem testen
+        if (i < 5 && currentTableType !== 'veldtest_zwemmen') {
             console.log(`Curve punt ${i}: ${x.toFixed(1)}W -> ${y.toFixed(2)}mmol/L`);
         }
         
@@ -1925,6 +1955,59 @@ function interpolateExponentialForCurve(points, targetX) {
     }
     
     return Math.max(localValue, 0.8); // Minimum lactaat
+}
+
+// NIEUWE FUNCTIE: Speciale exponentiële interpolatie voor zwemmen
+function interpolateExponentialForSwimming(points, targetX) {
+    console.log(`🏊 === ZWEM INTERPOLATIE === voor X=${targetX.toFixed(2)} min/100m`);
+    
+    if (points.length === 0) return 1.0;
+    if (points.length === 1) return points[0].y;
+    
+    // Sorteer punten op X-waarde (al gesorteerd maar zeker weten)
+    const sortedPoints = [...points].sort((a, b) => a.x - b.x);
+    console.log('🏊 Gesorteerde punten:', sortedPoints.map(p => `${p.x.toFixed(2)}min: ${p.y.toFixed(2)}mmol`));
+    
+    // ZWEMMEN: EENVOUDIGE LINEAIRE INTERPOLATIE die garanteerd door meetpunten gaat
+    
+    // Vind de twee omliggende punten
+    let i = 0;
+    while (i < sortedPoints.length - 1 && sortedPoints[i + 1].x < targetX) {
+        i++;
+    }
+    
+    // Als we exact op een meetpunt zitten
+    if (i < sortedPoints.length && Math.abs(sortedPoints[i].x - targetX) < 0.001) {
+        console.log(`🏊 Exact meetpunt gevonden: ${sortedPoints[i].y.toFixed(2)} mmol/L`);
+        return sortedPoints[i].y;
+    }
+    
+    // Extrapolatie aan de randen
+    if (targetX <= sortedPoints[0].x) {
+        console.log(`🏊 Extrapolatie links: ${sortedPoints[0].y.toFixed(2)} mmol/L`);
+        return sortedPoints[0].y;
+    }
+    
+    if (targetX >= sortedPoints[sortedPoints.length - 1].x) {
+        console.log(`🏊 Extrapolatie rechts: ${sortedPoints[sortedPoints.length - 1].y.toFixed(2)} mmol/L`);
+        return sortedPoints[sortedPoints.length - 1].y;
+    }
+    
+    // Lineaire interpolatie tussen twee punten
+    if (i < sortedPoints.length - 1) {
+        const p1 = sortedPoints[i];
+        const p2 = sortedPoints[i + 1];
+        const t = (targetX - p1.x) / (p2.x - p1.x);
+        const interpolatedValue = p1.y + t * (p2.y - p1.y);
+        
+        console.log(`🏊 Lineaire interpolatie tussen ${p1.x.toFixed(2)}min (${p1.y.toFixed(2)}mmol) en ${p2.x.toFixed(2)}min (${p2.y.toFixed(2)}mmol)`);
+        console.log(`🏊 t=${t.toFixed(3)}, resultaat=${interpolatedValue.toFixed(2)} mmol/L`);
+        
+        return Math.max(interpolatedValue, 0.8); // Minimum lactaat
+    }
+    
+    // Fallback
+    return sortedPoints[0].y;
 }
 
 // Functie om drag event listeners in te stellen
@@ -2297,16 +2380,26 @@ function generateChart() {
     
     // Voor D-max Modified methode: voeg hulplijn en D-max punt toe (aërobe punt naar laatste datapunt)
     if (selectedMethod === 'dmax_modified' && rawLactaatData && rawLactaatData.length > 2 && thresholds && thresholds.anaerobe) {
-        // Gebruik de aërobe punt berekening uit thresholds
-        const aerobePoint = thresholds.aerobe;
-        const lastDataPoint = rawLactaatData[rawLactaatData.length - 1];
+        // SPECIALE BEHANDELING VOOR ZWEMMEN: gebruik correcte hulplijn richting
+        const isSwimming = currentTableType === 'veldtest_zwemmen';
         
-        // Hulplijn tussen aërobe punt en laatste datapunt
+        let startPoint, endPoint;
+        if (isSwimming) {
+            // Voor zwemmen: hulplijn van laatste punt (langzaamste) naar aërobe punt (snellere baseline)
+            startPoint = rawLactaatData[rawLactaatData.length - 1]; // Laatste = langzaamste
+            endPoint = thresholds.aerobe; // Aërobe = snellere baseline
+        } else {
+            // Voor andere sporten: normale richting
+            startPoint = thresholds.aerobe;
+            endPoint = rawLactaatData[rawLactaatData.length - 1];
+        }
+        
+        // Hulplijn tussen correcte punten
         datasets.push({
-            label: 'D-max Modified Hulplijn (Aërobe → Laatste)',
+            label: isSwimming ? 'D-max Modified Hulplijn (Laatste → Aërobe)' : 'D-max Modified Hulplijn (Aërobe → Laatste)',
             data: [
-                {x: aerobePoint[xField], y: aerobePoint.lactaat},
-                {x: lastDataPoint.x, y: lastDataPoint.y}
+                {x: startPoint.x || startPoint[xField], y: startPoint.y || startPoint.lactaat},
+                {x: endPoint.x || endPoint[xField], y: endPoint.y || endPoint.lactaat}
             ],
             borderColor: 'rgba(107, 114, 128, 0.7)',
             backgroundColor: 'rgba(107, 114, 128, 0.1)',
@@ -2336,9 +2429,14 @@ function generateChart() {
         });
         
         // LOODLIJN: Verticale lijn van D-max punt naar hulplijn
-        // Bereken hulplijn Y-waarde op dmaxX positie (lineaire interpolatie tussen aërobe en laatste punt)
-        const m = (lastDataPoint.y - aerobePoint.lactaat) / (lastDataPoint.x - aerobePoint[xField]);
-        const b = aerobePoint.lactaat - m * aerobePoint[xField];
+        // Bereken hulplijn Y-waarde op dmaxX positie (lineaire interpolatie tussen start en eind punt)
+        const startX = startPoint.x || startPoint[xField];
+        const startY = startPoint.y || startPoint.lactaat;
+        const endX = endPoint.x || endPoint[xField];
+        const endY = endPoint.y || endPoint.lactaat;
+        
+        const m = (endY - startY) / (endX - startX);
+        const b = startY - m * startX;
         const hulplijnY = m * dmaxX + b;
         
         datasets.push({
