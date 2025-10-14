@@ -356,6 +356,90 @@
                                   placeholder="Trainingsadvies voor anaërobe zone...">{{ old('advies_anaerobe_drempel') }}</textarea>
                     </div>
 
+                    <!-- Trainingszones Configuratie - NIEUWE SECTIE -->
+                    <h3 class="text-xl font-bold mt-8 mb-4">Trainingszones Berekening</h3>
+                    
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                        <p class="text-blue-800 text-sm">
+                            🏃‍♂️ <strong>Automatische Zones:</strong> Kies een wetenschappelijke methode om trainingszones te berekenen op basis van je gemeten drempels.
+                            De zones worden live bijgewerkt wanneer je de configuratie wijzigt.
+                        </p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="mb-4">
+                            <label for="zones_methode" class="block text-sm font-medium text-gray-700 mb-2">Berekenings Methode</label>
+                            <select name="zones_methode" 
+                                    id="zones_methode"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="">Selecteer methode</option>
+                                <option value="bonami" {{ old('zones_methode') == 'bonami' ? 'selected' : '' }}>Bonami Drempel Methode (6 zones)</option>
+                                <option value="karvonen" {{ old('zones_methode') == 'karvonen' ? 'selected' : '' }}>Karvonen (Hartslagreserve)</option>
+                                <option value="handmatig" {{ old('zones_methode') == 'handmatig' ? 'selected' : '' }}>Handmatig Aanpassen</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="zones_aantal" class="block text-sm font-medium text-gray-700 mb-2">Aantal Zones</label>
+                            <select name="zones_aantal" 
+                                    id="zones_aantal"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="3" {{ old('zones_aantal') == '3' ? 'selected' : '' }}>3 Zones (Basis)</option>
+                                <option value="5" {{ old('zones_aantal', '5') == '5' ? 'selected' : '' }}>5 Zones (Standaard)</option>
+                                <option value="6" {{ old('zones_aantal') == '6' ? 'selected' : '' }}>6 Zones (Bonami)</option>
+                                <option value="7" {{ old('zones_aantal') == '7' ? 'selected' : '' }}>7 Zones (Uitgebreid)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="zones_eenheid" class="block text-sm font-medium text-gray-700 mb-2">Focus Eenheid</label>
+                            <select name="zones_eenheid" 
+                                    id="zones_eenheid"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                <option value="hartslag" {{ old('zones_eenheid', 'hartslag') == 'hartslag' ? 'selected' : '' }}>Hartslag (bpm)</option>
+                                <option value="vermogen" {{ old('zones_eenheid') == 'vermogen' ? 'selected' : '' }}>Vermogen (Watt)</option>
+                                <option value="combinatie" {{ old('zones_eenheid') == 'combinatie' ? 'selected' : '' }}>Combinatie Alle</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Trainingszones Tabel Container -->
+                    <div id="trainingszones-container" class="mb-6" style="display: none;">
+                        <div class="bg-white border border-gray-300 rounded-lg overflow-hidden">
+                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-300">
+                                <h4 class="font-bold text-gray-900 flex items-center">
+                                    🎯 <span class="ml-2">Berekende Trainingszones</span>
+                                    <span id="zones-methode-label" class="ml-2 text-sm text-gray-600"></span>
+                                </h4>
+                            </div>
+                            
+                            <div class="overflow-x-auto">
+                                <table id="trainingszones-tabel" class="w-full">
+                                    <thead id="zones-header" class="bg-gray-100">
+                                        <!-- Headers worden dynamisch gegenereerd -->
+                                    </thead>
+                                    <tbody id="zones-body">
+                                        <!-- Rijen worden dynamisch gegenereerd -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="bg-gray-50 px-4 py-3 border-t border-gray-300">
+                                <div class="flex justify-between items-center">
+                                    <p class="text-xs text-gray-600">
+                                        💡 <strong>Tip:</strong> Deze zones zijn automatisch berekend. Bij 'Handmatig' kun je waarden aanpassen.
+                                    </p>
+                                    <button type="button" onclick="exportZonesData()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                        📊 Exporteer Zones
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hidden input voor zones data -->
+                    <input type="hidden" name="trainingszones_data" id="trainingszones_data" value="{{ old('trainingszones_data') }}">
+
                     <!-- Debug informatie -->
                     <div class="mt-4 p-4 bg-gray-100 rounded" style="display: none;" id="debug-info">
                         <h4 class="font-bold">Debug Info:</h4>
@@ -1148,6 +1232,33 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initiële update bij het laden van de pagina
     updateProtocolFields();
+    
+    // NIEUWE FUNCTIONALITEIT: Event listeners voor trainingszones (VEILIG)
+    const zonesMethodeSelect = document.getElementById('zones_methode');
+    const zonesAantalSelect = document.getElementById('zones_aantal');
+    const zonesEenheidSelect = document.getElementById('zones_eenheid');
+    
+    // Veilige event listeners die bestaande functionaliteit niet verstoren
+    if (zonesMethodeSelect) {
+        zonesMethodeSelect.addEventListener('change', function() {
+            console.log('🎯 Zones methode gewijzigd naar:', this.value);
+            updateTrainingszones();
+        });
+    }
+    
+    if (zonesAantalSelect) {
+        zonesAantalSelect.addEventListener('change', function() {
+            console.log('🔢 Zones aantal gewijzigd naar:', this.value);
+            updateTrainingszones();
+        });
+    }
+    
+    if (zonesEenheidSelect) {
+        zonesEenheidSelect.addEventListener('change', function() {
+            console.log('📊 Zones eenheid gewijzigd naar:', this.value);
+            updateTrainingszones();
+        });
+    }
 });
 
 // Grafiek variabelen
@@ -2592,6 +2703,329 @@ function showFormData() {
     console.log('DIAGNOSE: Inputs op pagina:', allPageInputs.length);
     console.log('DIAGNOSE: Inputs in form:', allFormInputs.length);
     console.log('DIAGNOSE: FormData entries:', entryCount);
+}
+
+// === TRAININGSZONES EXPORT FUNCTIE (VEILIG) ===
+function exportZonesData() {
+    console.log('📊 exportZonesData() aangeroepen');
+    alert('Export functionaliteit komt in de volgende stap!');
+}
+
+// === TRAININGSZONES BEREKENING FUNCTIONALITEIT ===
+
+// Globale variabele voor huidige zones data
+let huidigeZonesData = null;
+
+// Hoofdfunctie om trainingszones bij te werken
+function updateTrainingszones() {
+    console.log('🎯 updateTrainingszones() gestart');
+    
+    const methodeSelektor = document.getElementById('zones_methode');
+    const aantalSelektor = document.getElementById('zones_aantal');
+    const eenheidSelektor = document.getElementById('zones_eenheid');
+    
+    if (!methodeSelektor || !aantalSelektor || !eenheidSelektor) {
+        console.log('❌ Zone selektoren niet gevonden');
+        return;
+    }
+    
+    const methode = methodeSelektor.value;
+    const aantal = parseInt(aantalSelektor.value) || 5;
+    const eenheid = eenheidSelektor.value;
+    
+    console.log('🔧 Zone configuratie:', { methode, aantal, eenheid });
+    
+    // Toon/verberg container
+    const container = document.getElementById('trainingszones-container');
+    if (!methode) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    
+    // Update methode label
+    const methodeLabel = document.getElementById('zones-methode-label');
+    methodeLabel.textContent = `(${methode.charAt(0).toUpperCase() + methode.slice(1)})`;
+    
+    // Bereken zones op basis van methode
+    let zonesData = null;
+    
+    if (methode === 'bonami') {
+        zonesData = berekenBonamiZones(aantal, eenheid);
+    } else if (methode === 'karvonen') {
+        zonesData = berekenKarvonenZones(aantal, eenheid);
+    } else if (methode === 'handmatig') {
+        zonesData = createHandmatigeZones(aantal, eenheid);
+    }
+    
+    if (zonesData) {
+        genereerZonesTabel(zonesData, eenheid);
+        huidigeZonesData = zonesData;
+        
+        // Sla zones data op in hidden input
+        document.getElementById('trainingszones_data').value = JSON.stringify(zonesData);
+        
+        console.log('✅ Trainingszones succesvol berekend en weergegeven');
+    } else {
+        console.log('❌ Kan geen zones berekenen - ontbrekende drempel data');
+        toonZonesError('Geen drempel data beschikbaar. Voer eerst testresultaten in en bereken drempels.');
+    }
+}
+
+// Bonami specifieke zones berekening - VEREENVOUDIGD VOOR STAP 2
+function berekenBonamiZones(aantal, eenheid) {
+    console.log('🚀 berekenBonamiZones() - aantal:', aantal, 'eenheid:', eenheid);
+    
+    // Controleer of er drempel data beschikbaar is
+    const LT1 = parseFloat(document.getElementById('aerobe_drempel_vermogen').value) || 0;
+    const LT2 = parseFloat(document.getElementById('anaerobe_drempel_vermogen').value) || 0;
+    const LT1_HR = parseFloat(document.getElementById('aerobe_drempel_hartslag').value) || 0;
+    const LT2_HR = parseFloat(document.getElementById('anaerobe_drempel_hartslag').value) || 0;
+    const HRmax = parseFloat(document.getElementById('maximale_hartslag_bpm').value) || 190;
+    
+    console.log('📊 Drempel waarden:', { LT1, LT2, LT1_HR, LT2_HR, HRmax });
+    
+    // Als er geen drempel data is, maak voorbeeldzones
+    if (LT1 === 0 || LT2 === 0) {
+        console.log('⚠️ Geen drempel data - genereer voorbeeldzones');
+        return createVoorbeeldBonamiZones(aantal);
+    }
+    
+    // Echte Bonami zones berekening
+    const bonamiZones = [
+        {
+            naam: 'HERSTEL',
+            minVermogen: Math.round(LT1 * 0.60),
+            maxVermogen: Math.round(LT1 * 0.80),
+            minHartslag: Math.round(LT1_HR * 0.75),
+            maxHartslag: Math.round(LT1_HR * 0.85),
+            beschrijving: 'Herstel en regeneratie',
+            kleur: '#E3F2FD',
+            borgMin: null,
+            borgMax: 7
+        },
+        {
+            naam: 'LANGE DUUR',
+            minVermogen: Math.round(LT1 * 0.80) + 1,
+            maxVermogen: Math.round(LT1 * 0.90),
+            minHartslag: Math.round(LT1_HR * 0.85) + 1,
+            maxHartslag: Math.round(LT1_HR * 0.92),
+            beschrijving: 'Lange duur training',
+            kleur: '#E8F5E8',
+            borgMin: null,
+            borgMax: 9
+        },
+        {
+            naam: 'EXTENSIEF',
+            minVermogen: Math.round(LT1 * 0.90) + 1,
+            maxVermogen: Math.round(LT1),
+            minHartslag: Math.round(LT1_HR * 0.92) + 1,
+            maxHartslag: Math.round(LT1_HR),
+            beschrijving: 'Extensieve duur training',
+            kleur: '#F1F8E9',
+            borgMin: null,
+            borgMax: 12
+        },
+        {
+            naam: 'INTENSIEF',
+            minVermogen: Math.round(LT1) + 1,
+            maxVermogen: Math.round(LT2),
+            minHartslag: Math.round(LT1_HR) + 1,
+            maxHartslag: Math.round(LT2_HR),
+            beschrijving: 'Intensieve duur training',
+            kleur: '#FFF3E0',
+            borgMin: 12,
+            borgMax: 15
+        },
+        {
+            naam: 'TEMPO',
+            minVermogen: Math.round(LT2) + 1,
+            maxVermogen: Math.round(LT2 * 1.15),
+            minHartslag: Math.round(LT2_HR) + 1,
+            maxHartslag: Math.round(HRmax * 0.95),
+            beschrijving: 'Tempo training',
+            kleur: '#FFEBEE',
+            borgMin: 15,
+            borgMax: 18
+        },
+        {
+            naam: 'MAXIMAAL',
+            minVermogen: Math.round(LT2 * 1.15) + 1,
+            maxVermogen: Math.round(LT2 * 1.40),
+            minHartslag: Math.round(HRmax * 0.95) + 1,
+            maxHartslag: Math.round(HRmax),
+            beschrijving: 'Maximale training',
+            kleur: '#FFCDD2',
+            borgMin: 18,
+            borgMax: 20
+        }
+    ];
+    
+    console.log('✅ Bonami zones berekend:', bonamiZones.length, 'zones');
+    
+    // Pas aan naar gewenst aantal zones
+    if (aantal !== 6) {
+        return pasBonamiZonesAan(bonamiZones, aantal);
+    }
+    
+    return bonamiZones;
+}
+
+// Hulpfunctie om voorbeeldzones te maken als er geen drempel data is
+function createVoorbeeldBonamiZones(aantal) {
+    const voorbeeldZones = [
+        { naam: 'HERSTEL', minVermogen: 120, maxVermogen: 160, minHartslag: 110, maxHartslag: 130, beschrijving: 'Herstel (voorbeeld)', kleur: '#E3F2FD', borgMin: null, borgMax: 7 },
+        { naam: 'DUUR', minVermogen: 161, maxVermogen: 200, minHartslag: 131, maxHartslag: 150, beschrijving: 'Duur training (voorbeeld)', kleur: '#E8F5E8', borgMin: null, borgMax: 12 },
+        { naam: 'TEMPO', minVermogen: 201, maxVermogen: 240, minHartslag: 151, maxHartslag: 170, beschrijving: 'Tempo training (voorbeeld)', kleur: '#FFF3E0', borgMin: 12, borgMax: 15 },
+        { naam: 'INTERVAL', minVermogen: 241, maxVermogen: 280, minHartslag: 171, maxHartslag: 185, beschrijving: 'Interval training (voorbeeld)', kleur: '#FFEBEE', borgMin: 15, borgMax: 18 },
+        { naam: 'MAXIMAAL', minVermogen: 281, maxVermogen: 320, minHartslag: 186, maxHartslag: 200, beschrijving: 'Maximale training (voorbeeld)', kleur: '#FFCDD2', borgMin: 18, borgMax: 20 }
+    ];
+    
+    return voorbeeldZones.slice(0, aantal);
+}
+
+// Hulpfunctie om Bonami zones aan te passen naar gewenst aantal
+function pasBonamiZonesAan(zones, aantal) {
+    if (aantal >= zones.length) return zones;
+    
+    // Voor nu: simpel de eerste X zones teruggeven
+    return zones.slice(0, aantal);
+}
+
+// Placeholder functies voor andere methodes
+function berekenKarvonenZones(aantal, eenheid) {
+    console.log('⚠️ Karvonen zones - placeholder functie');
+    const HRmax = parseFloat(document.getElementById('maximale_hartslag_bpm').value) || 190;
+    const HRrust = parseFloat(document.getElementById('hartslag_rust_bpm').value) || 60;
+    
+    // Simpele Karvonen zones (HRR methode)
+    const zones = [];
+    for (let i = 0; i < aantal; i++) {
+        const intensiteit = (i + 1) / aantal;
+        const targetHR = HRrust + (intensiteit * (HRmax - HRrust));
+        
+        zones.push({
+            naam: `Zone ${i + 1}`,
+            minVermogen: Math.round(100 + (i * 40)),
+            maxVermogen: Math.round(140 + (i * 40)),
+            minHartslag: Math.round(targetHR - 10),
+            maxHartslag: Math.round(targetHR + 10),
+            beschrijving: `Karvonen zone ${i + 1}`,
+            kleur: '#F5F5F5',
+            borgMin: 6 + i,
+            borgMax: 8 + i
+        });
+    }
+    
+    return zones;
+}
+
+function createHandmatigeZones(aantal, eenheid) {
+    console.log('🔧 Handmatige zones - placeholder');
+    const zones = [];
+    
+    for (let i = 0; i < aantal; i++) {
+        zones.push({
+            naam: `Zone ${i + 1}`,
+            minVermogen: 100 + (i * 50),
+            maxVermogen: 150 + (i * 50),
+            minHartslag: 120 + (i * 15),
+            maxHartslag: 135 + (i * 15),
+            beschrijving: `Handmatige zone ${i + 1} (aanpasbaar)`,
+            kleur: '#F8F9FA',
+            borgMin: 6 + i,
+            borgMax: 8 + i
+        });
+    }
+    
+    return zones;
+}
+
+// Functie om zones tabel te genereren
+function genereerZonesTabel(zonesData, eenheid) {
+    console.log('📊 genereerZonesTabel() met', zonesData.length, 'zones');
+    
+    const tabel = document.getElementById('trainingszones-tabel');
+    const header = document.getElementById('zones-header');
+    const body = document.getElementById('zones-body');
+    
+    if (!tabel || !header || !body) {
+        console.log('❌ Zones tabel elementen niet gevonden');
+        return;
+    }
+    
+    const eenheidLabel = currentTableType === 'looptest' ? 'km/h' : 'Watt';
+    
+    header.innerHTML = `
+        <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Zone</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" colspan="2">Hartslag (bpm)</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" colspan="2">${eenheidLabel}</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Borg</th>
+        </tr>
+        <tr class="bg-gray-50">
+            <th class="px-4 py-2 border-r border-gray-200"></th>
+            <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">min</th>
+            <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">max</th>
+            <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">min</th>
+            <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">max</th>
+            <th class="px-2 py-2 text-xs text-gray-600">schaal</th>
+        </tr>
+    `;
+    
+    body.innerHTML = '';
+    
+    zonesData.forEach((zone, index) => {
+        const row = document.createElement('tr');
+        row.style.backgroundColor = zone.kleur || '#FFFFFF';
+        row.className = 'border-b border-gray-200 hover:bg-opacity-80';
+        
+        let borgText = '';
+        if (zone.borgMin === null) {
+            borgText = `> ${zone.borgMax}`;
+        } else if (zone.borgMax === null) {
+            borgText = `${zone.borgMin} <`;
+        } else {
+            borgText = `${zone.borgMin} - ${zone.borgMax}`;
+        }
+        
+        row.innerHTML = `
+            <td class="px-4 py-3 border-r border-gray-200">
+                <div class="font-bold text-sm text-gray-900">${zone.naam}</div>
+                <div class="text-xs text-gray-600 mt-1">${zone.beschrijving}</div>
+            </td>
+            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.minHartslag}</td>
+            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.maxHartslag}</td>
+            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.minVermogen}</td>
+            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.maxVermogen}</td>
+            <td class="px-2 py-3 text-center text-sm">${borgText}</td>
+        `;
+        
+        body.appendChild(row);
+    });
+    
+    console.log('✅ Zones tabel succesvol gegenereerd');
+}
+
+// Error functie
+function toonZonesError(bericht) {
+    const container = document.getElementById('trainingszones-container');
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex">
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">
+                        Kan trainingszones niet berekenen
+                    </h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <p>${bericht}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 }
 </script>
 @endsection
