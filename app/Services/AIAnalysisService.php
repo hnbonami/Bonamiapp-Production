@@ -2,314 +2,356 @@
 
 namespace App\Services;
 
-use Exception;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Service voor AI-gestuurde complete analyse van inspanningstesten
- * Gebruikt OpenAI GPT-4o-mini voor uitgebreide sportmedische adviezen
+ * AI Analysis Service voor Inspanningstesten
+ * Genereert uitgebreide analyses op basis van testdata
  */
 class AIAnalysisService
 {
-    private string $apiKey;
-    private string $model;
-    private string $baseUrl;
+    protected $apiKey;
+    protected $model;
+    protected $temperature;
+    protected $maxTokens;
 
     public function __construct()
     {
-        $this->apiKey = config('ai.openai_key');
-        $this->model = config('ai.model', 'gpt-4o-mini');
-        $this->baseUrl = 'https://api.openai.com/v1/chat/completions';
+        // Haal API key op uit .env via services config of direct
+        $this->apiKey = config('services.openai.key') ?? env('OPENAI_API_KEY');
+        $this->model = config('ai_analysis.model', 'gpt-4o-mini');
+        $this->temperature = config('ai_analysis.temperature', 0.4);
+        $this->maxTokens = config('ai_analysis.max_tokens', 1500);
     }
 
     /**
-     * Genereer complete AI analyse van de inspanningstest
+     * Genereer complete analyse van inspanningstestdata
      */
-    public function genereerCompleteAnalyse(array $testData): string
+    public function generateCompleteAnalysis(array $testData): array
     {
-        Log::info('🧠 Genereren complete AI analyse', [
-            'test_type' => $testData['testtype'] ?? 'onbekend',
-            'goals' => $testData['specifieke_doelstellingen'] ?? 'geen'
+        Log::info('AI Complete Analysis gestart', [
+            'testtype' => $testData['testtype'] ?? 'onbekend'
         ]);
 
-        $prompt = $this->bouwCompleteAnalysePrompt($testData);
-        
+        // Check of API key aanwezig is
+        if (empty($this->apiKey)) {
+            Log::error('OpenAI API key ontbreekt');
+            return [
+                'success' => false,
+                'error' => 'OpenAI API key niet geconfigureerd',
+                'fallback' => $this->generateFallbackAnalysis($testData)
+            ];
+        }
+
         try {
+            // Verrijk data met berekende metrics en populatienormen
+            $enrichedData = $this->enrichTestData($testData);
+            
+            // Bouw de prompt
+            $prompt = $this->buildPrompt($enrichedData);
+            
+            // Roep OpenAI API aan
             $response = $this->callOpenAI($prompt);
             
-            Log::info('✅ Complete AI analyse succesvol gegenereerd');
-            return $response;
+            return [
+                'success' => true,
+                'analysis' => $response,
+                'metadata' => [
+                    'model' => $this->model,
+                    'timestamp' => now()->toIso8601String(),
+                    'testtype' => $testData['testtype'] ?? 'onbekend',
+                ]
+            ];
+
+        } catch (\Exception $e) {
+            Log::error('AI analyse fout', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+
+            return [
+                'success' => false,
+                'error' => $e->getMessage(),
+                'fallback' => $this->generateFallbackAnalysis($testData)
+            ];
+        }
+    }
+
+    /**
+     * Verrijk testdata met berekende metrics en populatienormen
+     */
+    protected function enrichTestData(array $testData): array
+    {
+        // Bereken Watt/kg voor fietstesten
+        if (isset($testData['lichaamsgewicht_kg']) && $testData['lichaamsgewicht_kg'] > 0) {
+            $gewicht = (float) $testData['lichaamsgewicht_kg'];
             
-        } catch (Exception $e) {
-            Log::error('❌ Fout bij genereren complete analyse: ' . $e->getMessage());
-            return $this->getFallbackCompleteAnalyse($testData);
+            if (isset($testData['aerobe_drempel_vermogen'])) {
+                $testData['aerobe_drempel_watt_per_kg'] = round($testData['aerobe_drempel_vermogen'] / $gewicht, 2);
+            }
+            
+            if (isset($testData['anaerobe_drempel_vermogen'])) {
+                $testData['anaerobe_drempel_watt_per_kg'] = round($testData['anaerobe_drempel_vermogen'] / $gewicht, 2);
+            }
         }
+        
+        // Bereken hartslagreserve percentages
+        if (isset($testData['maximale_hartslag_bpm']) && isset($testData['hartslag_rust_bpm'])) {
+            $maxHR = (float) $testData['maximale_hartslag_bpm'];
+            $rustHR = (float) $testData['hartslag_rust_bpm'];
+            $hrr = $maxHR - $rustHR;
+            $testData['hartslagreserve'] = $hrr;
+            
+            if (isset($testData['aerobe_drempel_hartslag']) && $hrr > 0) {
+                $testData['aerobe_drempel_percentage_hrr'] = round((($testData['aerobe_drempel_hartslag'] - $rustHR) / $hrr) * 100, 1);
+            }
+            
+            if (isset($testData['anaerobe_drempel_hartslag']) && $hrr > 0) {
+                $testData['anaerobe_drempel_percentage_hrr'] = round((($testData['anaerobe_drempel_hartslag'] - $rustHR) / $hrr) * 100, 1);
+            }
+        }
+        
+        // Voeg populatie classificatie toe
+        $testData['population_comparison'] = $this->getPopulationComparison($testData);
+        
+        return $testData;
     }
 
     /**
-     * Bouw uitgebreide prompt voor complete testanalyse
+     * Vergelijk testdata met populatienormen
      */
-    private function bouwCompleteAnalysePrompt(array $data): string
+    protected function getPopulationComparison(array $testData): ?array
     {
-        // Extraheer alle beschikbare data
-        $testtype = $data['testtype'] ?? 'onbekend';
-        $doelstellingen = $data['specifieke_doelstellingen'] ?? 'algemene fitheid';
+        $testtype = $testData['testtype'] ?? '';
+        $leeftijd = $testData['leeftijd'] ?? 35;
         
-        // Persoonlijke gegevens
-        $leeftijd = $data['leeftijd'] ?? 'onbekend';
-        $gewicht = $data['lichaamsgewicht_kg'] ?? 'onbekend';
-        $lengte = $data['lichaamslengte_cm'] ?? 'onbekend';
-        $bmi = $data['bmi'] ?? 'onbekend';
+        // Bepaal sporttype
+        $sporttype = str_contains($testtype, 'fiets') ? 'cycling' : 'running';
         
-        // Drempelwaarden
-        $aerobeVermogen = $data['aerobe_drempel_vermogen'] ?? 'niet gemeten';
-        $aerobeHartslag = $data['aerobe_drempel_hartslag'] ?? 'niet gemeten';
-        $anaerobeVermogen = $data['anaerobe_drempel_vermogen'] ?? 'niet gemeten';
-        $anaerobeHartslag = $data['anaerobe_drempel_hartslag'] ?? 'niet gemeten';
+        // Bepaal leeftijdsgroep
+        $leeftijdsgroep = $this->getLeeftijdsgroep($leeftijd);
         
-        // Hartslaggegevens
-        $maxHartslag = $data['maximale_hartslag_bpm'] ?? 'niet gemeten';
-        $rustHartslag = $data['hartslag_rust_bpm'] ?? 'niet gemeten';
+        // Haal normen op (standaard male)
+        $normen = config("ai_analysis.population_norms.{$sporttype}.male.{$leeftijdsgroep}");
         
-        // Lichaamssamenstelling
-        $buikomtrek = $data['buikomtrek_cm'] ?? 'niet gemeten';
+        if (!$normen) {
+            return null;
+        }
         
-        // Protocol informatie
-        $analyseMethode = $data['analyse_methode'] ?? 'niet gespecificeerd';
-        $testlocatie = $data['testlocatie'] ?? 'onbekend';
+        // Classificeer prestatie
+        $classificatie = null;
+        if ($sporttype === 'cycling' && isset($testData['anaerobe_drempel_watt_per_kg'])) {
+            $wattPerKg = (float) $testData['anaerobe_drempel_watt_per_kg'];
+            $classificatie = $this->classifyPerformance($wattPerKg, $normen['lt2_watt_per_kg'] ?? []);
+        } elseif ($sporttype === 'running' && isset($testData['anaerobe_drempel_vermogen'])) {
+            $speed = (float) $testData['anaerobe_drempel_vermogen'];
+            $classificatie = $this->classifyPerformance($speed, $normen['lt2_speed_kmh'] ?? []);
+        }
         
-        // Besluit velden
-        $besluitLichaamssamenstelling = $data['besluit_lichaamssamenstelling'] ?? '';
-        
-        // Bepaal eenheid en bereken ratio's
-        $eenheid = $this->bepaalEenheid($testtype);
-        $analyseData = $this->berekenAnalyseRatios($data);
-
-        return "Je bent een wereldklasse sportfysioloog en performance consultant met 25+ jaar ervaring. Je hebt gewerkt met Olympische atleten, Tour de France renners, Boston Marathon winnaars en duizenden recreatieve sporters. Je bent gespecialiseerd in lactaattesten, trainingsperiodisering en goal-specific performance optimization.
-
-═══════════════════════════════════════════════════════════════════════════════════
-📊 COMPLETE INSPANNINGSTEST ANALYSE RAPPORT
-═══════════════════════════════════════════════════════════════════════════════════
-
-🏃‍♂️ ATLEET PROFIEL:
-───────────────────────────────────────────────────────────────────────────────────
-• Leeftijd: {$leeftijd} jaar
-• Gewicht: {$gewicht} kg | Lengte: {$lengte} cm | BMI: {$bmi}
-• Buikomtrek: {$buikomtrek} cm
-• Testtype: {$testtype}
-• Testlocatie: {$testlocatie}
-• Analyse methode: {$analyseMethode}
-
-🎯 SPECIFIEKE DOELSTELLINGEN:
-───────────────────────────────────────────────────────────────────────────────────
-{$doelstellingen}
-
-📈 GEMETEN FYSIOLOGISCHE PARAMETERS:
-───────────────────────────────────────────────────────────────────────────────────
-• Hartslag rust: {$rustHartslag} bpm
-• Hartslag maximum: {$maxHartslag} bpm
-• Aërobe drempel (LT1): {$aerobeVermogen} {$eenheid} bij {$aerobeHartslag} bpm
-• Anaërobe drempel (LT2): {$anaerobeVermogen} {$eenheid} bij {$anaerobeHartslag} bpm
-
-🔬 LICHAAMSSAMENSTELLING BEVINDINGEN:
-───────────────────────────────────────────────────────────────────────────────────
-{$besluitLichaamssamenstelling}
-
-{$analyseData}
-
-═══════════════════════════════════════════════════════════════════════════════════
-📋 OPDRACHT: COMPLETE PERFORMANCE ANALYSE
-═══════════════════════════════════════════════════════════════════════════════════
-
-Schrijf een uitgebreide, wetenschappelijk onderbouwde analyse die ALLE bovenstaande parameters integreert:
-
-🏆 1. PRESTATIECLASSIFICATIE & POPULATIEVERGELIJKING
-─────────────────────────────────────────────────────────────────────────────────
-• Vergelijk ALLE parameters met leeftijd/geslacht specifieke normwaarden
-• Classificatie: recreational/trained/competitive/elite niveau
-• Percentiel rankings binnen relevante populatie
-• Specifieke vergelijking met doelgroep (bijv. marathonlopers indien Marathon van Berlijn doel)
-• Identificeer sterktes en zwaktes vs benchmarks
-
-💡 2. FYSIOLOGISCHE INTERPRETATIE & METABOLISME
-─────────────────────────────────────────────────────────────────────────────────
-• Aerobe vs anaerobe capaciteit breakdown
-• Metabolische flexibiliteit en substrate utilization
-• Hartslagreserve en cardiac efficiency
-• VO2max schatting en comparison
-• Lactaat kinetics en buffering capacity
-
-📊 3. GOAL-SPECIFIC PERFORMANCE PROGNOSIS
-─────────────────────────────────────────────────────────────────────────────────
-• DIRECTE relatie van alle metingen tot specifieke doelstellingen
-• Realistische performance predictions voor gestelde doelen
-• Tijdlijn voor doelrealisatie (bijv. marathon target times)
-• Limiterende factoren voor goal achievement
-• Race strategy recommendations gebaseerd op drempel profiel
-
-🎯 4. GEÏNTEGREERDE TRAININGSPERIODISERING
-─────────────────────────────────────────────────────────────────────────────────
-• Macro/meso/micro cyclus planning
-• Zone distribution op basis van gemeten drempels
-• Volume vs intensiteit prioritization
-• Specifieke workout prescriptions met exacte power/pace targets
-• Recovery protocols en monitoring parameters
-
-⚡ 5. PERFORMANCE OPTIMIZATION ROADMAP
-─────────────────────────────────────────────────────────────────────────────────
-• Prioritized improvement areas (grootste ROI)
-• Specific interventions (training, nutrition, recovery)
-• Testing frequency en progress markers
-• Red flags en injury prevention strategies
-• Equipment/technology recommendations
-
-🔄 6. MONITORING & PROGRESSION STRATEGY
-─────────────────────────────────────────────────────────────────────────────────
-• KPI's om progress te tracken
-• Retest protocols en timing
-• Adjustments based on response
-• Long-term development pathway
-
-SCHRIJFSTIJL VEREISTEN:
-═══════════════════════════════════════════════════════════════════════════════════
-• Expert niveau, wetenschappelijk précies maar praktisch toepasbaar
-• Nederlands, professioneel en direct
-• Gebruik ALLE beschikbare data punten in de analyse
-• Concrete cijfers, percentages en vergelijkingen
-• Specifieke referenties naar de gestelde doelstellingen
-• 800-1200 woorden (uitgebreid en compleet)
-• Gebruik bulletpoints en structuur voor leesbaarheid
-• Focus op actionable insights en implementatie
-
-KRITISCH BELANGRIJK:
-• Integreer ALLE gemeten parameters in één coherent verhaal
-• Geef altijd populatie benchmarks en contextual comparisons
-• Relateer ALLES aan de specifieke doelstellingen
-• Wees specifiek over wat deze cijfers betekenen voor prestatie
-• Geef concrete next steps en action items
-
-Begin met een executive summary van de key findings en classificatie.";
+        return [
+            'leeftijdsgroep' => $leeftijdsgroep,
+            'sporttype' => $sporttype,
+            'normen' => $normen,
+            'classificatie' => $classificatie,
+        ];
     }
 
-    /**
-     * Bereken relevante ratio's en vergelijkingen
-     */
-    private function berekenAnalyseRatios(array $data): string
+    protected function getLeeftijdsgroep(int $leeftijd): string
     {
-        $analyseData = "\n🧮 BEREKENDE PERFORMANCE METRICS:\n";
-        $analyseData .= "───────────────────────────────────────────────────────────────────────────────────\n";
-        
-        // Watt/kg berekeningen
-        if (isset($data['lichaamsgewicht_kg']) && isset($data['aerobe_drempel_vermogen']) && 
-            is_numeric($data['lichaamsgewicht_kg']) && is_numeric($data['aerobe_drempel_vermogen'])) {
-            $aerobeWattPerKg = round($data['aerobe_drempel_vermogen'] / $data['lichaamsgewicht_kg'], 2);
-            $analyseData .= "• Aërobe watt/kg: {$aerobeWattPerKg} W/kg\n";
-        }
-        
-        if (isset($data['lichaamsgewicht_kg']) && isset($data['anaerobe_drempel_vermogen']) && 
-            is_numeric($data['lichaamsgewicht_kg']) && is_numeric($data['anaerobe_drempel_vermogen'])) {
-            $anaerobeWattPerKg = round($data['anaerobe_drempel_vermogen'] / $data['lichaamsgewicht_kg'], 2);
-            $analyseData .= "• Anaërobe watt/kg: {$anaerobeWattPerKg} W/kg\n";
-        }
-        
-        // LT1/LT2 verhouding
-        if (isset($data['aerobe_drempel_vermogen']) && isset($data['anaerobe_drempel_vermogen']) && 
-            is_numeric($data['aerobe_drempel_vermogen']) && is_numeric($data['anaerobe_drempel_vermogen'])) {
-            $ratio = round(($data['anaerobe_drempel_vermogen'] / $data['aerobe_drempel_vermogen']) * 100, 1);
-            $analyseData .= "• LT2/LT1 ratio: {$ratio}% (anaërobe reserve)\n";
-        }
-        
-        // Hartslagreserve
-        if (isset($data['maximale_hartslag_bpm']) && isset($data['hartslag_rust_bpm']) && 
-            is_numeric($data['maximale_hartslag_bpm']) && is_numeric($data['hartslag_rust_bpm'])) {
-            $hrReserve = $data['maximale_hartslag_bpm'] - $data['hartslag_rust_bpm'];
-            $analyseData .= "• Hartslagreserve: {$hrReserve} bpm\n";
-        }
-        
-        return $analyseData;
+        if ($leeftijd >= 18 && $leeftijd <= 29) return '18-29';
+        if ($leeftijd >= 30 && $leeftijd <= 39) return '30-39';
+        if ($leeftijd >= 40 && $leeftijd <= 49) return '40-49';
+        return '50+';
     }
 
-    /**
-     * Bepaal de juiste eenheid op basis van testtype
-     */
-    private function bepaalEenheid(string $testtype): string
+    protected function classifyPerformance(float $value, array $normen): ?array
     {
-        return match($testtype) {
-            'looptest', 'veldtest_lopen' => 'km/h',
-            'veldtest_zwemmen' => 'min/100m',
-            'fietstest', 'veldtest_fietsen' => 'Watt',
-            default => 'Watt'
-        };
+        if (empty($normen)) return null;
+
+        if ($value >= ($normen['elite'] ?? PHP_INT_MAX)) {
+            return ['level' => 'Elite', 'description' => 'Uitzonderlijk hoog niveau', 'percentile' => 95];
+        }
+        if ($value >= ($normen['good'] ?? PHP_INT_MAX)) {
+            return ['level' => 'Zeer Goed', 'description' => 'Bovengemiddeld niveau', 'percentile' => 75];
+        }
+        if ($value >= ($normen['average'] ?? PHP_INT_MAX)) {
+            return ['level' => 'Goed', 'description' => 'Gemiddeld niveau', 'percentile' => 50];
+        }
+        if ($value >= ($normen['below'] ?? PHP_INT_MAX)) {
+            return ['level' => 'Redelijk', 'description' => 'Ontwikkelpotentieel', 'percentile' => 30];
+        }
+        
+        return ['level' => 'Ontwikkeling Nodig', 'description' => 'Veel groeipotentieel', 'percentile' => 15];
     }
 
-    /**
-     * Voer OpenAI API call uit
-     */
-    private function callOpenAI(string $prompt): string
+    protected function buildPrompt(array $testData): array
     {
-        if (empty($this->apiKey)) {
-            throw new Exception('OpenAI API key niet geconfigureerd');
-        }
+        $systemPrompt = config('ai_analysis.system_prompt');
+        $template = config('ai_analysis.analysis_template');
+        
+        $formattedData = $this->formatTestData($testData);
+        $userPrompt = str_replace('{testdata}', $formattedData, $template);
+        
+        return [
+            'system' => $systemPrompt,
+            'user' => $userPrompt
+        ];
+    }
 
+    protected function formatTestData(array $testData): string
+    {
+        $output = "=== TESTINFORMATIE ===\n";
+        $output .= "Testtype: " . ($testData['testtype'] ?? 'Onbekend') . "\n";
+        $output .= "Datum: " . ($testData['testdatum'] ?? 'Onbekend') . "\n";
+        
+        $output .= "\n=== ATLEET PROFIEL ===\n";
+        $output .= "Leeftijd: " . ($testData['leeftijd'] ?? 35) . " jaar\n";
+        $output .= "Gewicht: " . ($testData['lichaamsgewicht_kg'] ?? 'Onbekend') . " kg\n";
+        $output .= "Doelstellingen: " . ($testData['specifieke_doelstellingen'] ?? 'Algemene fitheid') . "\n";
+        
+        $output .= "\n=== GEMETEN DREMPELWAARDEN ===\n";
+        $output .= "Aërobe drempel (LT1):\n";
+        $output .= "  - Vermogen/Snelheid: " . ($testData['aerobe_drempel_vermogen'] ?? 'N/A') . "\n";
+        $output .= "  - Hartslag: " . ($testData['aerobe_drempel_hartslag'] ?? 'N/A') . " bpm\n";
+        
+        if (isset($testData['aerobe_drempel_watt_per_kg'])) {
+            $output .= "  - Watt/kg: " . $testData['aerobe_drempel_watt_per_kg'] . " W/kg\n";
+        }
+        
+        $output .= "\nAnaërobe drempel (LT2):\n";
+        $output .= "  - Vermogen/Snelheid: " . ($testData['anaerobe_drempel_vermogen'] ?? 'N/A') . "\n";
+        $output .= "  - Hartslag: " . ($testData['anaerobe_drempel_hartslag'] ?? 'N/A') . " bpm\n";
+        
+        if (isset($testData['anaerobe_drempel_watt_per_kg'])) {
+            $output .= "  - Watt/kg: " . $testData['anaerobe_drempel_watt_per_kg'] . " W/kg\n";
+        }
+        
+        if (isset($testData['population_comparison']['classificatie'])) {
+            $class = $testData['population_comparison']['classificatie'];
+            $output .= "\n=== POPULATIE VERGELIJKING ===\n";
+            $output .= "Classificatie: " . $class['level'] . "\n";
+            $output .= "Beschrijving: " . $class['description'] . "\n";
+            $output .= "Percentiel: Top " . $class['percentile'] . "%\n";
+        }
+        
+        return $output;
+    }
+
+    protected function callOpenAI(array $prompts): string
+    {
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->apiKey,
             'Content-Type' => 'application/json',
-        ])->timeout(30)->post($this->baseUrl, [
+        ])->timeout(60)->post('https://api.openai.com/v1/chat/completions', [
             'model' => $this->model,
             'messages' => [
-                [
-                    'role' => 'system',
-                    'content' => 'Je bent een Nederlandse sportfysioloog gespecialiseerd in lactaattesten en trainingsadvies. Je hebt 20+ jaar ervaring met atleten van recreatief tot elite niveau.'
-                ],
-                [
-                    'role' => 'user',
-                    'content' => $prompt
-                ]
+                ['role' => 'system', 'content' => $prompts['system']],
+                ['role' => 'user', 'content' => $prompts['user']]
             ],
-            'max_tokens' => config('ai.max_tokens', 1500),
-            'temperature' => config('ai.temperature', 0.4),
+            'temperature' => $this->temperature,
+            'max_tokens' => $this->maxTokens,
         ]);
 
         if (!$response->successful()) {
-            throw new Exception('OpenAI API fout: ' . $response->body());
+            throw new \Exception('OpenAI API fout: ' . $response->body());
         }
 
         $data = $response->json();
-        
-        if (!isset($data['choices'][0]['message']['content'])) {
-            throw new Exception('Onverwacht OpenAI response formaat');
-        }
-
-        return trim($data['choices'][0]['message']['content']);
+        return $data['choices'][0]['message']['content'] ?? 'Geen analyse gegenereerd';
     }
 
-    /**
-     * Fallback bij API fouten - complete analyse
-     */
-    private function getFallbackCompleteAnalyse(array $data): string
+    protected function generateFallbackAnalysis(array $testData): string
     {
-        $testtype = $data['testtype'] ?? 'fietstest';
-        $doelstellingen = $data['specifieke_doelstellingen'] ?? 'algemene fitheid';
-        $aerobeVermogen = $data['aerobe_drempel_vermogen'] ?? 'niet gemeten';
-        $anaerobeVermogen = $data['anaerobe_drempel_vermogen'] ?? 'niet gemeten';
+        $testtype = $testData['testtype'] ?? 'Onbekend';
+        $eenheid = str_contains($testtype, 'fiets') ? 'Watt' : 'km/h';
         
-        return "COMPLETE INSPANNINGSTEST ANALYSE
-
-PRESTATIECLASSIFICATIE:
-Uw gemeten drempelwaardes (LT1: {$aerobeVermogen}, LT2: {$anaerobeVermogen}) worden geanalyseerd in de context van uw doelstellingen: {$doelstellingen}.
-
-BELANGRIJKE BEVINDINGEN:
-• Voor {$testtype} tonen uw resultaten een solide basis voor verdere ontwikkeling
-• Uw drempelprofiel suggereert specifieke trainingsaanbevelingen
-• De verhouding tussen aërobe en anaërobe capaciteit biedt inzichten voor periodisering
-
-AANBEVELINGEN:
-1. Focus op gestructureerde training binnen uw gemeten zones
-2. Bouw geleidelijk volume op met 80% onder LT1 intensiteit
-3. Voeg gerichte intervaltraining toe rond LT2 niveau
-4. Monitor progressie met regelmatige hertesten
-
-Voor een uitgebreidere analyse adviseren wij een vervolgconsultatie waarbij alle parameters gedetailleerd worden besproken in relatie tot uw specifieke doelstellingen.";
+        $output = "# 🏃 INSPANNINGSTEST ANALYSE\n\n";
+        $output .= "> *Automatisch gegenereerde analyse*\n\n";
+        
+        $output .= "## 📊 TESTOVERZICHT\n\n";
+        $output .= "**Testtype:** " . ucfirst(str_replace('_', ' ', $testtype)) . "\n";
+        $output .= "**Datum:** " . ($testData['testdatum'] ?? date('Y-m-d')) . "\n\n";
+        
+        $output .= "## 👤 ATLET PROFIEL\n\n";
+        if (!empty($testData['leeftijd'])) {
+            $output .= "- **Leeftijd:** " . $testData['leeftijd'] . " jaar\n";
+        }
+        if (!empty($testData['lichaamsgewicht_kg'])) {
+            $output .= "- **Gewicht:** " . $testData['lichaamsgewicht_kg'] . " kg\n";
+        }
+        if (!empty($testData['specifieke_doelstellingen'])) {
+            $output .= "\n**Doelstellingen:**\n" . $testData['specifieke_doelstellingen'] . "\n";
+        }
+        $output .= "\n";
+        
+        $output .= "## 🎯 GEMETEN DREMPELWAARDEN\n\n";
+        $lt1 = $testData['aerobe_drempel_vermogen'] ?? null;
+        $lt1_hr = $testData['aerobe_drempel_hartslag'] ?? null;
+        $lt2 = $testData['anaerobe_drempel_vermogen'] ?? null;
+        $lt2_hr = $testData['anaerobe_drempel_hartslag'] ?? null;
+        
+        if ($lt1 || $lt2) {
+            $output .= "### Aërobe Drempel (LT1)\n";
+            if ($lt1) $output .= "- **Vermogen/Snelheid:** " . round($lt1, 1) . " " . $eenheid . "\n";
+            if ($lt1_hr) $output .= "- **Hartslag:** " . round($lt1_hr) . " bpm\n";
+            
+            $output .= "\n### Anaërobe Drempel (LT2)\n";
+            if ($lt2) $output .= "- **Vermogen/Snelheid:** " . round($lt2, 1) . " " . $eenheid . "\n";
+            if ($lt2_hr) $output .= "- **Hartslag:** " . round($lt2_hr) . " bpm\n\n";
+        }
+        
+        if (isset($testData['population_comparison']['classificatie'])) {
+            $class = $testData['population_comparison']['classificatie'];
+            $output .= "## 🏆 PRESTATIECLASSIFICATIE\n\n";
+            $output .= "**Niveau:** " . $class['level'] . " (" . $class['description'] . ")\n\n";
+            $output .= "Je prestatie valt in het **top " . $class['percentile'] . "%** van jouw leeftijdsgroep.\n\n";
+        }
+        
+        $output .= "## 💪 TRAININGSADVIES\n\n";
+        if ($lt1 && $lt2) {
+            $output .= "### Aërobe Basisontwikkeling\n";
+            $output .= "- Train **80-85%** van je totale trainingstijd onder de aërobe drempel (LT1)\n";
+            $output .= "- Dit betekent trainen onder " . round($lt1, 1) . " " . $eenheid;
+            if ($lt1_hr) $output .= " of onder " . round($lt1_hr) . " bpm";
+            $output .= "\n\n";
+            
+            $output .= "### Drempeltraining\n";
+            $output .= "- Voeg **1-2x per week** drempelintervals toe rond de anaërobe drempel (LT2)\n";
+            $output .= "- Train rond " . round($lt2, 1) . " " . $eenheid;
+            if ($lt2_hr) $output .= " of rond " . round($lt2_hr) . " bpm";
+            $output .= "\n\n";
+        }
+        
+        // Doelstellingen specifiek
+        if (!empty($testData['specifieke_doelstellingen'])) {
+            $doelen = strtolower($testData['specifieke_doelstellingen']);
+            
+            $output .= "### Advies op basis van jouw doelstellingen\n\n";
+            
+            if (str_contains($doelen, 'marathon')) {
+                $output .= "**Marathon voorbereiding:**\n";
+                $output .= "- Focus op lange duurtrainingen tot 30-35km\n";
+                $output .= "- Oefen race tempo rond je anaërobe drempel\n\n";
+            }
+            
+            if (str_contains($doelen, 'snelheid')) {
+                $output .= "**Snelheidsverbetering:**\n";
+                $output .= "- Voeg tempo intervallen toe boven LT2\n";
+                $output .= "- Train specifieke race snelheden\n\n";
+            }
+        }
+        
+        $output .= "## 📈 PROGRESSIE & HERTEST\n\n";
+        $output .= "**Verwachte verbeteringen (8-12 weken):**\n";
+        $output .= "- Aërobe drempel: 5-10% verbetering\n";
+        $output .= "- Anaërobe drempel: 3-8% verbetering\n";
+        $output .= "- Lagere hartslag bij zelfde intensiteit\n\n";
+        
+        $output .= "---\n\n";
+        $output .= "*💡 Voor een uitgebreidere AI-analyse, configureer de OpenAI API key.*\n";
+        
+        return $output;
     }
 }

@@ -203,8 +203,23 @@ class InspanningstestController extends Controller {
 
             $aiService = new AIAnalysisService();
             
-            // Genereer complete analyse
-            $analysis = $aiService->genereerCompleteAnalyse($validated);
+            // Genereer complete analyse met de service
+            $result = $aiService->generateCompleteAnalysis($validated);
+
+            if ($result['success']) {
+                return response()->json([
+                    'success' => true,
+                    'analysis' => $result['analysis'],
+                    'metadata' => $result['metadata'] ?? []
+                ]);
+            } else {
+                // Gebruik fallback analyse bij fout
+                return response()->json([
+                    'success' => true,
+                    'analysis' => $result['fallback'] ?? 'Kon geen analyse genereren.',
+                    'is_fallback' => true
+                ]);
+            }
 
             \Log::info('Complete AI analyse succesvol gegenereerd', [
                 'testtype' => $validated['testtype'],
