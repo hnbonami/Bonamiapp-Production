@@ -3015,8 +3015,8 @@ function genereerZonesTabel(zonesData, eenheid) {
             </td>
             <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.minHartslag}</td>
             <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.maxHartslag}</td>
-            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.minVermogen.toFixed(1) : zone.minVermogen}</td>
-            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.maxVermogen.toFixed(1) : zone.maxVermogen}</td>
+            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.minVermogen.toFixed(1) : Math.round(zone.minVermogen)}</td>
+            <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.maxVermogen.toFixed(1) : Math.round(zone.maxVermogen)}</td>
             ${extraKolomCellen}
             <td class="px-2 py-3 text-center text-sm">${borgText}</td>
         `;
