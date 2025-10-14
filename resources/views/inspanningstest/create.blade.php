@@ -373,7 +373,7 @@
                                     id="zones_methode"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Selecteer methode</option>
-                                <option value="bonami" {{ old('zones_methode') == 'bonami' ? 'selected' : '' }}>Bonami Drempel Methode (6 zones)</option>
+                                <option value="bonami" {{ old('zones_methode', 'bonami') == 'bonami' ? 'selected' : '' }}>Bonami Drempel Methode (6 zones)</option>
                                 <option value="karvonen" {{ old('zones_methode') == 'karvonen' ? 'selected' : '' }}>Karvonen (Hartslagreserve)</option>
                                 <option value="handmatig" {{ old('zones_methode') == 'handmatig' ? 'selected' : '' }}>Handmatig Aanpassen</option>
                             </select>
@@ -385,8 +385,8 @@
                                     id="zones_aantal"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="3" {{ old('zones_aantal') == '3' ? 'selected' : '' }}>3 Zones (Basis)</option>
-                                <option value="5" {{ old('zones_aantal', '5') == '5' ? 'selected' : '' }}>5 Zones (Standaard)</option>
-                                <option value="6" {{ old('zones_aantal') == '6' ? 'selected' : '' }}>6 Zones (Bonami)</option>
+                                <option value="5" {{ old('zones_aantal') == '5' ? 'selected' : '' }}>5 Zones (Standaard)</option>
+                                <option value="6" {{ old('zones_aantal', '6') == '6' ? 'selected' : '' }}>6 Zones (Bonami)</option>
                                 <option value="7" {{ old('zones_aantal') == '7' ? 'selected' : '' }}>7 Zones (Uitgebreid)</option>
                             </select>
                         </div>
@@ -1270,6 +1270,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initiële update bij het laden van de pagina
     updateProtocolFields();
+    
+    // 🎯 AUTOMATISCH BONAMI ZONES TONEN bij laden pagina
+    setTimeout(() => {
+        console.log('🚀 Automatisch Bonami zones laden...');
+        updateTrainingszones();
+    }, 500); // Kleine delay om ervoor te zorgen dat alles geladen is
     
     // NIEUWE FUNCTIONALITEIT: Event listeners voor trainingszones (VEILIG)
     const zonesMethodeSelect = document.getElementById('zones_methode');
