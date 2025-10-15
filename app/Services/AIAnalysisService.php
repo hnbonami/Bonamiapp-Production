@@ -280,8 +280,6 @@ class AIAnalysisService
         $output = "🏃‍♂️ INSPANNINGSTEST ANALYSE\n\n";
         $output .= "Geautomatiseerde analyse op basis van uw testresultaten\n\n";
         $output .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
-        
-        // TESTOVERZICHT
         $output .= "📊 TESTOVERZICHT\n\n";
         $output .= "• Testtype: " . ucfirst(str_replace('_', ' ', $testtype)) . "\n";
         $output .= "• Datum: " . ($testData['testdatum'] ?? date('Y-m-d')) . "\n";
