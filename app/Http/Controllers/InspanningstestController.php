@@ -23,6 +23,14 @@ class InspanningstestController extends Controller {
         $testresultaten = json_decode($test->testresultaten, true) ?? [];
         $trainingszones = json_decode($test->trainingszones_data, true) ?? [];
         
+        // Log voor debugging
+        \Log::info('Results pagina - Trainingszones check:', [
+            'test_id' => $test->id,
+            'zones_data_raw' => $test->trainingszones_data,
+            'zones_decoded' => $trainingszones,
+            'zones_count' => count($trainingszones)
+        ]);
+        
         // Hernoem variabele voor de view (backward compatibility)
         $inspanningstest = $test;
         

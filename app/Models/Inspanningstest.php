@@ -17,6 +17,11 @@ class Inspanningstest extends Model
         // Trainingstatus velden
         'slaapkwaliteit', 'eetlust', 'gevoel_op_training', 'stressniveau', 'gemiddelde_trainingstatus',
         'training_dag_voor_test', 'training_2d_voor_test',
+        // Trainingszones velden
+        'trainingszones_data', // Zones data JSON
+        'zones_methode',
+        'zones_aantal', 
+        'zones_eenheid',
     ];
     protected $casts = [
         'testresultaten' => 'array',

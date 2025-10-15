@@ -26,28 +26,22 @@
             </div>
         </div>
 
-        <!-- Test Info Card -->
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
-            <div class="p-6">
-                <h3 class="text-xl font-bold mb-4">Test Informatie</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <span class="text-sm text-gray-600">Testtype:</span>
-                        <p class="font-semibold">{{ ucfirst($inspanningstest->testtype) }}</p>
-                    </div>
-                    <div>
-                        <span class="text-sm text-gray-600">Testdatum:</span>
-                        <p class="font-semibold">{{ \Carbon\Carbon::parse($inspanningstest->datum)->format('d-m-Y') }}</p>
-                    </div>
-                    <div>
-                        <span class="text-sm text-gray-600">Analyse Methode:</span>
-                        <p class="font-semibold">{{ ucfirst($inspanningstest->analyse_methode ?? 'Niet gespecificeerd') }}</p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <!-- Trainingstatus Sectie -->
+        @include('inspanningstest.partials._trainingstatus_results')
 
-        <!-- Drempels Card -->
+        <!-- Testresultaten Tabel -->
+        @include('inspanningstest.partials._testresultaten_results')
+
+        <!-- Trainingszones Tabel -->
+        @include('inspanningstest.partials._trainingszones_results')
+
+        <!-- Drempelwaarden Overzicht Tabel -->
+        @include('inspanningstest.partials._drempelwaarden_overzicht')
+
+        <!-- Grafiek Analyse -->
+        @include('inspanningstest.partials._grafiek_analyse')
+
+        <!-- Drempelwaarden (oude sectie) -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6">
                 <h3 class="text-xl font-bold mb-4">Drempelwaarden</h3>
@@ -137,4 +131,88 @@
 
     </div>
 </div>
+
+<script>
+    // Globale drempelwaarden voor gebruik in plugin
+    window.drempelwaardenResults = {
+        lt1Vermogen: {{ $inspanningstest->aerobe_drempel_vermogen ?? 'null' }},
+        lt2Vermogen: {{ $inspanningstest->anaerobe_drempel_vermogen ?? 'null' }}
+    };
+
+    // Custom plugin voor verticale drempellijnen - MET INTERPOLATIE
+    const verticalLinePluginResults = {
+        id: 'verticalLinesResults',
+        afterDatasetsDraw(chart) {
+            const { ctx, chartArea: { top, bottom, left, right }, data } = chart;
+            const { lt1Vermogen, lt2Vermogen } = window.drempelwaardenResults;
+            
+            // Haal de X-as labels (vermogen waarden) op
+            const labels = data.labels;
+            if (!labels || labels.length === 0) return;
+            
+            const chartWidth = right - left;
+            const minVermogen = labels[0];
+            const maxVermogen = labels[labels.length - 1];
+            const vermogenRange = maxVermogen - minVermogen;
+            
+            // Functie om X-positie te berekenen met interpolatie
+            function berekenXPositie(vermogen) {
+                // Bereken percentage positie in de range
+                const percentage = (vermogen - minVermogen) / vermogenRange;
+                // Converteer naar pixel positie
+                return left + (percentage * chartWidth);
+            }
+            
+            // Teken rode verticale lijn voor LT1
+            if (lt1Vermogen) {
+                const lt1X = berekenXPositie(lt1Vermogen);
+                
+                ctx.save();
+                ctx.strokeStyle = '#dc2626'; // Rood
+                ctx.lineWidth = 2;
+                ctx.setLineDash([10, 5]);
+                ctx.beginPath();
+                ctx.moveTo(lt1X, top);
+                ctx.lineTo(lt1X, bottom);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Label bovenaan
+                ctx.fillStyle = '#dc2626';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText(`LT1: ${Math.round(lt1Vermogen)}`, lt1X + 5, top + 15);
+                ctx.restore();
+                
+                console.log('✅ LT1 lijn: vermogen', lt1Vermogen, 'X-pixel', lt1X, 'range', minVermogen, '-', maxVermogen);
+            }
+            
+            // Teken oranje verticale lijn voor LT2
+            if (lt2Vermogen) {
+                const lt2X = berekenXPositie(lt2Vermogen);
+                
+                ctx.save();
+                ctx.strokeStyle = '#f97316'; // Oranje
+                ctx.lineWidth = 2;
+                ctx.setLineDash([10, 5]);
+                ctx.beginPath();
+                ctx.moveTo(lt2X, top);
+                ctx.lineTo(lt2X, bottom);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                // Label bovenaan
+                ctx.fillStyle = '#f97316';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText(`LT2: ${Math.round(lt2Vermogen)}`, lt2X + 5, top + 30);
+                ctx.restore();
+                
+                console.log('✅ LT2 lijn: vermogen', lt2Vermogen, 'X-pixel', lt2X, 'range', minVermogen, '-', maxVermogen);
+            }
+        }
+    };
+
+    // Registreer het plugin globaal
+    Chart.register(verticalLinePluginResults);
+    console.log('✅ Vertical line plugin geregistreerd voor results pagina');
+</script>
 @endsection
