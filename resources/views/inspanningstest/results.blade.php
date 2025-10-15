@@ -32,26 +32,15 @@
         <!-- Testresultaten Tabel -->
         @include('inspanningstest.partials._testresultaten_results')
 
-        <!-- Trainingszones Tabel -->
-        @include('inspanningstest.partials._trainingszones_results')
+        <!-- Grafiek Analyse -->
+        @include('inspanningstest.partials._grafiek_analyse')
 
         <!-- Drempelwaarden Overzicht Tabel -->
         @include('inspanningstest.partials._drempelwaarden_overzicht')
 
-        <!-- Grafiek Analyse -->
-        @include('inspanningstest.partials._grafiek_analyse')
+        <!-- Trainingszones Tabel -->
+        @include('inspanningstest.partials._trainingszones_results')
 
-
-
-        <!-- AI Analyse -->
-        @if($inspanningstest->complete_ai_analyse)
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg p-6 mb-6">
-            <h3 class="text-xl font-bold text-blue-900 mb-4">🧠 AI Performance Analyse</h3>
-            <div class="prose max-w-none">
-                <pre class="whitespace-pre-wrap text-sm text-gray-800 font-sans">{{ $inspanningstest->complete_ai_analyse }}</pre>
-            </div>
-        </div>
-        @endif
 
     </div>
 </div>

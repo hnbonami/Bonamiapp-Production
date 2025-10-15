@@ -253,66 +253,103 @@
                 });
             </script>
             
-            {{-- Analyse Uitleg --}}
-            @if($analyseMethode === 'dmax')
-                <div class="bg-white rounded-lg p-4" style="border: 1px solid #c8e1eb;">
-                    <h4 class="text-sm font-bold text-gray-900 mb-2">🔬 D-max Methode Uitleg:</h4>
-                    <p class="text-sm text-gray-700 mb-2">
-                        De D-max methode bepaalt de anaërobe drempel door het punt te vinden met de <strong>maximale afstand</strong> 
-                        tussen de lactaatcurve en een rechte lijn van het eerste naar het laatste meetpunt.
-                    </p>
-                    <ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                        <li>Aërobe drempel: baseline lactaat + 0.4 mmol/L</li>
-                        <li>Anaërobe drempel: maximale afstand tussen curve en hulplijn</li>
-                        <li>Wetenschappelijk gevalideerde methode voor drempelbepaling</li>
-                    </ul>
+            {{-- Toelichting Grafiek Analyse --}}
+            <div class="mt-6 p-6" style="background-color: #fff8e1;">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 mr-4 text-2xl">
+                        💡
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-base font-bold text-gray-900 mb-3">Hoe interpreteer je deze grafiek?</h4>
+                        <div class="text-sm text-gray-700 space-y-3">
+                            <p>
+                                Deze grafiek toont de <strong>progressie van hartslag en lactaat</strong> tijdens je inspanningstest. 
+                                @if($isLooptest)
+                                    Naarmate je snelheid tijdens het lopen toeneemt, stijgen zowel je hartslag als je lactaatproductie.
+                                @elseif($isZwemtest)
+                                    Naarmate je zwemtempo toeneemt, stijgen zowel je hartslag als je lactaatproductie.
+                                @else
+                                    Naarmate het vermogen (Watt) toeneemt, stijgen zowel je hartslag als je lactaatproductie.
+                                @endif
+                                De manier waarop deze waarden stijgen vertelt ons veel over je conditie en trainingstoestand.
+                            </p>
+                            <p>
+                                <strong>Hartslag (blauwe lijn):</strong> In het begin van de test stijgt je hartslag geleidelijk en vrij lineair. 
+                                Naarmate de intensiteit toeneemt, moet je hart harder werken om voldoende zuurstof naar je spieren te pompen. 
+                                Bij de drempelwaarden zie je vaak dat de hartslagstijging versnelt - dit wijst op een overgang naar zwaarder werk voor je cardiovasculaire systeem.
+                            </p>
+                            <p>
+                                <strong>Lactaat (groene lijn):</strong> Deze curve is cruciaal. Bij lage intensiteiten blijft lactaat relatief laag en stabiel - 
+                                je lichaam kan het geproduceerde lactaat nog goed afbreken (aëroob = met zuurstof). Vanaf een bepaald punt begint de curve steiler te stijgen - 
+                                dit is het moment waarop je lichaam overschakelt naar meer anaërobe (zonder zuurstof) energieproductie en lactaat sneller aanmaakt dan het kan afbreken.
+                            </p>
+                            <p>
+                                <strong>De drempellijnen:</strong> 
+                                @if($heeftDrempels)
+                                    De <span style="color: #dc2626; font-weight: bold;">rode lijn (LT1 - aërobe drempel)</span> markeert het punt waarop lactaat begint te stijgen boven het basisniveau. 
+                                    Tot dit punt kun je zeer lang volhouden zonder vermoeidheid. 
+                                    De <span style="color: #f97316; font-weight: bold;">oranje lijn (LT2 - anaërobe drempel)</span> toont het punt waarop lactaat snel stijgt. 
+                                    Boven dit punt kun je slechts beperkte tijd volhouden voordat vermoeidheid toeslaat.
+                                @else
+                                    Deze zijn nog niet bepaald voor jouw test. Met drempelwaarden zou je de overgangen tussen aëroob en anaëroob werk visueel kunnen zien.
+                                @endif
+                            </p>
+                            
+                            @if($analyseMethode)
+                                <div class="mt-4 pt-4 border-t border-gray-300">
+                                    <p class="font-bold text-gray-900 mb-2">🔬 Toegepaste analyse methode: {{ $analyseMethodeLabel }}</p>
+                                    @if($analyseMethode === 'dmax')
+                                        <p>
+                                            De <strong>D-max methode</strong> is een objectieve, wetenschappelijk gevalideerde methode. 
+                                            Deze zoekt het punt op de lactaatcurve met de maximale afstand tot een rechte lijn tussen begin- en eindpunt. 
+                                            Dit punt vertegenwoordigt de anaërobe drempel (LT2). De aërobe drempel (LT1) wordt bepaald als het punt waar lactaat 
+                                            0.4 mmol/L boven je baseline (rustwaarde) komt. Deze methode is zeer betrouwbaar en reproduceerbaar.
+                                        </p>
+                                    @elseif($analyseMethode === 'dmax_modified')
+                                        <p>
+                                            De <strong>D-max Modified methode</strong> is een aangepaste versie waarbij de hulplijn niet vanaf het startpunt, 
+                                            maar vanaf de aërobe drempel (LT1) naar het eindpunt loopt. Dit geeft vaak een iets hogere anaërobe drempel en 
+                                            kan beter passen bij individuele lactaatprofielen, vooral bij goed getrainde sporters die een fluwelere lactaatcurve hebben.
+                                        </p>
+                                    @elseif($analyseMethode === 'lactaat_steady_state')
+                                        <p>
+                                            De <strong>Lactaat Steady State methode</strong> gebruikt vaste lactaatwaarden: 2.0 mmol/L voor LT1 en 4.0 mmol/L voor LT2. 
+                                            Dit is een klassieke en eenvoudige benadering. Het voordeel is dat het makkelijk te begrijpen en toe te passen is, 
+                                            maar het houdt geen rekening met individuele verschillen in baseline lactaat of lactaatmetabolisme.
+                                        </p>
+                                    @elseif($analyseMethode === 'hartslag_deflectie')
+                                        <p>
+                                            De <strong>Hartslagdeflectie methode</strong> analyseert de verandering in hartslagstijging in plaats van lactaat. 
+                                            Wanneer je lichaam zwaarder moet werken (overgang naar anaëroob), zie je vaak een versnelling in de hartslagstijging. 
+                                            Deze methode is nuttig als aanvulling op lactaatmetingen en kan helpen bij het valideren van drempelwaarden.
+                                        </p>
+                                    @elseif($analyseMethode === 'handmatig')
+                                        <p>
+                                            De drempelwaarden zijn <strong>handmatig bepaald</strong> door visuele inspectie van de curves. 
+                                            Dit vereist ervaring van de tester maar kan zeer nauwkeurig zijn, vooral bij atypische lactaatprofielen 
+                                            waar automatische methoden minder betrouwbaar zijn. De tester kijkt naar het punt waar de lactaatcurve begint 
+                                            te "buigen" (LT1) en waar deze sterk versnelt (LT2).
+                                        </p>
+                                    @endif
+                                </div>
+                            @endif
+                            
+                            <p class="mt-4 pt-4 border-t border-gray-300">
+                                <strong>Praktisch gebruik:</strong> Deze grafiek helpt je om je eigen lichaam beter te begrijpen. 
+                                @if($isLooptest)
+                                    Je ziet precies bij welke snelheid je lichaam "omschakelt". Gebruik deze kennis om je trainingssnelheden te bepalen.
+                                @elseif($isZwemtest)
+                                    Je ziet precies bij welk tempo je lichaam "omschakelt". Gebruik deze kennis om je trainingsintensiteiten te bepalen.
+                                @else
+                                    Je ziet precies bij welk vermogen je lichaam "omschakelt". Gebruik deze kennis om je trainingszones nauwkeurig in te stellen.
+                                @endif
+                                Train voornamelijk onder je LT1 voor basisconditie, tussen LT1 en LT2 voor tempo-ontwikkeling, 
+                                en slechts beperkt boven LT2 voor hoogintensieve intervallen.
+                            </p>
+                        </div>
+                    </div>
                 </div>
-            @elseif($analyseMethode === 'dmax_modified')
-                <div class="bg-white rounded-lg p-4" style="border: 1px solid #c8e1eb;">
-                    <h4 class="text-sm font-bold text-gray-900 mb-2">🔬 D-max Modified Methode Uitleg:</h4>
-                    <p class="text-sm text-gray-700 mb-2">
-                        De D-max Modified methode is een <strong>aangepaste versie</strong> waarbij de hulplijn loopt van de 
-                        aërobe drempel (baseline + 0.4 mmol/L) naar het laatste meetpunt.
-                    </p>
-                    <ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                        <li>Aërobe drempel: baseline lactaat + configureerbare waarde (standaard 0.4 mmol/L)</li>
-                        <li>Anaërobe drempel: maximale afstand tussen curve en aangepaste hulplijn</li>
-                        <li>Geschikt voor individuele lactaatprofielen</li>
-                    </ul>
-                </div>
-            @elseif($analyseMethode === 'lactaat_steady_state')
-                <div class="bg-white rounded-lg p-4" style="border: 1px solid #c8e1eb;">
-                    <h4 class="text-sm font-bold text-gray-900 mb-2">🔬 Lactaat Steady State Methode Uitleg:</h4>
-                    <p class="text-sm text-gray-700 mb-2">
-                        Deze methode gebruikt <strong>vaste lactaatwaarden</strong> als drempelmarkeringen.
-                    </p>
-                    <ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                        <li>Aërobe drempel: 2.0 mmol/L lactaat</li>
-                        <li>Anaërobe drempel: 4.0 mmol/L lactaat</li>
-                        <li>Klassieke benadering voor steady-state bepaling</li>
-                    </ul>
-                </div>
-            @elseif($analyseMethode === 'hartslag_deflectie')
-                <div class="bg-white rounded-lg p-4" style="border: 1px solid #c8e1eb;">
-                    <h4 class="text-sm font-bold text-gray-900 mb-2">🔬 Hartslagdeflectie Methode Uitleg:</h4>
-                    <p class="text-sm text-gray-700 mb-2">
-                        Deze methode analyseert de <strong>verandering in hartslagstijging</strong> tijdens de test.
-                    </p>
-                    <ul class="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                        <li>Zoekt naar afbuigpunten in de hartslagcurve</li>
-                        <li>Eerste deflectie = aërobe drempel</li>
-                        <li>Maximale deflectie = anaërobe drempel</li>
-                    </ul>
-                </div>
-            @elseif($analyseMethode === 'handmatig')
-                <div class="bg-white rounded-lg p-4" style="border: 1px solid #c8e1eb;">
-                    <h4 class="text-sm font-bold text-gray-900 mb-2">✋ Handmatige Drempelbepaling:</h4>
-                    <p class="text-sm text-gray-700">
-                        De drempelwaarden zijn <strong>handmatig bepaald</strong> op basis van visuele inspectie 
-                        van de lactaat- en hartslagcurves door de tester.
-                    </p>
-                </div>
-            @endif
+            </div>
             
         @else
             {{-- Geen drempelwaarden of testresultaten --}}
