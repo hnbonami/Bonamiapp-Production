@@ -139,80 +139,121 @@
         lt2Vermogen: {{ $inspanningstest->anaerobe_drempel_vermogen ?? 'null' }}
     };
 
-    // Custom plugin voor verticale drempellijnen - MET INTERPOLATIE
+    // Custom plugin voor verticale drempellijnen - HYBRIDE VERSIE (werkt voor ALLE testtypes)
     const verticalLinePluginResults = {
         id: 'verticalLinesResults',
         afterDatasetsDraw(chart) {
-            const { ctx, chartArea: { top, bottom, left, right }, data } = chart;
+            const { ctx, chartArea: { top, bottom, left, right }, scales, data } = chart;
             const { lt1Vermogen, lt2Vermogen } = window.drempelwaardenResults;
             
-            // Haal de X-as labels (vermogen waarden) op
-            const labels = data.labels;
-            if (!labels || labels.length === 0) return;
+            if (!lt1Vermogen && !lt2Vermogen) {
+                console.log('⚠️ Geen drempelwaarden om te tekenen');
+                return;
+            }
             
-            const chartWidth = right - left;
-            const minVermogen = labels[0];
-            const maxVermogen = labels[labels.length - 1];
-            const vermogenRange = maxVermogen - minVermogen;
+            const xScale = scales.x;
+            const labels = data.labels || [];
             
-            // Functie om X-positie te berekenen met interpolatie
-            function berekenXPositie(vermogen) {
-                // Bereken percentage positie in de range
-                const percentage = (vermogen - minVermogen) / vermogenRange;
-                // Converteer naar pixel positie
-                return left + (percentage * chartWidth);
+            console.log('📊 Plugin debug:', {
+                lt1: lt1Vermogen,
+                lt2: lt2Vermogen,
+                labels: labels,
+                scaleType: xScale?.type,
+                scaleMin: xScale?.min,
+                scaleMax: xScale?.max
+            });
+            
+            // FUNCTIE: Bereken X-positie (werkt voor linear EN category scales)
+            function berekenXPositie(waarde) {
+                // Probeer eerst Chart.js getPixelForValue (voor linear scales)
+                if (xScale && typeof xScale.getPixelForValue === 'function') {
+                    try {
+                        const pixel = xScale.getPixelForValue(waarde);
+                        // Check of het resultaat geldig is
+                        if (!isNaN(pixel) && pixel >= left && pixel <= right) {
+                            console.log(`  ✅ getPixelForValue(${waarde}) = ${pixel}`);
+                            return pixel;
+                        }
+                    } catch (e) {
+                        console.log(`  ⚠️ getPixelForValue failed:`, e.message);
+                    }
+                }
+                
+                // Fallback: Handmatige interpolatie tussen labels
+                if (labels.length > 0) {
+                    const numLabels = labels.map(l => parseFloat(l));
+                    const minVal = Math.min(...numLabels);
+                    const maxVal = Math.max(...numLabels);
+                    const chartWidth = right - left;
+                    
+                    if (waarde >= minVal && waarde <= maxVal) {
+                        const percentage = (waarde - minVal) / (maxVal - minVal);
+                        const pixel = left + (percentage * chartWidth);
+                        console.log(`  ✅ Handmatige interpolatie: ${waarde} -> ${pixel}px (${minVal}-${maxVal})`);
+                        return pixel;
+                    }
+                }
+                
+                console.log(`  ❌ Kan geen positie berekenen voor ${waarde}`);
+                return null;
             }
             
             // Teken rode verticale lijn voor LT1
             if (lt1Vermogen) {
                 const lt1X = berekenXPositie(lt1Vermogen);
                 
-                ctx.save();
-                ctx.strokeStyle = '#dc2626'; // Rood
-                ctx.lineWidth = 2;
-                ctx.setLineDash([10, 5]);
-                ctx.beginPath();
-                ctx.moveTo(lt1X, top);
-                ctx.lineTo(lt1X, bottom);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                
-                // Label bovenaan
-                ctx.fillStyle = '#dc2626';
-                ctx.font = 'bold 12px sans-serif';
-                ctx.fillText(`LT1: ${Math.round(lt1Vermogen)}`, lt1X + 5, top + 15);
-                ctx.restore();
-                
-                console.log('✅ LT1 lijn: vermogen', lt1Vermogen, 'X-pixel', lt1X, 'range', minVermogen, '-', maxVermogen);
+                if (lt1X !== null) {
+                    ctx.save();
+                    ctx.strokeStyle = '#dc2626'; // Rood
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([10, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(lt1X, top);
+                    ctx.lineTo(lt1X, bottom);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    // Label bovenaan
+                    ctx.fillStyle = '#dc2626';
+                    ctx.font = 'bold 12px sans-serif';
+                    const lt1Label = lt1Vermogen % 1 === 0 ? lt1Vermogen : lt1Vermogen.toFixed(1);
+                    ctx.fillText(`LT1: ${lt1Label}`, lt1X + 5, top + 15);
+                    ctx.restore();
+                    
+                    console.log('✅ LT1 lijn getekend op', lt1X, 'px');
+                }
             }
             
             // Teken oranje verticale lijn voor LT2
             if (lt2Vermogen) {
                 const lt2X = berekenXPositie(lt2Vermogen);
                 
-                ctx.save();
-                ctx.strokeStyle = '#f97316'; // Oranje
-                ctx.lineWidth = 2;
-                ctx.setLineDash([10, 5]);
-                ctx.beginPath();
-                ctx.moveTo(lt2X, top);
-                ctx.lineTo(lt2X, bottom);
-                ctx.stroke();
-                ctx.setLineDash([]);
-                
-                // Label bovenaan
-                ctx.fillStyle = '#f97316';
-                ctx.font = 'bold 12px sans-serif';
-                ctx.fillText(`LT2: ${Math.round(lt2Vermogen)}`, lt2X + 5, top + 30);
-                ctx.restore();
-                
-                console.log('✅ LT2 lijn: vermogen', lt2Vermogen, 'X-pixel', lt2X, 'range', minVermogen, '-', maxVermogen);
+                if (lt2X !== null) {
+                    ctx.save();
+                    ctx.strokeStyle = '#f97316'; // Oranje
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([10, 5]);
+                    ctx.beginPath();
+                    ctx.moveTo(lt2X, top);
+                    ctx.lineTo(lt2X, bottom);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                    
+                    // Label bovenaan
+                    ctx.fillStyle = '#f97316';
+                    ctx.font = 'bold 12px sans-serif';
+                    const lt2Label = lt2Vermogen % 1 === 0 ? lt2Vermogen : lt2Vermogen.toFixed(1);
+                    ctx.fillText(`LT2: ${lt2Label}`, lt2X + 5, top + 30);
+                    ctx.restore();
+                    
+                    console.log('✅ LT2 lijn getekend op', lt2X, 'px');
+                }
             }
         }
     };
 
     // Registreer het plugin globaal
     Chart.register(verticalLinePluginResults);
-    console.log('✅ Vertical line plugin geregistreerd voor results pagina');
+    console.log('✅ Vertical line plugin geregistreerd (HYBRIDE VERSIE - werkt voor alle testtypes)');
 </script>
 @endsection

@@ -23,12 +23,49 @@ class InspanningstestController extends Controller {
         $testresultaten = json_decode($test->testresultaten, true) ?? [];
         $trainingszones = json_decode($test->trainingszones_data, true) ?? [];
         
+        // 🏃 VELDTEST SNELHEID BEREKENING - Voor correcte grafiek weergave
+        if (in_array($test->testtype, ['veldtest_lopen', 'veldtest_zwemmen'])) {
+            \Log::info('🏃 Veldtest detected - bereken snelheden voor grafiek', [
+                'testtype' => $test->testtype,
+                'resultaten_count' => count($testresultaten)
+            ]);
+            
+            foreach ($testresultaten as $index => &$resultaat) {
+                // Voor veldtest lopen: bereken snelheid in km/h
+                if ($test->testtype === 'veldtest_lopen' && isset($resultaat['afstand']) && isset($resultaat['tijd_min'])) {
+                    $afstandKm = $resultaat['afstand'] / 1000; // meter naar km
+                    $tijdMinuten = $resultaat['tijd_min'] + (($resultaat['tijd_sec'] ?? 0) / 60); // totale tijd in minuten
+                    $tijdUur = $tijdMinuten / 60; // minuten naar uur
+                    
+                    if ($tijdUur > 0) {
+                        $resultaat['snelheid'] = $afstandKm / $tijdUur; // km/h
+                        \Log::info("  🏃 Rij {$index}: {$resultaat['afstand']}m in {$tijdMinuten}min = {$resultaat['snelheid']} km/h");
+                    }
+                }
+                
+                // Voor veldtest zwemmen: bereken snelheid in min/100m
+                if ($test->testtype === 'veldtest_zwemmen' && isset($resultaat['afstand']) && isset($resultaat['tijd_min'])) {
+                    $totaleTijdSec = ($resultaat['tijd_min'] * 60) + ($resultaat['tijd_sec'] ?? 0);
+                    
+                    if ($totaleTijdSec > 0 && $resultaat['afstand'] > 0) {
+                        $resultaat['snelheid'] = ($totaleTijdSec / 60) * (100 / $resultaat['afstand']); // min/100m
+                        \Log::info("  🏊 Rij {$index}: {$resultaat['afstand']}m in {$totaleTijdSec}sec = {$resultaat['snelheid']} min/100m");
+                    }
+                }
+            }
+            unset($resultaat); // Break reference
+            
+            \Log::info('✅ Veldtest snelheden berekend voor grafiek weergave');
+        }
+        
         // Log voor debugging
-        \Log::info('Results pagina - Trainingszones check:', [
+        \Log::info('Results pagina - Data check:', [
             'test_id' => $test->id,
-            'zones_data_raw' => $test->trainingszones_data,
-            'zones_decoded' => $trainingszones,
-            'zones_count' => count($trainingszones)
+            'testtype' => $test->testtype,
+            'resultaten_count' => count($testresultaten),
+            'zones_count' => count($trainingszones),
+            'aerobe_drempel_vermogen' => $test->aerobe_drempel_vermogen,
+            'anaerobe_drempel_vermogen' => $test->anaerobe_drempel_vermogen
         ]);
         
         // Hernoem variabele voor de view (backward compatibility)
