@@ -23,39 +23,46 @@ class InspanningstestController extends Controller {
         $testresultaten = json_decode($test->testresultaten, true) ?? [];
         $trainingszones = json_decode($test->trainingszones_data, true) ?? [];
         
-        // 🏃 VELDTEST SNELHEID BEREKENING - Voor correcte grafiek weergave
+        // 🏃 VELDTEST SNELHEID BEREKENING - Voor correcte tabel en grafiek weergave
         if (in_array($test->testtype, ['veldtest_lopen', 'veldtest_zwemmen'])) {
-            \Log::info('🏃 Veldtest detected - bereken snelheden voor grafiek', [
+            \Log::info('🏃 Veldtest detected - bereken snelheden', [
                 'testtype' => $test->testtype,
-                'resultaten_count' => count($testresultaten)
+                'resultaten_count' => count($testresultaten),
+                'eerste_rij' => $testresultaten[0] ?? null
             ]);
             
             foreach ($testresultaten as $index => &$resultaat) {
                 // Voor veldtest lopen: bereken snelheid in km/h
-                if ($test->testtype === 'veldtest_lopen' && isset($resultaat['afstand']) && isset($resultaat['tijd_min'])) {
+                if ($test->testtype === 'veldtest_lopen' && isset($resultaat['afstand'])) {
                     $afstandKm = $resultaat['afstand'] / 1000; // meter naar km
-                    $tijdMinuten = $resultaat['tijd_min'] + (($resultaat['tijd_sec'] ?? 0) / 60); // totale tijd in minuten
+                    $tijdMinuten = ($resultaat['tijd_min'] ?? 0) + (($resultaat['tijd_sec'] ?? 0) / 60); // totale tijd in minuten
                     $tijdUur = $tijdMinuten / 60; // minuten naar uur
                     
                     if ($tijdUur > 0) {
-                        $resultaat['snelheid'] = $afstandKm / $tijdUur; // km/h
+                        $resultaat['snelheid'] = round($afstandKm / $tijdUur, 2); // km/h
                         \Log::info("  🏃 Rij {$index}: {$resultaat['afstand']}m in {$tijdMinuten}min = {$resultaat['snelheid']} km/h");
+                    } else {
+                        $resultaat['snelheid'] = 0;
                     }
                 }
                 
                 // Voor veldtest zwemmen: bereken snelheid in min/100m
-                if ($test->testtype === 'veldtest_zwemmen' && isset($resultaat['afstand']) && isset($resultaat['tijd_min'])) {
-                    $totaleTijdSec = ($resultaat['tijd_min'] * 60) + ($resultaat['tijd_sec'] ?? 0);
+                if ($test->testtype === 'veldtest_zwemmen' && isset($resultaat['afstand'])) {
+                    $totaleTijdSec = (($resultaat['tijd_min'] ?? 0) * 60) + ($resultaat['tijd_sec'] ?? 0);
                     
                     if ($totaleTijdSec > 0 && $resultaat['afstand'] > 0) {
-                        $resultaat['snelheid'] = ($totaleTijdSec / 60) * (100 / $resultaat['afstand']); // min/100m
+                        $resultaat['snelheid'] = round(($totaleTijdSec / 60) * (100 / $resultaat['afstand']), 2); // min/100m
                         \Log::info("  🏊 Rij {$index}: {$resultaat['afstand']}m in {$totaleTijdSec}sec = {$resultaat['snelheid']} min/100m");
+                    } else {
+                        $resultaat['snelheid'] = 0;
                     }
                 }
             }
             unset($resultaat); // Break reference
             
-            \Log::info('✅ Veldtest snelheden berekend voor grafiek weergave');
+            \Log::info('✅ Veldtest snelheden berekend', [
+                'testresultaten_na_berekening' => $testresultaten
+            ]);
         }
         
         // Log voor debugging

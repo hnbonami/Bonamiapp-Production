@@ -33,6 +33,23 @@
     // Lichaamsgewicht voor Watt/kg berekening
     $gewicht = $inspanningstest->lichaamsgewicht_kg ?? null;
     
+    // Bereken Watt/kg voor fietstesten
+    $lt1WattPerKg = null;
+    $lt2WattPerKg = null;
+    $maxWattPerKg = null;
+    
+    if ($gewicht && $gewicht > 0) {
+        if ($lt1Vermogen) {
+            $lt1WattPerKg = $lt1Vermogen / $gewicht;
+        }
+        if ($lt2Vermogen) {
+            $lt2WattPerKg = $lt2Vermogen / $gewicht;
+        }
+        if ($maxVermogen) {
+            $maxWattPerKg = $maxVermogen / $gewicht;
+        }
+    }
+    
     // Bereken percentages van max
     function berekenPercentage($waarde, $max) {
         if (!$waarde || !$max || $max == 0) return null;
@@ -174,7 +191,7 @@
                             {{ $lt1Vermogen ? round($lt1Vermogen) : '-' }}
                         </td>
                         <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #2563eb;">
-                            {{ ($lt1Vermogen && $gewicht) ? number_format($lt1Vermogen / $gewicht, 1) : '-' }}
+                            {{ $lt1WattPerKg ? number_format($lt1WattPerKg, 1) : '-' }}
                         </td>
                     @endif
                     
@@ -211,7 +228,7 @@
                             {{ $lt2Vermogen ? round($lt2Vermogen) : '-' }}
                         </td>
                         <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #2563eb;">
-                            {{ ($lt2Vermogen && $gewicht) ? number_format($lt2Vermogen / $gewicht, 1) : '-' }}
+                            {{ $lt2WattPerKg ? number_format($lt2WattPerKg, 1) : '-' }}
                         </td>
                     @endif
                     
@@ -249,7 +266,7 @@
                                 {{ $maxVermogen ? round($maxVermogen) : '-' }}
                             </td>
                             <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #2563eb;">
-                                {{ ($maxVermogen && $gewicht) ? number_format($maxVermogen / $gewicht, 1) : '-' }}
+                                {{ $maxWattPerKg ? number_format($maxWattPerKg, 1) : '-' }}
                             </td>
                         @endif
                         

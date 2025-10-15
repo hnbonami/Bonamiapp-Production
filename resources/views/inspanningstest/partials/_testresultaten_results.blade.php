@@ -4,7 +4,7 @@
 @php
     // Bepaal testtype en relevante velden
     $testtype = $inspanningstest->testtype ?? 'fietstest';
-    $isLooptest = str_contains($testtype, 'loop');
+    $isLooptest = str_contains($testtype, 'loop') || str_contains($testtype, 'lopen');
     $isZwemtest = str_contains($testtype, 'zwem');
     $isVeldtest = str_contains($testtype, 'veld');
     
@@ -14,7 +14,7 @@
     // Bepaal kolom headers op basis van testtype
     $headers = [];
     if ($isVeldtest && $isLooptest) {
-        $headers = ['Afstand (m)', 'Tijd (min)', 'Tijd (sec)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'];
+        $headers = ['Afstand (m)', 'Snelheid (km/h)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'];
     } elseif ($isVeldtest && $isZwemtest) {
         $headers = ['Afstand (m)', 'Tijd (min)', 'Tijd (sec)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'];
     } elseif ($isLooptest) {
@@ -60,8 +60,25 @@
                         </td>
                         
                         {{-- Dynamische kolommen op basis van testtype --}}
-                        @if($isVeldtest && ($isLooptest || $isZwemtest))
-                            {{-- Veldtest lopen/zwemmen: Afstand, Tijd (min), Tijd (sec), Lactaat, Hartslag, Borg --}}
+                        @if($isVeldtest && $isLooptest)
+                            {{-- Veldtest lopen: Afstand, Snelheid, Lactaat, Hartslag, Borg --}}
+                            <td class="px-4 py-3 text-center text-sm text-gray-900 border-b border-gray-200">
+                                {{ $rij['afstand'] ?? '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-sm font-semibold border-b border-gray-200" style="color: #2563eb;">
+                                {{ isset($rij['snelheid']) ? number_format($rij['snelheid'], 1) : '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-sm font-semibold border-b border-gray-200" style="color: #16a34a;">
+                                {{ isset($rij['lactaat']) ? number_format($rij['lactaat'], 1) : '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-sm font-semibold border-b border-gray-200" style="color: #dc2626;">
+                                {{ $rij['hartslag'] ?? '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-sm text-gray-700 border-b border-gray-200">
+                                {{ $rij['borg'] ?? '-' }}
+                            </td>
+                        @elseif($isVeldtest && $isZwemtest)
+                            {{-- Veldtest zwemmen: Afstand, Tijd (min), Tijd (sec), Lactaat, Hartslag, Borg --}}
                             <td class="px-4 py-3 text-center text-sm text-gray-900 border-b border-gray-200">
                                 {{ $rij['afstand'] ?? '-' }}
                             </td>
