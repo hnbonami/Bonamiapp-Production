@@ -3030,6 +3030,7 @@ function collectCompleteTestData() {
         lichaamsgewicht_kg: parseFloat(document.getElementById('lichaamsgewicht_kg')?.value) || null,
         lichaamslengte_cm: parseFloat(document.getElementById('lichaamslengte_cm')?.value) || null,
         bmi: parseFloat(document.getElementById('bmi')?.value) || null,
+        vetpercentage: parseFloat(document.getElementById('vetpercentage')?.value) || null,
         buikomtrek_cm: parseFloat(document.getElementById('buikomtrek_cm')?.value) || null,
         
         // Drempelwaarden - KERN van de analyse
