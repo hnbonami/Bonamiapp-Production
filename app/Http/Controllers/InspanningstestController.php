@@ -176,6 +176,13 @@ class InspanningstestController extends Controller {
         
         // Log data voor debugging - VOOR create
         \Log::info('Data VOOR create():', $dataVoorDatabase);
+        \Log::info('🔍 complete_ai_analyse veld check:', [
+            'aanwezig_in_request' => $request->has('complete_ai_analyse'),
+            'filled_in_request' => $request->filled('complete_ai_analyse'),
+            'waarde' => $request->input('complete_ai_analyse') ? substr($request->input('complete_ai_analyse'), 0, 100) . '...' : 'LEEG',
+            'in_dataVoorDatabase' => isset($dataVoorDatabase['complete_ai_analyse']),
+            'lengte' => $request->filled('complete_ai_analyse') ? strlen($request->input('complete_ai_analyse')) : 0
+        ]);
         
         // BELANGRIJK: Controleer of datum er nog in zit
         if (!isset($dataVoorDatabase['datum']) || empty($dataVoorDatabase['datum'])) {

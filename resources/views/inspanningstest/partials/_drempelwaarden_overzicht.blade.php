@@ -289,15 +289,158 @@
         </table>
     </div>
     
-    {{-- Footer met uitleg --}}
-    <div class="px-6 py-4 bg-gray-50 border-t-2" style="border-color: #c8e1eb;">
-        <div class="text-xs text-gray-600">
-            <p><strong>💡 Toelichting:</strong></p>
-            <ul class="list-disc pl-5 mt-2 space-y-1">
-                <li><strong>Aërobe drempel (LT1):</strong> Begin van lactaatophoping (~2 mmol/L), basis voor duurtraining</li>
-                <li><strong>Anaërobe drempel (LT2):</strong> Snelle lactaatophoping (~4 mmol/L), maximaal steady-state tempo</li>
-                <li><strong>%max:</strong> Percentage van maximale hartslag voor training intensiteit</li>
-            </ul>
+    {{-- Uitgebreide Toelichting Drempelwaarden --}}
+    <div class="mx-6 mb-6 mt-4 p-6" style="background-color: #fff8e1;">
+        <div class="flex items-start">
+            <div class="flex-shrink-0 mr-4 text-2xl">
+                💡
+            </div>
+            <div class="flex-1">
+                <h4 class="text-base font-bold text-gray-900 mb-3">Wat betekenen deze drempelwaarden?</h4>
+                <div class="text-sm text-gray-700 space-y-3">
+                    <p>
+                        De drempelwaarden zijn de <strong>meest belangrijke uitkomsten</strong> van je inspanningstest. 
+                        Ze geven de overgangsmomenten weer tussen verschillende energiesystemen in je lichaam en vormen de basis voor je trainingszones.
+                    </p>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-300">
+                        <p class="font-bold text-gray-900 mb-2">🔴 Aërobe drempel (LT1 - Lactate Threshold 1)</p>
+                        <p>
+                            Dit is het punt waarop je lichaam begint over te schakelen van pure <strong>aërobe energievoorziening</strong> (met zuurstof) 
+                            naar een combinatie met anaërobe energieproductie. Bij deze intensiteit stijgt je lactaat licht boven het basisniveau, 
+                            maar je lichaam kan het lactaat nog volledig afbreken.
+                        </p>
+                        <p class="mt-2">
+                            <strong>Praktisch:</strong> 
+                            @if($isLooptest)
+                                Tot deze snelheid kun je <strong>zeer lang volhouden</strong> zonder moe te worden - denk aan lange duurlopen van meerdere uren. 
+                                Deze snelheid voelt comfortabel aan en je kunt nog makkelijk een gesprek voeren tijdens het lopen.
+                            @elseif($isZwemtest)
+                                Tot dit tempo kun je <strong>zeer lang volhouden</strong> zonder moe te worden - denk aan lange duurtrainingen in het water. 
+                                Dit tempo voelt comfortabel aan en je ademhaling blijft rustig en gecontroleerd.
+                            @else
+                                Tot dit vermogen kun je <strong>zeer lang volhouden</strong> zonder moe te worden - denk aan tochten van meerdere uren. 
+                                Dit vermogen voelt comfortabel aan en je kunt nog makkelijk een gesprek voeren tijdens het fietsen.
+                            @endif
+                            Dit is je ideale intensiteit voor het opbouwen van je aerobe basis.
+                        </p>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-300">
+                        <p class="font-bold text-gray-900 mb-2">🟠 Anaërobe drempel (LT2 - Lactate Threshold 2)</p>
+                        <p>
+                            Dit is het punt waarop je lichaam <strong>meer lactaat produceert dan het kan afbreken</strong>. 
+                            De lactaatwaarde stijgt hier snel. Boven deze drempel begin je te "verzuren" 
+                            en kun je de intensiteit slechts beperkte tijd volhouden voordat je vertraagt door vermoeidheid.
+                        </p>
+                        <p class="mt-2">
+                            <strong>Praktisch:</strong> 
+                            @if($isLooptest)
+                                Deze snelheid kun je ongeveer <strong>30-60 minuten volhouden</strong> bij een maximale inspanning. 
+                                Het voelt "zwaar maar haalbaar" - denken aan een 10km wedstrijdtempo voor goed getrainde lopers, 
+                                of een half marathon tempo voor zeer goed getrainde atleten. Je ademhaling is diep en regelmatig, 
+                                maar praten wordt moeilijk.
+                            @elseif($isZwemtest)
+                                Dit tempo kun je ongeveer <strong>30-60 minuten volhouden</strong> bij een maximale inspanning. 
+                                Het voelt "zwaar maar haalbaar" - je zwemtechniek blijft intact maar vergt meer concentratie. 
+                                Je ademhaling is diep en krachtig.
+                            @else
+                                Dit vermogen kun je ongeveer <strong>30-60 minuten volhouden</strong> bij een maximale inspanning. 
+                                Het voelt "zwaar maar haalbaar" - denk aan een tijdrit of bergrit tempo. 
+                                Je ademhaling is diep en regelmatig, maar praten wordt moeilijk.
+                            @endif
+                            Dit is je maximale "steady state" intensiteit.
+                        </p>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-300">
+                        <p class="font-bold text-gray-900 mb-2">🔥 Maximum waarden</p>
+                        <p>
+                            Dit zijn de hoogste waarden die je tijdens de test hebt bereikt. 
+                            @if($isLooptest)
+                                Je maximale snelheid geeft aan wat je topsnelheid is in uitgeruste toestand.
+                            @elseif($isZwemtest)
+                                Je maximale tempo geeft aan wat je toptempo is in uitgeruste toestand.
+                            @else
+                                Je maximale vermogen geeft aan wat je piekprestatie is in uitgeruste toestand.
+                            @endif
+                            Het maximale lactaat toont hoe goed je lichaam met hoge lactaatwaarden kan omgaan.
+                        </p>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-300">
+                        <p class="font-bold text-gray-900 mb-2">📊 Kolom uitleg</p>
+                        <ul class="list-disc pl-5 space-y-2 mt-2">
+                            @if($isLooptest)
+                                <li>
+                                    <strong>Snelheid (km/h):</strong> Je loopsnelheid in kilometers per uur bij de drempel. 
+                                    Dit is de meest directe waarde om je trainingssnelheden mee te bepalen.
+                                </li>
+                                <li>
+                                    <strong>Tempo (min/km):</strong> Dezelfde snelheid uitgedrukt in minuten per kilometer - 
+                                    dit is vaak praktischer voor lopers omdat het direct aangeeft hoeveel minuten je over een kilometer doet.
+                                </li>
+                            @elseif($isZwemtest)
+                                <li>
+                                    <strong>Snelheid (min/100m):</strong> Je zwemtempo in minuten per 100 meter. 
+                                    Dit is de standaard manier om zwemsnelheid uit te drukken en direct bruikbaar voor je trainingen.
+                                </li>
+                            @else
+                                <li>
+                                    <strong>Vermogen (Watt):</strong> Het absolute vermogen dat je trapt bij de drempel. 
+                                    Dit is de meest nauwkeurige maat voor je inspanning op de fiets.
+                                </li>
+                                <li>
+                                    <strong>Vermogen (Watt/kg):</strong> Je vermogen gedeeld door je lichaamsgewicht. 
+                                    Deze waarde is nuttig om jezelf te vergelijken met anderen of je eigen progressie te volgen bij gewichtsveranderingen. 
+                                    Hoe hoger dit getal, hoe beter je klimvermogen bijvoorbeeld.
+                                </li>
+                            @endif
+                            <li>
+                                <strong>Hartslag (BPM):</strong> Je hartslag in slagen per minuut bij de drempel. 
+                                Handig als je geen vermogensmeter
+                                @if($isLooptest)
+                                    of GPS-horloge hebt - je kunt dan trainen op hartslagzones.
+                                @else
+                                    hebt - je kunt dan trainen op hartslagzones.
+                                @endif
+                                Let op: hartslag kan variëren door warmte, vermoeidheid, stress en cafeïne.
+                            </li>
+                            <li>
+                                <strong>Lactaat (mmol/L):</strong> De hoeveelheid lactaat (melkzuur) in je bloed bij de drempel, 
+                                gemeten in millimol per liter. Dit getal vertelt hoe je lichaam reageert op de inspanning en 
+                                is een objectieve maat voor je metabolisme.
+                            </li>
+                            <li>
+                                <strong>%max:</strong> Het percentage van je maximale 
+                                @if($isLooptest)
+                                    snelheid of maximale hartslag.
+                                @elseif($isZwemtest)
+                                    tempo of maximale hartslag.
+                                @else
+                                    vermogen of maximale hartslag.
+                                @endif
+                                Dit helpt om te zien in welke verhouding je drempels tot je maximum staan. 
+                                Bij goed getrainde atleten ligt LT2 vaak rond 85-95% van het maximum.
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <p class="mt-4 pt-4 border-t-2 border-gray-400">
+                        <strong>💪 Gebruik deze waarden:</strong> 
+                        De drempelwaarden uit deze tabel zijn de basis voor je <strong>persoonlijke trainingszones</strong>. 
+                        @if($isLooptest)
+                            Gebruik de snelheid of hartslag om je looptrainingen correct in te stellen.
+                        @elseif($isZwemtest)
+                            Gebruik het tempo of hartslag om je zwemtrainingen correct in te stellen.
+                        @else
+                            Gebruik het vermogen of hartslag om je fietstrainingen correct in te stellen.
+                        @endif
+                        Vergelijk deze waarden bij een volgende test om je vooruitgang objectief te meten. 
+                        Let vooral op verschuivingen van LT1 en LT2 - als deze hoger worden, word je fitter!
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 </div>

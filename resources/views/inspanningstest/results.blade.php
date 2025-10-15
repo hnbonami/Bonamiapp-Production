@@ -41,6 +41,8 @@
         <!-- Trainingszones Tabel -->
         @include('inspanningstest.partials._trainingszones_results')
 
+        <!-- AI Analyse -->
+        @include('inspanningstest.partials._ai_analyse_results')
 
     </div>
 </div>
