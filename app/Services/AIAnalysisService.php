@@ -271,6 +271,9 @@ class AIAnalysisService
 
     protected function generateFallbackAnalysis(array $testData): string
     {
+        // Verrijk de data eerst met populatievergelijking!
+        $testData = $this->enrichTestData($testData);
+        
         $testtype = $testData['testtype'] ?? 'Onbekend';
         $eenheid = str_contains($testtype, 'fiets') ? 'Watt' : 'km/h';
         
@@ -422,9 +425,13 @@ class AIAnalysisService
             }
             
             $output .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+        } else {
+            // Als er geen classificatie is, toon dan een melding
+            \Log::warning('Geen populatievergelijking beschikbaar', [
+                'testData_keys' => array_keys($testData),
+                'population_comparison' => $testData['population_comparison'] ?? 'not set'
+            ]);
         }
-        
-        $output .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
         
         // TRAININGSADVIES
         $output .= "💪 TRAININGSADVIES\n\n";
