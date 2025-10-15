@@ -151,6 +151,61 @@
             </div>
         </div>
     </div>
+    
+    {{-- Toelichting Testresultaten --}}
+    <div class="mx-6 mb-6 mt-4 p-6" style="background-color: #fff8e1;">
+        <div class="flex items-start">
+            <div class="flex-shrink-0 mr-4 text-2xl">
+                💡
+            </div>
+            <div class="flex-1">
+                <h4 class="text-base font-bold text-gray-900 mb-3">Wat wordt er gemeten?</h4>
+                <div class="text-sm text-gray-700 space-y-3">
+                    <p>
+                        @if($isLooptest)
+                            Tijdens de looptest wordt de snelheid geleidelijk verhoogd per stap. 
+                            @if($isVeldtest)
+                                Na elke inspanning wordt een bloedstaal genomen en worden de hartslag en tijd genoteerd.
+                            @else
+                                Aan het einde van elke stap worden hartslag, snelheid en melkzuurproductie gemeten en geregistreerd.
+                            @endif
+                        @elseif($isZwemtest)
+                            Tijdens de zwemtest worden verschillende afstanden gezwommen met toenemende intensiteit. 
+                            Na elke inspanning wordt een bloedstaal genomen en worden de hartslag en tijd genoteerd.
+                        @else
+                            Tijdens de fietstest wordt het vermogen (Watt) geleidelijk verhoogd per stap. 
+                            Aan het einde van elke stap worden hartslag, vermogen en melkzuurproductie gemeten en geregistreerd.
+                        @endif
+                    </p>
+                    <p>
+                        <strong>Doel van de test:</strong> Het bepalen van de aërobe en anaërobe getraindheid. 
+                        @if($isLooptest)
+                            Door de combinatie van snelheid, hartslag en lactaatniveaus kunnen we je optimale trainingssnelheden bepalen.
+                        @elseif($isZwemtest)
+                            Door de combinatie van zwemtijden, hartslag en lactaatniveaus kunnen we je optimale trainingsintensiteiten bepalen.
+                        @else
+                            Door de combinatie van vermogen, hartslag en lactaatniveaus kunnen we je optimale trainingszones bepalen.
+                        @endif
+                    </p>
+                    <p>
+                        <strong>Lactaat (melkzuur):</strong> De lactaatwaarde geeft aan hoeveel afvalstoffen je spieren produceren bij een bepaalde intensiteit. 
+                        @if($isLooptest)
+                            Bij lage snelheden blijft het lactaat laag (aëroob), bij hoge snelheden stijgt het lactaat snel (anaëroob).
+                        @elseif($isZwemtest)
+                            Bij lage intensiteit blijft het lactaat laag (aëroob), bij hoge intensiteit stijgt het lactaat snel (anaëroob).
+                        @else
+                            Bij laag vermogen blijft het lactaat laag (aëroob), bij hoog vermogen stijgt het lactaat snel (anaëroob).
+                        @endif
+                        De overgang tussen beide zones is cruciaal voor je trainingsopbouw.
+                    </p>
+                    <p>
+                        <strong>Borg schaal:</strong> Dit is je persoonlijke inspanningsbeleving op een schaal van 6-20. 
+                        Dit helpt om subjectieve inspanning te koppelen aan objectieve metingen en is nuttig voor het sturen van je training op gevoel.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @else
 <div class="bg-yellow-50 rounded-lg p-6 mb-6" style="border: 2px solid #fbbf24;">

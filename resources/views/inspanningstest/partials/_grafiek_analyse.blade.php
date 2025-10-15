@@ -180,6 +180,7 @@
                             scales: {
                                 x: {
                                     display: true,
+                                    reverse: isZwemtest, // Keer X-as om voor zwemtesten (snel = rechts)
                                     title: {
                                         display: true,
                                         text: xAxisLabel,

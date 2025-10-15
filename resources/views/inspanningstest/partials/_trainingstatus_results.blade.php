@@ -105,7 +105,7 @@
 
         {{-- Gemiddelde Score --}}
         @if($gemiddeldeStatus !== null)
-            <div class="rounded-lg p-6 mb-6" style="background-color: #e3f2fd; border: 2px solid #c8e1eb;">
+            <div class="p-6 mb-6" style="background-color: #e3f2fd;">
                 <div class="text-center">
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Gemiddelde Trainingstatus Score</label>
                     <div class="text-6xl font-bold mb-2" style="color: #2563eb;">{{ number_format($gemiddeldeStatus, 1) }}</div>
@@ -154,5 +154,54 @@
                 @endif
             </div>
         @endif
+
+        {{-- Toelichting Trainingstatus --}}
+        <div class="mt-6 p-6" style="background-color: #fff8e1;">
+            <div class="flex items-start">
+                <div class="flex-shrink-0 mr-4 text-2xl">
+                    💡
+                </div>
+                <div class="flex-1">
+                    <h4 class="text-base font-bold text-gray-900 mb-3">Interpretatie Trainingstatus</h4>
+                    <div class="text-sm text-gray-700 space-y-3">
+                        <p>
+                            <strong>Waarom is dit belangrijk?</strong> Je trainingstatus op het moment van de test heeft directe invloed op je prestaties 
+                            @if(isset($inspanningstest->testtype))
+                                @if(str_contains(strtolower($inspanningstest->testtype), 'loop'))
+                                    tijdens het hardlopen. Een slechte nachtrust of hoog stressniveau kan je loopvermogen en uithoudingsvermogen significant beïnvloeden.
+                                @elseif(str_contains(strtolower($inspanningstest->testtype), 'zwem'))
+                                    in het water. Vermoeidheid en stress beïnvloeden je zwemtechniek, coördinatie en ademhaling meer dan je denkt.
+                                @else
+                                    op de fiets. Vermoeidheid, slechte slaap of hoge stress kunnen je vermogen en hartslag meetbaar beïnvloeden.
+                                @endif
+                            @else
+                                tijdens de test. Vermoeidheid, slechte slaap of hoge stress kunnen je prestaties meetbaar beïnvloeden.
+                            @endif
+                        </p>
+                        <p>
+                            <strong>Bij een retest:</strong> Probeer zoveel mogelijk dezelfde trainingstatus te bereiken als bij de eerste test. 
+                            Verschillen in herstelstatus maken vergelijken moeilijk - een lagere score kan door vermoeidheid komen in plaats van achteruitgang in conditie.
+                            @if($gemiddeldeStatus !== null)
+                                @if($gemiddeldeStatus >= 7)
+                                    Je trainingstatus was uitstekend bij deze test, wat betekent dat de resultaten een betrouwbaar beeld geven van je werkelijke capaciteiten.
+                                @elseif($gemiddeldeStatus >= 5)
+                                    Je trainingstatus was redelijk bij deze test. Bij een retest met betere status kun je mogelijk betere resultaten verwachten.
+                                @else
+                                    Je trainingstatus was suboptimaal bij deze test. De resultaten kunnen lager zijn dan je werkelijke capaciteiten - houd hier rekening mee bij interpretatie.
+                                @endif
+                            @endif
+                        </p>
+                        <p>
+                            <strong>Training voor de test:</strong> 
+                            @if($trainingDagVoor || $training2dVoor)
+                                De trainingen in de dagen voor deze test zijn geregistreerd. Bij een retest is het ideaal om een vergelijkbare trainingsbelasting te hebben.
+                            @else
+                                Voor optimale testresultaten is het belangrijk om gestructureerd naar de test toe te werken - niet te zwaar, maar ook niet volledig uitgerust.
+                            @endif
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>

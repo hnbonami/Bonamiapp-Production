@@ -192,6 +192,115 @@
             </div>
         </div>
     </div>
+    
+    {{-- Toelichting Trainingszones --}}
+    <div class="mx-6 mb-6 mt-4 p-6" style="background-color: #fff8e1;">
+        <div class="flex items-start">
+            <div class="flex-shrink-0 mr-4 text-2xl">
+                💡
+            </div>
+            <div class="flex-1">
+                <h4 class="text-base font-bold text-gray-900 mb-3">Uitleg Trainingszones</h4>
+                <div class="text-sm text-gray-700 space-y-4">
+                    @foreach($trainingszones as $zone)
+                        <div>
+                            <h5 class="font-bold text-gray-900 mb-1" style="color: #1f2937;">{{ $zone['naam'] ?? '' }}</h5>
+                            @php
+                                $zoneName = strtolower($zone['naam'] ?? '');
+                            @endphp
+                            
+                            @if(str_contains($zoneName, 'herstel') || str_contains($zoneName, 'recuperatie'))
+                                <p>
+                                    In deze zone, ook wel de <strong>actieve recuperatie</strong> genoemd, worden de hersteltrainingen uitgevoerd, meestal na een wedstrijd of zware trainingsdag. 
+                                    @if($isLooptest)
+                                        Deze rustige loopsessies
+                                    @elseif($isZwemtest)
+                                        Deze rustige zwemsessies
+                                    @else
+                                        Deze rustige fietstochten
+                                    @endif
+                                    bevorderen het herstel maar verder is de intensiteit te laag om enig trainingseffect te veroorzaken. Focus op soepele bewegingen en volledig herstel.
+                                </p>
+                            @elseif(str_contains($zoneName, 'lange') && str_contains($zoneName, 'duur'))
+                                <p>
+                                    Dit is de intensiteit waaraan je de <strong>(zeer) lange rustige duurtrainingen</strong> afwerkt 
+                                    @if($isLooptest)
+                                        (tot wel vijf uur en meer). Deze trainingen stimuleren het aërobe prestatievermogen en dienen om je basisconditie en loopeconomie te verbeteren.
+                                    @elseif($isZwemtest)
+                                        (lange afstanden in het water). Deze trainingen stimuleren het aërobe prestatievermogen en dienen om je zwemtechniek en basisconditie te verbeteren.
+                                    @else
+                                        (tot wel vijf uur en meer). Deze trainingen stimuleren het aërobe prestatievermogen en dienen om je basisconditie te verbeteren.
+                                    @endif
+                                    Je bouwt hier je uithoudingsvermogen op.
+                                </p>
+                            @elseif(str_contains($zoneName, 'extensieve') && str_contains($zoneName, 'duur'))
+                                <p>
+                                    Aan deze intensiteit werk je de <strong>snellere duurtrainingen</strong> af. 
+                                    @if($isLooptest)
+                                        Je loopt aan een vlot tempo waardoor je uithoudingsvermogen goed gestimuleerd wordt.
+                                    @elseif($isZwemtest)
+                                        Je zwemt aan een vlot tempo waardoor je uithoudingsvermogen goed gestimuleerd wordt.
+                                    @else
+                                        Je fietst aan een vlot tempo waardoor je uithoudingsvermogen goed gestimuleerd wordt.
+                                    @endif
+                                    De vetverbranding wordt sterk aangesproken. Dit is vaak de zone waarin je het meest zult trainen voor lange wedstrijden.
+                                </p>
+                            @elseif(str_contains($zoneName, 'intensieve') && str_contains($zoneName, 'duur'))
+                                <p>
+                                    Deze zone situeert zich <strong>tussen de aërobe en anaërobe drempel</strong>. De inspanning kan relatief lang worden volgehouden, zolang er voldoende energiereserves (koolhydraten) beschikbaar zijn. 
+                                    @if($isLooptest)
+                                        Het looptempo voelt lastig maar is nog vol te houden voor langere periodes.
+                                    @elseif($isZwemtest)
+                                        Het zwemtempo voelt lastig maar is nog vol te houden voor langere sets.
+                                    @else
+                                        Het vermogen voelt lastig maar is nog vol te houden voor langere periodes.
+                                    @endif
+                                    Deze zone verbetert je wedstrijdsnelheid op middellange afstanden.
+                                </p>
+                            @elseif(str_contains($zoneName, 'tempo'))
+                                <p>
+                                    Training in deze zone belast ons <strong>aeroob systeem maximaal</strong>, tevens met een belangrijke bijdrage van de anaerobe stofwisseling afhankelijk van de individuele verhouding van spiervezeltypes. 
+                                    De bedoeling is om de VO2max zelf, maar vooral ook het rendement van inspanning op 95-100% van de maximale zuurstofopname te verbeteren. 
+                                    Er treedt geen lactaatevenwicht meer op waardoor je lichaam gaat verzuren. Dit type trainingen wordt altijd <strong>opgesplitst in blokjes tussen de 3 en 10min</strong> met telkens een herstelperiode ertussen (van bijv. 1-3min). 
+                                    Deze training is zeer belastend en wordt dan ook enkel uitgevoerd in volledig uitgeruste status.
+                                </p>
+                            @elseif(str_contains($zoneName, 'weerstand') || str_contains($zoneName, 'maximaal'))
+                                <p>
+                                    Dit is de zone voor de <strong>puur anaerobe training</strong>, met zeer korte intervallen meestal tussen 15 sec en 2 min. 
+                                    Deze trainingen hebben de bedoeling om de weerstand tegen 'verzuring' te verbeteren, maar zijn maximaal belastend voor ons lichaam en vergen een extra lange recuperatie. 
+                                    @if($isLooptest)
+                                        Je sprint hier op maximale snelheid met zeer korte duur.
+                                    @elseif($isZwemtest)
+                                        Je zwemt hier op maximale intensiteit met zeer korte afstanden.
+                                    @else
+                                        Je trapt hier op maximaal vermogen met zeer korte duur.
+                                    @endif
+                                    Gezien de intensiteit van de inspanningen en de vrij korte duur van de intervallen is de hartfrequentie absoluut geen valabele parameter meer.
+                                </p>
+                            @else
+                                <p>{{ $zone['beschrijving'] ?? 'Training in deze zone draagt bij aan je algehele fitheid en prestatievermogen.' }}</p>
+                            @endif
+                        </div>
+                    @endforeach
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-300">
+                        <p class="font-semibold mb-2">💪 Praktisch gebruik:</p>
+                        <p>
+                            Gebruik deze zones om je trainingen gestructureerd op te bouwen. Train <strong>niet altijd in dezelfde zone</strong> - variatie is de sleutel tot vooruitgang. 
+                            Bouw je trainingsweek op met voornamelijk trainingen in de lagere zones (herstel, lange duur, extensief) en voeg beperkt intensievere sessies toe (tempo, weerstand).
+                            @if($isLooptest)
+                                Let bij hardlopen extra op je loopvorm - bij vermoeidheid kan je techniek verslechteren.
+                            @elseif($isZwemtest)
+                                Let bij zwemmen extra op je techniek - bij vermoeidheid kan je houding in het water verslechteren.
+                            @else
+                                Let bij fietsen op je traptechniek en houding - bij vermoeidheid kan je efficiëntie afnemen.
+                            @endif
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @else
 <div class="bg-yellow-50 rounded-lg p-6 mb-6" style="border: 2px solid #fbbf24;">
