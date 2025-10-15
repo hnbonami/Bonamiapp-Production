@@ -1,0 +1,88 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up()
+    {
+        // Users table additions
+        if (!Schema::hasColumn('users', 'voornaam')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('voornaam')->nullable();
+                $table->string('naam')->nullable(); 
+                $table->date('geboortedatum')->nullable();
+                $table->enum('geslacht', ['m', 'v', 'anders'])->nullable();
+                $table->string('avatar_path')->nullable();
+                $table->boolean('bikefit')->default(false);
+                $table->boolean('inspanningstest')->default(false);
+            });
+        }
+
+        // Klanten table additions
+        if (!Schema::hasColumn('klanten', 'laatste_uitnodiging')) {
+            Schema::table('klanten', function (Blueprint $table) {
+                $table->timestamp('laatste_uitnodiging')->nullable();
+                $table->string('status')->default('Actief');
+            });
+        }
+
+        Schema::table('klanten', function (Blueprint $table) {
+            if (!Schema::hasColumn('klanten', 'status')) {
+                $table->string('status')->default('Actief');
+            }
+            if (!Schema::hasColumn('klanten', 'opmerkingen')) {
+                $table->text('opmerkingen')->nullable();
+            }
+        });
+
+        // Medewerkers table additions  
+        if (!Schema::hasColumn('medewerkers', 'laatste_uitnodiging')) {
+            Schema::table('medewerkers', function (Blueprint $table) {
+                $table->timestamp('laatste_uitnodiging')->nullable();
+                $table->string('avatar_path')->nullable();
+            });
+        }
+
+        // Bikefits table additions
+        if (!Schema::hasColumn('bikefits', 'voetpositie')) {
+            Schema::table('bikefits', function (Blueprint $table) {
+                $table->string('voetpositie')->nullable();
+            });
+        }
+
+        // Staff notes table fixes
+        if (Schema::hasTable('staff_notes')) {
+            Schema::table('staff_notes', function (Blueprint $table) {
+                if (!Schema::hasColumn('staff_notes', 'content')) {
+                    $table->text('content')->nullable();
+                }
+                if (!Schema::hasColumn('staff_notes', 'user_id')) {
+                    $table->bigInteger('user_id')->unsigned()->nullable();
+                }
+            });
+        }
+    }
+
+    public function down()
+    {
+        // Reverse the changes if needed
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn(['voornaam', 'naam', 'geboortedatum', 'geslacht', 'avatar_path', 'bikefit', 'inspanningstest']);
+        });
+        
+        Schema::table('klanten', function (Blueprint $table) {
+            $table->dropColumn(['laatste_uitnodiging']);
+        });
+        
+        Schema::table('medewerkers', function (Blueprint $table) {
+            $table->dropColumn(['laatste_uitnodiging', 'avatar_path']);
+        });
+        
+        Schema::table('bikefits', function (Blueprint $table) {
+            $table->dropColumn(['voetpositie']);
+        });
+    }
+};

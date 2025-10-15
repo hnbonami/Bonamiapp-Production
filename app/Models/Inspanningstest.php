@@ -13,6 +13,9 @@ class Inspanningstest extends Model
         'anaerobe_drempel_vermogen', 'anaerobe_drempel_hartslag', 'besluit_lichaamssamenstelling',
     'advies_aerobe_drempel', 'advies_anaerobe_drempel',
     'template_kind', 'user_id',
+        // Trainingstatus velden
+        'slaapkwaliteit', 'eetlust', 'gevoel_op_training', 'stressniveau', 'gemiddelde_trainingstatus',
+        'training_dag_voor_test', 'training_2d_voor_test',
     ];
     protected $casts = [
         'testresultaten' => 'array',

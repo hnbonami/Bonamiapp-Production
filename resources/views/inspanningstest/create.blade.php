@@ -1,6 +1,47 @@
 @extends('layouts.app')
 
 @section('content')
+<style>
+/* Bonami Slider Styling */
+.slider-bonami {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 5px;
+    background: linear-gradient(to right, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+    outline: none;
+    opacity: 0.9;
+    transition: opacity 0.2s;
+}
+
+.slider-bonami:hover {
+    opacity: 1;
+}
+
+.slider-bonami::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #3b82f6;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.slider-bonami::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #3b82f6;
+    cursor: pointer;
+    border: 3px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+</style>
+
 <!-- Chart.js library -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- CSRF Token voor AI AJAX calls -->
@@ -134,7 +175,160 @@
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                     </div>
+                    <!-- Huidige Trainingstatus -->
+<div class="bg-white p-6 rounded-lg shadow mb-6">
+    <h3 class="text-lg font-semibold mb-4 text-gray-800">Huidige Trainingstatus</h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <!-- Slaapkwaliteit -->
+        <div>
+            <label for="slaapkwaliteit" class="block text-sm font-medium text-gray-700 mb-1">
+                Slaapkwaliteit
+                <span class="text-xs text-gray-500">(0 = slecht, 10 = perfect)</span>
+            </label>
+            <input type="range" 
+                   id="slaapkwaliteit" 
+                   name="slaapkwaliteit" 
+                   min="0" 
+                   max="10" 
+                   value="{{ old('slaapkwaliteit', 5) }}"
+                   class="w-full slider-bonami"
+                   oninput="updateScoreDisplay('slaapkwaliteit')">
+            <div class="flex justify-between text-xs text-gray-600 mt-1">
+                <span>0 (slecht)</span>
+                <span id="slaapkwaliteit_value" class="font-semibold">5</span>
+                <span>10 (perfect)</span>
+            </div>
+        </div>
 
+        <!-- Eetlust -->
+        <div>
+            <label for="eetlust" class="block text-sm font-medium text-gray-700 mb-1">
+                Eetlust
+                <span class="text-xs text-gray-500">(0 = slecht, 10 = perfect)</span>
+            </label>
+            <input type="range" 
+                   id="eetlust" 
+                   name="eetlust" 
+                   min="0" 
+                   max="10" 
+                   value="{{ old('eetlust', 5) }}"
+                   class="w-full slider-bonami"
+                   oninput="updateScoreDisplay('eetlust')">
+            <div class="flex justify-between text-xs text-gray-600 mt-1">
+                <span>0 (slecht)</span>
+                <span id="eetlust_value" class="font-semibold">5</span>
+                <span>10 (perfect)</span>
+            </div>
+        </div>
+
+        <!-- Gevoel op training -->
+        <div>
+            <label for="gevoel_op_training" class="block text-sm font-medium text-gray-700 mb-1">
+                Gevoel op training
+                <span class="text-xs text-gray-500">(0 = slecht, 10 = perfect)</span>
+            </label>
+            <input type="range" 
+                   id="gevoel_op_training" 
+                   name="gevoel_op_training" 
+                   min="0" 
+                   max="10" 
+                   value="{{ old('gevoel_op_training', 5) }}"
+                   class="w-full slider-bonami"
+                   oninput="updateScoreDisplay('gevoel_op_training')">
+            <div class="flex justify-between text-xs text-gray-600 mt-1">
+                <span>0 (slecht)</span>
+                <span id="gevoel_op_training_value" class="font-semibold">5</span>
+                <span>10 (perfect)</span>
+            </div>
+        </div>
+
+        <!-- Stressniveau -->
+        <div>
+            <label for="stressniveau" class="block text-sm font-medium text-gray-700 mb-1">
+                Stressniveau
+                <span class="text-xs text-gray-500">(0 = veel stress, 10 = geen stress)</span>
+            </label>
+            <input type="range" 
+                   id="stressniveau" 
+                   name="stressniveau" 
+                   min="0" 
+                   max="10" 
+                   value="{{ old('stressniveau', 5) }}"
+                   class="w-full slider-bonami"
+                   oninput="updateScoreDisplay('stressniveau')">
+            <div class="flex justify-between text-xs text-gray-600 mt-1">
+                <span>0 (veel)</span>
+                <span id="stressniveau_value" class="font-semibold">5</span>
+                <span>10 (geen)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gemiddelde Score -->
+    <div class="bg-blue-50 p-4 rounded-lg mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Gemiddelde Score</label>
+        <div class="text-3xl font-bold text-blue-600" id="gemiddelde_display">5.0</div>
+        <input type="hidden" name="gemiddelde_trainingstatus" id="gemiddelde_trainingstatus" value="5.0">
+        <p class="text-xs text-gray-500 mt-1">Automatisch berekend gemiddelde van bovenstaande scores</p>
+    </div>
+
+    <!-- Training dag voor test -->
+    <div class="mb-4">
+        <label for="training_dag_voor_test" class="block text-sm font-medium text-gray-700 mb-1">
+            Training dag voor de test
+        </label>
+        <textarea id="training_dag_voor_test" 
+                  name="training_dag_voor_test" 
+                  rows="3" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Beschrijf de training van 1 dag voor de test...">{{ old('training_dag_voor_test') }}</textarea>
+    </div>
+
+    <!-- Training 2 dagen voor test -->
+    <div>
+        <label for="training_2d_voor_test" class="block text-sm font-medium text-gray-700 mb-1">
+            Training 2 dagen voor de test
+        </label>
+        <textarea id="training_2d_voor_test" 
+                  name="training_2d_voor_test" 
+                  rows="3" 
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Beschrijf de training van 2 dagen voor de test...">{{ old('training_2d_voor_test') }}</textarea>
+    </div>
+</div>
+
+<script>
+// Update score display en bereken gemiddelde
+function updateScoreDisplay(fieldId) {
+    const slider = document.getElementById(fieldId);
+    const display = document.getElementById(fieldId + '_value');
+    display.textContent = slider.value;
+    
+    // Bereken gemiddelde
+    berekenGemiddelde();
+}
+
+function berekenGemiddelde() {
+    const slaap = parseInt(document.getElementById('slaapkwaliteit').value) || 0;
+    const eetlust = parseInt(document.getElementById('eetlust').value) || 0;
+    const gevoel = parseInt(document.getElementById('gevoel_op_training').value) || 0;
+    const stress = parseInt(document.getElementById('stressniveau').value) || 0;
+    
+    const gemiddelde = ((slaap + eetlust + gevoel + stress) / 4).toFixed(1);
+    
+    document.getElementById('gemiddelde_display').textContent = gemiddelde;
+    document.getElementById('gemiddelde_trainingstatus').value = gemiddelde;
+}
+
+// Initialiseer bij laden
+document.addEventListener('DOMContentLoaded', function() {
+    updateScoreDisplay('slaapkwaliteit');
+    updateScoreDisplay('eetlust');
+    updateScoreDisplay('gevoel_op_training');
+    updateScoreDisplay('stressniveau');
+});
+</script>
                     <!-- Protocol -->
                     <h3 class="text-xl font-bold mt-6 mb-4">Test Protocol</h3>
                     
@@ -3043,6 +3237,15 @@ function collectCompleteTestData() {
         maximale_hartslag_bpm: parseFloat(document.getElementById('maximale_hartslag_bpm')?.value) || null,
         hartslag_rust_bpm: parseFloat(document.getElementById('hartslag_rust_bpm')?.value) || null,
         
+        // Trainingstatus velden - BELANGRIJK voor herstel en belastbaarheid analyse
+        slaapkwaliteit: parseInt(document.getElementById('slaapkwaliteit')?.value) || null,
+        eetlust: parseInt(document.getElementById('eetlust')?.value) || null,
+        gevoel_op_training: parseInt(document.getElementById('gevoel_op_training')?.value) || null,
+        stressniveau: parseInt(document.getElementById('stressniveau')?.value) || null,
+        gemiddelde_trainingstatus: parseFloat(document.getElementById('gemiddelde_trainingstatus')?.value) || null,
+        training_dag_voor_test: document.getElementById('training_dag_voor_test')?.value || '',
+        training_2d_voor_test: document.getElementById('training_2d_voor_test')?.value || '',
+        
         // Besluit velden (indien ingevuld)
         besluit_lichaamssamenstelling: document.getElementById('besluit_lichaamssamenstelling')?.value || ''
     };
@@ -3056,6 +3259,21 @@ function getCompleteAnalysisFallback(testData) {
     const doelstellingen = testData.specifieke_doelstellingen || 'algemene fitheid';
     const lt1 = testData.aerobe_drempel_vermogen || 'niet gemeten';
     const lt2 = testData.anaerobe_drempel_vermogen || 'niet gemeten';
+    const trainingstatus = testData.gemiddelde_trainingstatus || 'niet ingevuld';
+    
+    // Bepaal trainingstatus interpretatie
+    let statusInterpretatie = '';
+    if (trainingstatus !== 'niet ingevuld') {
+        if (trainingstatus >= 8) {
+            statusInterpretatie = '✅ Uitstekend - Optimaal voor intensieve training';
+        } else if (trainingstatus >= 6) {
+            statusInterpretatie = '👍 Goed - Geschikt voor normale training';
+        } else if (trainingstatus >= 4) {
+            statusInterpretatie = '⚠️ Matig - Focus op herstel en lichte training';
+        } else {
+            statusInterpretatie = '🚨 Laag - Herstel prioriteit, geen intensieve training';
+        }
+    }
     
     return `COMPLETE INSPANNINGSTEST ANALYSE
 
@@ -3065,6 +3283,14 @@ function getCompleteAnalysisFallback(testData) {
 • Aërobe drempel (LT1): ${lt1} Watt
 • Anaërobe drempel (LT2): ${lt2} Watt
 
+💤 TRAININGSTATUS:
+• Gemiddelde score: ${trainingstatus}/10
+${statusInterpretatie ? '• Status: ' + statusInterpretatie : ''}
+${testData.slaapkwaliteit ? '• Slaapkwaliteit: ' + testData.slaapkwaliteit + '/10' : ''}
+${testData.eetlust ? '• Eetlust: ' + testData.eetlust + '/10' : ''}
+${testData.gevoel_op_training ? '• Gevoel op training: ' + testData.gevoel_op_training + '/10' : ''}
+${testData.stressniveau ? '• Stressniveau: ' + testData.stressniveau + '/10 (10 = geen stress)' : ''}
+
 🏆 PRESTATIECLASSIFICATIE:
 Uw drempelwaardes worden geanalyseerd in de context van uw specifieke doelstellingen voor ${testtype}.
 
@@ -3072,12 +3298,14 @@ Uw drempelwaardes worden geanalyseerd in de context van uw specifieke doelstelli
 • Uw aërobe basis vormt de foundation voor langdurige prestaties
 • De anaërobe drempel bepaalt uw tempo-capaciteit
 • Training moet afgestemd worden op uw gestelde doelen
+${trainingstatus < 6 ? '• LET OP: Trainingstatus is matig/laag - prioriteer herstel' : ''}
 
 🎯 TRAININGSAANBEVELINGEN:
 1. Focus op 80% training onder LT1 voor aerobe ontwikkeling
 2. Voeg specifieke intervaltraining toe rond LT2
 3. Periodiseer training naar uw doelstellingen toe
 4. Monitor progressie met regelmatige hertesten
+${trainingstatus < 6 ? '5. BELANGRIJK: Verbeter herstel (slaap, voeding, stress management)' : ''}
 
 Voor een uitgebreidere AI-analyse probeer het opnieuw wanneer de verbinding hersteld is.`;
 }
