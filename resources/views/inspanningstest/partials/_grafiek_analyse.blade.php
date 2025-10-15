@@ -2,6 +2,12 @@
 {{-- Variabele sleutel: {{INSPANNINGSTEST_GRAFIEK}} --}}
 
 @php
+    // Bepaal testtype
+    $testtype = $inspanningstest->testtype ?? 'fietstest';
+    $isLooptest = str_contains($testtype, 'loop') || str_contains($testtype, 'lopen');
+    $isZwemtest = str_contains($testtype, 'zwem');
+    $isVeldtest = str_contains($testtype, 'veld');
+    
     // Haal analyse methode op
     $analyseMethode = $inspanningstest->analyse_methode ?? null;
     $analyseMethodeLabel = match($analyseMethode) {
@@ -60,8 +66,9 @@
                     const testresultaten = @json($testresultaten);
                     
                     // Bereid grafiek data voor - gebruik juiste veld op basis van testtype
-                    const isLooptest = '{{ $inspanningstest->testtype }}'.includes('loop');
-                    const isZwemtest = '{{ $inspanningstest->testtype }}'.includes('zwem');
+                    const testtype = '{{ $inspanningstest->testtype }}';
+                    const isLooptest = testtype.includes('loop') || testtype.includes('lopen');
+                    const isZwemtest = testtype.includes('zwem');
                     
                     // Voor X-as: gebruik snelheid voor loop/zwem, vermogen voor fiets
                     const xValues = testresultaten.map(stap => {

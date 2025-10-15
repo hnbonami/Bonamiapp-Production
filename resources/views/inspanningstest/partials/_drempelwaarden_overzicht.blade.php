@@ -4,7 +4,7 @@
 @php
     // Bepaal testtype
     $testtype = $inspanningstest->testtype ?? 'fietstest';
-    $isLooptest = str_contains($testtype, 'loop');
+    $isLooptest = str_contains($testtype, 'loop') || str_contains($testtype, 'lopen');
     $isZwemtest = str_contains($testtype, 'zwem');
     
     // Haal drempelwaarden op
@@ -162,7 +162,11 @@
                         Lactaat<br><span class="text-xs font-normal text-gray-600">mmol/L</span>
                     </th>
                     <th class="px-4 py-3 text-center text-sm font-bold text-gray-800 border-b-2" style="border-color: #c8e1eb;">
-                        Vermogen<br><span class="text-xs font-normal text-gray-600">%max</span>
+                        @if($isLooptest)
+                            Snelheid<br><span class="text-xs font-normal text-gray-600">%max</span>
+                        @else
+                            Vermogen<br><span class="text-xs font-normal text-gray-600">%max</span>
+                        @endif
                     </th>
                 </tr>
             </thead>

@@ -4,7 +4,7 @@
 @php
     // Bepaal testtype
     $testtype = $inspanningstest->testtype ?? 'fietstest';
-    $isLooptest = str_contains($testtype, 'loop');
+    $isLooptest = str_contains($testtype, 'loop') || str_contains($testtype, 'lopen');
     $isZwemtest = str_contains($testtype, 'zwem');
     
     // Decode trainingszones JSON
@@ -21,12 +21,7 @@
     // Bepaal zones methode
     $zonesMethode = $inspanningstest->zones_methode ?? 'bonami';
     $zonesMethodeLabel = ucfirst($zonesMethode);
-@endphp
-
-{{-- Trainingszones Results Partial --}}
-{{-- Variabele sleutel: {{INSPANNINGSTEST_TRAININGSZONES}} --}}
-
-@php
+    
     // Helper functie om decimale minuten naar mm:ss te converteren
     function formatMinPerKmDisplay($decimalMinutes) {
         if ($decimalMinutes >= 999 || !is_numeric($decimalMinutes)) return '∞';
@@ -36,9 +31,6 @@
         
         return sprintf('%d:%02d', $minutes, $seconds);
     }
-    
-    // Bepaal of dit een looptest is voor min/km kolom
-    $isLooptest = in_array($inspanningstest->testtype, ['looptest', 'veldtest_lopen']);
 @endphp
 
 @if(count($trainingszones) > 0)
