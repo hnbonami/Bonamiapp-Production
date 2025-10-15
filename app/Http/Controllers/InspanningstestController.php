@@ -9,13 +9,24 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
 class InspanningstestController extends Controller {
-    public function results($klantId, $testId)
+    /**
+     * Toon resultaten van een inspanningstest
+     */
+    public function results(Klant $klant, Inspanningstest $test)
     {
-        $klant = \App\Models\Klant::findOrFail($klantId);
-        $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
-        // Hier kun je straks berekeningen toevoegen
-        $results = [];
-        return view('inspanningstest.results', compact('klant', 'test', 'results', 'klantId'));
+        // Controleer of inspanningstest bij klant hoort
+        if ($test->klant_id !== $klant->id) {
+            abort(404);
+        }
+        
+        // Decode JSON data
+        $testresultaten = json_decode($test->testresultaten, true) ?? [];
+        $trainingszones = json_decode($test->trainingszones_data, true) ?? [];
+        
+        // Hernoem variabele voor de view (backward compatibility)
+        $inspanningstest = $test;
+        
+        return view('inspanningstest.results', compact('klant', 'inspanningstest', 'testresultaten', 'trainingszones'));
     }
 
     public function generateReport(Request $request, $klantId, $testId)
@@ -29,38 +40,115 @@ class InspanningstestController extends Controller {
         return view('inspanningstest.create', compact('klant'));
     }
 
-    public function store(Request $request, $klantId)
+    public function store(Request $request, Klant $klant)
     {
-    \Log::info('InspanningstestController@store called', ['klantId' => $klantId, 'input_keys' => array_keys($request->all())]);
-        $data = $request->validate([
-            'testdatum' => 'required|date',
-            'testtype' => 'required|in:looptest,fietstest',
-            'lichaamslengte_cm' => 'nullable|integer',
-            'lichaamsgewicht_kg' => 'nullable|numeric',
-            'bmi' => 'nullable|numeric',
-            'hartslag_rust_bpm' => 'nullable|integer',
-            'buikomtrek_cm' => 'nullable|integer',
-            'startwattage' => 'nullable|integer',
-            'stappen_min' => 'nullable|integer',
-            'testresultaten' => 'nullable|array',
-            'aerobe_drempel_vermogen' => 'nullable|numeric',
-            'aerobe_drempel_hartslag' => 'nullable|integer',
-            'anaerobe_drempel_vermogen' => 'nullable|numeric',
-            'anaerobe_drempel_hartslag' => 'nullable|integer',
-            'besluit_lichaamssamenstelling' => 'nullable|string',
-            'advies_aerobe_drempel' => 'nullable|string',
-            'advies_anaerobe_drempel' => 'nullable|string',
-            // Template kind for mapping to report templates (nullable)
-            'template_kind' => 'nullable|string|in:inspanningstest_fietsen,inspanningstest_lopen,standaard_bikefit,professionele_bikefit,zadeldrukmeting,maatbepaling',
+        // Log ALLE incoming data voor debugging
+        \Log::info('=== INSPANNINGSTEST STORE DEBUG ===');
+        \Log::info('Alle request data:', $request->all());
+        
+        // Valideer minimale verplichte velden - accepteer beide namen
+        $request->validate([
+            'testdatum' => 'nullable|date',
+            'datum' => 'nullable|date',
+            'testtype' => 'required|string',
         ]);
-        // Add the current user's ID to track who performed the test
-        $data['user_id'] = auth()->id();
-        $data['klant_id'] = $klantId;
-        $test = Inspanningstest::create($data);
-        return redirect()->route('inspanningstest.results', [
-            'klant' => $klantId,
-            'test' => $test->id
-        ])->with('success', 'Inspanningstest opgeslagen.');
+        
+        // Gebruik testdatum OF datum (whichever is ingevuld), fallback naar vandaag
+        $testDatum = $request->input('testdatum') ?: ($request->input('datum') ?: now()->format('Y-m-d'));
+        
+        \Log::info('Datum bepaald als:', ['datum' => $testDatum]);
+        
+        // Start met verplichte velden - datum is ALTIJD ingevuld
+        $dataVoorDatabase = [
+            'datum' => $testDatum, // Altijd ingevuld, fallback naar vandaag
+            'testtype' => $request->testtype,
+            'klant_id' => $klant->id,
+            'user_id' => auth()->id(),
+        ];
+        
+        // Voeg testresultaten toe als JSON
+        if ($request->filled('testresultaten')) {
+            $dataVoorDatabase['testresultaten'] = json_encode($request->testresultaten);
+        }
+        
+        // Alle optionele tekstvelden
+        $tekstVelden = [
+            'testlocatie',
+            'protocol',
+            'weersomstandigheden',
+            'specifieke_doelstellingen',
+            'complete_ai_analyse',
+            'analyse_methode',
+            'zones_methode',
+            'zones_eenheid',
+            'trainingszones_data',
+            'training_dag_voor_test',
+            'training_2d_voor_test',
+        ];
+        
+        foreach ($tekstVelden as $veld) {
+            if ($request->filled($veld)) {
+                $dataVoorDatabase[$veld] = $request->$veld;
+            }
+        }
+        
+        // Alle optionele numerieke velden
+        $numeriekeVelden = [
+            'vetpercentage',
+            'zones_aantal',
+            'lichaamsgewicht_kg',
+            'lichaamslengte_cm',
+            'bmi',
+            'buikomtrek_cm',
+            'hartslag_rust_bpm',
+            'maximale_hartslag_bpm',
+            'slaapkwaliteit',
+            'eetlust',
+            'gevoel_op_training',
+            'stressniveau',
+            'gemiddelde_trainingstatus',
+            'startwattage',
+            'stappen_min',
+            'stappen_watt',
+            'aerobe_drempel_vermogen',
+            'aerobe_drempel_hartslag',
+            'anaerobe_drempel_vermogen',
+            'anaerobe_drempel_hartslag',
+        ];
+        
+        foreach ($numeriekeVelden as $veld) {
+            if ($request->filled($veld)) {
+                $dataVoorDatabase[$veld] = $request->$veld;
+            }
+        }
+        
+        // Log data voor debugging - VOOR create
+        \Log::info('Data VOOR create():', $dataVoorDatabase);
+        
+        // BELANGRIJK: Controleer of datum er nog in zit
+        if (!isset($dataVoorDatabase['datum']) || empty($dataVoorDatabase['datum'])) {
+            \Log::error('DATUM IS LEEG! Forceer vandaag als fallback');
+            $dataVoorDatabase['datum'] = now()->format('Y-m-d');
+        }
+        
+        try {
+            // Maak inspanningstest aan
+            $inspanningstest = Inspanningstest::create($dataVoorDatabase);
+            
+            // Redirect naar RESULTS pagina met success bericht
+            return redirect()->route('inspanningstest.results', [
+                'klant' => $klant->id,
+                'test' => $inspanningstest->id  // 'test' ipv 'inspanningstest'
+            ])->with('success', 'Inspanningstest succesvol aangemaakt!');
+            
+        } catch (\Exception $e) {
+            \Log::error('Fout bij opslaan inspanningstest: ' . $e->getMessage());
+            \Log::error('Data die probeerde op te slaan:', $dataVoorDatabase);
+            
+            return back()
+                ->withInput()
+                ->withErrors(['error' => 'Er ging iets mis bij het opslaan: ' . $e->getMessage()]);
+        }
     }
     public function show($klantId, $testId)
     {
