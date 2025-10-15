@@ -3544,8 +3544,12 @@ function updateMinKmDisplay(zoneIndex) {
     if (currentTableType !== 'looptest' || !huidigeZonesData[zoneIndex]) return;
     
     const zone = huidigeZonesData[zoneIndex];
-    const minMinPerKm = zone.maxVermogen > 0 ? (60 / zone.maxVermogen).toFixed(1) : '∞';
-    const maxMinPerKm = zone.minVermogen > 0 ? (60 / zone.minVermogen).toFixed(1) : '∞';
+    const minMinPerKmDecimal = zone.maxVermogen > 0 ? (60 / zone.maxVermogen) : 999;
+    const maxMinPerKmDecimal = zone.minVermogen > 0 ? (60 / zone.minVermogen) : 999;
+    
+    // Converteer naar mm:ss formaat
+    const minMinPerKm = formatMinPerKm(minMinPerKmDecimal);
+    const maxMinPerKm = formatMinPerKm(maxMinPerKmDecimal);
     
     // Update de min/km cellen in de tabel (als ze bestaan)
     const rows = document.getElementById('zones-body').getElementsByTagName('tr');
@@ -3564,6 +3568,16 @@ function updateMinKmDisplay(zoneIndex) {
 
 // Globale variabele voor huidige zones data
 let huidigeZonesData = null;
+
+// 🏃 HULPFUNCTIE: Converteer decimale minuten naar mm:ss formaat
+function formatMinPerKm(decimalMinutes) {
+    if (decimalMinutes >= 999 || isNaN(decimalMinutes)) return '∞';
+    
+    const minutes = Math.floor(decimalMinutes);
+    const seconds = Math.round((decimalMinutes - minutes) * 60);
+    
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
 
 // Hoofdfunctie om trainingszones bij te werken
 function updateTrainingszones() {
@@ -4057,11 +4071,17 @@ function genereerZonesTabel(zonesData, eenheid) {
         // Bereken min/km voor looptesten (60 / snelheid_kmh = min_per_km)
         let extraKolomCellen = '';
         if (isLooptest) {
-            const minMinPerKm = zone.maxVermogen > 0 ? (60 / zone.maxVermogen).toFixed(1) : '∞';
-            const maxMinPerKm = zone.minVermogen > 0 ? (60 / zone.minVermogen).toFixed(1) : '∞';
+            // Bereken min/km en converteer naar mm:ss formaat
+            const minPerKmMin = zone.maxVermogen > 0 ? (60 / zone.maxVermogen) : 999;
+            const maxPerKmMin = zone.minVermogen > 0 ? (60 / zone.minVermogen) : 999;
+            
+            // Converteer naar mm:ss formaat
+            const minMinKmFormatted = formatMinPerKm(minPerKmMin);
+            const maxMinKmFormatted = formatMinPerKm(maxPerKmMin);
+            
             extraKolomCellen = `
-                <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${minMinPerKm}</td>
-                <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${maxMinPerKm}</td>
+                <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${minMinKmFormatted}</td>
+                <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${maxMinKmFormatted}</td>
             `;
         }
         

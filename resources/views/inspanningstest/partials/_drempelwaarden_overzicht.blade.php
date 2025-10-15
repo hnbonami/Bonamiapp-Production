@@ -85,10 +85,16 @@
         return sprintf('%d:%02d', $min, $sec);
     }
     
-    // Voor looptesten: bereken min/km uit km/h
+    // Voor looptesten: bereken min/km uit km/h en formatteer als mm:ss
     function berekenMinPerKm($kmh) {
         if (!$kmh || $kmh == 0) return null;
-        return 60 / $kmh;
+        $decimalMinutes = 60 / $kmh;
+        
+        // Converteer naar mm:ss formaat
+        $minutes = floor($decimalMinutes);
+        $seconds = round(($decimalMinutes - $minutes) * 60);
+        
+        return sprintf('%d:%02d', $minutes, $seconds);
     }
 @endphp
 
@@ -161,7 +167,7 @@
                             {{ $lt1Vermogen ? number_format($lt1Vermogen, 1) : '-' }}
                         </td>
                         <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #2563eb;">
-                            {{ $lt1Vermogen ? number_format(berekenMinPerKm($lt1Vermogen), 1) : '-' }}
+                            {{ $lt1Vermogen ? berekenMinPerKm($lt1Vermogen) : '-' }}
                         </td>
                     @else
                         <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #2563eb;">
@@ -198,7 +204,7 @@
                             {{ $lt2Vermogen ? number_format($lt2Vermogen, 1) : '-' }}
                         </td>
                         <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #2563eb;">
-                            {{ $lt2Vermogen ? number_format(berekenMinPerKm($lt2Vermogen), 1) : '-' }}
+                            {{ $lt2Vermogen ? berekenMinPerKm($lt2Vermogen) : '-' }}
                         </td>
                     @else
                         <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #2563eb;">
@@ -236,7 +242,7 @@
                                 {{ $maxVermogen ? number_format($maxVermogen, 1) : '-' }}
                             </td>
                             <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #2563eb;">
-                                {{ $maxVermogen ? number_format(berekenMinPerKm($maxVermogen), 1) : '-' }}
+                                {{ $maxVermogen ? berekenMinPerKm($maxVermogen) : '-' }}
                             </td>
                         @else
                             <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #2563eb;">
