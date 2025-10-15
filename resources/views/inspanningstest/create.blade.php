@@ -98,6 +98,16 @@
                         </div>
 
                         <div class="mb-4">
+                            <label for="vetpercentage" class="block text-sm font-medium text-gray-700 mb-2">Vetpercentage (%)</label>
+                            <input type="number" 
+                                   step="0.1"
+                                   name="vetpercentage" 
+                                   id="vetpercentage"
+                                   value="{{ old('vetpercentage') }}"
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                        </div>
+
+                        <div class="mb-4">
                             <label for="hartslag_rust_bpm" class="block text-sm font-medium text-gray-700 mb-2">Hartslag rust (bpm)</label>
                             <input type="number" 
                                    name="hartslag_rust_bpm" 
@@ -331,14 +341,8 @@
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="besluit_lichaamssamenstelling" class="block text-sm font-medium text-gray-700 mb-2">Besluit Lichaamssamenstelling</label>
-                        <textarea name="besluit_lichaamssamenstelling" 
-                                  id="besluit_lichaamssamenstelling"
-                                  rows="3"
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                  placeholder="Conclusies over lichaamssamenstelling...">{{ old('besluit_lichaamssamenstelling') }}</textarea>
-                    </div>
+
+
 
                     <!-- Complete AI Analyse Sectie -->
                     <div class="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
@@ -450,17 +454,7 @@
                     <!-- Hidden input voor zones data -->
                     <input type="hidden" name="trainingszones_data" id="trainingszones_data" value="{{ old('trainingszones_data') }}">
 
-                    <!-- Debug informatie -->
-                    <div class="mt-4 p-4 bg-gray-100 rounded" id="debug-info">
-                        <h4 class="font-bold">🔧 Debug & Test Sectie</h4>
-                        <p>Datum: <span id="debug-datum"></span></p>
-                        <p>Testtype: <span id="debug-testtype"></span></p>
-        <button type="button" onclick="testJavaScript()" class="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm">
-            🔧 Test JavaScript
-        </button>
-        <button type="button" onclick="generateCompleteAIAnalysis()" class="mt-2 ml-2 px-3 py-1 bg-green-500 text-white rounded text-sm">
-            � Test Complete AI Analyse
-        </button>
+
     </div>                    <!-- Sjabloon notificatie - EENVOUDIGE VERSIE -->
                     <div id="sjabloon-notificatie" class="mt-6 mb-6" style="background: #e3f2fd; border: 2px solid #2196f3; padding: 15px; border-radius: 8px;">
                         <strong style="color: #1976d2;">📋 Selecteer een testtype om te zien of er een sjabloon beschikbaar is voor rapportgeneratie.</strong>
