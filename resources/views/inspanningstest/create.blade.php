@@ -112,6 +112,7 @@
                         <div class="mb-4">
                             <label for="lichaamslengte_cm" class="block text-sm font-medium text-gray-700 mb-2">Lengte (cm)</label>
                             <input type="number" 
+                                   step="0.1"
                                    name="lichaamslengte_cm" 
                                    id="lichaamslengte_cm"
                                    value="{{ old('lichaamslengte_cm', $klant->lengte_cm) }}"
@@ -499,39 +500,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="mb-4">
-                            <label for="aerobe_drempel_vermogen" class="block text-sm font-medium text-gray-700 mb-2">Aërobe drempel - Vermogen (Watt)</label>
+                            <label for="aerobe_drempel_vermogen" id="label_aerobe_drempel_vermogen" class="block text-sm font-medium text-gray-700 mb-2">Aërobe drempel - Vermogen (Watt)</label>
                             <input type="number" 
+                                   step="any"
                                    name="aerobe_drempel_vermogen" 
                                    id="aerobe_drempel_vermogen"
                                    value="{{ old('aerobe_drempel_vermogen') }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                   placeholder="Automatisch berekend">
                         </div>
 
                         <div class="mb-4">
                             <label for="aerobe_drempel_hartslag" class="block text-sm font-medium text-gray-700 mb-2">Aërobe drempel - Hartslag (bpm)</label>
                             <input type="number" 
+                                   step="1"
                                    name="aerobe_drempel_hartslag" 
                                    id="aerobe_drempel_hartslag"
                                    value="{{ old('aerobe_drempel_hartslag') }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                   placeholder="Automatisch berekend">
                         </div>
 
                         <div class="mb-4">
-                            <label for="anaerobe_drempel_vermogen" class="block text-sm font-medium text-gray-700 mb-2">Anaërobe drempel - Vermogen (Watt)</label>
+                            <label for="anaerobe_drempel_vermogen" id="label_anaerobe_drempel_vermogen" class="block text-sm font-medium text-gray-700 mb-2">Anaërobe drempel - Vermogen (Watt)</label>
                             <input type="number" 
+                                   step="any"
                                    name="anaerobe_drempel_vermogen" 
                                    id="anaerobe_drempel_vermogen"
                                    value="{{ old('anaerobe_drempel_vermogen') }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                   placeholder="Automatisch berekend">
                         </div>
 
                         <div class="mb-4">
                             <label for="anaerobe_drempel_hartslag" class="block text-sm font-medium text-gray-700 mb-2">Anaërobe drempel - Hartslag (bpm)</label>
                             <input type="number" 
+                                   step="1"
                                    name="anaerobe_drempel_hartslag" 
                                    id="anaerobe_drempel_hartslag"
                                    value="{{ old('anaerobe_drempel_hartslag') }}"
-                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                   class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                   placeholder="Automatisch berekend">
                         </div>
                     </div>
 
@@ -1383,8 +1392,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateDrempelwaardenLabels(selectedType) {
         console.log('🏷️ updateDrempelwaardenLabels aangeroepen voor:', selectedType);
         
-        const aerobeVermogenLabel = document.querySelector('label[for="aerobe_drempel_vermogen"]');
-        const anaerobeVermogenLabel = document.querySelector('label[for="anaerobe_drempel_vermogen"]');
+        const aerobeVermogenLabel = document.getElementById('label_aerobe_drempel_vermogen');
+        const anaerobeVermogenLabel = document.getElementById('label_anaerobe_drempel_vermogen');
         
         if (!aerobeVermogenLabel || !anaerobeVermogenLabel) {
             console.log('❌ Drempelwaarden labels niet gevonden');
