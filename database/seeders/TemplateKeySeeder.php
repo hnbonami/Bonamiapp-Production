@@ -67,6 +67,15 @@ class TemplateKeySeeder extends Seeder
             ['key' => 'inspanningstest.type_test', 'description' => 'Type inspanningstest', 'category' => 'inspanningstest'],
             ['key' => 'inspanningstest.duur', 'description' => 'Duur van de test in minuten', 'category' => 'inspanningstest'],
             
+            // Inspanningstest - NIEUWE COMPONENT KEYS
+            ['key' => '{{INSPANNINGSTEST_ALGEMEEN}}', 'description' => 'Algemene Informatie (klantgegevens, testdatum, lichaamssamenstelling)', 'category' => 'inspanningstest'],
+            ['key' => '{{INSPANNINGSTEST_TRAININGSTATUS}}', 'description' => 'Trainingstatus (slaap, eetlust, gevoel, stress)', 'category' => 'inspanningstest'],
+            ['key' => '{{INSPANNINGSTEST_TESTRESULTATEN}}', 'description' => 'Testresultaten Tabel (tijd, vermogen, lactaat, hartslag)', 'category' => 'inspanningstest'],
+            ['key' => '{{INSPANNINGSTEST_GRAFIEK}}', 'description' => 'Grafiek Analyse (hartslag & lactaat progressie)', 'category' => 'inspanningstest'],
+            ['key' => '{{INSPANNINGSTEST_DREMPELS}}', 'description' => 'Drempelwaarden Overzicht (LT1/LT2 tabel)', 'category' => 'inspanningstest'],
+            ['key' => '{{INSPANNINGSTEST_ZONES}}', 'description' => 'Trainingszones (Bonami/Karvonen methode)', 'category' => 'inspanningstest'],
+            ['key' => '{{INSPANNINGSTEST_AI_ANALYSE}}', 'description' => 'AI Performance Analyse (complete trainingsadvies)', 'category' => 'inspanningstest'],
+            
             // Inspanningstest - startwaarden
             ['key' => 'inspanningstest.rust_hartslag', 'description' => 'Rusthartslag', 'category' => 'inspanningstest'],
             ['key' => 'inspanningstest.rust_bloeddruk_systolisch', 'description' => 'Rust bloeddruk systolisch', 'category' => 'inspanningstest'],
