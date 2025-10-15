@@ -174,23 +174,37 @@ class InspanningstestController extends Controller {
     public function generateAIAdvice(Request $request): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'testtype' => 'required|string',
-                'aerobe_drempel_vermogen' => 'nullable|numeric',
-                'aerobe_drempel_hartslag' => 'nullable|numeric',
-                'anaerobe_drempel_vermogen' => 'nullable|numeric', 
-                'anaerobe_drempel_hartslag' => 'nullable|numeric',
-                'specifieke_doelstellingen' => 'nullable|string',
-                'lichaamsgewicht_kg' => 'nullable|numeric',
-                'lichaamslengte_cm' => 'nullable|numeric',
-                'leeftijd' => 'nullable|numeric',
-                'maximale_hartslag_bpm' => 'nullable|numeric',
-                'hartslag_rust_bpm' => 'nullable|numeric',
-                'bmi' => 'nullable|numeric',
-                'buikomtrek_cm' => 'nullable|numeric',
-                'analyse_methode' => 'nullable|string',
-                'testlocatie' => 'nullable|string',
-                'besluit_lichaamssamenstelling' => 'nullable|string',
+            \Log::info('🤖 GenerateAIAdvice aangeroepen');
+            
+            // Haal klant op voor geslacht en geboortedatum
+            $klant = \App\Models\Klant::find($request->input('klant_id'));
+            
+            // Bereken leeftijd uit geboortedatum
+            $leeftijd = 35; // Default
+            if ($klant && $klant->geboortedatum) {
+                try {
+                    $leeftijd = \Carbon\Carbon::parse($klant->geboortedatum)->age;
+                } catch (\Exception $e) {
+                    \Log::warning('Kon leeftijd niet berekenen uit geboortedatum', ['error' => $e->getMessage()]);
+                }
+            }
+            
+            // Converteer geslacht naar male/female voor normen
+            $geslacht = 'male'; // Default
+            if ($klant && $klant->geslacht) {
+                $geslachtLower = strtolower($klant->geslacht);
+                if (in_array($geslachtLower, ['vrouw', 'female', 'woman'])) {
+                    $geslacht = 'female';
+                } else if (in_array($geslachtLower, ['man', 'male'])) {
+                    $geslacht = 'male';
+                }
+            }
+            
+            // Verzamel complete testdata
+            $validated = array_merge($request->all(), [
+                'geslacht' => $geslacht,
+                'leeftijd' => $leeftijd,
+                'geboortedatum' => $klant ? $klant->geboortedatum : null,
             ]);
 
             // Check of AI enabled is
