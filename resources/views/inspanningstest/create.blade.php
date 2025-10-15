@@ -1594,28 +1594,35 @@ function getTableData() {
             }
         });
         
-        // SPECIALE BEHANDELING voor veldtest lopen: bereken snelheid
-        if (currentTableType === 'veldtest_lopen' && rowData.afstand && rowData.tijd_min) {
-            const afstandKm = rowData.afstand / 1000; // meter naar km
-            const tijdUur = rowData.tijd_min / 60; // minuten naar uur
-            if (tijdUur > 0) {
-                rowData.snelheid = afstandKm / tijdUur; // km/h
-                console.log(`  🏃 Berekende snelheid: ${rowData.snelheid.toFixed(2)} km/h (${rowData.afstand}m in ${rowData.tijd_min}min)`);
-            }
+    // SPECIALE BEHANDELING voor veldtest lopen: bereken snelheid EN voeg hartslag toe
+    if (currentTableType === 'veldtest_lopen' && rowData.afstand && rowData.tijd_min) {
+        const afstandKm = rowData.afstand / 1000; // meter naar km
+        const tijdMinuten = rowData.tijd_min + ((rowData.tijd_sec || 0) / 60); // totale tijd in minuten
+        const tijdUur = tijdMinuten / 60; // minuten naar uur
+        if (tijdUur > 0) {
+            rowData.snelheid = afstandKm / tijdUur; // km/h
+            console.log(`  🏃 Berekende snelheid: ${rowData.snelheid.toFixed(2)} km/h (${rowData.afstand}m in ${tijdMinuten.toFixed(2)}min)`);
         }
-        
-        // SPECIALE BEHANDELING voor veldtest zwemmen: bereken snelheid (min/100m)
-        if (currentTableType === 'veldtest_zwemmen' && rowData.afstand && rowData.tijd_min) {
-            // Bereken totale tijd in seconden
-            const totaleTijdSec = (rowData.tijd_min * 60) + (rowData.tijd_sec || 0);
-            if (totaleTijdSec > 0 && rowData.afstand > 0) {
-                // Bereken min/100m (zwemnotatie)
-                rowData.snelheid = (totaleTijdSec / 60) * (100 / rowData.afstand); // min/100m
-                console.log(`  🏊 Berekende zwemsnelheid: ${rowData.snelheid.toFixed(2)} min/100m (${rowData.afstand}m in ${totaleTijdSec}sec)`);
-            }
+        // Zorg dat hartslag aanwezig is
+        if (rowData.hartslag) {
+            console.log(`  ❤️ Hartslag aanwezig: ${rowData.hartslag} bpm`);
         }
-        
-        console.log('RowData:', rowData);
+    }
+    
+    // SPECIALE BEHANDELING voor veldtest zwemmen: bereken snelheid (min/100m) EN voeg hartslag toe
+    if (currentTableType === 'veldtest_zwemmen' && rowData.afstand && rowData.tijd_min) {
+        // Bereken totale tijd in seconden
+        const totaleTijdSec = (rowData.tijd_min * 60) + (rowData.tijd_sec || 0);
+        if (totaleTijdSec > 0 && rowData.afstand > 0) {
+            // Bereken min/100m (zwemnotatie)
+            rowData.snelheid = (totaleTijdSec / 60) * (100 / rowData.afstand); // min/100m
+            console.log(`  🏊 Berekende zwemsnelheid: ${rowData.snelheid.toFixed(2)} min/100m (${rowData.afstand}m in ${totaleTijdSec}sec)`);
+        }
+        // Zorg dat hartslag aanwezig is
+        if (rowData.hartslag) {
+            console.log(`  ❤️ Hartslag aanwezig: ${rowData.hartslag} bpm`);
+        }
+    }        console.log('RowData:', rowData);
         
         // Only add row if it has useful data
         if (Object.values(rowData).some(val => val !== null && val !== '')) {
@@ -1840,21 +1847,50 @@ function calculateDmaxModified(validData, xField) {
     return result;
 }
 
-// Lineaire interpolatie helper functie
+// Lineaire interpolatie helper functie - GEFIXEERD VOOR VELDTESTEN
 function interpolateLinear(points, targetX, targetField, xField) {
-    points.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
+    // Voor veldtesten: zorg dat snelheid en hartslag beschikbaar zijn
+    const validPoints = points.filter(p => {
+        const hasXValue = p[xField] !== null && p[xField] !== undefined && !isNaN(p[xField]);
+        const hasTargetValue = p[targetField] !== null && p[targetField] !== undefined && !isNaN(p[targetField]);
+        return hasXValue && hasTargetValue;
+    });
     
-    for (let i = 0; i < points.length - 1; i++) {
-        const p1 = points[i];
-        const p2 = points[i + 1];
+    if (validPoints.length === 0) {
+        console.log('❌ interpolateLinear: Geen valide punten met', xField, 'en', targetField);
+        return targetField === 'hartslag' ? 140 : 0; // Fallback waarde
+    }
+    
+    if (validPoints.length === 1) {
+        console.log('⚠️ interpolateLinear: Slechts 1 punt, gebruik deze waarde');
+        return validPoints[0][targetField];
+    }
+    
+    validPoints.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
+    
+    console.log(`🔍 interpolateLinear: targetX=${targetX.toFixed(2)}, targetField=${targetField}, xField=${xField}`);
+    console.log(`📊 Valide punten (${validPoints.length}):`, validPoints.map(p => `${p[xField].toFixed(2)}${xField}: ${p[targetField]}`));
+    
+    for (let i = 0; i < validPoints.length - 1; i++) {
+        const p1 = validPoints[i];
+        const p2 = validPoints[i + 1];
         
         if (p1[xField] <= targetX && p2[xField] >= targetX) {
             const ratio = (targetX - p1[xField]) / (p2[xField] - p1[xField]);
-            return p1[targetField] + ratio * (p2[targetField] - p1[targetField]);
+            const interpolatedValue = p1[targetField] + ratio * (p2[targetField] - p1[targetField]);
+            console.log(`✅ Interpolatie tussen ${p1[xField].toFixed(2)} (${p1[targetField]}) en ${p2[xField].toFixed(2)} (${p2[targetField]}): ${interpolatedValue.toFixed(1)}`);
+            return interpolatedValue;
         }
     }
     
-    return points[0][targetField]; // Fallback
+    // Extrapolatie: gebruik dichtstbijzijnde punt
+    if (targetX < validPoints[0][xField]) {
+        console.log(`⬅️ Extrapolatie links: gebruik eerste punt ${validPoints[0][targetField]}`);
+        return validPoints[0][targetField];
+    } else {
+        console.log(`➡️ Extrapolatie rechts: gebruik laatste punt ${validPoints[validPoints.length - 1][targetField]}`);
+        return validPoints[validPoints.length - 1][targetField];
+    }
 }
 
 // Lactaat Steady State methode met interpolatie
