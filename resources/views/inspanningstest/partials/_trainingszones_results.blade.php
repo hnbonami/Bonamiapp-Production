@@ -128,14 +128,18 @@
                         
                         {{-- Vermogen/Snelheid min/max --}}
                         <td class="px-2 py-3 text-center text-sm font-semibold border-r border-gray-200" style="color: #2563eb;">
-                            @if($isLooptest)
+                            @if($isZwemtest)
+                                {{ isset($zone['minVermogen']) ? formatMinPerKmDisplay($zone['minVermogen']) : '-' }}
+                            @elseif($isLooptest)
                                 {{ isset($zone['minVermogen']) ? number_format($zone['minVermogen'], 1) : '-' }}
                             @else
                                 {{ isset($zone['minVermogen']) ? round($zone['minVermogen']) : '-' }}
                             @endif
                         </td>
                         <td class="px-2 py-3 text-center text-sm font-semibold border-r border-gray-200" style="color: #2563eb;">
-                            @if($isLooptest)
+                            @if($isZwemtest)
+                                {{ isset($zone['maxVermogen']) ? formatMinPerKmDisplay($zone['maxVermogen']) : '-' }}
+                            @elseif($isLooptest)
                                 {{ isset($zone['maxVermogen']) ? number_format($zone['maxVermogen'], 1) : '-' }}
                             @else
                                 {{ isset($zone['maxVermogen']) ? round($zone['maxVermogen']) : '-' }}
