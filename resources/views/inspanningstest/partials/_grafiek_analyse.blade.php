@@ -59,10 +59,35 @@
                     // Haal testresultaten op
                     const testresultaten = @json($testresultaten);
                     
-                    // Bereid grafiek data voor
-                    const labels = testresultaten.map(stap => stap.vermogen || stap.snelheid);
-                    const hartslagData = testresultaten.map(stap => stap.hartslag);
-                    const lactaatData = testresultaten.map(stap => stap.lactaat);
+                    // Bereid grafiek data voor - gebruik juiste veld op basis van testtype
+                    const isLooptest = '{{ $inspanningstest->testtype }}'.includes('loop');
+                    const isZwemtest = '{{ $inspanningstest->testtype }}'.includes('zwem');
+                    
+                    // Voor X-as: gebruik snelheid voor loop/zwem, vermogen voor fiets
+                    const xValues = testresultaten.map(stap => {
+                        if (isLooptest || isZwemtest) {
+                            return stap.snelheid || 0;
+                        }
+                        return stap.vermogen || 0;
+                    });
+                    
+                    const hartslagData = testresultaten.map(stap => ({
+                        x: stap.snelheid || stap.vermogen || 0,
+                        y: stap.hartslag
+                    }));
+                    
+                    const lactaatData = testresultaten.map(stap => ({
+                        x: stap.snelheid || stap.vermogen || 0,
+                        y: stap.lactaat
+                    }));
+                    
+                    console.log('📊 Grafiek data:', {
+                        testtype: '{{ $inspanningstest->testtype }}',
+                        isLooptest,
+                        xValues,
+                        hartslagData,
+                        lactaatData
+                    });
                     
                     // Gebruik globale drempelwaarden (geen dubbele declaratie!)
                     const { lt1Vermogen, lt2Vermogen } = window.drempelwaardenResults || {};
@@ -71,8 +96,6 @@
                     
                     // Bereid X-as label voor
                     let xAxisLabel = 'Vermogen (Watt)';
-                    const isLooptest = '{{ $inspanningstest->testtype }}'.includes('loop');
-                    const isZwemtest = '{{ $inspanningstest->testtype }}'.includes('zwem');
                     
                     if (isLooptest) {
                         xAxisLabel = 'Snelheid (km/h)';
@@ -83,9 +106,8 @@
                     // Configureer Chart.js
                     const ctx = document.getElementById('testResultatenGrafiek').getContext('2d');
                     const chart = new Chart(ctx, {
-                        type: 'line',
+                        type: 'scatter', // BELANGRIJK: scatter voor xy-data in plaats van line
                         data: {
-                            labels: labels,
                             datasets: [
                                 {
                                     label: 'Hartslag (bpm)',
@@ -96,7 +118,8 @@
                                     tension: 0.4,
                                     yAxisID: 'y',
                                     pointRadius: 5,
-                                    pointHoverRadius: 7
+                                    pointHoverRadius: 7,
+                                    showLine: true // Toon lijn tussen punten
                                 },
                                 {
                                     label: 'Lactaat (mmol/L)',
@@ -107,7 +130,8 @@
                                     tension: 0.4,
                                     yAxisID: 'y1',
                                     pointRadius: 5,
-                                    pointHoverRadius: 7
+                                    pointHoverRadius: 7,
+                                    showLine: true // Toon lijn tussen punten
                                 }
                             ]
                         },
@@ -154,6 +178,24 @@
                                         text: xAxisLabel,
                                         font: {
                                             weight: 'bold'
+                                        }
+                                    },
+                                    ticks: {
+                                        // Dynamische step size op basis van testtype
+                                        stepSize: isLooptest ? 0.5 : (isZwemtest ? 0.1 : 10),
+                                        callback: function(value) {
+                                            // Voor looptesten: toon met 1 decimaal
+                                            if (isLooptest) {
+                                                return value.toFixed(1);
+                                            }
+                                            // Voor zwemtesten: toon mm:ss formaat
+                                            if (isZwemtest) {
+                                                const minuten = Math.floor(value);
+                                                const seconden = Math.round((value - minuten) * 60);
+                                                return `${minuten}:${seconden.toString().padStart(2, '0')}`;
+                                            }
+                                            // Voor fietstesten: toon hele getallen (per 10 watt)
+                                            return Math.round(value);
                                         }
                                     }
                                 },
