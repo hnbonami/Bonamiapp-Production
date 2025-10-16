@@ -104,6 +104,17 @@
     $isZwemtest = str_contains($testtype, 'zwem');
     $isVeldtest = str_contains($testtype, 'veld');
     
+    // Haal testresultaten op via relatie of decode JSON
+    $testresultaten = $inspanningstest->testresultaten ?? collect();
+    
+    // Check of testresultaten een string is (JSON) en decode indien nodig
+    if (is_string($testresultaten)) {
+        $testresultaten = json_decode($testresultaten) ?? [];
+    }
+    
+    // Converteer naar collection voor consistentie
+    $testresultaten = collect($testresultaten);
+    
     // Haal analyse methode op
     $analyseMethode = $inspanningstest->analyse_methode ?? null;
     $analyseMethodeLabel = match($analyseMethode) {

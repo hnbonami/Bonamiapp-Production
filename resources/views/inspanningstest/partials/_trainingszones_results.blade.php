@@ -7,7 +7,15 @@
     $isLooptest = str_contains($testtype, 'loop') || str_contains($testtype, 'lopen');
     $isZwemtest = str_contains($testtype, 'zwem');
     
-    // Decode trainingszones JSON
+    // Haal trainingszones op via relatie of decode JSON
+    $trainingszones = $inspanningstest->trainingszones_data ?? [];
+    
+    // Check of trainingszones een string is (JSON) en decode indien nodig
+    if (is_string($trainingszones)) {
+        $trainingszones = json_decode($trainingszones, true) ?? [];
+    }
+    
+    // Decode trainingszones JSON - zorg dat het een array is
     $trainingszones = is_array($trainingszones) ? $trainingszones : [];
     
     // Bepaal eenheid label

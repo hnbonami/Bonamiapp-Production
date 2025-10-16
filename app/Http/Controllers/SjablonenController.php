@@ -963,35 +963,35 @@ class SjablonenController extends Controller
                     $content = str_replace('{{INSPANNINGSTEST_TRAININGSTATUS}}', $trainingsstatusHtml, $content);
                 }
                 
+                // Maak een kopie van inspanningstest met gedecode data voor partials
+                $inspanningstestForPartials = clone $inspanningstest;
+                $inspanningstestForPartials->testresultaten = $testresultaten;
+                $inspanningstestForPartials->trainingszones_data = $trainingszones;
+                
                 if (strpos($content, '{{INSPANNINGSTEST_TESTRESULTATEN}}') !== false) {
-                    $resultatenHtml = view('inspanningstest.partials._testresultaten_results', [
-                        'inspanningstest' => $inspanningstest,
-                        'testresultaten' => $testresultaten,
-                        'klant' => $inspanningstest->klant
+                    $resultatenHtml = view('inspanningstest.partials._testresultaten', [
+                        'inspanningstest' => $inspanningstestForPartials
                     ])->render();
                     $content = str_replace('{{INSPANNINGSTEST_TESTRESULTATEN}}', $resultatenHtml, $content);
                 }
                 
                 if (strpos($content, '{{INSPANNINGSTEST_GRAFIEK}}') !== false) {
                     $grafiekHtml = view('inspanningstest.partials._grafiek_analyse', [
-                        'inspanningstest' => $inspanningstest,
-                        'testresultaten' => $testresultaten
+                        'inspanningstest' => $inspanningstestForPartials
                     ])->render();
                     $content = str_replace('{{INSPANNINGSTEST_GRAFIEK}}', $grafiekHtml, $content);
                 }
                 
                 if (strpos($content, '{{INSPANNINGSTEST_DREMPELS}}') !== false) {
                     $drempelwaardenHtml = view('inspanningstest.partials._drempelwaarden_overzicht', [
-                        'inspanningstest' => $inspanningstest,
-                        'testresultaten' => $testresultaten
+                        'inspanningstest' => $inspanningstestForPartials
                     ])->render();
                     $content = str_replace('{{INSPANNINGSTEST_DREMPELS}}', $drempelwaardenHtml, $content);
                 }
                 
                 if (strpos($content, '{{INSPANNINGSTEST_ZONES}}') !== false) {
                     $trainingzonesHtml = view('inspanningstest.partials._trainingszones_results', [
-                        'inspanningstest' => $inspanningstest,
-                        'trainingszones' => $trainingszones
+                        'inspanningstest' => $inspanningstestForPartials
                     ])->render();
                     $content = str_replace('{{INSPANNINGSTEST_ZONES}}', $trainingzonesHtml, $content);
                 }

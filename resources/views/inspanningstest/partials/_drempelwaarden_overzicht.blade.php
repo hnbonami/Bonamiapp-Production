@@ -7,6 +7,17 @@
     $isLooptest = str_contains($testtype, 'loop') || str_contains($testtype, 'lopen');
     $isZwemtest = str_contains($testtype, 'zwem');
     
+    // Haal testresultaten op via relatie of decode JSON
+    $testresultaten = $inspanningstest->testresultaten ?? collect();
+    
+    // Check of testresultaten een string is (JSON) en decode indien nodig
+    if (is_string($testresultaten)) {
+        $testresultaten = json_decode($testresultaten, true) ?? [];
+    }
+    
+    // Converteer naar array voor consistentie
+    $testresultaten = is_array($testresultaten) ? $testresultaten : [];
+    
     // Haal drempelwaarden op
     $lt1Vermogen = $inspanningstest->aerobe_drempel_vermogen ?? null;
     $lt1Hartslag = $inspanningstest->aerobe_drempel_hartslag ?? null;
