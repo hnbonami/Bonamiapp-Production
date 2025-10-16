@@ -880,6 +880,15 @@ class SjablonenController extends Controller
      */
     private function generatePagesForInspanningstest($sjabloon, $inspanningstest)
     {
+        // Decode JSON strings naar collections als ze bestaan
+        $testresultaten = is_string($inspanningstest->testresultaten) 
+            ? collect(json_decode($inspanningstest->testresultaten, true) ?? [])
+            : ($inspanningstest->testresultaten ?? collect());
+            
+        $trainingszones = is_string($inspanningstest->trainingszones)
+            ? collect(json_decode($inspanningstest->trainingszones, true) ?? [])
+            : ($inspanningstest->trainingszones ?? collect());
+        
         $generatedPages = [];
         
         foreach ($sjabloon->pages as $page) {
@@ -938,6 +947,61 @@ class SjablonenController extends Controller
                 $content = str_replace('{{test.besluit_lichaamssamenstelling}}', $inspanningstest->besluit_lichaamssamenstelling ?? '', $content);
                 $content = str_replace('{{test.advies_aerobe_drempel}}', $inspanningstest->advies_aerobe_drempel ?? '', $content);
                 $content = str_replace('{{test.advies_anaerobe_drempel}}', $inspanningstest->advies_anaerobe_drempel ?? '', $content);
+                
+                if (strpos($content, '{{INSPANNINGSTEST_ALGEMEEN}}') !== false) {
+                    $algemeenHtml = view('inspanningstest.partials._algemene_info_results', [
+                        'inspanningstest' => $inspanningstest,
+                        'klant' => $inspanningstest->klant
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_ALGEMEEN}}', $algemeenHtml, $content);
+                }
+                
+                if (strpos($content, '{{INSPANNINGSTEST_TRAININGSTATUS}}') !== false) {
+                    $trainingsstatusHtml = view('inspanningstest.partials._trainingstatus_results', [
+                        'inspanningstest' => $inspanningstest
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_TRAININGSTATUS}}', $trainingsstatusHtml, $content);
+                }
+                
+                if (strpos($content, '{{INSPANNINGSTEST_TESTRESULTATEN}}') !== false) {
+                    $resultatenHtml = view('inspanningstest.partials._testresultaten_results', [
+                        'inspanningstest' => $inspanningstest,
+                        'testresultaten' => $testresultaten,
+                        'klant' => $inspanningstest->klant
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_TESTRESULTATEN}}', $resultatenHtml, $content);
+                }
+                
+                if (strpos($content, '{{INSPANNINGSTEST_GRAFIEK}}') !== false) {
+                    $grafiekHtml = view('inspanningstest.partials._grafiek_analyse', [
+                        'inspanningstest' => $inspanningstest,
+                        'testresultaten' => $testresultaten
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_GRAFIEK}}', $grafiekHtml, $content);
+                }
+                
+                if (strpos($content, '{{INSPANNINGSTEST_DREMPELS}}') !== false) {
+                    $drempelwaardenHtml = view('inspanningstest.partials._drempelwaarden_overzicht', [
+                        'inspanningstest' => $inspanningstest,
+                        'testresultaten' => $testresultaten
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_DREMPELS}}', $drempelwaardenHtml, $content);
+                }
+                
+                if (strpos($content, '{{INSPANNINGSTEST_ZONES}}') !== false) {
+                    $trainingzonesHtml = view('inspanningstest.partials._trainingszones_results', [
+                        'inspanningstest' => $inspanningstest,
+                        'trainingszones' => $trainingszones
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_ZONES}}', $trainingzonesHtml, $content);
+                }
+                
+                if (strpos($content, '{{INSPANNINGSTEST_AI_ANALYSE}}') !== false) {
+                    $aiAnalyseHtml = view('inspanningstest.partials._ai_analyse_results', [
+                        'inspanningstest' => $inspanningstest
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE}}', $aiAnalyseHtml, $content);
+                }
                 
                 // Systeem variabelen
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
