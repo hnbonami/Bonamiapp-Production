@@ -4,76 +4,67 @@
 <style>
     .rapport-ai-deel1 {
         font-family: Tahoma, Arial, sans-serif;
-        font-size: 10px;
-        line-height: 1.4;
+        font-size: 9px;
+        line-height: 1.5;
         color: #1f2937;
-        margin: 20px 0;
+        margin: 15px 0;
         width: 120%;
     }
     
     .rapport-ai-deel1 h3 {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 700;
         color: #0f4c75;
-        margin: 15px 0 10px 0;
-        padding: 8px 10px;
+        margin: 12px 0 8px 0;
+        padding: 6px 10px;
         background-color: #c8e1eb;
         border-left: 4px solid #0f4c75;
     }
     
-    .ai-grid-2col {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin: 10px 0;
-    }
-    
-    .ai-info-box {
-        background: #f8fafc;
-        border: 1px solid #e5e7eb;
-        border-radius: 4px;
-        padding: 12px;
-    }
-    
-    .ai-info-box h4 {
-        font-size: 11px;
-        font-weight: 700;
-        color: #1976d2;
-        margin: 0 0 8px 0;
-        padding-bottom: 6px;
-        border-bottom: 2px solid #c8e1eb;
-    }
-    
-    .ai-info-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-    
-    .ai-info-list li {
-        padding: 3px 0;
-        font-size: 9px;
-        color: #374151;
-    }
-    
-    .ai-info-list li strong {
-        color: #1f2937;
-        font-weight: 600;
-    }
-    
-    .drempel-box {
-        background: white;
-        border: 2px solid #c8e1eb;
-        border-radius: 4px;
-        padding: 10px;
-        margin: 8px 0;
-    }
-    
-    .drempel-box h5 {
+    .ai-sectie-titel {
         font-size: 10px;
         font-weight: 700;
-        color: #0f4c75;
-        margin: 0 0 6px 0;
+        color: white;
+        background: #0f4c75;
+        padding: 5px 8px;
+        margin: 8px 0 5px 0;
+        border-radius: 3px;
+    }
+    
+    .ai-sectie-content {
+        font-size: 8.5px;
+        line-height: 1.5;
+        color: #374151;
+        padding: 6px 10px;
+        background: #fafafa;
+        border-left: 2px solid #c8e1eb;
+    }
+    
+    .ai-2col-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 6px 0;
+    }
+    
+    .ai-bullet {
+        padding: 2px 0 2px 12px;
+        position: relative;
+    }
+    
+    .ai-bullet:before {
+        content: "●";
+        position: absolute;
+        left: 0;
+        color: #1976d2;
+        font-size: 7px;
+    }
+    
+    .ai-subheading {
+        margin: 5px 0 2px 0;
+        font-weight: 700;
+        color: #1f2937;
+        font-size: 9px;
     }
 </style>
 
@@ -139,57 +130,81 @@
     $midPoint = (int) ceil($totalSections / 2);
     $deel1Secties = array_slice($parsedSections, 0, $midPoint);
     
-    // Debug log
-    \Log::info('AI Rapport Deel 1', [
-        'total_sections' => $totalSections,
-        'midpoint' => $midPoint,
-        'deel1_count' => count($deel1Secties),
-        'deel1_titles' => array_column($deel1Secties, 'titel')
-    ]);
+    // Verbeter titels - verwijder emoji en maak duidelijker
+    foreach ($deel1Secties as &$sectie) {
+        $titel = $sectie['titel'];
+        // Strip emoji maar behoud tekst
+        $titel = preg_replace('/[\x{1F000}-\x{1F9FF}]/u', '', $titel);
+        $titel = trim($titel);
+        
+        // Maak titels leesbaarder
+        $titel = str_replace(['INSPANNINGSTEST ANALYSE', 'TESTOVERZICHT', 'ATLET PROFIEL', 'GEMETEN DREMPELWAARDEN'], 
+                            ['Inspanningstest Analyse', 'Test Overzicht', 'Atleet Profiel', 'Gemeten Drempelwaarden'], $titel);
+        
+        $sectie['titel'] = $titel;
+    }
 @endphp
 
 @if($aiAnalyse && count($deel1Secties) > 0)
 <div class="rapport-ai-deel1">
     <h3>🧠 AI Performance Analyse - Deel 1</h3>
     
-    @foreach($deel1Secties as $sectie)
-        <div style="margin: 15px 0;">
-            {{-- Sectie Titel --}}
-            <h4 style="font-size: 12px; font-weight: 700; color: #0f4c75; margin: 10px 0 8px 0; padding: 6px 10px; background: #f0f9ff; border-left: 3px solid #1976d2;">
-                {{ $sectie['titel'] }}
-            </h4>
+    @php
+        // Detecteer welke secties naast elkaar kunnen (korte secties)
+        $sectiesMetLengte = array_map(function($sectie) {
+            return [
+                'sectie' => $sectie,
+                'lengte' => strlen($sectie['inhoud'])
+            ];
+        }, $deel1Secties);
+        
+        $i = 0;
+        $totalSecties = count($deel1Secties);
+    @endphp
+    
+    @while($i < $totalSecties)
+        @php
+            $huidigeSectie = $deel1Secties[$i];
+            $volgendeSectie = ($i + 1 < $totalSecties) ? $deel1Secties[$i + 1] : null;
             
-            {{-- Sectie Inhoud --}}
-            <div style="font-size: 9px; line-height: 1.6; color: #374151; padding: 8px 12px; background: #fafafa;">
-                @php
-                    $lines = explode("\n", $sectie['inhoud']);
-                @endphp
+            // Bepaal of deze 2 secties naast elkaar kunnen (als beide < 400 chars)
+            $huidigeLengte = strlen($huidigeSectie['inhoud']);
+            $volgendeLengte = $volgendeSectie ? strlen($volgendeSectie['inhoud']) : 999999;
+            
+            $naarElkaar = ($volgendeSectie && $huidigeLengte < 400 && $volgendeLengte < 400);
+        @endphp
+        
+        @if($naarElkaar)
+            {{-- 2 Kolommen Layout voor korte secties --}}
+            <div class="ai-2col-layout">
+                {{-- Linker sectie --}}
+                <div>
+                    <div class="ai-sectie-titel">{{ $huidigeSectie['titel'] }}</div>
+                    <div class="ai-sectie-content">
+                        @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $huidigeSectie['inhoud']])
+                    </div>
+                </div>
                 
-                @foreach($lines as $line)
-                    @php
-                        $line = trim($line);
-                        if (empty($line)) continue;
-                        
-                        $isBulletPoint = str_starts_with($line, '•') || str_starts_with($line, '-') || str_starts_with($line, '*') || str_starts_with($line, '◦');
-                        $isSubheading = str_contains($line, ':') && strlen($line) < 80 && !$isBulletPoint;
-                    @endphp
-                    
-                    @if($isBulletPoint)
-                        <div style="padding: 2px 0 2px 15px; position: relative;">
-                            <span style="position: absolute; left: 0; color: #1976d2;">●</span>
-                            {{ ltrim($line, '•-*◦ ') }}
-                        </div>
-                    @elseif($isSubheading)
-                        <p style="margin: 6px 0 3px 0; font-weight: 700; color: #1f2937;">
-                            {{ $line }}
-                        </p>
-                    @else
-                        <p style="margin: 4px 0;">{{ $line }}</p>
-                    @endif
-                @endforeach
+                {{-- Rechter sectie --}}
+                <div>
+                    <div class="ai-sectie-titel">{{ $volgendeSectie['titel'] }}</div>
+                    <div class="ai-sectie-content">
+                        @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $volgendeSectie['inhoud']])
+                    </div>
+                </div>
             </div>
-        </div>
-    @endforeach
+            @php $i += 2; @endphp
+        @else
+            {{-- Volle breedte voor lange secties --}}
+            <div style="margin: 8px 0;">
+                <div class="ai-sectie-titel">{{ $huidigeSectie['titel'] }}</div>
+                <div class="ai-sectie-content">
+                    @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $huidigeSectie['inhoud']])
+                </div>
+            </div>
+            @php $i += 1; @endphp
+        @endif
+    @endwhile
 </div>
 @else
 <div class="rapport-ai-deel1">
