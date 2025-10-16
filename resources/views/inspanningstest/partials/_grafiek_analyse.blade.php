@@ -1,5 +1,101 @@
-{{-- Grafiek Analyse Sectie voor Inspanningstest Results --}}
+{{-- Grafiek Analyse - Rapport Versie (Print-ready) --}}
 {{-- Variabele sleutel: {{INSPANNINGSTEST_GRAFIEK}} --}}
+
+<style>
+    .rapport-grafiek {
+        font-family: Tahoma, Arial, sans-serif;
+        font-size: 11px;
+        line-height: 1.4;
+        color: #1f2937;
+        margin: 20px 0;
+        width: 120%;
+    }
+    
+    .rapport-grafiek h3 {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f4c75;
+        margin: 15px 0 10px 0;
+        padding: 8px 10px;
+        background-color: #c8e1eb;
+        border-left: 4px solid #0f4c75;
+    }
+    
+    .grafiek-interpretatie-box {
+        margin: 10px 0;
+        padding: 10px 12px;
+        background: #f0f9ff;
+        border-left: 3px solid #c8e1eb;
+        font-size: 10px;
+        line-height: 1.5;
+    }
+    
+    .grafiek-interpretatie-box ul {
+        margin: 5px 0 0 0;
+        padding-left: 0;
+        list-style: none;
+    }
+    
+    .grafiek-interpretatie-box li {
+        padding: 3px 0;
+    }
+    
+    .grafiek-container {
+        margin: 15px 0;
+        padding: 15px;
+        background: white;
+        border: 1px solid #e5e7eb;
+        height: 450px !important;
+        min-height: 450px !important;
+        position: relative;
+    }
+    
+    .grafiek-container canvas {
+        height: 100% !important;
+        width: 100% !important;
+    }
+    
+    .rapport-toelichting-box {
+        margin: 15px 0;
+        padding: 12px 15px;
+        background: #fff8e1;
+        border-left: 4px solid #f59e0b;
+        font-size: 10px;
+        line-height: 1.6;
+        color: #78350f;
+    }
+    
+    .rapport-toelichting-box h4 {
+        font-size: 11px;
+        font-weight: 700;
+        color: #92400e;
+        margin: 0 0 8px 0;
+    }
+    
+    .rapport-toelichting-box p {
+        margin: 8px 0;
+        color: #78350f;
+    }
+    
+    .rapport-analyse-methode {
+        display: inline-block;
+        padding: 4px 10px;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        font-size: 9px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 10px;
+    }
+    
+    .rapport-geen-data {
+        text-align: center;
+        padding: 30px 20px;
+        color: #9ca3af;
+        font-style: italic;
+    }
+</style>
 
 @php
     // Bepaal testtype
@@ -20,346 +116,324 @@
     };
     
     // Check of er drempelwaarden zijn
-    $heeftDrempels = $inspanningstest->aerobe_drempel_vermogen && $inspanningstest->anaerobe_drempel_vermogen;
+    $heeftDrempels = ($inspanningstest->aerobe_drempel_vermogen || $inspanningstest->aerobe_drempel_snelheid) 
+                  && ($inspanningstest->anaerobe_drempel_vermogen || $inspanningstest->anaerobe_drempel_snelheid);
 @endphp
 
-<div class="bg-white rounded-lg shadow-md overflow-hidden mb-6" style="border: 2px solid #c8e1eb;">
-    {{-- Header --}}
-    <div class="px-6 py-4" style="background-color: #c8e1eb; border-bottom: 2px solid #a8c1cb;">
-        <div class="flex justify-between items-center">
-            <div>
-                <h3 class="text-xl font-bold text-gray-900">📈 Grafiek Analyse</h3>
-                <p class="text-sm text-gray-700 mt-1">Visualisatie van hartslag en lactaat progressie</p>
-            </div>
-            @if($analyseMethode)
-                <span class="text-xs font-semibold text-gray-700 bg-white px-3 py-1 rounded-full border-2" style="border-color: #a8c1cb;">
-                    {{ $analyseMethodeLabel }}
-                </span>
-            @endif
-        </div>
-    </div>
+<div class="rapport-grafiek">
+    <h3>📈 Grafiek Analyse & Interpretatie</h3>
     
-    {{-- Content --}}
-    <div class="p-6">
-        @if($heeftDrempels && count($testresultaten) > 0)
-            {{-- Grafiek Instructies --}}
-            <div class="bg-blue-50 rounded-lg p-4 mb-4" style="border: 1px solid #c8e1eb;">
-                <h4 class="text-sm font-bold text-gray-900 mb-2">📊 Grafiek Interpretatie:</h4>
-                <ul class="text-sm text-gray-700 space-y-1">
-                    <li><span class="font-semibold" style="color: #2563eb;">● Blauwe lijn:</span> Hartslag progressie tijdens de test</li>
-                    <li><span class="font-semibold" style="color: #16a34a;">● Groene lijn:</span> Lactaat progressie tijdens de test</li>
-                    <li><span class="font-semibold" style="color: #dc2626;">● Rode lijn:</span> Aërobe drempel (LT1)</li>
-                    <li><span class="font-semibold" style="color: #f59e0b;">● Oranje lijn:</span> Anaërobe drempel (LT2)</li>
-                </ul>
-            </div>
+    @if($analyseMethode)
+        <span class="rapport-analyse-methode">{{ $analyseMethodeLabel }}</span>
+    @endif
+    
+    @if($heeftDrempels && count($testresultaten) > 0)
+        {{-- Grafiek Interpretatie Instructies --}}
+        <div class="grafiek-interpretatie-box">
+            <strong style="display: block; margin-bottom: 5px;">📊 Grafiek Legenda:</strong>
+            <ul>
+                <li><span style="color: #2563eb; font-weight: 700;">● Blauwe lijn:</span> Hartslag progressie tijdens de test</li>
+                <li><span style="color: #16a34a; font-weight: 700;">● Groene lijn:</span> Lactaat progressie tijdens de test</li>
+                <li><span style="color: #dc2626; font-weight: 700;">● Rode lijn:</span> Aërobe drempel (LT1)</li>
+                <li><span style="color: #f59e0b; font-weight: 700;">● Oranje lijn:</span> Anaërobe drempel (LT2)</li>
+            </ul>
+        </div>
+        
+        {{-- Grafiek Container met Chart.js --}}
+        <div class="grafiek-container">
+            <canvas id="testResultatenGrafiek"></canvas>
+        </div>
             
-            {{-- Grafiek Container met Chart.js --}}
-            <div class="bg-white rounded-lg p-4 mb-4" style="border: 1px solid #c8e1eb;">
-                <canvas id="testResultatenGrafiek" style="max-height: 400px;"></canvas>
-            </div>
-            
-            {{-- Chart.js Script --}}
-            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    // Haal testresultaten op
-                    const testresultaten = @json($testresultaten);
-                    
-                    // Bereid grafiek data voor - gebruik juiste veld op basis van testtype
-                    const testtype = '{{ $inspanningstest->testtype }}';
-                    const isLooptest = testtype.includes('loop') || testtype.includes('lopen');
-                    const isZwemtest = testtype.includes('zwem');
-                    
-                    // Voor X-as: gebruik snelheid voor loop/zwem, vermogen voor fiets
-                    const xValues = testresultaten.map(stap => {
-                        if (isLooptest || isZwemtest) {
-                            return stap.snelheid || 0;
-                        }
-                        return stap.vermogen || 0;
-                    });
-                    
-                    const hartslagData = testresultaten.map(stap => ({
-                        x: stap.snelheid || stap.vermogen || 0,
-                        y: stap.hartslag
-                    }));
-                    
-                    const lactaatData = testresultaten.map(stap => ({
-                        x: stap.snelheid || stap.vermogen || 0,
-                        y: stap.lactaat
-                    }));
-                    
-                    console.log('📊 Grafiek data:', {
-                        testtype: '{{ $inspanningstest->testtype }}',
-                        isLooptest,
-                        xValues,
-                        hartslagData,
-                        lactaatData
-                    });
-                    
-                    // Gebruik globale drempelwaarden (geen dubbele declaratie!)
-                    const { lt1Vermogen, lt2Vermogen } = window.drempelwaardenResults || {};
-                    const lt1Hartslag = {{ $inspanningstest->aerobe_drempel_hartslag ?? 'null' }};
-                    const lt2Hartslag = {{ $inspanningstest->anaerobe_drempel_hartslag ?? 'null' }};
-                    
-                    // Bereid X-as label voor
-                    let xAxisLabel = 'Vermogen (Watt)';
-                    
-                    if (isLooptest) {
-                        xAxisLabel = 'Snelheid (km/h)';
-                    } else if (isZwemtest) {
-                        xAxisLabel = 'Tempo (mm:ss/100m)';
+        
+        {{-- Chart.js Script --}}
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Wacht tot Chart.js volledig geladen is
+                if (typeof Chart === 'undefined') {
+                    console.error('❌ Chart.js niet geladen!');
+                    return;
+                }
+                
+                console.log('✅ Chart.js geladen, versie:', Chart.version);
+                
+                const testresultaten = @json($testresultaten);
+                const testtype = '{{ $inspanningstest->testtype }}';
+                const isLooptest = testtype.includes('loop') || testtype.includes('lopen');
+                const isZwemtest = testtype.includes('zwem');
+                
+                // Drempelwaarden ophalen
+                const lt1Vermogen = {{ $inspanningstest->aerobe_drempel_vermogen ?? 'null' }};
+                const lt2Vermogen = {{ $inspanningstest->anaerobe_drempel_vermogen ?? 'null' }};
+                const lt1Snelheid = {{ $inspanningstest->aerobe_drempel_snelheid ?? 'null' }};
+                const lt2Snelheid = {{ $inspanningstest->anaerobe_drempel_snelheid ?? 'null' }};
+                
+                console.log('🔍 Debug info:', {
+                    testtype,
+                    isLooptest,
+                    isZwemtest,
+                    lt1Vermogen,
+                    lt2Vermogen,
+                    lt1Snelheid,
+                    lt2Snelheid,
+                    testresultaten
+                });
+                
+                const hartslagData = testresultaten.map(stap => ({
+                    x: stap.snelheid || stap.vermogen || 0,
+                    y: stap.hartslag
+                }));
+                
+                const lactaatData = testresultaten.map(stap => ({
+                    x: stap.snelheid || stap.vermogen || 0,
+                    y: stap.lactaat
+                }));
+                
+                let xAxisLabel = 'Vermogen (Watt)';
+                if (isLooptest) xAxisLabel = 'Snelheid (km/h)';
+                else if (isZwemtest) xAxisLabel = 'Tempo (mm:ss/100m)';
+                
+                // Bepaal drempelwaarden - gebruik ALTIJD vermogen kolommen want daar staan de waarden
+                // Voor looptesten bevat 'vermogen' eigenlijk de snelheid in km/h
+                const lt1Value = lt1Snelheid || lt1Vermogen;
+                const lt2Value = lt2Snelheid || lt2Vermogen;
+                
+                console.log('📊 Drempelwaarden:', { 
+                    lt1Value, 
+                    lt2Value, 
+                    isLooptest, 
+                    isZwemtest,
+                    'lt1Value type': typeof lt1Value,
+                    'lt2Value type': typeof lt2Value,
+                    'lt1Value === null': lt1Value === null,
+                    'lt2Value === null': lt2Value === null,
+                    'lt1Value !== null': lt1Value !== null,
+                    'lt2Value !== null': lt2Value !== null,
+                    'isNaN(lt1Value)': isNaN(lt1Value),
+                    'isNaN(lt2Value)': isNaN(lt2Value)
+                });
+                
+                const ctx = document.getElementById('testResultatenGrafiek');
+                if (!ctx) {
+                    console.error('Canvas element niet gevonden!');
+                    return;
+                }
+                
+                // Voeg drempellijnen toe als extra datasets (verticale lijnen)
+                const datasets = [
+                    {
+                        label: 'Hartslag (bpm)',
+                        data: hartslagData,
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        yAxisID: 'y',
+                        pointRadius: 4,
+                        showLine: true
+                    },
+                    {
+                        label: 'Lactaat (mmol/L)',
+                        data: lactaatData,
+                        borderColor: '#16a34a',
+                        backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                        borderWidth: 2,
+                        tension: 0.3,
+                        yAxisID: 'y1',
+                        pointRadius: 4,
+                        showLine: true
                     }
-                    
-                    // Configureer Chart.js
-                    const ctx = document.getElementById('testResultatenGrafiek').getContext('2d');
-                    const chart = new Chart(ctx, {
-                        type: 'scatter', // BELANGRIJK: scatter voor xy-data in plaats van line
-                        data: {
-                            datasets: [
-                                {
-                                    label: 'Hartslag (bpm)',
-                                    data: hartslagData,
-                                    borderColor: '#2563eb',
-                                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                                    borderWidth: 3,
-                                    tension: 0.4,
-                                    yAxisID: 'y',
-                                    pointRadius: 5,
-                                    pointHoverRadius: 7,
-                                    showLine: true // Toon lijn tussen punten
-                                },
-                                {
-                                    label: 'Lactaat (mmol/L)',
-                                    data: lactaatData,
-                                    borderColor: '#16a34a',
-                                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
-                                    borderWidth: 3,
-                                    tension: 0.4,
-                                    yAxisID: 'y1',
-                                    pointRadius: 5,
-                                    pointHoverRadius: 7,
-                                    showLine: true // Toon lijn tussen punten
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: true,
-                            interaction: {
-                                mode: 'index',
-                                intersect: false,
+                ];
+                
+                // Voeg LT1 drempellijn toe als verticale lijn dataset
+                if (lt1Value !== null && lt1Value !== undefined && !isNaN(lt1Value)) {
+                    // Gebruik een breed bereik voor Y-waarden zodat de lijn altijd zichtbaar is
+                    const minY = Math.min(...hartslagData.map(d => d.y)) - 10;
+                    const maxY = Math.max(...hartslagData.map(d => d.y)) + 10;
+                    datasets.push({
+                        label: 'LT1 (Aëroob)',
+                        data: [
+                            { x: lt1Value, y: minY },
+                            { x: lt1Value, y: maxY }
+                        ],
+                        borderColor: '#dc2626',
+                        borderWidth: 3,
+                        borderDash: [8, 4],
+                        pointRadius: 0,
+                        pointHitRadius: 0,
+                        showLine: true,
+                        yAxisID: 'y',
+                        fill: false,
+                        tension: 0
+                    });
+                    console.log('✅ LT1 verticale lijn toegevoegd bij x=' + lt1Value, 'y-range:', minY, '-', maxY);
+                }
+                
+                // Voeg LT2 drempellijn toe als verticale lijn dataset  
+                if (lt2Value !== null && lt2Value !== undefined && !isNaN(lt2Value)) {
+                    // Gebruik een breed bereik voor Y-waarden zodat de lijn altijd zichtbaar is
+                    const minY = Math.min(...hartslagData.map(d => d.y)) - 10;
+                    const maxY = Math.max(...hartslagData.map(d => d.y)) + 10;
+                    datasets.push({
+                        label: 'LT2 (Anaëroob)',
+                        data: [
+                            { x: lt2Value, y: minY },
+                            { x: lt2Value, y: maxY }
+                        ],
+                        borderColor: '#f59e0b',
+                        borderWidth: 3,
+                        borderDash: [8, 4],
+                        pointRadius: 0,
+                        pointHitRadius: 0,
+                        showLine: true,
+                        yAxisID: 'y',
+                        fill: false,
+                        tension: 0
+                    });
+                    console.log('✅ LT2 verticale lijn toegevoegd bij x=' + lt2Value, 'y-range:', minY, '-', maxY);
+                }
+                
+                console.log('📊 Totaal aantal datasets:', datasets.length);
+                console.log('📊 Alle datasets:', datasets);
+                
+                const myChart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                                labels: { font: { size: 10 } }
                             },
-                            plugins: {
-                                legend: {
-                                    display: true,
-                                    position: 'top',
-                                },
+                            title: {
+                                display: true,
+                                text: 'Hartslag & Lactaat Progressie',
+                                font: { size: 12, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: true,
+                                reverse: isZwemtest,
                                 title: {
                                     display: true,
-                                    text: 'Hartslag & Lactaat Progressie met Drempels',
-                                    font: {
-                                        size: 16,
-                                        weight: 'bold'
-                                    }
+                                    text: xAxisLabel,
+                                    font: { size: 10, weight: 'bold' }
                                 },
-                                tooltip: {
-                                    callbacks: {
-                                        label: function(context) {
-                                            let label = context.dataset.label || '';
-                                            if (label) {
-                                                label += ': ';
-                                            }
-                                            if (context.parsed.y !== null) {
-                                                label += context.parsed.y.toFixed(1);
-                                            }
-                                            return label;
+                                ticks: {
+                                    font: { size: 9 },
+                                    callback: function(value) {
+                                        if (isLooptest) return value.toFixed(1);
+                                        if (isZwemtest) {
+                                            const min = Math.floor(value);
+                                            const sec = Math.round((value - min) * 60);
+                                            return `${min}:${sec.toString().padStart(2, '0')}`;
                                         }
+                                        return Math.round(value);
                                     }
                                 }
                             },
-                            scales: {
-                                x: {
+                            y: {
+                                type: 'linear',
+                                position: 'left',
+                                title: {
                                     display: true,
-                                    reverse: isZwemtest, // Keer X-as om voor zwemtesten (snel = rechts)
-                                    title: {
-                                        display: true,
-                                        text: xAxisLabel,
-                                        font: {
-                                            weight: 'bold'
-                                        }
-                                    },
-                                    ticks: {
-                                        // Dynamische step size op basis van testtype
-                                        stepSize: isLooptest ? 0.5 : (isZwemtest ? 0.1 : 10),
-                                        callback: function(value) {
-                                            // Voor looptesten: toon met 1 decimaal
-                                            if (isLooptest) {
-                                                return value.toFixed(1);
-                                            }
-                                            // Voor zwemtesten: toon mm:ss formaat
-                                            if (isZwemtest) {
-                                                const minuten = Math.floor(value);
-                                                const seconden = Math.round((value - minuten) * 60);
-                                                return `${minuten}:${seconden.toString().padStart(2, '0')}`;
-                                            }
-                                            // Voor fietstesten: toon hele getallen (per 10 watt)
-                                            return Math.round(value);
-                                        }
-                                    }
+                                    text: 'Hartslag (bpm)',
+                                    color: '#2563eb',
+                                    font: { size: 10, weight: 'bold' }
                                 },
-                                y: {
-                                    type: 'linear',
+                                ticks: { color: '#2563eb', font: { size: 9 } }
+                            },
+                            y1: {
+                                type: 'linear',
+                                position: 'right',
+                                title: {
                                     display: true,
-                                    position: 'left',
-                                    title: {
-                                        display: true,
-                                        text: 'Hartslag (bpm)',
-                                        color: '#2563eb',
-                                        font: {
-                                            weight: 'bold'
-                                        }
-                                    },
-                                    ticks: {
-                                        color: '#2563eb'
-                                    }
+                                    text: 'Lactaat (mmol/L)',
+                                    color: '#16a34a',
+                                    font: { size: 10, weight: 'bold' }
                                 },
-                                y1: {
-                                    type: 'linear',
-                                    display: true,
-                                    position: 'right',
-                                    title: {
-                                        display: true,
-                                        text: 'Lactaat (mmol/L)',
-                                        color: '#16a34a',
-                                        font: {
-                                            weight: 'bold'
-                                        }
-                                    },
-                                    ticks: {
-                                        color: '#16a34a'
-                                    },
-                                    grid: {
-                                        drawOnChartArea: false,
-                                    }
-                                }
+                                ticks: { color: '#16a34a', font: { size: 9 } },
+                                grid: { drawOnChartArea: false }
                             }
                         }
-                    });
-                    
-                    console.log('📊 Grafiek succesvol geladen', {
-                        lt1Vermogen,
-                        lt2Vermogen
-                    });
+                    }
                 });
-            </script>
+                
+                console.log('✅ Grafiek succesvol aangemaakt!', myChart);
+            });
+        </script>
+        
+        {{-- Toelichting Grafiek Analyse --}}
+        <div class="rapport-toelichting-box">
+            <h4>💡 Hoe interpreteer je deze grafiek?</h4>
+            <p>
+                Deze grafiek toont de <strong>progressie van hartslag en lactaat</strong> tijdens je inspanningstest. 
+                @if($isLooptest)
+                    Naarmate je snelheid tijdens het lopen toeneemt, stijgen zowel je hartslag als je lactaatproductie.
+                @elseif($isZwemtest)
+                    Naarmate je zwemtempo toeneemt, stijgen zowel je hartslag als je lactaatproductie.
+                @else
+                    Naarmate het vermogen (Watt) toeneemt, stijgen zowel je hartslag als je lactaatproductie.
+                @endif
+            </p>
+            <p>
+                <strong>Hartslag (blauwe lijn):</strong> Stijgt geleidelijk naarmate je harder werkt. Bij de drempelwaarden versnelt de stijging vaak - dit wijst op overgang naar zwaarder werk voor je hart.
+            </p>
+            <p>
+                <strong>Lactaat (groene lijn):</strong> Bij lage intensiteiten blijft lactaat laag en stabiel (aëroob). Vanaf een bepaald punt stijgt de curve steiler - je lichaam schakelt over naar anaërobe energieproductie en maakt lactaat sneller aan dan het kan afbreken.
+            </p>
+            <p>
+                <strong>De drempellijnen:</strong> 
+                @if($heeftDrempels)
+                    De <strong style="color: #dc2626;">rode lijn (LT1)</strong> markeert waar lactaat begint te stijgen. Tot dit punt kun je zeer lang volhouden. 
+                    De <strong style="color: #f97316;">oranje lijn (LT2)</strong> toont waar lactaat snel stijgt - boven dit punt kun je slechts beperkt volhouden.
+                @else
+                    Deze zijn nog niet bepaald voor jouw test.
+                @endif
+            </p>
             
-            {{-- Toelichting Grafiek Analyse --}}
-            <div class="mt-6 p-6" style="background-color: #fff8e1;">
-                <div class="flex items-start">
-                    <div class="flex-shrink-0 mr-4 text-2xl">
-                        💡
-                    </div>
-                    <div class="flex-1">
-                        <h4 class="text-base font-bold text-gray-900 mb-3">Hoe interpreteer je deze grafiek?</h4>
-                        <div class="text-sm text-gray-700 space-y-3">
-                            <p>
-                                Deze grafiek toont de <strong>progressie van hartslag en lactaat</strong> tijdens je inspanningstest. 
-                                @if($isLooptest)
-                                    Naarmate je snelheid tijdens het lopen toeneemt, stijgen zowel je hartslag als je lactaatproductie.
-                                @elseif($isZwemtest)
-                                    Naarmate je zwemtempo toeneemt, stijgen zowel je hartslag als je lactaatproductie.
-                                @else
-                                    Naarmate het vermogen (Watt) toeneemt, stijgen zowel je hartslag als je lactaatproductie.
-                                @endif
-                                De manier waarop deze waarden stijgen vertelt ons veel over je conditie en trainingstoestand.
-                            </p>
-                            <p>
-                                <strong>Hartslag (blauwe lijn):</strong> In het begin van de test stijgt je hartslag geleidelijk en vrij lineair. 
-                                Naarmate de intensiteit toeneemt, moet je hart harder werken om voldoende zuurstof naar je spieren te pompen. 
-                                Bij de drempelwaarden zie je vaak dat de hartslagstijging versnelt - dit wijst op een overgang naar zwaarder werk voor je cardiovasculaire systeem.
-                            </p>
-                            <p>
-                                <strong>Lactaat (groene lijn):</strong> Deze curve is cruciaal. Bij lage intensiteiten blijft lactaat relatief laag en stabiel - 
-                                je lichaam kan het geproduceerde lactaat nog goed afbreken (aëroob = met zuurstof). Vanaf een bepaald punt begint de curve steiler te stijgen - 
-                                dit is het moment waarop je lichaam overschakelt naar meer anaërobe (zonder zuurstof) energieproductie en lactaat sneller aanmaakt dan het kan afbreken.
-                            </p>
-                            <p>
-                                <strong>De drempellijnen:</strong> 
-                                @if($heeftDrempels)
-                                    De <span style="color: #dc2626; font-weight: bold;">rode lijn (LT1 - aërobe drempel)</span> markeert het punt waarop lactaat begint te stijgen boven het basisniveau. 
-                                    Tot dit punt kun je zeer lang volhouden zonder vermoeidheid. 
-                                    De <span style="color: #f97316; font-weight: bold;">oranje lijn (LT2 - anaërobe drempel)</span> toont het punt waarop lactaat snel stijgt. 
-                                    Boven dit punt kun je slechts beperkte tijd volhouden voordat vermoeidheid toeslaat.
-                                @else
-                                    Deze zijn nog niet bepaald voor jouw test. Met drempelwaarden zou je de overgangen tussen aëroob en anaëroob werk visueel kunnen zien.
-                                @endif
-                            </p>
-                            
-                            @if($analyseMethode)
-                                <div class="mt-4 pt-4 border-t border-gray-300">
-                                    <p class="font-bold text-gray-900 mb-2">🔬 Toegepaste analyse methode: {{ $analyseMethodeLabel }}</p>
-                                    @if($analyseMethode === 'dmax')
-                                        <p>
-                                            De <strong>D-max methode</strong> is een objectieve, wetenschappelijk gevalideerde methode. 
-                                            Deze zoekt het punt op de lactaatcurve met de maximale afstand tot een rechte lijn tussen begin- en eindpunt. 
-                                            Dit punt vertegenwoordigt de anaërobe drempel (LT2). De aërobe drempel (LT1) wordt bepaald als het punt waar lactaat 
-                                            0.4 mmol/L boven je baseline (rustwaarde) komt. Deze methode is zeer betrouwbaar en reproduceerbaar.
-                                        </p>
-                                    @elseif($analyseMethode === 'dmax_modified')
-                                        <p>
-                                            De <strong>D-max Modified methode</strong> is een aangepaste versie waarbij de hulplijn niet vanaf het startpunt, 
-                                            maar vanaf de aërobe drempel (LT1) naar het eindpunt loopt. Dit geeft vaak een iets hogere anaërobe drempel en 
-                                            kan beter passen bij individuele lactaatprofielen, vooral bij goed getrainde sporters die een fluwelere lactaatcurve hebben.
-                                        </p>
-                                    @elseif($analyseMethode === 'lactaat_steady_state')
-                                        <p>
-                                            De <strong>Lactaat Steady State methode</strong> gebruikt vaste lactaatwaarden: 2.0 mmol/L voor LT1 en 4.0 mmol/L voor LT2. 
-                                            Dit is een klassieke en eenvoudige benadering. Het voordeel is dat het makkelijk te begrijpen en toe te passen is, 
-                                            maar het houdt geen rekening met individuele verschillen in baseline lactaat of lactaatmetabolisme.
-                                        </p>
-                                    @elseif($analyseMethode === 'hartslag_deflectie')
-                                        <p>
-                                            De <strong>Hartslagdeflectie methode</strong> analyseert de verandering in hartslagstijging in plaats van lactaat. 
-                                            Wanneer je lichaam zwaarder moet werken (overgang naar anaëroob), zie je vaak een versnelling in de hartslagstijging. 
-                                            Deze methode is nuttig als aanvulling op lactaatmetingen en kan helpen bij het valideren van drempelwaarden.
-                                        </p>
-                                    @elseif($analyseMethode === 'handmatig')
-                                        <p>
-                                            De drempelwaarden zijn <strong>handmatig bepaald</strong> door visuele inspectie van de curves. 
-                                            Dit vereist ervaring van de tester maar kan zeer nauwkeurig zijn, vooral bij atypische lactaatprofielen 
-                                            waar automatische methoden minder betrouwbaar zijn. De tester kijkt naar het punt waar de lactaatcurve begint 
-                                            te "buigen" (LT1) en waar deze sterk versnelt (LT2).
-                                        </p>
-                                    @endif
-                                </div>
-                            @endif
-                            
-                            <p class="mt-4 pt-4 border-t border-gray-300">
-                                <strong>Praktisch gebruik:</strong> Deze grafiek helpt je om je eigen lichaam beter te begrijpen. 
-                                @if($isLooptest)
-                                    Je ziet precies bij welke snelheid je lichaam "omschakelt". Gebruik deze kennis om je trainingssnelheden te bepalen.
-                                @elseif($isZwemtest)
-                                    Je ziet precies bij welk tempo je lichaam "omschakelt". Gebruik deze kennis om je trainingsintensiteiten te bepalen.
-                                @else
-                                    Je ziet precies bij welk vermogen je lichaam "omschakelt". Gebruik deze kennis om je trainingszones nauwkeurig in te stellen.
-                                @endif
-                                Train voornamelijk onder je LT1 voor basisconditie, tussen LT1 en LT2 voor tempo-ontwikkeling, 
-                                en slechts beperkt boven LT2 voor hoogintensieve intervallen.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @if($analyseMethode)
+            <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #fbbf24;">
+                <strong>🔬 Toegepaste methode: {{ $analyseMethodeLabel }}</strong><br>
+                @if($analyseMethode === 'dmax')
+                    Objectieve, wetenschappelijk gevalideerde methode die het punt met maximale afstand tot een rechte lijn tussen begin- en eindpunt zoekt.
+                @elseif($analyseMethode === 'dmax_modified')
+                    Aangepaste D-max waarbij de hulplijn vanaf LT1 loopt - past beter bij goed getrainde sporters.
+                @elseif($analyseMethode === 'lactaat_steady_state')
+                    Klassieke methode met vaste waarden (2.0 mmol/L voor LT1, 4.0 mmol/L voor LT2).
+                @elseif($analyseMethode === 'hartslag_deflectie')
+                    Analyseert de verandering in hartslagstijging om drempels te bepalen.
+                @elseif($analyseMethode === 'handmatig')
+                    Handmatig bepaald door visuele inspectie - nuttig bij atypische lactaatprofielen.
+                @endif
+            </p>
+            @endif
             
-        @else
-            {{-- Geen drempelwaarden of testresultaten --}}
-            <div class="text-center py-8">
-                <svg class="w-16 h-16 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-                <p class="text-gray-500 text-sm">Geen grafiekdata beschikbaar</p>
-                <p class="text-gray-400 text-xs mt-1">Drempelwaarden en testresultaten zijn vereist voor grafiekanalyse</p>
-            </div>
-        @endif
-    </div>
+            <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #fbbf24;">
+                <strong>Praktisch gebruik:</strong> 
+                @if($isLooptest)
+                    Gebruik deze kennis om je trainingssnelheden te bepalen.
+                @elseif($isZwemtest)
+                    Gebruik deze kennis om je trainingsintensiteiten te bepalen.
+                @else
+                    Gebruik deze kennis om je trainingszones nauwkeurig in te stellen.
+                @endif
+                Train voornamelijk onder LT1 voor basisconditie, tussen LT1-LT2 voor tempo, en beperkt boven LT2 voor intervallen.
+            </p>
+        </div>
+        
+    @else
+        {{-- Geen drempelwaarden of testresultaten --}}
+        <div class="rapport-geen-data">
+            <div style="font-size: 32px; margin-bottom: 10px;">📊</div>
+            <p style="color: #6b7280; font-size: 11px;">Geen grafiekdata beschikbaar</p>
+            <p style="color: #9ca3af; font-size: 9px; margin-top: 5px;">Drempelwaarden en testresultaten zijn vereist voor grafiekanalyse</p>
+        </div>
+    @endif
 </div>
