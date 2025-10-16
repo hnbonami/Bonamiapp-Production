@@ -880,14 +880,28 @@ class SjablonenController extends Controller
      */
     private function generatePagesForInspanningstest($sjabloon, $inspanningstest)
     {
-        // Decode JSON strings naar collections als ze bestaan
+        // Decode JSON strings naar arrays als ze bestaan
         $testresultaten = is_string($inspanningstest->testresultaten) 
-            ? collect(json_decode($inspanningstest->testresultaten, true) ?? [])
-            : ($inspanningstest->testresultaten ?? collect());
-            
-        $trainingszones = is_string($inspanningstest->trainingszones)
-            ? collect(json_decode($inspanningstest->trainingszones, true) ?? [])
-            : ($inspanningstest->trainingszones ?? collect());
+            ? json_decode($inspanningstest->testresultaten, true) ?? []
+            : ($inspanningstest->testresultaten ?? []);
+        
+        // Check trainingszones_data veld (nieuwere versie)
+        $trainingszones = null;
+        if (isset($inspanningstest->trainingszones_data)) {
+            $trainingszones = is_string($inspanningstest->trainingszones_data)
+                ? json_decode($inspanningstest->trainingszones_data, true) ?? []
+                : $inspanningstest->trainingszones_data;
+        }
+        
+        // Fallback naar trainingszones veld (oudere versie)
+        if (empty($trainingszones) && isset($inspanningstest->trainingszones)) {
+            $trainingszones = is_string($inspanningstest->trainingszones)
+                ? json_decode($inspanningstest->trainingszones, true) ?? []
+                : $inspanningstest->trainingszones;
+        }
+        
+        // Als nog steeds leeg, maak lege array
+        $trainingszones = $trainingszones ?? [];
         
         $generatedPages = [];
         
