@@ -1017,11 +1017,37 @@ class SjablonenController extends Controller
                     $content = str_replace('{{INSPANNINGSTEST_ZONES}}', $trainingzonesHtml, $content);
                 }
                 
+                // AI Analyse - Gebruik rapport versie voor sjablonen
                 if (strpos($content, '{{INSPANNINGSTEST_AI_ANALYSE}}') !== false) {
-                    $aiAnalyseHtml = view('inspanningstest.partials._ai_analyse_results', [
-                        'inspanningstest' => $inspanningstest
+                    // Combineer beide delen in één output voor backward compatibility
+                    $aiDeel1Html = view('inspanningstest.partials._ai_analyse_report_deel1', [
+                        'inspanningstest' => $inspanningstestForPartials
                     ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE}}', $aiAnalyseHtml, $content);
+                    
+                    $aiDeel2Html = view('inspanningstest.partials._ai_analyse_report_deel2', [
+                        'inspanningstest' => $inspanningstestForPartials
+                    ])->render();
+                    
+                    // Combineer beide delen met een pagebreak hint
+                    $combinedHtml = $aiDeel1Html . '<div style="page-break-before: always;"></div>' . $aiDeel2Html;
+                    
+                    $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE}}', $combinedHtml, $content);
+                }
+                
+                // AI Analyse Rapport - Deel 1 (overzicht & drempels)
+                if (strpos($content, '{{INSPANNINGSTEST_AI_ANALYSE_DEEL1}}') !== false) {
+                    $aiDeel1Html = view('inspanningstest.partials._ai_analyse_report_deel1', [
+                        'inspanningstest' => $inspanningstestForPartials
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE_DEEL1}}', $aiDeel1Html, $content);
+                }
+                
+                // AI Analyse Rapport - Deel 2 (advies & progressie)
+                if (strpos($content, '{{INSPANNINGSTEST_AI_ANALYSE_DEEL2}}') !== false) {
+                    $aiDeel2Html = view('inspanningstest.partials._ai_analyse_report_deel2', [
+                        'inspanningstest' => $inspanningstestForPartials
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE_DEEL2}}', $aiDeel2Html, $content);
                 }
                 
                 // Systeem variabelen

@@ -383,6 +383,44 @@ class InspanningstestController extends Controller {
                 'leeftijd' => $leeftijd,
                 'geboortedatum' => $klant ? $klant->geboortedatum : null,
             ]);
+            
+            // 🏊 TRIATHLON/IRONMAN DETECTIE - Extra emphasis voor AI
+            $doelstellingen = $validated['specifieke_doelstellingen'] ?? '';
+            $isTriathlonDoel = false;
+            $triathlonTermen = ['triathlon', 'triatlon', 'ironman', 'iron man', 'IM ', '70.3', 'half ironman', 'full ironman', 'hawaii', 'kona', 'olympic', 'sprint tri'];
+            
+            \Log::info('🔍 TRIATHLON DETECTIE START', [
+                'doelstellingen_raw' => $doelstellingen,
+                'doelstellingen_lowercase' => strtolower($doelstellingen),
+                'termen_zoeken' => $triathlonTermen
+            ]);
+            
+            foreach ($triathlonTermen as $term) {
+                if (stripos($doelstellingen, $term) !== false) {
+                    $isTriathlonDoel = true;
+                    \Log::info('✅ TRIATHLON DOEL GEDETECTEERD!', [
+                        'gevonden_term' => $term,
+                        'doelstellingen' => $doelstellingen,
+                        'flag_gezet' => true
+                    ]);
+                    break;
+                }
+            }
+            
+            if (!$isTriathlonDoel) {
+                \Log::warning('❌ GEEN TRIATHLON DOEL GEDETECTEERD', [
+                    'doelstellingen' => $doelstellingen,
+                    'gezochte_termen' => $triathlonTermen
+                ]);
+            }
+            
+            // Voeg triathlon flag toe aan data voor AI service
+            $validated['is_triathlon_doel'] = $isTriathlonDoel;
+            
+            \Log::info('📦 DATA NAAR AI SERVICE', [
+                'is_triathlon_doel' => $validated['is_triathlon_doel'],
+                'specifieke_doelstellingen' => $validated['specifieke_doelstellingen'] ?? 'NIET INGESTELD'
+            ]);
 
             // Check of AI enabled is
             if (!config('ai.enabled', true)) {
