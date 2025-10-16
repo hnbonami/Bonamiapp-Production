@@ -44,6 +44,18 @@
         <!-- AI Analyse -->
         @include('inspanningstest.partials._ai_analyse_results')
 
+        <!-- Rapport Generatie Knop - Onderaan Pagina -->
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
+            <div class="p-6 text-center">
+                <h3 class="text-xl font-bold text-gray-900 mb-4">📄 Rapport Genereren</h3>
+                <p class="text-gray-600 mb-6">Genereer een professioneel rapport op basis van de sjablonen</p>
+                <a href="{{ route('inspanningstest.generate-report', ['klant' => $klant->id, 'test' => $inspanningstest->id]) }}" 
+                   class="inline-block rounded-full px-8 py-3 bg-green-500 text-white font-bold text-lg hover:bg-green-600 transition shadow-lg">
+                    📄 Genereer Rapport
+                </a>
+            </div>
+        </div>
+
     </div>
 </div>
 

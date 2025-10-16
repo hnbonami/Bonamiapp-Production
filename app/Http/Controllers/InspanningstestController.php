@@ -413,4 +413,6 @@ class InspanningstestController extends Controller {
             ], 500);
         }
     }
+
+    // ...existing generateReport method... (wordt vervangen via deze update)
 }

@@ -227,6 +227,10 @@ Route::middleware('auth')->group(function () {
         })->name('inspanningstest.test.generate')->scopeBindings();
     });
 
+    // Inspanningstest rapport generatie
+    Route::get('/klanten/{klant}/inspanningstest/{test}/generate-report', [InspanningstestController::class, 'generateReport'])
+        ->name('inspanningstest.generate-report');
+
     // Export routes
     Route::get('medewerkers-export', fn() => Excel::download(new MedewerkersExport, 'medewerkers.xlsx'))->name('medewerkers.export');
     Route::get('klanten-export', fn() => Excel::download(new KlantenExport, 'klanten.xlsx'))->name('klanten.export');
