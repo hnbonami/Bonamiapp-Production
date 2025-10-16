@@ -6,7 +6,7 @@
         font-family: Tahoma, Arial, sans-serif;
         font-size: 11px;
         line-height: 1.4;
-        color: #1f2937;
+        color: #0a152dff;
         margin: 20px 0;
         width: 120%;
     }
@@ -14,11 +14,11 @@
     .rapport-grafiek h3 {
         font-size: 14px;
         font-weight: 700;
-        color: #0f4c75;
+        color: #0a152dff;
         margin: 15px 0 10px 0;
         padding: 8px 10px;
         background-color: #c8e1eb;
-        border-left: 4px solid #0f4c75;
+        border-left: 4px solid #0a152dff;
     }
     
     .grafiek-interpretatie-box {
@@ -121,23 +121,14 @@
 @endphp
 
 <div class="rapport-grafiek">
-    <h3>📈 Grafiek Analyse & Interpretatie</h3>
+   
     
     @if($analyseMethode)
         <span class="rapport-analyse-methode">{{ $analyseMethodeLabel }}</span>
     @endif
     
     @if($heeftDrempels && count($testresultaten) > 0)
-        {{-- Grafiek Interpretatie Instructies --}}
-        <div class="grafiek-interpretatie-box">
-            <strong style="display: block; margin-bottom: 5px;">📊 Grafiek Legenda:</strong>
-            <ul>
-                <li><span style="color: #2563eb; font-weight: 700;">● Blauwe lijn:</span> Hartslag progressie tijdens de test</li>
-                <li><span style="color: #16a34a; font-weight: 700;">● Groene lijn:</span> Lactaat progressie tijdens de test</li>
-                <li><span style="color: #dc2626; font-weight: 700;">● Rode lijn:</span> Aërobe drempel (LT1)</li>
-                <li><span style="color: #f59e0b; font-weight: 700;">● Oranje lijn:</span> Anaërobe drempel (LT2)</li>
-            </ul>
-        </div>
+        
         
         {{-- Grafiek Container met Chart.js --}}
         <div class="grafiek-container">
@@ -224,7 +215,7 @@
                     {
                         label: 'Hartslag (bpm)',
                         data: hartslagData,
-                        borderColor: '#2563eb',
+                        borderColor: '#0a152dff',
                         backgroundColor: 'rgba(37, 99, 235, 0.1)',
                         borderWidth: 2,
                         tension: 0.3,
@@ -235,7 +226,7 @@
                     {
                         label: 'Lactaat (mmol/L)',
                         data: lactaatData,
-                        borderColor: '#16a34a',
+                        borderColor: '#84bfd6ff',
                         backgroundColor: 'rgba(22, 163, 74, 0.1)',
                         borderWidth: 2,
                         tension: 0.3,
@@ -256,7 +247,7 @@
                             { x: lt1Value, y: minY },
                             { x: lt1Value, y: maxY }
                         ],
-                        borderColor: '#dc2626',
+                        borderColor: '#f1a8a8ff',
                         borderWidth: 3,
                         borderDash: [8, 4],
                         pointRadius: 0,
@@ -280,7 +271,7 @@
                             { x: lt2Value, y: minY },
                             { x: lt2Value, y: maxY }
                         ],
-                        borderColor: '#f59e0b',
+                        borderColor: '#f5bc59ff',
                         borderWidth: 3,
                         borderDash: [8, 4],
                         pointRadius: 0,
@@ -296,11 +287,61 @@
                 console.log('📊 Totaal aantal datasets:', datasets.length);
                 console.log('📊 Alle datasets:', datasets);
                 
+                // Custom plugin om labels aan de drempellijnen toe te voegen
+                const drempelLabelsPlugin = {
+                    id: 'drempelLabels',
+                    afterDatasetsDraw(chart) {
+                        const ctx = chart.ctx;
+                        const xScale = chart.scales.x;
+                        const yScale = chart.scales.y;
+                        
+                        ctx.save();
+                        ctx.font = 'bold 11px Tahoma, Arial, sans-serif';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'top';
+                        
+                        // Teken LT1 label
+                        if (lt1Value !== null && lt1Value !== undefined && !isNaN(lt1Value)) {
+                            const xPos = xScale.getPixelForValue(lt1Value);
+                            const yPos = yScale.top + 5;
+                            
+                            // Achtergrond voor label
+                            ctx.fillStyle = '#f1a8a8ff';
+                            const labelText = `LT1: ${lt1Value}`;
+                            const textWidth = ctx.measureText(labelText).width;
+                            ctx.fillRect(xPos + 5, yPos, textWidth + 8, 18);
+                            
+                            // Tekst
+                            ctx.fillStyle = 'white';
+                            ctx.fillText(labelText, xPos + 9, yPos + 3);
+                        }
+                        
+                        // Teken LT2 label
+                        if (lt2Value !== null && lt2Value !== undefined && !isNaN(lt2Value)) {
+                            const xPos = xScale.getPixelForValue(lt2Value);
+                            const yPos = yScale.top + 30;
+                            
+                            // Achtergrond voor label
+                            ctx.fillStyle = '#f5bc59ff';
+                            const labelText = `LT2: ${lt2Value}`;
+                            const textWidth = ctx.measureText(labelText).width;
+                            ctx.fillRect(xPos + 5, yPos, textWidth + 8, 18);
+                            
+                            // Tekst
+                            ctx.fillStyle = 'white';
+                            ctx.fillText(labelText, xPos + 9, yPos + 3);
+                        }
+                        
+                        ctx.restore();
+                    }
+                };
+                
                 const myChart = new Chart(ctx, {
                     type: 'scatter',
                     data: {
                         datasets: datasets
                     },
+                    plugins: [drempelLabelsPlugin],
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
@@ -344,10 +385,10 @@
                                 title: {
                                     display: true,
                                     text: 'Hartslag (bpm)',
-                                    color: '#2563eb',
+                                    color: '#0a152dff',
                                     font: { size: 10, weight: 'bold' }
                                 },
-                                ticks: { color: '#2563eb', font: { size: 9 } }
+                                ticks: { color: '#0a152dff', font: { size: 9 } }
                             },
                             y1: {
                                 type: 'linear',
@@ -355,10 +396,10 @@
                                 title: {
                                     display: true,
                                     text: 'Lactaat (mmol/L)',
-                                    color: '#16a34a',
+                                    color: '#84bfd6ff',
                                     font: { size: 10, weight: 'bold' }
                                 },
-                                ticks: { color: '#16a34a', font: { size: 9 } },
+                                ticks: { color: '#84bfd6ff', font: { size: 9 } },
                                 grid: { drawOnChartArea: false }
                             }
                         }
@@ -383,10 +424,10 @@
                 @endif
             </p>
             <p>
-                <strong>Hartslag (blauwe lijn):</strong> Stijgt geleidelijk naarmate je harder werkt. Bij de drempelwaarden versnelt de stijging vaak - dit wijst op overgang naar zwaarder werk voor je hart.
+                <strong>Hartslag (zwarte lijn):</strong> Stijgt geleidelijk naarmate je harder werkt. Bij de drempelwaarden versnelt de stijging vaak - dit wijst op overgang naar zwaarder werk voor je hart.
             </p>
             <p>
-                <strong>Lactaat (groene lijn):</strong> Bij lage intensiteiten blijft lactaat laag en stabiel (aëroob). Vanaf een bepaald punt stijgt de curve steiler - je lichaam schakelt over naar anaërobe energieproductie en maakt lactaat sneller aan dan het kan afbreken.
+                <strong>Lactaat (blauwe lijn):</strong> Bij lage intensiteiten blijft lactaat laag en stabiel (aëroob). Vanaf een bepaald punt stijgt de curve steiler - je lichaam schakelt over naar anaërobe energieproductie en maakt lactaat sneller aan dan het kan afbreken.
             </p>
             <p>
                 <strong>De drempellijnen:</strong> 
