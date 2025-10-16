@@ -26,6 +26,9 @@
             </div>
         </div>
 
+        {{-- Algemene Informatie --}}
+        @include('inspanningstest.partials._algemene_info_results')
+
         <!-- Trainingstatus Sectie -->
         @include('inspanningstest.partials._trainingstatus_results')
 
