@@ -197,11 +197,13 @@ Route::middleware('auth')->group(function () {
         Route::post('inspanningstest/{test}/generate-report', [InspanningstestController::class, 'generateReport'])->name('inspanningstest.generateReport');
         Route::get('inspanningstest/nieuw', [InspanningstestController::class, 'create'])->name('inspanningstest.create');
         Route::post('inspanningstest', [InspanningstestController::class, 'store'])->name('inspanningstest.store');
-        Route::get('inspanningstest/{test}', [InspanningstestController::class, 'show'])->name('inspanningstest.show')->scopeBindings();
-        Route::get('inspanningstest/{test}/edit', [InspanningstestController::class, 'edit'])->name('inspanningstest.edit')->scopeBindings();
-        Route::put('inspanningstest/{test}', [InspanningstestController::class, 'update'])->name('inspanningstest.update')->scopeBindings();
-        Route::get('inspanningstest/{test}/report', [InspanningstestController::class, 'report'])->name('inspanningstest.report')->scopeBindings();
-        Route::delete('inspanningstest/{test}', [InspanningstestController::class, 'destroy'])->name('inspanningstest.destroy')->scopeBindings();
+        Route::post('inspanningstest/auto-save', [InspanningstestController::class, 'autoSave'])->name('inspanningstest.autoSave');
+        Route::get('inspanningstest/{test}', [InspanningstestController::class, 'show'])->name('inspanningstest.show');
+        Route::get('inspanningstest/{test}/bewerken', [InspanningstestController::class, 'edit'])->name('inspanningstest.edit');
+        Route::get('inspanningstest/{test}/edit', [InspanningstestController::class, 'edit'])->name('inspanningstest.edit.alt');
+        Route::put('inspanningstest/{test}', [InspanningstestController::class, 'update'])->name('inspanningstest.update');
+        Route::post('inspanningstest/{test}/auto-save', [InspanningstestController::class, 'autoSaveEdit'])->name('inspanningstest.autoSaveEdit');
+        Route::delete('inspanningstest/{test}', [InspanningstestController::class, 'destroy'])->name('inspanningstest.destroy');
         // Authenticated download route for stored inspanningstest PDFs
         Route::get('inspanningstest/{test}/download-report', [\App\Http\Controllers\ReportDownloadController::class, 'downloadInspanningstestReport'])->name('inspanningstest.report.download')->scopeBindings();
         Route::post('inspanningstest/{test}/duplicate', [InspanningstestController::class, 'duplicate'])->name('inspanningstest.duplicate')->scopeBindings();
@@ -1173,6 +1175,10 @@ Route::get('/admin/email/templates/{id}/preview', [App\Http\Controllers\Admin\Em
 // Auto-save routes voor bikefit (voor create en edit)
 Route::post('/klanten/{klant}/bikefit/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save.create');
 Route::post('/klanten/{klant}/bikefit/{bikefit}/auto-save', [BikefitController::class, 'autoSave'])->name('bikefit.auto-save.edit');
+
+// Auto-save routes voor inspanningstest (voor create en edit) - IDENTIEK AAN BIKEFIT
+Route::post('/klanten/{klant}/inspanningstest/auto-save', [InspanningstestController::class, 'autoSave'])->name('inspanningstest.auto-save.create');
+Route::post('/klanten/{klant}/inspanningstest/{test}/auto-save', [InspanningstestController::class, 'autoSave'])->name('inspanningstest.auto-save.edit');
 
 // Login activity logging is nu actief via middleware!
 // Check /admin/users/activity om alle login activiteiten te zien

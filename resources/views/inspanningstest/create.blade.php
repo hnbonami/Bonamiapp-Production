@@ -75,9 +75,10 @@
                             <input type="date" 
                                    name="testdatum" 
                                    id="datum" 
-                                   value="{{ old('testdatum', date('Y-m-d')) }}"
+                                   value="{{ old('testdatum', now()->format('Y-m-d')) }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                    required>
+                            <p class="text-xs text-gray-500 mt-1">Standaard ingesteld op vandaag, maar aanpasbaar</p>
                         </div>
 
                         <div class="mb-4">
@@ -4197,5 +4198,276 @@ function toonZonesError(bericht) {
         </div>
     `;
 }
+</script>
+@endsection
+
+@section('scripts')
+<script>
+console.log('🚀 AUTO-SAVE SCRIPT LOADED FOR INSPANNINGSTEST CREATE!');
+
+// Auto-save functionaliteit voor inspanningstest formulieren (IDENTIEK AAN BIKEFIT)
+class InspanningstestAutoSave {
+    constructor() {
+        this.form = null;
+        this.saveTimeout = null;
+        this.lastSaved = null;
+        this.isEdit = false;
+        this.klantId = null;
+        this.testId = null;
+        this.statusElement = null;
+        
+        this.init();
+    }
+    
+    init() {
+        console.log('🔧 InspanningstestAutoSave initializing...');
+        console.log('📍 Current URL:', window.location.pathname);
+        
+        // Detecteer of we op een inspanningstest pagina zijn
+        const path = window.location.pathname;
+        const testMatch = path.match(/\/klanten\/(\d+)\/inspanningstest(?:\/(\d+))?/);
+        
+        if (!testMatch) {
+            console.log('❌ Not on an inspanningstest page, auto-save disabled');
+            return;
+        }
+        
+        this.klantId = testMatch[1];
+        this.testId = testMatch[2] || null;
+        this.isEdit = !!this.testId;
+        
+        console.log('✅ Inspanningstest page detected:', {
+            klantId: this.klantId,
+            testId: this.testId,
+            isEdit: this.isEdit
+        });
+        
+        // Vind het formulier - zoek specifiek naar de inspanningstest form
+        this.form = document.querySelector('form[action*="inspanningstest"]') || 
+                   document.querySelector('form:not([action*="logout"])') ||
+                   document.querySelector('form[method="POST"]');
+        
+        if (!this.form) {
+            console.log('❌ No inspanningstest form found on page');
+            return;
+        }
+        
+        console.log('✅ Form found:', this.form);
+        console.log('📋 Form action:', this.form.action);
+        
+        // Voeg status indicator toe
+        this.addStatusIndicator();
+        
+        // Luister naar form changes
+        this.attachEventListeners();
+        
+        console.log('🚀 Auto-save activated for', this.isEdit ? 'EDIT' : 'CREATE', 'mode');
+    }
+    
+    addStatusIndicator() {
+        // Voeg een subtiele status indicator toe
+        const statusDiv = document.createElement('div');
+        statusDiv.id = 'auto-save-status';
+        statusDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 10px 15px;
+            font-size: 13px;
+            color: #6c757d;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        `;
+        statusDiv.innerHTML = '💾 Auto-save ready';
+        document.body.appendChild(statusDiv);
+        this.statusElement = statusDiv;
+        
+        console.log('✅ Status indicator added');
+        
+        // Verberg na 3 seconden
+        setTimeout(() => this.hideStatus(), 3000);
+    }
+    
+    attachEventListeners() {
+        // Luister naar alle form inputs
+        const inputs = this.form.querySelectorAll('input, select, textarea');
+        
+        console.log(`📝 Found ${inputs.length} form inputs to monitor`);
+        
+        inputs.forEach((input, index) => {
+            input.addEventListener('input', () => {
+                console.log(`📝 Input changed: ${input.name || input.id || 'unnamed'}`);
+                this.scheduleAutoSave();
+            });
+            input.addEventListener('change', () => {
+                console.log(`🔄 Change event: ${input.name || input.id || 'unnamed'}`);
+                this.scheduleAutoSave();
+            });
+        });
+    }
+    
+    scheduleAutoSave() {
+        console.log('⏰ Scheduling auto-save...');
+        
+        // Cancel bestaande timeout
+        if (this.saveTimeout) {
+            clearTimeout(this.saveTimeout);
+            console.log('⏰ Cancelled previous save timeout');
+        }
+        
+        // Schedule nieuwe save na 3 seconden
+        this.saveTimeout = setTimeout(() => {
+            this.performAutoSave();
+        }, 3000);
+        
+        this.showStatus('⏳ Auto-save in 3 seconds...', '#ffc107');
+    }
+    
+    async performAutoSave() {
+        console.log('💾 Starting auto-save...');
+        
+        try {
+            this.showStatus('💾 Saving...', '#007bff');
+            
+            // Maak een NIEUWE FormData object met alle velden expliciet
+            const formData = new FormData();
+            
+            // Voeg CSRF token toe
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || 
+                             document.querySelector('input[name="_token"]')?.value;
+            formData.append('_token', csrfToken);
+            
+            // KRITIEKE VELDEN: testtype en datum
+            const testtypeInput = document.getElementById('testtype');
+            const datumInput = document.getElementById('datum');
+            
+            if (!testtypeInput || !testtypeInput.value) {
+                console.warn('⚠️ Testtype is leeg - skip auto-save');
+                this.showStatus('⏭️ Selecteer eerst een testtype', '#ffc107');
+                setTimeout(() => this.hideStatus(), 3000);
+                return;
+            }
+            
+            formData.append('testtype', testtypeInput.value);
+            formData.append('testdatum', datumInput?.value || new Date().toISOString().split('T')[0]);
+            
+            console.log('✅ Kritieke velden:', {
+                testtype: testtypeInput.value,
+                datum: datumInput?.value
+            });
+            
+            // Verzamel ALLE form inputs
+            const inputs = this.form.querySelectorAll('input:not([type="file"]):not([name="_method"]), select, textarea');
+            
+            inputs.forEach(input => {
+                const name = input.name;
+                if (!name || name === '_token' || name === 'testtype' || name === 'testdatum') return;
+                
+                if (input.type === 'checkbox') {
+                    if (input.checked) formData.append(name, input.value || '1');
+                } else if (input.type === 'radio') {
+                    if (input.checked) formData.append(name, input.value);
+                } else {
+                    const value = input.value;
+                    if (value !== null && value !== undefined) {
+                        formData.append(name, value);
+                    }
+                }
+            });
+            
+            // Voeg extra debug info toe
+            console.log('📦 FormData contents:');
+            for (let [key, value] of formData.entries()) {
+                console.log(`  ${key}: ${value}`);
+            }
+            
+            // Bepaal de juiste URL
+            const url = this.isEdit 
+                ? `/klanten/${this.klantId}/inspanningstest/${this.testId}/auto-save`
+                : `/klanten/${this.klantId}/inspanningstest/auto-save`;
+            
+            console.log('🌐 Sending to URL:', url);
+            
+            // Verstuur de request
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            console.log('📡 Response status:', response.status);
+            console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+            
+            const responseText = await response.text();
+            console.log('📡 Raw response:', responseText);
+            
+            let result;
+            try {
+                result = JSON.parse(responseText);
+            } catch (e) {
+                throw new Error(`Invalid JSON response: ${responseText}`);
+            }
+            
+            if (response.ok && result.success) {
+                this.lastSaved = new Date();
+                console.log('✅ Auto-save successful:', result);
+                this.showStatus('✅ ' + result.message, '#28a745');
+                
+                // 🔄 BELANGRIJKE FIX: Schakel over naar EDIT mode na eerste save EN update URL
+                if (!this.isEdit && result.test_id) {
+                    console.log('🔄 Switching to EDIT mode with test_id:', result.test_id);
+                    this.testId = result.test_id;
+                    this.isEdit = true;
+                    
+                    // Update URL naar edit route zodat refresh werkt
+                    const newUrl = `/klanten/${this.klantId}/inspanningstest/${this.testId}/bewerken`;
+                    window.history.replaceState({}, '', newUrl);
+                    console.log('✅ URL updated naar:', newUrl);
+                }
+                
+                setTimeout(() => this.hideStatus(), 4000);
+            } else {
+                console.error('❌ Auto-save failed:', result);
+                this.showStatus('❌ ' + (result.message || 'Save failed'), '#dc3545');
+                setTimeout(() => this.hideStatus(), 6000);
+            }
+            
+        } catch (error) {
+            console.error('💥 Auto-save error:', error);
+            this.showStatus('❌ Connection error: ' + error.message, '#dc3545');
+            setTimeout(() => this.hideStatus(), 6000);
+        }
+    }
+    
+    showStatus(message, color = '#6c757d') {
+        if (!this.statusElement) return;
+        
+        this.statusElement.innerHTML = message;
+        this.statusElement.style.borderColor = color;
+        this.statusElement.style.color = color;
+        this.statusElement.style.opacity = '1';
+        
+        console.log('📢 Status:', message);
+    }
+    
+    hideStatus() {
+        if (!this.statusElement) return;
+        this.statusElement.style.opacity = '0';
+    }
+}
+
+// Start auto-save
+console.log('🎯 Starting inspanningstest auto-save initialization...');
+new InspanningstestAutoSave();
 </script>
 @endsection

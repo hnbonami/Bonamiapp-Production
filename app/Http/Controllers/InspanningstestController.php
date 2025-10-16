@@ -7,6 +7,7 @@ use App\Helpers\SjabloonHelper;
 use App\Services\AIAnalysisService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Exception;
 
 class InspanningstestController extends Controller {
     /**
@@ -225,262 +226,168 @@ class InspanningstestController extends Controller {
         return view('inspanningstest.show', compact('klant', 'test', 'hasMatchingTemplate', 'matchingTemplate'));
     }
 
-    public function edit($klantId, $testId)
-    {
-        $klant = \App\Models\Klant::findOrFail($klantId);
-        $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
-        return view('inspanningstest.edit', compact('klant', 'test'));
-    }
-
-    public function update(Request $request, $klantId, $testId)
-    {
-        $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
-        $data = $request->validate([
-            'testdatum' => 'required|date',
-            'testtype' => 'required|in:looptest,fietstest',
-            'lichaamslengte_cm' => 'nullable|integer',
-            'lichaamsgewicht_kg' => 'nullable|numeric',
-            'bmi' => 'nullable|numeric',
-            'hartslag_rust_bpm' => 'nullable|integer',
-            'buikomtrek_cm' => 'nullable|integer',
-            'startwattage' => 'nullable|integer',
-            'stappen_min' => 'nullable|integer',
-            'testresultaten' => 'nullable|array',
-            'aerobe_drempel_vermogen' => 'nullable|numeric',
-            'aerobe_drempel_hartslag' => 'nullable|integer',
-            'anaerobe_drempel_vermogen' => 'nullable|numeric',
-            'anaerobe_drempel_hartslag' => 'nullable|integer',
-            'besluit_lichaamssamenstelling' => 'nullable|string',
-            'advies_aerobe_drempel' => 'nullable|string',
-            'advies_anaerobe_drempel' => 'nullable|string',
-            // Template kind for mapping to report templates (nullable)
-            'template_kind' => 'nullable|string|in:inspanningstest_fietsen,inspanningstest_lopen,standaard_bikefit,professionele_bikefit,zadeldrukmeting,maatbepaling',
-        ]);
-        $test->update($data);
-        return redirect()->route('klanten.show', $klantId)->with('success', 'Inspanningstest bijgewerkt.');
-    }
-
-    public function destroy($klantId, $testId)
-    {
-        $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
-        $test->delete();
-        return redirect()->route('klanten.show', $klantId)->with('success', 'Inspanningstest verwijderd.');
-    }
-
-    public function duplicate($klantId, $testId)
-    {
-        $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
-        $newTest = $test->replicate();
-        $newTest->testdatum = now();
-        $newTest->save();
-        return redirect()->route('klanten.show', $klantId)->with('success', 'Inspanningstest gedupliceerd.');
-    }
-
-    public function pdf($klantId, $testId)
-    {
-        $klant = \App\Models\Klant::findOrFail($klantId);
-        $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
-        $pdf = \PDF::loadView('inspanningstest.pdf', compact('klant', 'test'));
-        return $pdf->download('inspanningstest_'.$klant->id.'_'.$test->id.'.pdf');
-    }
-
-    public function report($klantId, $testId)
-    {
-        $klant = \App\Models\Klant::findOrFail($klantId);
-        $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
-        // Reuse the same view used for PDF generation but render as HTML preview
-        return view('inspanningstest.show', compact('klant', 'test'));
-    }
     /**
-     * Generate sjabloon-based report for inspanningstest (EXACT zoals bikefit)
+     * Toon bewerkingsformulier voor een bestaande inspanningstest
      */
-    public function generateSjabloonReport($klantId, $testId)
+    public function edit(Klant $klant, Inspanningstest $test)
     {
-        \Log::info('🚀 INSPANNINGSTEST SJABLOON RAPPORT START', [
-            'klant_id' => $klantId,
-            'test_id' => $testId
+        \Log::info('� Edit inspanningstest opgehaald', [
+            'test_id' => $test->id,
+            'klant_id' => $klant->id,
+            'testtype' => $test->testtype
         ]);
-        
-        try {
-            $klant = \App\Models\Klant::findOrFail($klantId);
-            $test = \App\Models\Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
-            
-            \Log::info('✅ Models loaded', [
-                'klant' => $klant->naam,
-                'test' => $test->testtype
-            ]);
-            
-            // Find matching sjabloon
-            $sjabloon = \App\Helpers\SjabloonHelper::findMatchingTemplate($test->testtype, 'inspanningstest');
-            
-            \Log::info('🔍 Sjabloon search result', [
-                'testtype' => $test->testtype,
-                'found' => $sjabloon ? 'YES' : 'NO',
-                'sjabloon_naam' => $sjabloon ? $sjabloon->naam : 'NONE'
-            ]);
-            
-            if (!$sjabloon) {
-                \Log::warning('❌ NO TEMPLATE FOUND - redirecting back');
-                return redirect()->route('inspanningstest.results', [
-                    'klant' => $klant->id,
-                    'test' => $test->id
-                ])->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $test->testtype);
-            }
-            
-            // Use SjablonenController to generate the report (EXACT zoals bikefit)
-            \Log::info('📄 Calling SjablonenController->generateInspanningstestReport');
-            $sjablonenController = new \App\Http\Controllers\SjablonenController();
-            return $sjablonenController->generateInspanningstestReport($test->id);
-            
-        } catch (\Exception $e) {
-            \Log::error('❌ EXCEPTION in generateSjabloonReport', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return redirect()->route('inspanningstest.results', [
-                'klant' => $klantId,
-                'test' => $testId
-            ])->with('error', 'Er is een fout opgetreden bij het genereren van het rapport: ' . $e->getMessage());
-        }
+
+        return view('inspanningstest.edit', [
+            'klant' => $klant,
+            'inspanningstest' => $test // Gebruik 'inspanningstest' naam voor de view
+        ]);
     }
 
     /**
-     * Genereer AI-gedreven complete analyse van de inspanningstest
+     * Update een bestaande inspanningstest
      */
-    public function generateAIAdvice(Request $request): JsonResponse
+    public function update(Request $request, Klant $klant, Inspanningstest $test)
     {
+        \Log::info('� Update inspanningstest gestart', [
+            'test_id' => $test->id,
+            'klant_id' => $klant->id,
+            'request_data' => $request->all()
+        ]);
+
+        // Update test met alle velden
+        $test->update([
+            'klant_id' => $klant->id,
+            'user_id' => auth()->id(),
+            'testdatum' => $request->testdatum,
+            'testtype' => $request->testtype,
+            'specifieke_doelstellingen' => $request->specifieke_doelstellingen,
+            'lichaamslengte_cm' => $request->lichaamslengte_cm,
+            'lichaamsgewicht_kg' => $request->lichaamsgewicht_kg,
+            'bmi' => $request->bmi,
+            'vetpercentage' => $request->vetpercentage,
+            'hartslag_rust_bpm' => $request->hartslag_rust_bpm,
+            'maximale_hartslag_bpm' => $request->maximale_hartslag_bpm,
+            'buikomtrek_cm' => $request->buikomtrek_cm,
+            'slaapkwaliteit' => $request->slaapkwaliteit,
+            'eetlust' => $request->eetlust,
+            'gevoel_op_training' => $request->gevoel_op_training,
+            'stressniveau' => $request->stressniveau,
+            'gemiddelde_trainingstatus' => $request->gemiddelde_trainingstatus,
+            'training_dag_voor_test' => $request->training_dag_voor_test,
+            'training_2d_voor_test' => $request->training_2d_voor_test,
+            'testlocatie' => $request->testlocatie,
+            'protocol' => $request->protocol,
+            'startwattage' => $request->startwattage,
+            'stappen_min' => $request->stappen_min,
+            'stappen_watt' => $request->stappen_watt,
+            'weersomstandigheden' => $request->weersomstandigheden,
+            'testresultaten' => $request->has('testresultaten') ? json_encode($request->testresultaten) : $test->testresultaten,
+            'analyse_methode' => $request->analyse_methode,
+            'dmax_modified_threshold' => $request->dmax_modified_threshold,
+            'aerobe_drempel_vermogen' => $request->aerobe_drempel_vermogen,
+            'aerobe_drempel_hartslag' => $request->aerobe_drempel_hartslag,
+            'anaerobe_drempel_vermogen' => $request->anaerobe_drempel_vermogen,
+            'anaerobe_drempel_hartslag' => $request->anaerobe_drempel_hartslag,
+            'complete_ai_analyse' => $request->complete_ai_analyse,
+            'zones_methode' => $request->zones_methode,
+            'zones_aantal' => $request->zones_aantal,
+            'zones_eenheid' => $request->zones_eenheid,
+            'trainingszones_data' => $request->trainingszones_data,
+        ]);
+
+        \Log::info('✅ Inspanningstest bijgewerkt', ['test_id' => $test->id]);
+
+        return redirect()
+            ->route('inspanningstest.show', ['klant' => $klant->id, 'test' => $test->id])
+            ->with('success', 'Inspanningstest succesvol bijgewerkt.');
+    }
+
+    /**
+     * Auto-save voor edit mode
+     */
+    public function autoSaveEdit(Request $request, Klant $klant, Inspanningstest $test)
+    {
+        \Log::info('💾 Auto-save EDIT aangeroepen', [
+            'test_id' => $test->id,
+            'klant_id' => $klant->id,
+            'testtype' => $request->testtype
+        ]);
+
         try {
-            \Log::info('🤖 GenerateAIAdvice aangeroepen');
-            
-            // Haal klant op voor geslacht en geboortedatum
-            $klant = \App\Models\Klant::find($request->input('klant_id'));
-            
-            // Bereken leeftijd uit geboortedatum
-            $leeftijd = 35; // Default
-            if ($klant && $klant->geboortedatum) {
-                try {
-                    $leeftijd = \Carbon\Carbon::parse($klant->geboortedatum)->age;
-                } catch (\Exception $e) {
-                    \Log::warning('Kon leeftijd niet berekenen uit geboortedatum', ['error' => $e->getMessage()]);
-                }
-            }
-            
-            // Converteer geslacht naar male/female voor normen
-            $geslacht = 'male'; // Default
-            if ($klant && $klant->geslacht) {
-                $geslachtLower = strtolower($klant->geslacht);
-                if (in_array($geslachtLower, ['vrouw', 'female', 'woman'])) {
-                    $geslacht = 'female';
-                } else if (in_array($geslachtLower, ['man', 'male'])) {
-                    $geslacht = 'male';
-                }
-            }
-            
-            // Verzamel complete testdata
-            $validated = array_merge($request->all(), [
-                'geslacht' => $geslacht,
-                'leeftijd' => $leeftijd,
-                'geboortedatum' => $klant ? $klant->geboortedatum : null,
-            ]);
-            
-            // 🏊 TRIATHLON/IRONMAN DETECTIE - Extra emphasis voor AI
-            $doelstellingen = $validated['specifieke_doelstellingen'] ?? '';
-            $isTriathlonDoel = false;
-            $triathlonTermen = ['triathlon', 'triatlon', 'ironman', 'iron man', 'IM ', '70.3', 'half ironman', 'full ironman', 'hawaii', 'kona', 'olympic', 'sprint tri'];
-            
-            \Log::info('🔍 TRIATHLON DETECTIE START', [
-                'doelstellingen_raw' => $doelstellingen,
-                'doelstellingen_lowercase' => strtolower($doelstellingen),
-                'termen_zoeken' => $triathlonTermen
-            ]);
-            
-            foreach ($triathlonTermen as $term) {
-                if (stripos($doelstellingen, $term) !== false) {
-                    $isTriathlonDoel = true;
-                    \Log::info('✅ TRIATHLON DOEL GEDETECTEERD!', [
-                        'gevonden_term' => $term,
-                        'doelstellingen' => $doelstellingen,
-                        'flag_gezet' => true
-                    ]);
-                    break;
-                }
-            }
-            
-            if (!$isTriathlonDoel) {
-                \Log::warning('❌ GEEN TRIATHLON DOEL GEDETECTEERD', [
-                    'doelstellingen' => $doelstellingen,
-                    'gezochte_termen' => $triathlonTermen
-                ]);
-            }
-            
-            // Voeg triathlon flag toe aan data voor AI service
-            $validated['is_triathlon_doel'] = $isTriathlonDoel;
-            
-            \Log::info('📦 DATA NAAR AI SERVICE', [
-                'is_triathlon_doel' => $validated['is_triathlon_doel'],
-                'specifieke_doelstellingen' => $validated['specifieke_doelstellingen'] ?? 'NIET INGESTELD'
+            // Update bestaande test
+            $test->update([
+                'testdatum' => $request->testdatum ?? now()->format('Y-m-d'),
+                'testtype' => $request->testtype,
+                'specifieke_doelstellingen' => $request->specifieke_doelstellingen,
+                'lichaamslengte_cm' => $request->lichaamslengte_cm,
+                'lichaamsgewicht_kg' => $request->lichaamsgewicht_kg,
+                'bmi' => $request->bmi,
+                'vetpercentage' => $request->vetpercentage,
+                'hartslag_rust_bpm' => $request->hartslag_rust_bpm,
+                'maximale_hartslag_bpm' => $request->maximale_hartslag_bpm,
+                'buikomtrek_cm' => $request->buikomtrek_cm,
+                'slaapkwaliteit' => $request->slaapkwaliteit,
+                'eetlust' => $request->eetlust,
+                'gevoel_op_training' => $request->gevoel_op_training,
+                'stressniveau' => $request->stressniveau,
+                'gemiddelde_trainingstatus' => $request->gemiddelde_trainingstatus,
+                'training_dag_voor_test' => $request->training_dag_voor_test,
+                'training_2d_voor_test' => $request->training_2d_voor_test,
+                'testlocatie' => $request->testlocatie,
+                'protocol' => $request->protocol,
+                'startwattage' => $request->startwattage,
+                'stappen_min' => $request->stappen_min,
+                'stappen_watt' => $request->stappen_watt,
+                'weersomstandigheden' => $request->weersomstandigheden,
+                'testresultaten' => $request->has('testresultaten') ? json_encode($request->testresultaten) : $test->testresultaten,
+                'analyse_methode' => $request->analyse_methode,
+                'dmax_modified_threshold' => $request->dmax_modified_threshold,
+                'aerobe_drempel_vermogen' => $request->aerobe_drempel_vermogen,
+                'aerobe_drempel_hartslag' => $request->aerobe_drempel_hartslag,
+                'anaerobe_drempel_vermogen' => $request->anaerobe_drempel_vermogen,
+                'anaerobe_drempel_hartslag' => $request->anaerobe_drempel_hartslag,
+                'complete_ai_analyse' => $request->complete_ai_analyse,
+                'zones_methode' => $request->zones_methode,
+                'zones_aantal' => $request->zones_aantal,
+                'zones_eenheid' => $request->zones_eenheid,
+                'trainingszones_data' => $request->trainingszones_data,
             ]);
 
-            // Check of AI enabled is
-            if (!config('ai.enabled', true)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'AI analyse is momenteel uitgeschakeld'
-                ], 503);
-            }
-
-            $aiService = new AIAnalysisService();
-            
-            // Genereer complete analyse met de service
-            $result = $aiService->generateCompleteAnalysis($validated);
-
-            if ($result['success']) {
-                return response()->json([
-                    'success' => true,
-                    'analysis' => $result['analysis'],
-                    'metadata' => $result['metadata'] ?? []
-                ]);
-            } else {
-                // Gebruik fallback analyse bij fout
-                return response()->json([
-                    'success' => true,
-                    'analysis' => $result['fallback'] ?? 'Kon geen analyse genereren.',
-                    'is_fallback' => true
-                ]);
-            }
-
-            \Log::info('Complete AI analyse succesvol gegenereerd', [
-                'testtype' => $validated['testtype'],
-                'goals' => $validated['specifieke_doelstellingen'] ?? 'geen doelstellingen',
-                'user_id' => auth()->id()
-            ]);
+            \Log::info('✅ Auto-save EDIT succesvol', ['test_id' => $test->id]);
 
             return response()->json([
                 'success' => true,
-                'analysis' => $analysis,
-                'type' => 'complete'
+                'message' => "Auto-saved at " . now()->format('H:i:s'),
+                'test_id' => $test->id
             ]);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validatie fout: ' . $e->getMessage(),
-                'errors' => $e->errors()
-            ], 422);
 
         } catch (\Exception $e) {
-            \Log::error('Fout bij AI analyse generatie: ' . $e->getMessage(), [
-                'request_data' => $request->all(),
-                'user_id' => auth()->id()
+            \Log::error('❌ Auto-save EDIT fout', [
+                'error' => $e->getMessage(),
+                'test_id' => $test->id
             ]);
 
             return response()->json([
                 'success' => false,
-                'message' => 'Er is een fout opgetreden bij het genereren van AI analyse. Probeer het opnieuw.'
+                'message' => 'Auto-save failed: ' . $e->getMessage()
             ], 500);
         }
     }
 
-    // ...existing generateReport method...
+    /**
+     * Verwijder een inspanningstest
+     */
+    public function destroy(Klant $klant, Inspanningstest $test)
+    {
+        \Log::info('🗑️ Delete inspanningstest aangeroepen', [
+            'test_id' => $test->id,
+            'klant_id' => $klant->id
+        ]);
+
+        $test->delete();
+
+        return redirect()
+            ->route('klanten.show', $klant->id)
+            ->with('success', 'Inspanningstest succesvol verwijderd.');
+    }
 }
