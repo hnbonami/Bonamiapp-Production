@@ -268,21 +268,66 @@
         <strong>LT2:</strong> Anaërobe drempel (lactaat ~4.0 mmol/L)
     </div>
     
-    {{-- Evaluatie box --}}
+    {{-- Evaluatie box met uitgebreide uitleg --}}
     <div class="rapport-evaluatie-box">
-        <strong>💡 Interpretatie:</strong> 
-        @if($isLooptest)
-            De aërobe drempel (🔴 LT1) is de maximale loopsnelheid die je zeer lang kunt volhouden - ideaal voor duurtraining. 
-            De anaërobe drempel (🟠 LT2) is je maximale steady-state tempo voor 30-60 minuten - denk aan wedstrijdtempo. 
-            Train vooral rond LT1 voor het opbouwen van je basis en rond LT2 voor wedstrijdspecifieke fitheid.
-        @elseif($isZwemtest)
-            De aërobe drempel (🔴 LT1) is het maximale zwemtempo dat je zeer lang kunt volhouden - ideaal voor lange afstanden. 
-            De anaërobe drempel (🟠 LT2) is je maximale steady-state tempo voor intensieve sets. 
-            Focus op technieksessies rond LT1 en intervaltrainingen rond LT2.
-        @else
-            De aërobe drempel (🔴 LT1) is het maximale vermogen dat je zeer lang kunt volhouden - ideaal voor lange tochten. 
-            De anaërobe drempel (🟠 LT2) is je maximaal haalbare "steady state" vermogen voor ongeveer een uur fietsen. 
-            Train vooral in zone 2-3 (rond LT1) voor basisconditie en in zone 4 (rond LT2) voor wedstrijdfitheid.
-        @endif
+        <strong>💡 Wat betekenen deze drempelwaarden?</strong>
+        <p style="margin-top: 6px;">
+            De drempelwaarden zijn de belangrijkste uitkomsten van je test. Ze tonen de overgangsmomenten tussen verschillende energiesystemen in je lichaam en vormen de basis voor je trainingszones.
+        </p>
+        
+        <p style="margin-top: 8px;">
+            <strong>🔴 Aërobe drempel (LT1):</strong> 
+            Het punt waarop je lichaam van pure aërobe naar gecombineerde energie overschakelt. 
+            @if($isLooptest)
+                Tot deze snelheid kun je zeer lang volhouden (meerdere uren) - het voelt comfortabel aan en je kunt nog makkelijk praten. 
+                Ideaal voor duurtraining om je basis op te bouwen.
+            @elseif($isZwemtest)
+                Tot dit tempo kun je zeer lang volhouden - het voelt comfortabel en je ademhaling blijft rustig. 
+                Ideaal voor duurtraining om je basis op te bouwen.
+            @else
+                Tot dit vermogen kun je zeer lang volhouden (meerdere uren) - het voelt comfortabel aan. 
+                Ideaal voor lange tochten en basisconditie.
+            @endif
+        </p>
+        
+        <p style="margin-top: 6px;">
+            <strong>🟠 Anaërobe drempel (LT2):</strong> 
+            Het punt waarop je lichaam meer lactaat produceert dan het kan afbreken. Boven deze drempel "verzuur" je en kun je slechts beperkte tijd volhouden. 
+            @if($isLooptest)
+                Deze snelheid kun je 30-60 minuten volhouden bij maximale inspanning - denk aan wedstrijdtempo. 
+                Het voelt "zwaar maar haalbaar", praten wordt moeilijk.
+            @elseif($isZwemtest)
+                Dit tempo kun je 30-60 minuten volhouden bij maximale inspanning - je zwemtechniek vergt meer concentratie. 
+                Je maximale steady-state tempo.
+            @else
+                Dit vermogen kun je 30-60 minuten volhouden - denk aan tijdrit of bergrit tempo. 
+                Je maximale steady-state vermogen.
+            @endif
+        </p>
+        
+        <p style="margin-top: 6px;">
+            <strong>🔥 Maximum:</strong> De hoogste waarden tijdens je test - toont je piekprestatie en lactaattolerantie in uitgeruste toestand.
+        </p>
+        
+        <p style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #f59e0b;">
+            <strong>📊 Kolom uitleg:</strong> 
+            @if($isLooptest)
+                <em>Snelheid (km/h)</em> = directe trainingswaarde · 
+                <em>Tempo (min/km)</em> = praktisch voor planning · 
+            @elseif($isZwemtest)
+                <em>Tempo (min/100m)</em> = standaard zwemwaarde · 
+            @else
+                <em>Vermogen (W)</em> = nauwkeurigste inspanningsmaat · 
+                <em>W/kg</em> = vergelijkbaar bij gewichtsverandering · 
+            @endif
+            <em>Hartslag</em> = handig zonder powermeter (varieert door warmte/vermoeidheid) · 
+            <em>Lactaat</em> = objectieve maat voor metabolisme · 
+            <em>%max</em> = verhouding tot maximum (LT2 vaak 85-95% bij goed getrainden).
+        </p>
+        
+        <p style="margin-top: 6px;">
+            <strong>💪 Gebruik:</strong> Deze waarden zijn de basis voor je persoonlijke trainingszones. 
+            Vergelijk bij volgende testen - als LT1 en LT2 hoger worden, word je fitter!
+        </p>
     </div>
 </div>
