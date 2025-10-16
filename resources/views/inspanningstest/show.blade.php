@@ -26,17 +26,50 @@
             </tr>
         </thead>
         <tbody>
-            @if($test->testresultaten)
-                @foreach($test->testresultaten as $row)
-                <tr>
-                    <td>{{ $row['tijd'] ?? '' }}</td>
-                    <td>{{ $row['vermogen'] ?? '' }}</td>
-                    <td>{{ $row['snelheid'] ?? '' }}</td>
-                    <td>{{ $row['lactaat'] ?? '' }}</td>
-                    <td>{{ $row['hartslag'] ?? '' }}</td>
-                    <td>{{ $row['borg'] ?? '' }}</td>
-                </tr>
-                @endforeach
+                        @if($test->testresultaten)
+                @php
+                    // Decode JSON als het een string is
+                    $testresultaten = is_string($test->testresultaten) 
+                        ? json_decode($test->testresultaten, true) 
+                        : $test->testresultaten;
+                @endphp
+                
+                @if(is_array($testresultaten) && count($testresultaten) > 0)
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tijd (min)</th>
+                                @if($test->testtype === 'fietstest')
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vermogen (W)</th>
+                                @else
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Snelheid (km/u)</th>
+                                @endif
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lactaat</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hartslag</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Borg</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-100">
+                            @foreach($testresultaten as $resultaat)
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $resultaat['tijd'] ?? '-' }}</td>
+                                    @if($test->testtype === 'fietstest')
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $resultaat['vermogen'] ?? '-' }}</td>
+                                    @else
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $resultaat['snelheid'] ?? '-' }}</td>
+                                    @endif
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $resultaat['lactaat'] ?? '-' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $resultaat['hartslag'] ?? '-' }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $resultaat['borg'] ?? '-' }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @else
+                    <p class="text-gray-500">Geen testresultaten beschikbaar</p>
+                @endif
+            @else
+                <p class="text-gray-500">Geen testresultaten beschikbaar</p>
             @endif
         </tbody>
     </table>

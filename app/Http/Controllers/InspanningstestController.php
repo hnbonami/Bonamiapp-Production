@@ -298,7 +298,7 @@ class InspanningstestController extends Controller {
         \Log::info('✅ Inspanningstest bijgewerkt', ['test_id' => $test->id]);
 
         return redirect()
-            ->route('inspanningstest.show', ['klant' => $klant->id, 'test' => $test->id])
+            ->route('inspanningstest.results', ['klant' => $klant->id, 'test' => $test->id])
             ->with('success', 'Inspanningstest succesvol bijgewerkt.');
     }
 
@@ -375,6 +375,136 @@ class InspanningstestController extends Controller {
     }
 
     /**
+     * Auto-save inspanningstest data via AJAX (CREATE mode)
+     */
+    public function autoSave(Request $request, Klant $klant)
+    {
+        \Log::info('💾 AUTO-SAVE aangeroepen', [
+            'klant_id' => $klant->id,
+            'testtype' => $request->testtype,
+            'has_testresultaten' => $request->has('testresultaten')
+        ]);
+
+        try {
+            // Haal bestaande test ID uit session of maak nieuwe
+            $testId = session('inspanningstest_draft_id');
+            
+            if ($testId) {
+                // Update bestaande draft
+                $test = Inspanningstest::find($testId);
+                if ($test && $test->klant_id == $klant->id) {
+                    $test->update([
+                        'datum' => $request->testdatum ?? now()->format('Y-m-d'),
+                        'testtype' => $request->testtype,
+                        'specifieke_doelstellingen' => $request->specifieke_doelstellingen,
+                        'lichaamslengte_cm' => $request->lichaamslengte_cm,
+                        'lichaamsgewicht_kg' => $request->lichaamsgewicht_kg,
+                        'bmi' => $request->bmi,
+                        'vetpercentage' => $request->vetpercentage,
+                        'hartslag_rust_bpm' => $request->hartslag_rust_bpm,
+                        'maximale_hartslag_bpm' => $request->maximale_hartslag_bpm,
+                        'buikomtrek_cm' => $request->buikomtrek_cm,
+                        'slaapkwaliteit' => $request->slaapkwaliteit,
+                        'eetlust' => $request->eetlust,
+                        'gevoel_op_training' => $request->gevoel_op_training,
+                        'stressniveau' => $request->stressniveau,
+                        'gemiddelde_trainingstatus' => $request->gemiddelde_trainingstatus,
+                        'training_dag_voor_test' => $request->training_dag_voor_test,
+                        'training_2d_voor_test' => $request->training_2d_voor_test,
+                        'testlocatie' => $request->testlocatie,
+                        'protocol' => $request->protocol,
+                        'startwattage' => $request->startwattage,
+                        'stappen_min' => $request->stappen_min,
+                        'stappen_watt' => $request->stappen_watt,
+                        'weersomstandigheden' => $request->weersomstandigheden,
+                        'testresultaten' => $request->has('testresultaten') ? json_encode($request->testresultaten) : $test->testresultaten,
+                        'analyse_methode' => $request->analyse_methode,
+                        'dmax_modified_threshold' => $request->dmax_modified_threshold,
+                        'aerobe_drempel_vermogen' => $request->aerobe_drempel_vermogen,
+                        'aerobe_drempel_hartslag' => $request->aerobe_drempel_hartslag,
+                        'anaerobe_drempel_vermogen' => $request->anaerobe_drempel_vermogen,
+                        'anaerobe_drempel_hartslag' => $request->anaerobe_drempel_hartslag,
+                        'complete_ai_analyse' => $request->complete_ai_analyse,
+                        'zones_methode' => $request->zones_methode,
+                        'zones_aantal' => $request->zones_aantal,
+                        'zones_eenheid' => $request->zones_eenheid,
+                        'trainingszones_data' => $request->trainingszones_data,
+                    ]);
+                    
+                    \Log::info('✅ Draft bijgewerkt', ['test_id' => $test->id]);
+                } else {
+                    $testId = null; // Reset als test niet meer bestaat
+                }
+            }
+            
+            if (!$testId) {
+                // Maak nieuwe draft test
+                $test = Inspanningstest::create([
+                    'klant_id' => $klant->id,
+                    'user_id' => auth()->id(),
+                    'datum' => $request->testdatum ?? now()->format('Y-m-d'),
+                    'testtype' => $request->testtype,
+                    'specifieke_doelstellingen' => $request->specifieke_doelstellingen,
+                    'lichaamslengte_cm' => $request->lichaamslengte_cm,
+                    'lichaamsgewicht_kg' => $request->lichaamsgewicht_kg,
+                    'bmi' => $request->bmi,
+                    'vetpercentage' => $request->vetpercentage,
+                    'hartslag_rust_bpm' => $request->hartslag_rust_bpm,
+                    'maximale_hartslag_bpm' => $request->maximale_hartslag_bpm,
+                    'buikomtrek_cm' => $request->buikomtrek_cm,
+                    'slaapkwaliteit' => $request->slaapkwaliteit,
+                    'eetlust' => $request->eetlust,
+                    'gevoel_op_training' => $request->gevoel_op_training,
+                    'stressniveau' => $request->stressniveau,
+                    'gemiddelde_trainingstatus' => $request->gemiddelde_trainingstatus,
+                    'training_dag_voor_test' => $request->training_dag_voor_test,
+                    'training_2d_voor_test' => $request->training_2d_voor_test,
+                    'testlocatie' => $request->testlocatie,
+                    'protocol' => $request->protocol,
+                    'startwattage' => $request->startwattage,
+                    'stappen_min' => $request->stappen_min,
+                    'stappen_watt' => $request->stappen_watt,
+                    'weersomstandigheden' => $request->weersomstandigheden,
+                    'testresultaten' => $request->has('testresultaten') ? json_encode($request->testresultaten) : null,
+                    'analyse_methode' => $request->analyse_methode,
+                    'dmax_modified_threshold' => $request->dmax_modified_threshold,
+                    'aerobe_drempel_vermogen' => $request->aerobe_drempel_vermogen,
+                    'aerobe_drempel_hartslag' => $request->aerobe_drempel_hartslag,
+                    'anaerobe_drempel_vermogen' => $request->anaerobe_drempel_vermogen,
+                    'anaerobe_drempel_hartslag' => $request->anaerobe_drempel_hartslag,
+                    'complete_ai_analyse' => $request->complete_ai_analyse,
+                    'zones_methode' => $request->zones_methode,
+                    'zones_aantal' => $request->zones_aantal,
+                    'zones_eenheid' => $request->zones_eenheid,
+                    'trainingszones_data' => $request->trainingszones_data,
+                ]);
+                
+                // Bewaar ID in session voor volgende auto-saves
+                session(['inspanningstest_draft_id' => $test->id]);
+                
+                \Log::info('✅ Nieuwe draft aangemaakt', ['test_id' => $test->id]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'test_id' => $test->id,
+                'message' => 'Auto-saved at ' . now()->format('H:i:s')
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Auto-save fout', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Auto-save failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Verwijder een inspanningstest
      */
     public function destroy(Klant $klant, Inspanningstest $test)
@@ -418,5 +548,34 @@ class InspanningstestController extends Controller {
         return redirect()
             ->route('klanten.show', $klant->id)
             ->with('success', 'Inspanningstest succesvol gedupliceerd.');
+    }
+
+    /**
+     * Genereer sjabloon-gebaseerd rapport voor inspanningstest
+     */
+    public function generateSjabloonReport($klantId, $testId)
+    {
+        try {
+            $klant = Klant::findOrFail($klantId);
+            $test = Inspanningstest::where('klant_id', $klantId)
+                ->findOrFail($testId);
+            
+            // Find matching sjabloon
+            $sjabloon = \App\Helpers\SjabloonHelper::findMatchingTemplate($test->testtype, 'inspanningstest');
+            
+            if (!$sjabloon) {
+                return redirect()->back()
+                    ->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $test->testtype);
+            }
+            
+            // Use SjablonenController to generate the report
+            $sjablonenController = new \App\Http\Controllers\SjablonenController();
+            return $sjablonenController->generateInspanningstestReport($test->id);
+            
+        } catch (\Exception $e) {
+            \Log::error('Inspanningstest sjabloon rapport generatie gefaald: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Er is een fout opgetreden bij het genereren van het rapport.');
+        }
     }
 }

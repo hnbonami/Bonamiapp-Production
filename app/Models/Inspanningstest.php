@@ -32,7 +32,7 @@ class Inspanningstest extends Model
     ];
     protected $casts = [
         'datum' => 'date', // Cast 'datum' kolom als date
-        'testresultaten' => 'array',
+        'testresultaten' => 'array', // Cast testresultaten als array
         'slaapkwaliteit' => 'integer',
         'eetlust' => 'integer',
         'gevoel_op_training' => 'integer',
