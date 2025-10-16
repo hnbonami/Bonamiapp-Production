@@ -295,9 +295,59 @@
                     console.log('✅ LT2 lijn toegevoegd op x=' + lt2Value);
                 }
                 
+                // Custom plugin om labels naast drempellijnen te tonen
+                const drempelLabelsPlugin = {
+                    id: 'drempelLabels',
+                    afterDatasetsDraw(chart) {
+                        const ctx = chart.ctx;
+                        const xScale = chart.scales.x;
+                        const yScale = chart.scales.y;
+                        
+                        ctx.save();
+                        ctx.font = 'bold 11px Tahoma, Arial, sans-serif';
+                        ctx.textAlign = 'left';
+                        ctx.textBaseline = 'middle';
+                        
+                        // Teken LT1 label
+                        if (lt1Value !== null && !isNaN(lt1Value)) {
+                            const xPos = xScale.getPixelForValue(lt1Value);
+                            const yPos = yScale.top + 30;
+                            
+                            // Achtergrond rechthoek
+                            const labelText = `LT1: ${lt1Value.toFixed(1)}`;
+                            const textWidth = ctx.measureText(labelText).width;
+                            ctx.fillStyle = '#f1a8a8ff';
+                            ctx.fillRect(xPos + 5, yPos - 9, textWidth + 8, 18);
+                            
+                            // Tekst
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillText(labelText, xPos + 9, yPos);
+                        }
+                        
+                        // Teken LT2 label
+                        if (lt2Value !== null && !isNaN(lt2Value)) {
+                            const xPos = xScale.getPixelForValue(lt2Value);
+                            const yPos = yScale.top + 55;
+                            
+                            // Achtergrond rechthoek
+                            const labelText = `LT2: ${lt2Value.toFixed(1)}`;
+                            const textWidth = ctx.measureText(labelText).width;
+                            ctx.fillStyle = '#f5bc59ff';
+                            ctx.fillRect(xPos + 5, yPos - 9, textWidth + 8, 18);
+                            
+                            // Tekst
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillText(labelText, xPos + 9, yPos);
+                        }
+                        
+                        ctx.restore();
+                    }
+                };
+                
                 const chart = new Chart(ctx, {
                     type: 'scatter',
                     data: { datasets: datasets },
+                    plugins: [drempelLabelsPlugin],
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,

@@ -11,10 +11,33 @@
     // Decode testresultaten JSON
     $testresultaten = is_array($testresultaten) ? $testresultaten : [];
     
+    // BEREKEN snelheid voor veldtesten als die niet aanwezig is
+    $testresultaten = array_map(function($rij) use ($isVeldtest, $isLooptest, $isZwemtest) {
+        // Als snelheid al aanwezig is, gebruik die
+        if (isset($rij['snelheid']) && $rij['snelheid'] !== null && $rij['snelheid'] !== '') {
+            return $rij;
+        }
+        
+        // Voor veldtesten: bereken snelheid uit afstand en tijd
+        if ($isVeldtest && ($isLooptest || $isZwemtest)) {
+            $afstand = floatval($rij['afstand'] ?? 0); // in meters
+            $tijdMin = floatval($rij['tijd_min'] ?? 0);
+            $tijdSec = floatval($rij['tijd_sec'] ?? 0);
+            $tijdUren = ($tijdMin + ($tijdSec / 60)) / 60; // converteer naar uren
+            
+            // Snelheid = afstand (km) / tijd (uren)
+            if ($tijdUren > 0) {
+                $rij['berekende_snelheid'] = ($afstand / 1000) / $tijdUren;
+            }
+        }
+        
+        return $rij;
+    }, $testresultaten);
+    
     // Bepaal kolom headers op basis van testtype
     $headers = [];
     if ($isVeldtest && $isLooptest) {
-        $headers = ['Afstand (m)', 'Snelheid (km/h)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'];
+        $headers = ['Tijd (min)', 'Snelheid (km/h)', 'Hartslag (bpm)', 'Lactaat (mmol/L)', 'Borg'];
     } elseif ($isVeldtest && $isZwemtest) {
         $headers = ['Afstand (m)', 'Tijd (min)', 'Tijd (sec)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'];
     } elseif ($isLooptest) {
@@ -61,18 +84,18 @@
                         
                         {{-- Dynamische kolommen op basis van testtype --}}
                         @if($isVeldtest && $isLooptest)
-                            {{-- Veldtest lopen: Afstand, Snelheid, Lactaat, Hartslag, Borg --}}
+                            {{-- Veldtest lopen: Tijd, Snelheid (berekend), Hartslag, Lactaat, Borg --}}
                             <td class="px-4 py-3 text-center text-sm text-gray-900 border-b border-gray-200">
-                                {{ $rij['afstand'] ?? '-' }}
+                                {{ $rij['tijd_min'] ?? '-' }}
                             </td>
                             <td class="px-4 py-3 text-center text-sm font-semibold border-b border-gray-200" style="color: #2563eb;">
-                                {{ isset($rij['snelheid']) ? number_format($rij['snelheid'], 1) : '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-center text-sm font-semibold border-b border-gray-200" style="color: #16a34a;">
-                                {{ isset($rij['lactaat']) ? number_format($rij['lactaat'], 1) : '-' }}
+                                {{ isset($rij['berekende_snelheid']) ? number_format($rij['berekende_snelheid'], 1) : (isset($rij['snelheid']) ? number_format($rij['snelheid'], 1) : '-') }}
                             </td>
                             <td class="px-4 py-3 text-center text-sm font-semibold border-b border-gray-200" style="color: #dc2626;">
                                 {{ $rij['hartslag'] ?? '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-sm font-semibold border-b border-gray-200" style="color: #16a34a;">
+                                {{ isset($rij['lactaat']) ? number_format($rij['lactaat'], 1) : '-' }}
                             </td>
                             <td class="px-4 py-3 text-center text-sm text-gray-700 border-b border-gray-200">
                                 {{ $rij['borg'] ?? '-' }}

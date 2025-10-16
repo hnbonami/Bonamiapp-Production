@@ -86,6 +86,7 @@
     $testtype = $inspanningstest->testtype ?? 'fietstest';
     $isLooptest = str_contains($testtype, 'loop') || str_contains($testtype, 'lopen');
     $isZwemtest = str_contains($testtype, 'zwem');
+    $isVeldtest = str_contains($testtype, 'veld');
     
     // Haal testresultaten op via relatie of decode JSON
     $resultaten = $inspanningstest->testresultaten ?? [];
@@ -94,6 +95,32 @@
     if (is_string($resultaten)) {
         $resultaten = json_decode($resultaten, true) ?? [];
     }
+    
+    // BEREKEN snelheid voor veldtesten als die niet aanwezig is
+    $resultaten = array_map(function($stap) use ($isVeldtest, $isLooptest, $isZwemtest) {
+        // Converteer naar array als het een object is
+        $stap = is_array($stap) ? $stap : (array)$stap;
+        
+        // Als snelheid al aanwezig is, gebruik die
+        if (isset($stap['snelheid']) && $stap['snelheid'] !== null && $stap['snelheid'] !== '') {
+            return $stap;
+        }
+        
+        // Voor veldtesten: bereken snelheid uit afstand en tijd
+        if ($isVeldtest && ($isLooptest || $isZwemtest)) {
+            $afstand = floatval($stap['afstand'] ?? 0); // in meters
+            $tijdMin = floatval($stap['tijd_min'] ?? 0);
+            $tijdSec = floatval($stap['tijd_sec'] ?? 0);
+            $tijdUren = ($tijdMin + ($tijdSec / 60)) / 60; // converteer naar uren
+            
+            // Snelheid = afstand (km) / tijd (uren)
+            if ($tijdUren > 0) {
+                $stap['snelheid'] = ($afstand / 1000) / $tijdUren;
+            }
+        }
+        
+        return $stap;
+    }, $resultaten);
     
     // Bepaal kolomlabels op basis van testtype
     $vermogenLabel = $isLooptest ? 'Snelheid<br><span style="font-size: 9px; font-weight: normal;">(km/h)</span>' : 
