@@ -78,6 +78,10 @@ class InspanningstestController extends Controller {
         // Hernoem variabele voor de view (backward compatibility)
         $inspanningstest = $test;
         
+        // Decode testresultaten en trainingszones voor de view
+        $test->testresultaten = is_string($test->testresultaten) ? json_decode($test->testresultaten, true) : $test->testresultaten;
+        $test->trainingszones_data = is_string($test->trainingszones_data) ? json_decode($test->trainingszones_data, true) : $test->trainingszones_data;
+        
         return view('inspanningstest.results', compact('klant', 'inspanningstest', 'testresultaten', 'trainingszones'));
     }
 

@@ -995,6 +995,13 @@ class SjablonenController extends Controller
                     ])->render();
                     $content = str_replace('{{INSPANNINGSTEST_GRAFIEK}}', $grafiekHtml, $content);
                 }
+
+                if (strpos($content, '{{INSPANNINGSTEST_TRAININGSZONES}}') !== false) {
+                    $trainingszones = view('inspanningstest.partials._trainingszones_report', [
+                        'inspanningstest' => $inspanningstestForPartials
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_TRAININGSZONES}}', $trainingszones, $content);
+                }
                 
                 if (strpos($content, '{{INSPANNINGSTEST_DREMPELS}}') !== false) {
                     $drempelwaardenHtml = view('inspanningstest.partials._drempelwaarden_overzicht_report', [
@@ -1004,7 +1011,7 @@ class SjablonenController extends Controller
                 }
                 
                 if (strpos($content, '{{INSPANNINGSTEST_ZONES}}') !== false) {
-                    $trainingzonesHtml = view('inspanningstest.partials._trainingszones_results', [
+                    $trainingzonesHtml = view('inspanningstest.partials._trainingszones_report', [
                         'inspanningstest' => $inspanningstestForPartials
                     ])->render();
                     $content = str_replace('{{INSPANNINGSTEST_ZONES}}', $trainingzonesHtml, $content);
