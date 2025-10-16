@@ -18,6 +18,33 @@
     // Converteer naar array voor consistentie
     $testresultaten = is_array($testresultaten) ? $testresultaten : [];
     
+    // BEREKEN snelheid voor veldtesten als die niet aanwezig is (exact zoals _testresultaten.blade.php)
+    $isVeldtest = str_contains($testtype, 'veld');
+    $testresultaten = array_map(function($stap) use ($isVeldtest, $isLooptest, $isZwemtest) {
+        // Converteer naar array als het een object is
+        $stap = is_array($stap) ? $stap : (array)$stap;
+        
+        // Als snelheid al aanwezig is, gebruik die
+        if (isset($stap['snelheid']) && $stap['snelheid'] !== null && $stap['snelheid'] !== '') {
+            return $stap;
+        }
+        
+        // Voor veldtesten: bereken snelheid uit afstand en tijd
+        if ($isVeldtest && ($isLooptest || $isZwemtest)) {
+            $afstand = floatval($stap['afstand'] ?? 0); // in meters
+            $tijdMin = floatval($stap['tijd_min'] ?? 0);
+            $tijdSec = floatval($stap['tijd_sec'] ?? 0);
+            $tijdUren = ($tijdMin + ($tijdSec / 60)) / 60; // converteer naar uren
+            
+            // Snelheid = afstand (km) / tijd (uren)
+            if ($tijdUren > 0) {
+                $stap['snelheid'] = ($afstand / 1000) / $tijdUren;
+            }
+        }
+        
+        return $stap;
+    }, $testresultaten);
+    
     // Haal drempelwaarden op
     $lt1Vermogen = $inspanningstest->aerobe_drempel_vermogen ?? null;
     $lt1Hartslag = $inspanningstest->aerobe_drempel_hartslag ?? null;
@@ -214,7 +241,7 @@
                         {{ $lt1Hartslag ? round($lt1Hartslag) : '-' }}
                     </td>
                     <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #16a34a;">
-                        {{ $lt1Lactaat ? number_format($lt1Lactaat, 1) : '~2.0' }}
+                        {{ $lt1Lactaat !== null ? number_format($lt1Lactaat, 1) : '-' }}
                     </td>
                     <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #6b7280;">
                         {{ $lt1Percentage ? $lt1Percentage . '%' : '-' }}
@@ -251,7 +278,7 @@
                         {{ $lt2Hartslag ? round($lt2Hartslag) : '-' }}
                     </td>
                     <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #16a34a;">
-                        {{ $lt2Lactaat ? number_format($lt2Lactaat, 1) : '~4.0' }}
+                        {{ $lt2Lactaat !== null ? number_format($lt2Lactaat, 1) : '-' }}
                     </td>
                     <td class="px-4 py-4 text-center font-semibold text-lg border-b border-gray-200" style="color: #6b7280;">
                         {{ $lt2Percentage ? $lt2Percentage . '%' : '-' }}
