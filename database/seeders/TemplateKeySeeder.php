@@ -123,5 +123,36 @@ class TemplateKeySeeder extends Seeder
                 $key
             );
         }
+
+        // AI Analyse Keys voor Inspanningstest - Update or Create om duplicaten te voorkomen
+        TemplateKey::updateOrCreate(
+            ['placeholder' => '{{INSPANNINGSTEST_AI_ANALYSE_DEEL1}}'],
+            [
+                'display_name' => 'AI Analyse Deel 1',
+                'category' => 'inspanningstest',
+                'description' => 'AI analyse overzicht en drempelwaarden',
+                'display_order' => 31
+            ]
+        );
+
+        TemplateKey::updateOrCreate(
+            ['placeholder' => '{{INSPANNINGSTEST_AI_ANALYSE_DEEL2}}'],
+            [
+                'display_name' => 'AI Analyse Deel 2',
+                'category' => 'inspanningstest',
+                'description' => 'AI trainingsadvies en doelstellingen',
+                'display_order' => 32
+            ]
+        );
+
+        TemplateKey::updateOrCreate(
+            ['placeholder' => '{{INSPANNINGSTEST_AI_ANALYSE_DEEL3}}'],
+            [
+                'display_name' => 'AI Analyse Deel 3',
+                'category' => 'inspanningstest',
+                'description' => 'AI progressie en monitoring advies',
+                'display_order' => 33
+            ]
+        );
     }
 }

@@ -1050,6 +1050,14 @@ class SjablonenController extends Controller
                     $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE_DEEL2}}', $aiDeel2Html, $content);
                 }
                 
+                // AI Analyse Rapport - Deel 3 (Progressie & Monitoring)
+                if (strpos($content, '{{INSPANNINGSTEST_AI_ANALYSE_DEEL3}}') !== false) {
+                    $aiDeel3Html = view('inspanningstest.partials._ai_analyse_report_deel3', [
+                        'inspanningstest' => $inspanningstestForPartials
+                    ])->render();
+                    $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE_DEEL3}}', $aiDeel3Html, $content);
+                }
+                
                 // Systeem variabelen
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
                 $content = str_replace('{{datum.jaar}}', date('Y'), $content);

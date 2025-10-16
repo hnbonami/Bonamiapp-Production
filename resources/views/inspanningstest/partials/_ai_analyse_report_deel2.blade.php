@@ -178,10 +178,41 @@
     
     $parsedSections = parseAISections($aiAnalyse);
     
-    // Selecteer ALLEEN tweede helft van secties voor deel 2
-    $totalSections = count($parsedSections);
-    $midPoint = (int) ceil($totalSections / 2);
-    $deel2Secties = array_slice($parsedSections, $midPoint); // Start vanaf midpoint, pak de rest
+    // Selecteer trainingsadvies secties voor deel 2 (ZONDER progressie/monitoring)
+    $deel2Secties = [];
+    $gezieneSecties = []; // Deduplicatie array
+    
+    foreach ($parsedSections as $sectie) {
+        $titelUpper = strtoupper($sectie['titel']);
+        
+        // Exclude progressie en monitoring (die komen in deel 3)
+        if (str_contains($titelUpper, 'PROGRESSIE') || 
+            str_contains($titelUpper, 'HERTEST') || 
+            str_contains($titelUpper, 'MONITOREN') ||
+            str_contains($titelUpper, 'MONITOR') ||
+            str_contains($titelUpper, 'METRICS')) {
+            continue;
+        }
+        
+        // Exclude ook de eerste secties (die komen in deel 1)
+        if (str_contains($titelUpper, 'TESTOVERZICHT') ||
+            str_contains($titelUpper, 'ATLET') ||
+            str_contains($titelUpper, 'PROFIEL') ||
+            str_contains($titelUpper, 'DREMPEL') ||
+            (str_contains($titelUpper, 'ANALYSE') && !str_contains($titelUpper, 'TRAINING'))) {
+            continue;
+        }
+        
+        // Deduplicatie: check of we deze sectie al hebben gezien
+        $normaliseerTitel = preg_replace('/[^A-Z0-9]/', '', $titelUpper);
+        if (in_array($normaliseerTitel, $gezieneSecties)) {
+            continue; // Skip duplicaat
+        }
+        
+        // Include trainingsadvies, doelstellingen en specifiek advies
+        $deel2Secties[] = $sectie;
+        $gezieneSecties[] = $normaliseerTitel;
+    }
     
     // Verbeter titels - verwijder emoji en maak duidelijker
     foreach ($deel2Secties as &$sectie) {
@@ -194,16 +225,20 @@
         $titelMappings = [
             'TRAININGSADVIES' => 'Trainingsadvies (80/20 Principe)',
             'TRIATHLON / IRONMAN VOORBEREIDING' => 'Triathlon / Ironman Voorbereiding',
+            'TRIATHLON' => 'Triathlon / Ironman Voorbereiding',
+            'IRONMAN' => 'Triathlon / Ironman Voorbereiding',
             'GRAN FONDO VOORBEREIDING' => 'Gran Fondo Voorbereiding',
+            'GRAN FONDO' => 'Gran Fondo Voorbereiding',
             'KLASSIEKERS / RONDE VAN VLAANDEREN VOORBEREIDING' => 'Klassiekers Voorbereiding',
+            'KLASSIEKERS' => 'Klassiekers Voorbereiding',
             'MARATHON VOORBEREIDING' => 'Marathon Voorbereiding (42.2 km)',
             'HALVE MARATHON VOORBEREIDING' => 'Halve Marathon (21.1 km)',
             '10KM WEDSTRIJD VOORBEREIDING' => '10km Wedstrijd',
             '5KM WEDSTRIJD VOORBEREIDING' => '5km Wedstrijd',
             'SNELHEIDSVERBETERING' => 'Snelheid & Tempo Training',
             'GEWICHTSVERLIES' => 'Gewichtsverlies & Lichaamssamenstelling',
-            'PROGRESSIE EN HERTEST' => 'Progressie & Hertesten',
-            'TE MONITOREN METRICS' => 'Belangrijke Metrics'
+            'SPECIFIEK ADVIES' => 'Specifiek Advies voor jouw Doelstellingen',
+            'DOELSTELLINGEN' => 'Specifiek Advies voor jouw Doelstellingen'
         ];
         
         foreach ($titelMappings as $oud => $nieuw) {
@@ -221,10 +256,10 @@
 <div class="rapport-ai-deel2">
     <h3>🧠 AI Performance Analyse - Deel 2</h3>
     
-    @php
-        // Herstructureer trainingsadvies in subsecties voor 2-kolommen layout
-        function splitTrainingsadviesInSubsecties($inhoud) {
-            $lines = explode("\n", $inhoud);
+    @foreach($deel2Secties as $sectie)
+        @php
+            // Split trainingsadvies in subsecties voor compactere weergave
+            $lines = explode("\n", $sectie['inhoud']);
             $subsecties = [];
             $huidigeSubsectie = null;
             $huidigeInhoud = [];
@@ -233,10 +268,11 @@
                 $line = trim($line);
                 if (empty($line)) continue;
                 
-                // Detecteer subsectie headers (nummer + titel of vetgedrukte tekst met :)
-                if (preg_match('/^\d+\.\s+(.+)/', $line, $matches) || 
-                    (str_contains($line, ':') && strlen($line) < 60 && !str_starts_with($line, '•'))) {
-                    
+                // Detecteer subsectie headers (nummering, boldtext met :, of losse regels < 60 chars)
+                $isSubheader = preg_match('/^\d+\.\s+/', $line) || 
+                              (str_contains($line, ':') && strlen($line) < 65 && !str_starts_with($line, '•') && !str_starts_with($line, '-'));
+                
+                if ($isSubheader) {
                     // Bewaar vorige subsectie
                     if ($huidigeSubsectie && !empty($huidigeInhoud)) {
                         $subsecties[] = [
@@ -261,116 +297,32 @@
                 ];
             }
             
-            return $subsecties;
-        }
-        
-        $i = 0;
-        $totalSecties = count($deel2Secties);
-    @endphp
-    
-    @while($i < $totalSecties)
-        @php
-            $huidigeSectie = $deel2Secties[$i];
-            $sectieNaam = strtoupper($huidigeSectie['titel']);
-            
-            // Check of dit trainingsadvies of doelstellingen sectie is
-            $isTrainingsAdvies = str_contains($sectieNaam, 'TRAINING') || 
-                                 str_contains($sectieNaam, 'TRIATHLON') || 
-                                 str_contains($sectieNaam, 'MARATHON') ||
-                                 str_contains($sectieNaam, 'FONDO') ||
-                                 str_contains($sectieNaam, 'KLASSIEK') ||
-                                 str_contains($sectieNaam, 'SNELHEID') ||
-                                 str_contains($sectieNaam, 'GEWICHT') ||
-                                 str_contains($sectieNaam, 'WEDSTRIJD');
-            
-            $volgendeSectie = ($i + 1 < $totalSecties) ? $deel2Secties[$i + 1] : null;
-            $huidigeLengte = strlen($huidigeSectie['inhoud']);
-            $volgendeLengte = $volgendeSectie ? strlen($volgendeSectie['inhoud']) : 999999;
-            $naarElkaar = ($volgendeSectie && $huidigeLengte < 350 && $volgendeLengte < 350);
+            $heeftSubsecties = count($subsecties) > 0;
         @endphp
         
-        @if($isTrainingsAdvies)
-            {{-- Trainingsadvies: split in subsecties en toon in 2 kolommen --}}
-            @php
-                $subsecties = splitTrainingsadviesInSubsecties($huidigeSectie['inhoud']);
-                $totalSubs = count($subsecties);
-            @endphp
+        <div style="margin: 8px 0;">
+            <div class="ai-sectie-titel">{{ $sectie['titel'] }}</div>
             
-            <div style="margin: 8px 0;">
-                <div class="ai-sectie-titel">{{ $huidigeSectie['titel'] }}</div>
-                
-                {{-- Toon subsecties in 2 kolommen --}}
-                @if($totalSubs > 1)
-                    <div class="ai-2col-layout">
-                        @php $subIndex = 0; @endphp
-                        @while($subIndex < $totalSubs)
-                            @php
-                                $linksSub = $subsecties[$subIndex];
-                                $rechtsSub = ($subIndex + 1 < $totalSubs) ? $subsecties[$subIndex + 1] : null;
-                            @endphp
-                            
-                            {{-- Linker kolom --}}
-                            <div>
-                                <div class="ai-subheading">{{ $linksSub['titel'] }}</div>
-                                <div class="ai-sectie-content" style="margin-top: 3px;">
-                                    @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $linksSub['inhoud']])
-                                </div>
+            @if($heeftSubsecties)
+                {{-- Toon subsecties in 2-kolommen grid --}}
+                <div class="ai-2col-layout">
+                    @foreach($subsecties as $sub)
+                        <div style="margin-bottom: 6px;">
+                            <div class="ai-subheading">{{ $sub['titel'] }}</div>
+                            <div class="ai-sectie-content" style="margin-top: 2px;">
+                                @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $sub['inhoud']])
                             </div>
-                            
-                            {{-- Rechter kolom --}}
-                            @if($rechtsSub)
-                                <div>
-                                    <div class="ai-subheading">{{ $rechtsSub['titel'] }}</div>
-                                    <div class="ai-sectie-content" style="margin-top: 3px;">
-                                        @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $rechtsSub['inhoud']])
-                                    </div>
-                                </div>
-                                @php $subIndex += 2; @endphp
-                            @else
-                                {{-- Lege kolom als er geen rechter subsectie is --}}
-                                <div></div>
-                                @php $subIndex += 1; @endphp
-                            @endif
-                        @endwhile
-                    </div>
-                @else
-                    {{-- Geen subsecties, toon gewoon de inhoud --}}
-                    <div class="ai-sectie-content">
-                        @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $huidigeSectie['inhoud']])
-                    </div>
-                @endif
-            </div>
-            @php $i += 1; @endphp
-            
-        @elseif($naarElkaar)
-            {{-- 2 Kolommen Layout voor korte niet-trainingsadvies secties --}}
-            <div class="ai-2col-layout">
-                <div>
-                    <div class="ai-sectie-titel">{{ $huidigeSectie['titel'] }}</div>
-                    <div class="ai-sectie-content">
-                        @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $huidigeSectie['inhoud']])
-                    </div>
+                        </div>
+                    @endforeach
                 </div>
-                <div>
-                    <div class="ai-sectie-titel">{{ $volgendeSectie['titel'] }}</div>
-                    <div class="ai-sectie-content">
-                        @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $volgendeSectie['inhoud']])
-                    </div>
-                </div>
-            </div>
-            @php $i += 2; @endphp
-            
-        @else
-            {{-- Volle breedte voor lange niet-trainingsadvies secties --}}
-            <div style="margin: 8px 0;">
-                <div class="ai-sectie-titel">{{ $huidigeSectie['titel'] }}</div>
+            @else
+                {{-- Geen subsecties, toon gewoon de volledige inhoud --}}
                 <div class="ai-sectie-content">
-                    @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $huidigeSectie['inhoud']])
+                    @include('inspanningstest.partials._ai_sectie_content', ['inhoud' => $sectie['inhoud']])
                 </div>
-            </div>
-            @php $i += 1; @endphp
-        @endif
-    @endwhile
+            @endif
+        </div>
+    @endforeach
     
     {{-- Disclaimer --}}
     <div class="ai-disclaimer">
