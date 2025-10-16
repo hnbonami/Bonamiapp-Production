@@ -6,7 +6,7 @@
         font-family: Tahoma, Arial, sans-serif;
         font-size: 11px;
         line-height: 1.4;
-        color: #1f2937;
+        color: #0a152dff;
         margin: 20px 0;
         width: 120%;
     }
@@ -14,7 +14,7 @@
     .rapport-testresultaten h3 {
         font-size: 14px;
         font-weight: 700;
-        color: #0f4c75;
+        color: #0a152dff;
         margin: 15px 0 10px 0;
         padding: 8px 10px;
         background-color: #c8e1eb;
@@ -26,72 +26,58 @@
         border-collapse: collapse;
         margin: 15px 0;
         background: white;
-        border: 1px solid #e5e7eb;
+        border: 1px solid #d1d5db;
     }
     
     .testresultaten-table thead {
-        background-color: #f3f4f6;
+        background-color: #e3f2fd;
     }
     
     .testresultaten-table th {
-        padding: 8px 10px;
-        text-align: left;
+        padding: 10px 12px;
+        text-align: center;
         font-weight: 700;
-        font-size: 10px;
-        color: #374151;
-        border-bottom: 2px solid #d1d5db;
+        font-size: 11px;
+        color: #0a152dff;
+        border: 1px solid #c8e1eb;
     }
     
     .testresultaten-table td {
-        padding: 6px 10px;
-        font-size: 10px;
-        color: #1f2937;
-        border-bottom: 1px solid #e5e7eb;
+        padding: 8px 12px;
+        font-size: 11px;
+        color: #0a152dff;
+        border: 1px solid #e5e7eb;
+        text-align: center;
     }
     
-    .testresultaten-table tbody tr:hover {
+    .testresultaten-table tbody tr:nth-child(even) {
         background-color: #f9fafb;
     }
     
-    .testresultaten-table tbody tr:last-child td {
-        border-bottom: none;
-    }
-    
-    .testresultaten-table .text-right {
-        text-align: right;
-    }
-    
-    .testresultaten-table .text-center {
-        text-align: center;
-    }
-    
-    .rapport-testresultaten-toelichting {
-        margin: 15px 0;
-        padding: 12px 15px;
-        background: #f0f9ff;
-        border-left: 4px solid #3b82f6;
-        font-size: 10px;
-        line-height: 1.6;
-        color: #1e40af;
-    }
-    
-    .rapport-testresultaten-toelichting h4 {
-        font-size: 11px;
-        font-weight: 700;
-        color: #1e3a8a;
-        margin: 0 0 8px 0;
-    }
-    
-    .rapport-geen-data {
-        text-align: center;
-        padding: 30px 20px;
-        color: #9ca3af;
-        font-style: italic;
+    .testresultaten-table tbody tr:hover {
+        background-color: #f3f4f6;
     }
     
     .stap-highlight {
         background-color: #fef3c7 !important;
         font-weight: 600;
+    }
+    
+    .rapport-toelichting-box {
+        margin: 15px 0;
+        padding: 12px 15px;
+        background: #fff8e1;
+        border-left: 4px solid #f59e0b;
+        font-size: 10px;
+        line-height: 1.6;
+        color: #78350f;
+    }
+    
+    .rapport-toelichting-box h4 {
+        font-size: 11px;
+        font-weight: 700;
+        color: #92400e;
+        margin: 0 0 8px 0;
     }
 </style>
 
@@ -100,122 +86,124 @@
     $testtype = $inspanningstest->testtype ?? 'fietstest';
     $isLooptest = str_contains($testtype, 'loop') || str_contains($testtype, 'lopen');
     $isZwemtest = str_contains($testtype, 'zwem');
-    $isVeldtest = str_contains($testtype, 'veld');
     
     // Haal testresultaten op via relatie of decode JSON
-    $resultaten = $inspanningstest->testresultaten ?? collect();
+    $resultaten = $inspanningstest->testresultaten ?? [];
     
     // Check of testresultaten een string is (JSON) en decode indien nodig
     if (is_string($resultaten)) {
-        $resultaten = json_decode($resultaten) ?? [];
+        $resultaten = json_decode($resultaten, true) ?? [];
     }
     
-    // Converteer naar collection voor consistentie
-    $resultaten = collect($resultaten);
-    
     // Bepaal kolomlabels op basis van testtype
-    $vermogenLabel = $isLooptest ? 'Snelheid (km/h)' : ($isZwemtest ? 'Tempo (mm:ss)' : 'Vermogen (W)');
+    $vermogenLabel = $isLooptest ? 'Snelheid<br><span style="font-size: 9px; font-weight: normal;">(km/h)</span>' : 
+                      ($isZwemtest ? 'Tempo<br><span style="font-size: 9px; font-weight: normal;">(mm:ss)</span>' : 
+                       'Vermogen<br><span style="font-size: 9px; font-weight: normal;">(W)</span>');
 @endphp
 
 <div class="rapport-testresultaten">
-    <h3>📋 Testresultaten per Stap</h3>
+    <h3>📋 Testresultaten</h3>
+    <p style="font-size: 10px; color: #6b7280; margin: 8px 0;">Gemeten waarden per stap tijdens de inspanningstest. Elk blok vertegenwoordigt een intensiteitsniveau.</p>
     
-    @if($resultaten && count($resultaten) > 0)
+    @if(is_array($resultaten) && count($resultaten) > 0)
         <table class="testresultaten-table">
             <thead>
                 <tr>
-                    <th class="text-center">Stap</th>
-                    <th class="text-right">{{ $vermogenLabel }}</th>
-                    <th class="text-right">Hartslag (bpm)</th>
-                    <th class="text-right">Lactaat (mmol/L)</th>
+                    <th>#</th>
+                    <th>Tijd<br><span style="font-size: 9px; font-weight: normal;">(min)</span></th>
+                    <th>{!! $vermogenLabel !!}</th>
+                    <th>Hartslag<br><span style="font-size: 9px; font-weight: normal;">(bpm)</span></th>
+                    <th>Lactaat<br><span style="font-size: 9px; font-weight: normal;">(mmol/L)</span></th>
                     @if(!$isLooptest && !$isZwemtest)
-                        <th class="text-right">RPM</th>
+                        <th>RPM</th>
                     @endif
-                    <th>Opmerkingen</th>
+                    <th>Borg</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach($resultaten as $index => $resultaat)
                     @php
+                        // Converteer naar array als het een object is
+                        $stap = is_array($resultaat) ? $resultaat : (array)$resultaat;
+                        
                         // Check of deze stap een drempelwaarde bevat
                         $isLT1Stap = false;
                         $isLT2Stap = false;
                         
                         if ($isLooptest || $isZwemtest) {
-                            $isLT1Stap = abs(($resultaat->snelheid ?? 0) - ($inspanningstest->aerobe_drempel_snelheid ?? 0)) < 0.1;
-                            $isLT2Stap = abs(($resultaat->snelheid ?? 0) - ($inspanningstest->anaerobe_drempel_snelheid ?? 0)) < 0.1;
+                            $stapWaarde = $stap['snelheid'] ?? 0;
+                            $isLT1Stap = abs($stapWaarde - ($inspanningstest->aerobe_drempel_snelheid ?? 0)) < 0.1;
+                            $isLT2Stap = abs($stapWaarde - ($inspanningstest->anaerobe_drempel_snelheid ?? 0)) < 0.1;
                         } else {
-                            $isLT1Stap = abs(($resultaat->vermogen ?? 0) - ($inspanningstest->aerobe_drempel_vermogen ?? 0)) < 1;
-                            $isLT2Stap = abs(($resultaat->vermogen ?? 0) - ($inspanningstest->anaerobe_drempel_vermogen ?? 0)) < 1;
+                            $stapWaarde = $stap['vermogen'] ?? 0;
+                            $isLT1Stap = abs($stapWaarde - ($inspanningstest->aerobe_drempel_vermogen ?? 0)) < 1;
+                            $isLT2Stap = abs($stapWaarde - ($inspanningstest->anaerobe_drempel_vermogen ?? 0)) < 1;
                         }
                         
                         $highlightClass = ($isLT1Stap || $isLT2Stap) ? 'stap-highlight' : '';
                     @endphp
                     <tr class="{{ $highlightClass }}">
-                        <td class="text-center">{{ $index + 1 }}</td>
-                        <td class="text-right">
+                        <td><strong>{{ $index + 1 }}</strong></td>
+                        <td>{{ $stap['tijd'] ?? '-' }}</td>
+                        <td style="color: #2563eb; font-weight: 600;">
                             @if($isLooptest)
-                                {{ number_format($resultaat->snelheid ?? $resultaat->vermogen ?? 0, 1, ',', '.') }}
+                                {{ number_format($stap['snelheid'] ?? 0, 1, ',', '.') }}
                             @elseif($isZwemtest)
                                 @php
-                                    $tempo = $resultaat->snelheid ?? $resultaat->vermogen ?? 0;
+                                    $tempo = $stap['snelheid'] ?? 0;
                                     $minuten = floor($tempo);
                                     $seconden = round(($tempo - $minuten) * 60);
                                 @endphp
                                 {{ $minuten }}:{{ str_pad($seconden, 2, '0', STR_PAD_LEFT) }}
                             @else
-                                {{ number_format($resultaat->vermogen ?? 0, 0, ',', '.') }}
+                                {{ number_format($stap['vermogen'] ?? 0, 0, ',', '.') }}
                             @endif
                         </td>
-                        <td class="text-right">{{ $resultaat->hartslag ?? '-' }}</td>
-                        <td class="text-right">{{ number_format($resultaat->lactaat ?? 0, 1, ',', '.') }}</td>
+                        <td style="color: #dc2626; font-weight: 600;">{{ $stap['hartslag'] ?? '-' }}</td>
+                        <td style="color: #16a34a; font-weight: 600;">{{ number_format($stap['lactaat'] ?? 0, 1, ',', '.') }}</td>
                         @if(!$isLooptest && !$isZwemtest)
-                            <td class="text-right">{{ $resultaat->rpm ?? '-' }}</td>
+                            <td>{{ $stap['rpm'] ?? '-' }}</td>
                         @endif
                         <td>
                             @if($isLT1Stap)
-                                <span style="color: #dc2626; font-weight: 600;">🔴 LT1 (Aëroob)</span>
+                                <span style="color: #dc2626; font-weight: 700;">🔴 LT1 (Aëroob)</span>
+                            @elseif($isLT2Stap)
+                                <span style="color: #f59e0b; font-weight: 700;">🟠 LT2 (Anaëroob)</span>
+                            @else
+                                {{ $stap['borg'] ?? '-' }}
                             @endif
-                            @if($isLT2Stap)
-                                <span style="color: #f59e0b; font-weight: 600;">🟠 LT2 (Anaëroob)</span>
-                            @endif
-                            {{ $resultaat->opmerkingen ?? '' }}
                         </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
         
-        {{-- Toelichting --}}
-        <div class="rapport-testresultaten-toelichting">
-            <h4>📊 Leeswijzer Testresultaten</h4>
-            <p>
-                Deze tabel toont de <strong>gemeten waarden per teststap</strong>. Elk blok vertegenwoordigt een intensiteitsniveau tijdens de test.
-            </p>
-            <p>
-                <strong>Hartslag:</strong> De hartslag (in slagen per minuut) geeft aan hoe hard je cardiovasculaire systeem werkt bij elke intensiteit.
-            </p>
-            <p>
-                <strong>Lactaat:</strong> Het lactaatgehalte (in mmol/L) toont hoeveel melkzuur er in je bloed aanwezig is. 
-                Lage waarden (&lt; 2 mmol/L) duiden op aëroob werk, hogere waarden op anaëroob werk.
-            </p>
-            @if(!$isLooptest && !$isZwemtest)
-            <p>
-                <strong>RPM:</strong> Het aantal rotaties per minuut (cadans) waarmee je trapt. Dit helpt bij het evalueren van je trapefficiëntie.
-            </p>
-            @endif
-            <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #93c5fd;">
-                <strong style="background-color: #fef3c7; padding: 2px 6px; border-radius: 3px;">Geel gemarkeerde rijen</strong> 
-                tonen de stappen waar je drempelwaarden (LT1 of LT2) zijn bereikt.
-            </p>
+        <div style="text-align: right; font-size: 10px; color: #6b7280; margin: 10px 0;">
+            <strong>Totaal aantal metingen:</strong> {{ count($resultaten) }}
         </div>
         
+        {{-- Toelichting --}}
+        <div class="rapport-toelichting-box">
+            <h4>💡 Hoe lees je deze tabel?</h4>
+            <p>
+                Tijdens de looptest wordt de snelheid geleidelijk verhoogd per stap. Aan het einde van elke stap worden hartslag, snelheid en melkzuurproductie geregistreerd.
+            </p>
+            <p style="margin-top: 8px;">
+                <strong>Hartslag:</strong> De hartslag (in slagen per minuut) geeft aan hoe hard je hart werkt bij elke intensiteit.
+            </p>
+            <p>
+                <strong>Lactaat:</strong> Het lactaatgehalte (in mmol/L) toont hoeveel melkzuur er in je bloed aanwezig is bij bepaalde belasting. 
+                Bij lage snelheden blijft lactaat laag (aëroob). Bij hoge snelheden stijgt lactaat snel (anaëroob).
+            </p>
+            <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #fbbf24;">
+                <strong>Doel van de test:</strong> Het bepalen van de aërobe en anaërobe drempels. Door de combinatie van snelheid, hartslag en melkzuurproductie kunnen we je optimale trainingszones bepalen.
+            </p>
+        </div>
     @else
-        {{-- Geen testresultaten --}}
-        <div class="rapport-geen-data">
+        <div style="text-align: center; padding: 30px 20px; background: #f9fafb; border-radius: 8px; border: 1px dashed #d1d5db;">
             <div style="font-size: 32px; margin-bottom: 10px;">📋</div>
-            <p style="color: #6b7280; font-size: 11px;">Geen testresultaten beschikbaar</p>
-            <p style="color: #9ca3af; font-size: 9px; margin-top: 5px;">Er zijn nog geen meetwaarden ingevoerd voor deze test</p>
+            <p style="color: #6b7280; font-size: 11px; font-weight: 600;">Geen testresultaten beschikbaar</p>
+            <p style="color: #9ca3af; font-size: 9px; margin-top: 5px;">Er zijn nog geen meetwaarden ingevoerd voor deze inspanningstest.</p>
         </div>
     @endif
 </div>
