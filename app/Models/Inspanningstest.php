@@ -8,12 +8,14 @@ class Inspanningstest extends Model
 {
     use HasFactory;
     protected $fillable = [
-        'datum', // VERPLICHT veld!
-        'klant_id', 'testdatum', 'testtype', 'lichaamslengte_cm', 'lichaamsgewicht_kg', 'bmi', 'hartslag_rust_bpm', 'buikomtrek_cm',
+        'klant_id',
+        'user_id',
+        'datum', // De kolom heet 'datum' niet 'testdatum' in de database!
+        'testtype', 'lichaamslengte_cm', 'lichaamsgewicht_kg', 'bmi', 'hartslag_rust_bpm', 'buikomtrek_cm',
         'startwattage', 'stappen_min', 'testresultaten', 'aerobe_drempel_vermogen', 'aerobe_drempel_hartslag',
         'anaerobe_drempel_vermogen', 'anaerobe_drempel_hartslag', 'besluit_lichaamssamenstelling',
         'advies_aerobe_drempel', 'advies_anaerobe_drempel',
-        'template_kind', 'user_id',
+        'template_kind',
         // Trainingstatus velden
         'slaapkwaliteit', 'eetlust', 'gevoel_op_training', 'stressniveau', 'gemiddelde_trainingstatus',
         'training_dag_voor_test', 'training_2d_voor_test',
@@ -29,9 +31,26 @@ class Inspanningstest extends Model
         'zones_eenheid',
     ];
     protected $casts = [
+        'datum' => 'date', // Cast 'datum' kolom als date
         'testresultaten' => 'array',
-        'testdatum' => 'date',
+        'slaapkwaliteit' => 'integer',
+        'eetlust' => 'integer',
+        'gevoel_op_training' => 'integer',
+        'stressniveau' => 'integer',
+        'gemiddelde_trainingstatus' => 'decimal:1',
     ];
+
+    // Accessor voor backwards compatibility - als code 'testdatum' gebruikt, geef dan 'datum' terug
+    public function getTestdatumAttribute()
+    {
+        return $this->datum;
+    }
+
+    // Mutator voor backwards compatibility - als code 'testdatum' set, sla op als 'datum'
+    public function setTestdatumAttribute($value)
+    {
+        $this->attributes['datum'] = $value;
+    }
 
     public function user()
     {

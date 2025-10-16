@@ -254,11 +254,11 @@ class InspanningstestController extends Controller {
             'request_data' => $request->all()
         ]);
 
-        // Update test met alle velden
+        // Update test met alle velden - gebruik 'datum' voor de database kolom
         $test->update([
             'klant_id' => $klant->id,
             'user_id' => auth()->id(),
-            'testdatum' => $request->testdatum,
+            'datum' => $request->testdatum, // Form gebruikt 'testdatum' maar database kolom is 'datum'
             'testtype' => $request->testtype,
             'specifieke_doelstellingen' => $request->specifieke_doelstellingen,
             'lichaamslengte_cm' => $request->lichaamslengte_cm,
@@ -314,9 +314,9 @@ class InspanningstestController extends Controller {
         ]);
 
         try {
-            // Update bestaande test
+            // Update bestaande test - gebruik 'datum' voor de database kolom
             $test->update([
-                'testdatum' => $request->testdatum ?? now()->format('Y-m-d'),
+                'datum' => $request->testdatum ?? now()->format('Y-m-d'), // Form gebruikt 'testdatum' maar database kolom is 'datum'
                 'testtype' => $request->testtype,
                 'specifieke_doelstellingen' => $request->specifieke_doelstellingen,
                 'lichaamslengte_cm' => $request->lichaamslengte_cm,
@@ -389,5 +389,34 @@ class InspanningstestController extends Controller {
         return redirect()
             ->route('klanten.show', $klant->id)
             ->with('success', 'Inspanningstest succesvol verwijderd.');
+    }
+
+    /**
+     * Dupliceer een inspanningstest
+     */
+    public function duplicate(Klant $klant, $test)
+    {
+        // Haal de test handmatig op omdat route binding met 'test' parameter problemen geeft
+        $inspanningstest = Inspanningstest::findOrFail($test);
+        
+        \Log::info('📋 Duplicate inspanningstest aangeroepen', [
+            'test_id' => $inspanningstest->id,
+            'klant_id' => $klant->id
+        ]);
+
+        // Maak een kopie van de test
+        $newTest = $inspanningstest->replicate();
+        $newTest->datum = now()->format('Y-m-d'); // Zet datum op vandaag
+        $newTest->user_id = auth()->id(); // Zet huidige gebruiker
+        $newTest->save();
+
+        \Log::info('✅ Inspanningstest gedupliceerd', [
+            'original_id' => $inspanningstest->id,
+            'new_id' => $newTest->id
+        ]);
+
+        return redirect()
+            ->route('klanten.show', $klant->id)
+            ->with('success', 'Inspanningstest succesvol gedupliceerd.');
     }
 }

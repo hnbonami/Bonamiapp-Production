@@ -165,7 +165,7 @@ Route::middleware('auth')->group(function () {
     // Eenvoudige print-versie (browser native print/PDF)
     Route::get('bikefit/{bikefit}/print', [\App\Http\Controllers\PdfController::class, 'printOnly'])->name('bikefit.report.print');
     // Alternatieve print route via BikefitResultsController
-    Route::get('bikefit/{bikefit}/print-direct', [\App\Http\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
+    Route::get('bikefit/{bikefit}/print-direct', [\AppHttp\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
     // Direct PDF download route voor bikefit rapport
     Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf');
     // Bikefit berekende resultaten en verslag generatie
@@ -203,6 +203,7 @@ Route::middleware('auth')->group(function () {
         Route::get('inspanningstest/{test}/edit', [InspanningstestController::class, 'edit'])->name('inspanningstest.edit.alt');
         Route::put('inspanningstest/{test}', [InspanningstestController::class, 'update'])->name('inspanningstest.update');
         Route::post('inspanningstest/{test}/auto-save', [InspanningstestController::class, 'autoSaveEdit'])->name('inspanningstest.autoSaveEdit');
+        Route::post('inspanningstest/{test}/duplicate', [InspanningstestController::class, 'duplicate'])->name('inspanningstest.duplicate');
         Route::delete('inspanningstest/{test}', [InspanningstestController::class, 'destroy'])->name('inspanningstest.destroy');
         // Authenticated download route for stored inspanningstest PDFs
         Route::get('inspanningstest/{test}/download-report', [\App\Http\Controllers\ReportDownloadController::class, 'downloadInspanningstestReport'])->name('inspanningstest.report.download')->scopeBindings();

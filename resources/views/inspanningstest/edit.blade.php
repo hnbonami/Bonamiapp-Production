@@ -76,9 +76,10 @@
                             <input type="date" 
                                    name="testdatum" 
                                    id="datum" 
-                                   value="{{ old('testdatum', $inspanningstest->testdatum) }}"
+                                   value="{{ old('testdatum', $inspanningstest->datum ? $inspanningstest->datum->format('Y-m-d') : now()->format('Y-m-d')) }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                    required>
+                            <p class="text-xs text-gray-500 mt-1">Datum aanpasbaar indien nodig</p>
                         </div>
 
                         <div class="mb-4">

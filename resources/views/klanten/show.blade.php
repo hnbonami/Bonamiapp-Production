@@ -150,9 +150,17 @@
                     <tr>
                         <td class="px-6 py-4 whitespace-nowrap text-gray-700">
                             @if($test->type === 'bikefit')
-                                {{ $test->datum ? $test->datum->format('d-m-Y') : 'Datum onbekend' }}
+                                @if($test->datum)
+                                    {{ is_string($test->datum) ? \Carbon\Carbon::parse($test->datum)->format('d-m-Y') : $test->datum->format('d-m-Y') }}
+                                @else
+                                    Datum onbekend
+                                @endif
                             @else
-                                {{ $test->testdatum ? $test->testdatum->format('d-m-Y') : 'Datum onbekend' }}
+                                @if($test->testdatum)
+                                    {{ is_string($test->testdatum) ? \Carbon\Carbon::parse($test->testdatum)->format('d-m-Y') : $test->testdatum->format('d-m-Y') }}
+                                @else
+                                    Datum onbekend
+                                @endif
                             @endif
                         </td>
                         @if($test instanceof App\Models\Bikefit)
