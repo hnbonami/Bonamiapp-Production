@@ -37,4 +37,12 @@ class Inspanningstest extends Model
     {
         return $this->belongsTo(User::class);
     }
+    
+    /**
+     * Relatie met Klant
+     */
+    public function klant()
+    {
+        return $this->belongsTo(Klant::class, 'klant_id');
+    }
 }

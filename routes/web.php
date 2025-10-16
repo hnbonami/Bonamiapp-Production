@@ -230,6 +230,10 @@ Route::middleware('auth')->group(function () {
     // Inspanningstest rapport generatie
     Route::get('/klanten/{klant}/inspanningstest/{test}/generate-report', [InspanningstestController::class, 'generateReport'])
         ->name('inspanningstest.generate-report');
+    
+    // Inspanningstest sjabloon rapport (NIEUW - analoog aan bikefit)
+    Route::get('/klanten/{klant}/inspanningstest/{test}/sjabloon-rapport', [InspanningstestController::class, 'generateSjabloonReport'])
+        ->name('inspanningstest.sjabloon-rapport');
 
     // Export routes
     Route::get('medewerkers-export', fn() => Excel::download(new MedewerkersExport, 'medewerkers.xlsx'))->name('medewerkers.export');

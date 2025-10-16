@@ -632,42 +632,59 @@ class SjablonenController extends Controller
     }
 
     /**
-     * Generate report for inspanningstest using matching sjabloon
+     * Generate inspanningstest report using sjabloon (EXACT zoals bikefit)
      */
     public function generateInspanningstestReport($inspanningstestId)
     {
         try {
-            // Find inspanningstest (assuming you have an Inspanningstest model)
-            $inspanningstest = \App\Models\Inspanningstest::findOrFail($inspanningstestId);
+            // Haal inspanningstest op
+            $inspanningstest = \App\Models\Inspanningstest::with('klant')->findOrFail($inspanningstestId);
             
-            // Find matching sjabloon
-            $sjabloon = $this->findMatchingTemplate($inspanningstest->testtype, 'inspanningstest');
+            \Log::info('🏃 Generating inspanningstest report', [
+                'test_id' => $inspanningstest->id,
+                'testtype' => $inspanningstest->testtype,
+                'klant' => $inspanningstest->klant->naam
+            ]);
             
-            if (!$sjabloon) {
-                return redirect()->back()
-                    ->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $inspanningstest->testtype);
+            // Zoek matching sjabloon
+            $template = \App\Helpers\SjabloonHelper::findMatchingTemplate($inspanningstest->testtype, 'inspanningstest');
+            
+            if (!$template) {
+                \Log::warning('❌ No matching template found', [
+                    'testtype' => $inspanningstest->testtype
+                ]);
+                return redirect()->route('inspanningstest.results', [
+                    'klant' => $inspanningstest->klant_id,
+                    'test' => $inspanningstest->id
+                ])->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $inspanningstest->testtype);
             }
             
-            // Load pages
-            $sjabloon->load(['pages' => function($query) {
-                $query->orderBy('page_number', 'asc');
-            }]);
+            // Genereer pagina's met vervangen placeholders
+            $generatedPages = $this->generatePagesForInspanningstest($template, $inspanningstest);
             
-            // Generate pages with real inspanningstest data
-            $generatedPages = $this->generatePagesForInspanningstest($sjabloon, $inspanningstest);
+            \Log::info('✅ Generated pages', [
+                'page_count' => count($generatedPages),
+                'template' => $template->naam
+            ]);
             
+            // Return de generated-report view (dezelfde als bikefit)
             return view('sjablonen.generated-report', [
-                'template' => $sjabloon,
-                'klantModel' => $inspanningstest->klant ?? null,
-                'inspanningstestModel' => $inspanningstest,
+                'template' => $template,
                 'generatedPages' => $generatedPages,
-                'reportType' => 'inspanningstest'
+                'klantModel' => $inspanningstest->klant,
+                'dataModel' => $inspanningstest
             ]);
             
         } catch (\Exception $e) {
-            \Log::error('Inspanningstest report generation failed: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Er is een fout opgetreden bij het genereren van het rapport.');
+            \Log::error('❌ Inspanningstest report generation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('inspanningstest.results', [
+                'klant' => $inspanningstest->klant_id,
+                'test' => $inspanningstest->id
+            ])->with('error', 'Fout bij genereren rapport: ' . $e->getMessage());
         }
     }
 

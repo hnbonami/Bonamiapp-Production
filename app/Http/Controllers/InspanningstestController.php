@@ -288,30 +288,56 @@ class InspanningstestController extends Controller {
         return view('inspanningstest.show', compact('klant', 'test'));
     }
     /**
-     * Generate sjabloon-based report for inspanningstest
+     * Generate sjabloon-based report for inspanningstest (EXACT zoals bikefit)
      */
     public function generateSjabloonReport($klantId, $testId)
     {
+        \Log::info('🚀 INSPANNINGSTEST SJABLOON RAPPORT START', [
+            'klant_id' => $klantId,
+            'test_id' => $testId
+        ]);
+        
         try {
             $klant = \App\Models\Klant::findOrFail($klantId);
-            $test = Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
+            $test = \App\Models\Inspanningstest::where('klant_id', $klantId)->findOrFail($testId);
+            
+            \Log::info('✅ Models loaded', [
+                'klant' => $klant->naam,
+                'test' => $test->testtype
+            ]);
             
             // Find matching sjabloon
-            $sjabloon = SjabloonHelper::findMatchingTemplate($test->testtype, 'inspanningstest');
+            $sjabloon = \App\Helpers\SjabloonHelper::findMatchingTemplate($test->testtype, 'inspanningstest');
+            
+            \Log::info('🔍 Sjabloon search result', [
+                'testtype' => $test->testtype,
+                'found' => $sjabloon ? 'YES' : 'NO',
+                'sjabloon_naam' => $sjabloon ? $sjabloon->naam : 'NONE'
+            ]);
             
             if (!$sjabloon) {
-                return redirect()->back()
-                    ->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $test->testtype);
+                \Log::warning('❌ NO TEMPLATE FOUND - redirecting back');
+                return redirect()->route('inspanningstest.results', [
+                    'klant' => $klant->id,
+                    'test' => $test->id
+                ])->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $test->testtype);
             }
             
-            // Use SjablonenController to generate the report
+            // Use SjablonenController to generate the report (EXACT zoals bikefit)
+            \Log::info('📄 Calling SjablonenController->generateInspanningstestReport');
             $sjablonenController = new \App\Http\Controllers\SjablonenController();
             return $sjablonenController->generateInspanningstestReport($test->id);
             
         } catch (\Exception $e) {
-            \Log::error('Inspanningstest sjabloon report generation failed: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Er is een fout opgetreden bij het genereren van het rapport.');
+            \Log::error('❌ EXCEPTION in generateSjabloonReport', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('inspanningstest.results', [
+                'klant' => $klantId,
+                'test' => $testId
+            ])->with('error', 'Er is een fout opgetreden bij het genereren van het rapport: ' . $e->getMessage());
         }
     }
 
@@ -414,5 +440,5 @@ class InspanningstestController extends Controller {
         }
     }
 
-    // ...existing generateReport method... (wordt vervangen via deze update)
+    // ...existing generateReport method...
 }
