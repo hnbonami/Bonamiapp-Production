@@ -997,7 +997,7 @@ class SjablonenController extends Controller
                 }
                 
                 if (strpos($content, '{{INSPANNINGSTEST_DREMPELS}}') !== false) {
-                    $drempelwaardenHtml = view('inspanningstest.partials._drempelwaarden_overzicht', [
+                    $drempelwaardenHtml = view('inspanningstest.partials._drempelwaarden_overzicht_report', [
                         'inspanningstest' => $inspanningstestForPartials
                     ])->render();
                     $content = str_replace('{{INSPANNINGSTEST_DREMPELS}}', $drempelwaardenHtml, $content);
