@@ -59,8 +59,8 @@
     .rapport-evaluatie-box {
         margin: 10px 0;
         padding: 10px 12px;
-        background: #fef3c7;
-        border-left: 4px solid #f59e0b;
+        background: #fef9e6ff;
+        border-left: 4px solid #42ffa1ff;
         font-size: 10px;
         line-height: 1.5;
         color: #78350f;

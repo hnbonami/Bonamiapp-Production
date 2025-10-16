@@ -57,6 +57,29 @@
         color: #1f2937;
     }
     
+    .trainingstatus-slider {
+        display: flex;
+        width: 100%;
+        height: 28px;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 2px solid #ddd;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        margin: 10px 0;
+    }
+    
+    .trainingstatus-slider-segment {
+        flex: 1;
+        height: 100%;
+        transition: box-shadow 0.3s;
+        min-width: 10px;
+    }
+    
+    .seg-0, .seg-1, .seg-2 { background-color: #ef4444 !important; }
+    .seg-3, .seg-4, .seg-5, .seg-6 { background-color: #f59e0b !important; }
+    .seg-7, .seg-8, .seg-9 { background-color: #10b981 !important; }
+    .seg-active { box-shadow: 0 0 12px 2px #333 !important; border-radius: 4px; }
+    
     .rapport-gemiddelde-score {
         margin: 20px 0 15px 0;
         padding: 15px 20px;
@@ -126,17 +149,38 @@
         $stress = $inspanningstest->stressniveau ?? null;
     @endphp
     
+    @php
+        // Kleurenschema voor de sliders (0-10)
+        $sliderColors = ['#ef4444', '#ef4444', '#ef4444', '#f59e0b', '#f59e0b', '#f59e0b', '#f59e0b', '#10b981', '#10b981', '#10b981'];
+        
+        // Helper functie om actief segment te bepalen
+        function getActiveSegment($score) {
+            if ($score === null) return -1;
+            $scoreInt = (int)$score;
+            return $scoreInt >= 10 ? 9 : $scoreInt;
+        }
+    @endphp
+    
     <div class="trainingstatus-grid">
         {{-- Slaapkwaliteit --}}
         <div class="trainingstatus-item">
             <span class="trainingstatus-label">Slaapkwaliteit</span>
             @if($slaap !== null)
-                <svg width="100%" height="50" style="margin: 10px 0;">
-                    <rect x="0" y="5" width="33.33%" height="40" fill="#ef4444" rx="20" ry="20"/>
-                    <rect x="33.33%" y="5" width="33.34%" height="40" fill="#f59e0b"/>
-                    <rect x="66.67%" y="5" width="33.33%" height="40" fill="#10b981" rx="20" ry="20"/>
-                    <rect x="{{ $slaap * 10 }}%" y="0" width="4" height="50" fill="#1f2937"/>
-                </svg>
+                @php $activeSegment = getActiveSegment($slaap); @endphp
+                <div style="display: flex; justify-content: center; margin: 10px 0;">
+                    <div class="trainingstatus-slider">
+                        <div class="trainingstatus-slider-segment seg-0 {{ $activeSegment === 0 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-1 {{ $activeSegment === 1 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-2 {{ $activeSegment === 2 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-3 {{ $activeSegment === 3 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-4 {{ $activeSegment === 4 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-5 {{ $activeSegment === 5 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-6 {{ $activeSegment === 6 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-7 {{ $activeSegment === 7 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-8 {{ $activeSegment === 8 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-9 {{ $activeSegment === 9 ? 'seg-active' : '' }}"></div>
+                    </div>
+                </div>
                 <div class="trainingstatus-labels">
                     <span>0 (slecht)</span>
                     <span>10 (perfect)</span>
@@ -151,12 +195,21 @@
         <div class="trainingstatus-item">
             <span class="trainingstatus-label">Eetlust</span>
             @if($eetlust !== null)
-                <svg width="100%" height="50" style="margin: 10px 0;">
-                    <rect x="0" y="5" width="33.33%" height="40" fill="#ef4444" rx="20" ry="20"/>
-                    <rect x="33.33%" y="5" width="33.34%" height="40" fill="#f59e0b"/>
-                    <rect x="66.67%" y="5" width="33.33%" height="40" fill="#10b981" rx="20" ry="20"/>
-                    <rect x="{{ $eetlust * 10 }}%" y="0" width="4" height="50" fill="#1f2937"/>
-                </svg>
+                @php $activeSegment = getActiveSegment($eetlust); @endphp
+                <div style="display: flex; justify-content: center; margin: 10px 0;">
+                    <div class="trainingstatus-slider">
+                        <div class="trainingstatus-slider-segment seg-0 {{ $activeSegment === 0 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-1 {{ $activeSegment === 1 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-2 {{ $activeSegment === 2 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-3 {{ $activeSegment === 3 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-4 {{ $activeSegment === 4 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-5 {{ $activeSegment === 5 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-6 {{ $activeSegment === 6 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-7 {{ $activeSegment === 7 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-8 {{ $activeSegment === 8 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-9 {{ $activeSegment === 9 ? 'seg-active' : '' }}"></div>
+                    </div>
+                </div>
                 <div class="trainingstatus-labels">
                     <span>0 (slecht)</span>
                     <span>10 (perfect)</span>
@@ -171,12 +224,21 @@
         <div class="trainingstatus-item">
             <span class="trainingstatus-label">Gevoel op training</span>
             @if($gevoel !== null)
-                <svg width="100%" height="50" style="margin: 10px 0;">
-                    <rect x="0" y="5" width="33.33%" height="40" fill="#ef4444" rx="20" ry="20"/>
-                    <rect x="33.33%" y="5" width="33.34%" height="40" fill="#f59e0b"/>
-                    <rect x="66.67%" y="5" width="33.33%" height="40" fill="#10b981" rx="20" ry="20"/>
-                    <rect x="{{ $gevoel * 10 }}%" y="0" width="4" height="50" fill="#1f2937"/>
-                </svg>
+                @php $activeSegment = getActiveSegment($gevoel); @endphp
+                <div style="display: flex; justify-content: center; margin: 10px 0;">
+                    <div class="trainingstatus-slider">
+                        <div class="trainingstatus-slider-segment seg-0 {{ $activeSegment === 0 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-1 {{ $activeSegment === 1 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-2 {{ $activeSegment === 2 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-3 {{ $activeSegment === 3 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-4 {{ $activeSegment === 4 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-5 {{ $activeSegment === 5 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-6 {{ $activeSegment === 6 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-7 {{ $activeSegment === 7 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-8 {{ $activeSegment === 8 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-9 {{ $activeSegment === 9 ? 'seg-active' : '' }}"></div>
+                    </div>
+                </div>
                 <div class="trainingstatus-labels">
                     <span>0 (slecht)</span>
                     <span>10 (perfect)</span>
@@ -191,12 +253,21 @@
         <div class="trainingstatus-item">
             <span class="trainingstatus-label">Stressniveau</span>
             @if($stress !== null)
-                <svg width="100%" height="50" style="margin: 10px 0;">
-                    <rect x="0" y="5" width="33.33%" height="40" fill="#ef4444" rx="20" ry="20"/>
-                    <rect x="33.33%" y="5" width="33.34%" height="40" fill="#f59e0b"/>
-                    <rect x="66.67%" y="5" width="33.33%" height="40" fill="#10b981" rx="20" ry="20"/>
-                    <rect x="{{ $stress * 10 }}%" y="0" width="4" height="50" fill="#1f2937"/>
-                </svg>
+                @php $activeSegment = getActiveSegment($stress); @endphp
+                <div style="display: flex; justify-content: center; margin: 10px 0;">
+                    <div class="trainingstatus-slider">
+                        <div class="trainingstatus-slider-segment seg-0 {{ $activeSegment === 0 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-1 {{ $activeSegment === 1 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-2 {{ $activeSegment === 2 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-3 {{ $activeSegment === 3 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-4 {{ $activeSegment === 4 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-5 {{ $activeSegment === 5 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-6 {{ $activeSegment === 6 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-7 {{ $activeSegment === 7 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-8 {{ $activeSegment === 8 ? 'seg-active' : '' }}"></div>
+                        <div class="trainingstatus-slider-segment seg-9 {{ $activeSegment === 9 ? 'seg-active' : '' }}"></div>
+                    </div>
+                </div>
                 <div class="trainingstatus-labels">
                     <span>0 (veel stress)</span>
                     <span>10 (geen)</span>

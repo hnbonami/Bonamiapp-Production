@@ -58,8 +58,8 @@
     .rapport-zones-uitleg {
         margin: 15px 0;
         padding: 10px 12px;
-        background: #fff8e1;
-        border-left: 4px solid #f59e0b;
+        background: #fcf7e7ff;
+        border-left: 4px solid #f6c877ff;
         font-size: 9px;
         line-height: 1.5;
         color: #78350f;

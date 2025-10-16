@@ -23,10 +23,13 @@
     
     .testresultaten-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
         margin: 15px 0;
         background: white;
-        border: 1px solid #d1d5db;
+        border: 3px solid #c8e1eb;
+        border-radius: 8px;
+        overflow: hidden;
     }
     
     .testresultaten-table thead {
@@ -39,15 +42,29 @@
         font-weight: 700;
         font-size: 11px;
         color: #0a152dff;
-        border: 1px solid #c8e1eb;
+        border-bottom: 2px solid #c8e1eb;
+        border-right: 1px solid #e5e7eb;
+    }
+    
+    .testresultaten-table th:last-child {
+        border-right: none;
     }
     
     .testresultaten-table td {
         padding: 8px 12px;
         font-size: 11px;
         color: #0a152dff;
-        border: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+        border-right: 1px solid #e5e7eb;
         text-align: center;
+    }
+    
+    .testresultaten-table td:last-child {
+        border-right: none;
+    }
+    
+    .testresultaten-table tbody tr:last-child td {
+        border-bottom: none;
     }
     
     .testresultaten-table tbody tr:nth-child(even) {
@@ -66,8 +83,8 @@
     .rapport-toelichting-box {
         margin: 15px 0;
         padding: 12px 15px;
-        background: #fff8e1;
-        border-left: 4px solid #f59e0b;
+        background: #f4e8c0ff;
+        border-left: 4px solid #f5b444ff;
         font-size: 10px;
         line-height: 1.6;
         color: #78350f;
@@ -232,17 +249,43 @@
         <div class="rapport-toelichting-box">
             <h4>💡 Hoe lees je deze tabel?</h4>
             <p>
-                Tijdens de looptest wordt de snelheid geleidelijk verhoogd per stap. Aan het einde van elke stap worden hartslag, snelheid en melkzuurproductie geregistreerd.
+                @if($isLooptest)
+                    Tijdens de looptest wordt de snelheid geleidelijk verhoogd per stap. 
+                    @if($isVeldtest)
+                        Na elke inspanning wordt een bloedstaal genomen en worden de hartslag en tijd genoteerd.
+                    @else
+                        Aan het einde van elke stap worden hartslag, snelheid en melkzuurproductie gemeten en geregistreerd.
+                    @endif
+                @elseif($isZwemtest)
+                    Tijdens de zwemtest worden verschillende afstanden gezwommen met toenemende intensiteit. 
+                    Na elke inspanning wordt een bloedstaal genomen en worden de hartslag en tijd genoteerd.
+                @else
+                    Tijdens de fietstest wordt het vermogen (Watt) geleidelijk verhoogd per stap. 
+                    Aan het einde van elke stap worden hartslag, vermogen en melkzuurproductie gemeten en geregistreerd.
+                @endif
             </p>
             <p style="margin-top: 8px;">
                 <strong>Hartslag:</strong> De hartslag (in slagen per minuut) geeft aan hoe hard je hart werkt bij elke intensiteit.
             </p>
             <p>
                 <strong>Lactaat:</strong> Het lactaatgehalte (in mmol/L) toont hoeveel melkzuur er in je bloed aanwezig is bij bepaalde belasting. 
-                Bij lage snelheden blijft lactaat laag (aëroob). Bij hoge snelheden stijgt lactaat snel (anaëroob).
+                @if($isLooptest)
+                    Bij lage snelheden blijft lactaat laag (aëroob). Bij hoge snelheden stijgt lactaat snel (anaëroob).
+                @elseif($isZwemtest)
+                    Bij lage intensiteit blijft lactaat laag (aëroob). Bij hoge intensiteit stijgt lactaat snel (anaëroob).
+                @else
+                    Bij laag vermogen blijft lactaat laag (aëroob). Bij hoog vermogen stijgt lactaat snel (anaëroob).
+                @endif
             </p>
             <p style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #fbbf24;">
-                <strong>Doel van de test:</strong> Het bepalen van de aërobe en anaërobe drempels. Door de combinatie van snelheid, hartslag en melkzuurproductie kunnen we je optimale trainingszones bepalen.
+                <strong>Doel van de test:</strong> Het bepalen van de aërobe en anaërobe drempels. 
+                @if($isLooptest)
+                    Door de combinatie van snelheid, hartslag en melkzuurproductie kunnen we je optimale trainingssnelheden bepalen.
+                @elseif($isZwemtest)
+                    Door de combinatie van zwemtijden, hartslag en lactaatniveaus kunnen we je optimale trainingsintensiteiten bepalen.
+                @else
+                    Door de combinatie van vermogen, hartslag en melkzuurproductie kunnen we je optimale trainingszones bepalen.
+                @endif
             </p>
         </div>
     @else

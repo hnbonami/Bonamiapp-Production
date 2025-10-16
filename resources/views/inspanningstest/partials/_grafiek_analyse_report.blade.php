@@ -39,8 +39,8 @@
     .rapport-toelichting-box {
         margin: 15px 0;
         padding: 12px 15px;
-        background: #fff8e1;
-        border-left: 4px solid #f59e0b;
+        background: #faf6e8ff;
+        border-left: 4px solid #f5c97cff;
         font-size: 10px;
         line-height: 1.6;
         color: #78350f;
