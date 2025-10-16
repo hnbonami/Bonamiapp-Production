@@ -990,7 +990,7 @@ class SjablonenController extends Controller
                 }
                 
                 if (strpos($content, '{{INSPANNINGSTEST_GRAFIEK}}') !== false) {
-                    $grafiekHtml = view('inspanningstest.partials._grafiek_analyse', [
+                    $grafiekHtml = view('inspanningstest.partials._grafiek_analyse_report', [
                         'inspanningstest' => $inspanningstestForPartials
                     ])->render();
                     $content = str_replace('{{INSPANNINGSTEST_GRAFIEK}}', $grafiekHtml, $content);
