@@ -957,7 +957,7 @@ class SjablonenController extends Controller
                 }
                 
                 if (strpos($content, '{{INSPANNINGSTEST_TRAININGSTATUS}}') !== false) {
-                    $trainingsstatusHtml = view('inspanningstest.partials._trainingstatus_results', [
+                    $trainingsstatusHtml = view('inspanningstest.partials._trainingstatus_report', [
                         'inspanningstest' => $inspanningstest
                     ])->render();
                     $content = str_replace('{{INSPANNINGSTEST_TRAININGSTATUS}}', $trainingsstatusHtml, $content);
