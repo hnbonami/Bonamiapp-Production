@@ -949,7 +949,7 @@ class SjablonenController extends Controller
                 $content = str_replace('{{test.advies_anaerobe_drempel}}', $inspanningstest->advies_anaerobe_drempel ?? '', $content);
                 
                 if (strpos($content, '{{INSPANNINGSTEST_ALGEMEEN}}') !== false) {
-                    $algemeenHtml = view('inspanningstest.partials._algemene_info_results', [
+                    $algemeenHtml = view('inspanningstest.partials._algemene_info_report', [
                         'inspanningstest' => $inspanningstest,
                         'klant' => $inspanningstest->klant
                     ])->render();
