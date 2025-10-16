@@ -118,40 +118,122 @@
             <canvas id="testResultatenGrafiek"></canvas>
         </div>
         
-        {{-- Chart.js Script --}}
+        {{-- Chart.js Script - EXACT KOPIE VAN WERKENDE RESULTS PAGINA --}}
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                if (typeof Chart === 'undefined') {
-                    console.error('❌ Chart.js niet geladen!');
-                    return;
-                }
-                
+                // Haal testresultaten op
                 const testresultaten = @json($testresultaten);
+                
+                // Bereid grafiek data voor - gebruik juiste veld op basis van testtype
                 const testtype = '{{ $inspanningstest->testtype }}';
                 const isLooptest = testtype.includes('loop') || testtype.includes('lopen');
                 const isZwemtest = testtype.includes('zwem');
                 
-                const lt1Value = {{ $inspanningstest->aerobe_drempel_snelheid ?? $inspanningstest->aerobe_drempel_vermogen ?? 'null' }};
-                const lt2Value = {{ $inspanningstest->anaerobe_drempel_snelheid ?? $inspanningstest->anaerobe_drempel_vermogen ?? 'null' }};
+                // DEBUG: Log eerste stap om structuur te zien
+                console.log('🔍 Eerste teststap structuur:', testresultaten[0]);
                 
-                const hartslagData = testresultaten.map(stap => ({
-                    x: stap.snelheid || stap.vermogen || 0,
-                    y: stap.hartslag
-                }));
+                // BEREKEN snelheid uit afstand en tijd voor veldtesten!
+                const testresultatenMetSnelheid = testresultaten.map(stap => {
+                    // Als snelheid al aanwezig is, gebruik die
+                    if (stap.snelheid) {
+                        return { ...stap, berekende_snelheid: parseFloat(stap.snelheid) };
+                    }
+                    
+                    // Anders bereken uit afstand en tijd
+                    const afstand = parseFloat(stap.afstand) || 0; // in meters
+                    const tijdMin = parseFloat(stap.tijd_min) || 0;
+                    const tijdSec = parseFloat(stap.tijd_sec) || 0;
+                    const tijdUren = (tijdMin + (tijdSec / 60)) / 60; // converteer naar uren
+                    
+                    // Snelheid = afstand (km) / tijd (uren)
+                    const snelheidKmh = tijdUren > 0 ? (afstand / 1000) / tijdUren : 0;
+                    
+                    return { ...stap, berekende_snelheid: snelheidKmh };
+                });
                 
-                const lactaatData = testresultaten.map(stap => ({
-                    x: stap.snelheid || stap.vermogen || 0,
-                    y: stap.lactaat
-                }));
+                console.log('🔍 Testresultaten met berekende snelheid:', testresultatenMetSnelheid);
                 
+                // Voor X-as: gebruik berekende snelheid voor loop, vermogen voor fiets
+                const xValues = testresultatenMetSnelheid.map(stap => {
+                    if (isLooptest || isZwemtest) {
+                        return stap.berekende_snelheid || 0;
+                    }
+                    return parseFloat(stap.vermogen) || 0;
+                });
+                
+                const hartslagData = testresultatenMetSnelheid.map(stap => {
+                    const xVal = isLooptest || isZwemtest 
+                        ? stap.berekende_snelheid || 0
+                        : parseFloat(stap.vermogen) || 0;
+                    return {
+                        x: xVal,
+                        y: parseFloat(stap.hartslag) || 0
+                    };
+                });
+                
+                const lactaatData = testresultatenMetSnelheid.map(stap => {
+                    const xVal = isLooptest || isZwemtest 
+                        ? stap.berekende_snelheid || 0
+                        : parseFloat(stap.vermogen) || 0;
+                    return {
+                        x: xVal,
+                        y: parseFloat(stap.lactaat) || 0
+                    };
+                });
+                
+                console.log('📊 PDF Grafiek data:', {
+                    testtype: testtype,
+                    isLooptest,
+                    xValues,
+                    hartslagData,
+                    lactaatData
+                });
+                
+                // Haal drempelwaarden op uit database (niet van window object!)
+                const lt1Vermogen = {{ $inspanningstest->aerobe_drempel_vermogen ?? 'null' }};
+                const lt2Vermogen = {{ $inspanningstest->anaerobe_drempel_vermogen ?? 'null' }};
+                const lt1Snelheid = {{ $inspanningstest->aerobe_drempel_snelheid ?? 'null' }};
+                const lt2Snelheid = {{ $inspanningstest->anaerobe_drempel_snelheid ?? 'null' }};
+                
+                // FALLBACK: Voor looptesten, als snelheid null is maar vermogen bestaat, gebruik dan vermogen!
+                // (Dit lost het probleem op dat drempelwaarden verkeerd zijn opgeslagen)
+                let lt1Value = null;
+                let lt2Value = null;
+                
+                if (isLooptest || isZwemtest) {
+                    // Probeer eerst snelheid, fallback naar vermogen
+                    lt1Value = lt1Snelheid !== null ? lt1Snelheid : lt1Vermogen;
+                    lt2Value = lt2Snelheid !== null ? lt2Snelheid : lt2Vermogen;
+                } else {
+                    lt1Value = lt1Vermogen;
+                    lt2Value = lt2Vermogen;
+                }
+                
+                console.log('🎯 Drempelwaarden:', {
+                    lt1Vermogen,
+                    lt2Vermogen,
+                    lt1Snelheid,
+                    lt2Snelheid,
+                    lt1Value,
+                    lt2Value,
+                    gebruiktSnelheid: isLooptest || isZwemtest,
+                    gebruiktFallback: (isLooptest && lt1Snelheid === null && lt1Vermogen !== null)
+                });
+                
+                // Bereid X-as label voor
                 let xAxisLabel = 'Vermogen (Watt)';
-                if (isLooptest) xAxisLabel = 'Snelheid (km/h)';
-                else if (isZwemtest) xAxisLabel = 'Tempo (mm:ss/100m)';
                 
-                const ctx = document.getElementById('testResultatenGrafiek');
-                if (!ctx) return;
+                if (isLooptest) {
+                    xAxisLabel = 'Snelheid (km/h)';
+                } else if (isZwemtest) {
+                    xAxisLabel = 'Tempo (mm:ss/100m)';
+                }
                 
+                // Configureer Chart.js
+                const ctx = document.getElementById('testResultatenGrafiek').getContext('2d');
+                
+                // Maak datasets array
                 const datasets = [
                     {
                         label: 'Hartslag (bpm)',
@@ -159,9 +241,10 @@
                         borderColor: '#0a152dff',
                         backgroundColor: 'rgba(37, 99, 235, 0.1)',
                         borderWidth: 2,
-                        tension: 0.3,
+                        tension: 0.4,
                         yAxisID: 'y',
                         pointRadius: 4,
+                        pointHoverRadius: 6,
                         showLine: true
                     },
                     {
@@ -170,15 +253,16 @@
                         borderColor: '#84bfd6ff',
                         backgroundColor: 'rgba(22, 163, 74, 0.1)',
                         borderWidth: 2,
-                        tension: 0.3,
+                        tension: 0.4,
                         yAxisID: 'y1',
                         pointRadius: 4,
+                        pointHoverRadius: 6,
                         showLine: true
                     }
                 ];
                 
                 // Voeg LT1 drempellijn toe
-                if (lt1Value !== null && !isNaN(lt1Value)) {
+                if (lt1Value !== null && !isNaN(lt1Value) && hartslagData.length > 0) {
                     const minY = Math.min(...hartslagData.map(d => d.y)) - 10;
                     const maxY = Math.max(...hartslagData.map(d => d.y)) + 10;
                     datasets.push({
@@ -186,17 +270,16 @@
                         data: [{ x: lt1Value, y: minY }, { x: lt1Value, y: maxY }],
                         borderColor: '#f1a8a8ff',
                         borderWidth: 3,
-                        borderDash: [8, 4],
+                        borderDash: [10, 5],
                         pointRadius: 0,
                         showLine: true,
-                        yAxisID: 'y',
-                        fill: false,
-                        tension: 0
+                        yAxisID: 'y'
                     });
+                    console.log('✅ LT1 lijn toegevoegd op x=' + lt1Value);
                 }
                 
                 // Voeg LT2 drempellijn toe
-                if (lt2Value !== null && !isNaN(lt2Value)) {
+                if (lt2Value !== null && !isNaN(lt2Value) && hartslagData.length > 0) {
                     const minY = Math.min(...hartslagData.map(d => d.y)) - 10;
                     const maxY = Math.max(...hartslagData.map(d => d.y)) + 10;
                     datasets.push({
@@ -204,87 +287,100 @@
                         data: [{ x: lt2Value, y: minY }, { x: lt2Value, y: maxY }],
                         borderColor: '#f5bc59ff',
                         borderWidth: 3,
-                        borderDash: [8, 4],
+                        borderDash: [10, 5],
                         pointRadius: 0,
                         showLine: true,
-                        yAxisID: 'y',
-                        fill: false,
-                        tension: 0
+                        yAxisID: 'y'
                     });
+                    console.log('✅ LT2 lijn toegevoegd op x=' + lt2Value);
                 }
                 
-                // Custom plugin voor drempel labels
-                const drempelLabelsPlugin = {
-                    id: 'drempelLabels',
-                    afterDatasetsDraw(chart) {
-                        const ctx = chart.ctx;
-                        const xScale = chart.scales.x;
-                        const yScale = chart.scales.y;
-                        
-                        ctx.save();
-                        ctx.font = 'bold 11px Tahoma, Arial, sans-serif';
-                        ctx.textAlign = 'left';
-                        ctx.textBaseline = 'top';
-                        
-                        if (lt1Value !== null && !isNaN(lt1Value)) {
-                            const xPos = xScale.getPixelForValue(lt1Value);
-                            const yPos = yScale.top + 5;
-                            ctx.fillStyle = '#f1a8a8ff';
-                            const labelText = `LT1: ${lt1Value}`;
-                            const textWidth = ctx.measureText(labelText).width;
-                            ctx.fillRect(xPos + 5, yPos, textWidth + 8, 18);
-                            ctx.fillStyle = 'white';
-                            ctx.fillText(labelText, xPos + 9, yPos + 3);
-                        }
-                        
-                        if (lt2Value !== null && !isNaN(lt2Value)) {
-                            const xPos = xScale.getPixelForValue(lt2Value);
-                            const yPos = yScale.top + 30;
-                            ctx.fillStyle = '#f5bc59ff';
-                            const labelText = `LT2: ${lt2Value}`;
-                            const textWidth = ctx.measureText(labelText).width;
-                            ctx.fillRect(xPos + 5, yPos, textWidth + 8, 18);
-                            ctx.fillStyle = 'white';
-                            ctx.fillText(labelText, xPos + 9, yPos + 3);
-                        }
-                        
-                        ctx.restore();
-                    }
-                };
-                
-                new Chart(ctx, {
+                const chart = new Chart(ctx, {
                     type: 'scatter',
                     data: { datasets: datasets },
-                    plugins: [drempelLabelsPlugin],
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false,
+                        },
                         plugins: {
-                            legend: { display: true, position: 'top', labels: { font: { size: 10 } } },
-                            title: { display: true, text: 'Hartslag & Lactaat Progressie', font: { size: 12, weight: 'bold' } }
+                            legend: { display: true, position: 'top' },
+                            title: {
+                                display: true,
+                                text: 'Hartslag & Lactaat Progressie met Drempels',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+                                        if (label) label += ': ';
+                                        if (context.parsed.y !== null) {
+                                            label += context.parsed.y.toFixed(1);
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
                         },
                         scales: {
                             x: {
                                 display: true,
                                 reverse: isZwemtest,
-                                title: { display: true, text: xAxisLabel, font: { size: 10, weight: 'bold' } },
-                                ticks: { font: { size: 9 } }
+                                title: {
+                                    display: true,
+                                    text: xAxisLabel,
+                                    font: { weight: 'bold', size: 10 }
+                                },
+                                ticks: {
+                                    stepSize: isLooptest ? 0.5 : (isZwemtest ? 0.1 : 10),
+                                    font: { size: 9 },
+                                    callback: function(value) {
+                                        if (isLooptest) return value.toFixed(1);
+                                        if (isZwemtest) {
+                                            const minuten = Math.floor(value);
+                                            const seconden = Math.round((value - minuten) * 60);
+                                            return `${minuten}:${seconden.toString().padStart(2, '0')}`;
+                                        }
+                                        return Math.round(value);
+                                    }
+                                }
                             },
                             y: {
                                 type: 'linear',
+                                display: true,
                                 position: 'left',
-                                title: { display: true, text: 'Hartslag (bpm)', color: '#0a152dff', font: { size: 10, weight: 'bold' } },
+                                title: {
+                                    display: true,
+                                    text: 'Hartslag (bpm)',
+                                    color: '#0a152dff',
+                                    font: { weight: 'bold', size: 10 }
+                                },
                                 ticks: { color: '#0a152dff', font: { size: 9 } }
                             },
                             y1: {
                                 type: 'linear',
+                                display: true,
                                 position: 'right',
-                                title: { display: true, text: 'Lactaat (mmol/L)', color: '#84bfd6ff', font: { size: 10, weight: 'bold' } },
+                                title: {
+                                    display: true,
+                                    text: 'Lactaat (mmol/L)',
+                                    color: '#84bfd6ff',
+                                    font: { weight: 'bold', size: 10 }
+                                },
                                 ticks: { color: '#84bfd6ff', font: { size: 9 } },
                                 grid: { drawOnChartArea: false }
                             }
                         }
                     }
+                });
+                
+                console.log('📊 PDF Grafiek geladen met ' + datasets.length + ' datasets', {
+                    lt1Value,
+                    lt2Value,
+                    heeftDrempels: datasets.length > 2
                 });
             });
         </script>
