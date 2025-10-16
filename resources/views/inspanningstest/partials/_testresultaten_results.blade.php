@@ -34,10 +34,25 @@
         return $rij;
     }, $testresultaten);
     
+    // Bereken cumulatieve tijd voor veldtesten als 'tijd' veld niet bestaat
+    if ($isVeldtest) {
+        $cumulatiefTijd = 0;
+        $testresultaten = array_map(function($rij) use (&$cumulatiefTijd) {
+            // Als 'tijd' al bestaat, gebruik die
+            if (!isset($rij['tijd']) || $rij['tijd'] === null || $rij['tijd'] === '') {
+                $tijdMin = floatval($rij['tijd_min'] ?? 0);
+                $tijdSec = floatval($rij['tijd_sec'] ?? 0);
+                $cumulatiefTijd += $tijdMin + ($tijdSec / 60);
+                $rij['tijd'] = round($cumulatiefTijd);
+            }
+            return $rij;
+        }, $testresultaten);
+    }
+    
     // Bepaal kolom headers op basis van testtype
     $headers = [];
     if ($isVeldtest && $isLooptest) {
-        $headers = ['Tijd (min)', 'Snelheid (km/h)', 'Hartslag (bpm)', 'Lactaat (mmol/L)', 'Borg'];
+        $headers = ['Afstand (m)', 'Snelheid (km/h)', 'Hartslag (bpm)', 'Lactaat (mmol/L)', 'Borg'];
     } elseif ($isVeldtest && $isZwemtest) {
         $headers = ['Afstand (m)', 'Tijd (min)', 'Tijd (sec)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'];
     } elseif ($isLooptest) {
@@ -84,9 +99,9 @@
                         
                         {{-- Dynamische kolommen op basis van testtype --}}
                         @if($isVeldtest && $isLooptest)
-                            {{-- Veldtest lopen: Tijd, Snelheid (berekend), Hartslag, Lactaat, Borg --}}
+                            {{-- Veldtest lopen: Afstand, Snelheid (berekend), Hartslag, Lactaat, Borg --}}
                             <td class="px-4 py-3 text-center text-sm text-gray-900 border-b border-gray-200">
-                                {{ $rij['tijd_min'] ?? '-' }}
+                                {{ $rij['afstand'] ?? '-' }}
                             </td>
                             <td class="px-4 py-3 text-center text-sm font-semibold border-b border-gray-200" style="color: #2563eb;">
                                 {{ isset($rij['berekende_snelheid']) ? number_format($rij['berekende_snelheid'], 1) : (isset($rij['snelheid']) ? number_format($rij['snelheid'], 1) : '-') }}

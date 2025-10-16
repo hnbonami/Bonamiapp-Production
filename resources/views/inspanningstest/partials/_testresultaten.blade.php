@@ -122,10 +122,29 @@
         return $stap;
     }, $resultaten);
     
+    // Bereken cumulatieve tijd voor veldtesten als 'tijd' veld niet bestaat
+    if ($isVeldtest) {
+        $cumulatiefTijd = 0;
+        $resultaten = array_map(function($stap) use (&$cumulatiefTijd) {
+            // Als 'tijd' al bestaat, gebruik die
+            if (!isset($stap['tijd']) || $stap['tijd'] === null || $stap['tijd'] === '') {
+                $tijdMin = floatval($stap['tijd_min'] ?? 0);
+                $tijdSec = floatval($stap['tijd_sec'] ?? 0);
+                $cumulatiefTijd += $tijdMin + ($tijdSec / 60);
+                $stap['tijd'] = round($cumulatiefTijd);
+            }
+            return $stap;
+        }, $resultaten);
+    }
+    
     // Bepaal kolomlabels op basis van testtype
     $vermogenLabel = $isLooptest ? 'Snelheid<br><span style="font-size: 9px; font-weight: normal;">(km/h)</span>' : 
                       ($isZwemtest ? 'Tempo<br><span style="font-size: 9px; font-weight: normal;">(mm:ss)</span>' : 
                        'Vermogen<br><span style="font-size: 9px; font-weight: normal;">(W)</span>');
+    
+    // Voor veldtest lopen: toon afstand in plaats van tijd
+    $eersteKolomLabel = ($isVeldtest && $isLooptest) ? 'Afstand<br><span style="font-size: 9px; font-weight: normal;">(m)</span>' : 
+                        'Tijd<br><span style="font-size: 9px; font-weight: normal;">(min)</span>';
 @endphp
 
 <div class="rapport-testresultaten">
@@ -137,7 +156,7 @@
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Tijd<br><span style="font-size: 9px; font-weight: normal;">(min)</span></th>
+                    <th>{!! $eersteKolomLabel !!}</th>
                     <th>{!! $vermogenLabel !!}</th>
                     <th>Hartslag<br><span style="font-size: 9px; font-weight: normal;">(bpm)</span></th>
                     <th>Lactaat<br><span style="font-size: 9px; font-weight: normal;">(mmol/L)</span></th>
@@ -171,7 +190,7 @@
                     @endphp
                     <tr class="{{ $highlightClass }}">
                         <td><strong>{{ $index + 1 }}</strong></td>
-                        <td>{{ $stap['tijd'] ?? '-' }}</td>
+                        <td>{{ ($isVeldtest && $isLooptest) ? ($stap['afstand'] ?? '-') : ($stap['tijd'] ?? '-') }}</td>
                         <td style="color: #2563eb; font-weight: 600;">
                             @if($isLooptest)
                                 {{ number_format($stap['snelheid'] ?? 0, 1, ',', '.') }}
