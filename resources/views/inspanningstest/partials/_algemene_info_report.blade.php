@@ -5,10 +5,11 @@
         font-size: 11px;
         line-height: 1.4;
         color: #1f2937;
+        width: 120%;
     }
     
     .rapport-algemene-info table {
-        width: 100%;
+        width: 120%;
         border-collapse: collapse;
         margin: 10px 0;
     }

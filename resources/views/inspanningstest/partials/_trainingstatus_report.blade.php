@@ -6,7 +6,7 @@
         line-height: 1.4;
         color: #1f2937;
         margin: 20px 0;
-        width: 100%;
+        width: 120%;
     }
     
     .rapport-trainingstatus h3 {
