@@ -1218,3 +1218,10 @@ Route::get('/debug-routes', function() {
 Route::post('/api/ai-advice', [App\Http\Controllers\InspanningstestController::class, 'generateAIAdvice'])
     ->name('api.ai-advice')
     ->middleware('auth');
+
+// 🔧 KRITIEKE FIX: Specifiekere route EERST (Laravel matcht van boven naar beneden)
+    // Route met {test} parameter moet VOOR route zonder {test} parameter
+    Route::post('klanten/{klant}/inspanningstest/{test}/auto-save', [InspanningstestController::class, 'autoSaveEdit'])
+        ->name('inspanningstest.auto-save-edit');
+    Route::post('klanten/{klant}/inspanningstest/auto-save', [InspanningstestController::class, 'autoSave'])
+        ->name('inspanningstest.auto-save');

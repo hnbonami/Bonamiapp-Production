@@ -307,53 +307,95 @@ class InspanningstestController extends Controller {
      */
     public function autoSaveEdit(Request $request, Klant $klant, Inspanningstest $test)
     {
-        \Log::info('💾 Auto-save EDIT aangeroepen', [
+        \Log::info('✅ CORRECT: autoSaveEdit (EDIT) aangeroepen', [
             'test_id' => $test->id,
             'klant_id' => $klant->id,
-            'testtype' => $request->testtype
+            'testtype' => $request->testtype,
+            'url' => $request->fullUrl(),
+            'method' => $request->method()
         ]);
 
         try {
-            // Update bestaande test - gebruik 'datum' voor de database kolom
-            $test->update([
-                'datum' => $request->testdatum ?? now()->format('Y-m-d'), // Form gebruikt 'testdatum' maar database kolom is 'datum'
-                'testtype' => $request->testtype,
-                'specifieke_doelstellingen' => $request->specifieke_doelstellingen,
-                'lichaamslengte_cm' => $request->lichaamslengte_cm,
-                'lichaamsgewicht_kg' => $request->lichaamsgewicht_kg,
-                'bmi' => $request->bmi,
-                'vetpercentage' => $request->vetpercentage,
-                'hartslag_rust_bpm' => $request->hartslag_rust_bpm,
-                'maximale_hartslag_bpm' => $request->maximale_hartslag_bpm,
-                'buikomtrek_cm' => $request->buikomtrek_cm,
-                'slaapkwaliteit' => $request->slaapkwaliteit,
-                'eetlust' => $request->eetlust,
-                'gevoel_op_training' => $request->gevoel_op_training,
-                'stressniveau' => $request->stressniveau,
-                'gemiddelde_trainingstatus' => $request->gemiddelde_trainingstatus,
-                'training_dag_voor_test' => $request->training_dag_voor_test,
-                'training_2d_voor_test' => $request->training_2d_voor_test,
-                'testlocatie' => $request->testlocatie,
-                'protocol' => $request->protocol,
-                'startwattage' => $request->startwattage,
-                'stappen_min' => $request->stappen_min,
-                'stappen_watt' => $request->stappen_watt,
-                'weersomstandigheden' => $request->weersomstandigheden,
-                'testresultaten' => $request->has('testresultaten') ? json_encode($request->testresultaten) : $test->testresultaten,
-                'analyse_methode' => $request->analyse_methode,
-                'dmax_modified_threshold' => $request->dmax_modified_threshold,
-                'aerobe_drempel_vermogen' => $request->aerobe_drempel_vermogen,
-                'aerobe_drempel_hartslag' => $request->aerobe_drempel_hartslag,
-                'anaerobe_drempel_vermogen' => $request->anaerobe_drempel_vermogen,
-                'anaerobe_drempel_hartslag' => $request->anaerobe_drempel_hartslag,
-                'complete_ai_analyse' => $request->complete_ai_analyse,
-                'zones_methode' => $request->zones_methode,
-                'zones_aantal' => $request->zones_aantal,
-                'zones_eenheid' => $request->zones_eenheid,
-                'trainingszones_data' => $request->trainingszones_data,
+            // 🔧 COMPLETE FIX: Converteer lege strings naar null voor alle velden
+            $updateData = [
+                'datum' => $request->input('testdatum', now()->format('Y-m-d')),
+                'testtype' => $request->input('testtype'),
+                'specifieke_doelstellingen' => $request->input('specifieke_doelstellingen') ?: null,
+                'lichaamslengte_cm' => $request->input('lichaamslengte_cm') ?: null,
+                'lichaamsgewicht_kg' => $request->input('lichaamsgewicht_kg') ?: null,
+                'bmi' => $request->input('bmi') ?: null,
+                'vetpercentage' => $request->input('vetpercentage') ?: null,
+                'hartslag_rust_bpm' => $request->input('hartslag_rust_bpm') ?: null,
+                'maximale_hartslag_bpm' => $request->input('maximale_hartslag_bpm') ?: null,
+                'buikomtrek_cm' => $request->input('buikomtrek_cm') ?: null,
+                'slaapkwaliteit' => $request->input('slaapkwaliteit') ?: null,
+                'eetlust' => $request->input('eetlust') ?: null,
+                'gevoel_op_training' => $request->input('gevoel_op_training') ?: null,
+                'stressniveau' => $request->input('stressniveau') ?: null,
+                'gemiddelde_trainingstatus' => $request->input('gemiddelde_trainingstatus') ?: null,
+                'training_dag_voor_test' => $request->input('training_dag_voor_test') ?: null,
+                'training_2d_voor_test' => $request->input('training_2d_voor_test') ?: null,
+                'testlocatie' => $request->input('testlocatie') ?: null,
+                'protocol' => $request->input('protocol') ?: null,
+                'startwattage' => $request->filled('startwattage') ? $request->input('startwattage') : null,
+                'stappen_min' => $request->filled('stappen_min') ? $request->input('stappen_min') : null,
+                'stappen_watt' => $request->filled('stappen_watt') ? $request->input('stappen_watt') : null,
+                'weersomstandigheden' => $request->input('weersomstandigheden') ?: null,
+                'analyse_methode' => $request->input('analyse_methode') ?: null,
+                'dmax_modified_threshold' => $request->input('dmax_modified_threshold') ?: null,
+                'aerobe_drempel_vermogen' => $request->input('aerobe_drempel_vermogen') ?: null,
+                'aerobe_drempel_hartslag' => $request->input('aerobe_drempel_hartslag') ?: null,
+                'anaerobe_drempel_vermogen' => $request->input('anaerobe_drempel_vermogen') ?: null,
+                'anaerobe_drempel_hartslag' => $request->input('anaerobe_drempel_hartslag') ?: null,
+                'complete_ai_analyse' => $request->input('complete_ai_analyse') ?: null,
+                'zones_methode' => $request->input('zones_methode') ?: null,
+                'zones_aantal' => $request->input('zones_aantal') ?: null,
+                'zones_eenheid' => $request->input('zones_eenheid') ?: null,
+                'trainingszones_data' => $request->input('trainingszones_data') ?: null,
+            ];
+            
+            // 🔧 TESTRESULTATEN: ALTIJD opslaan als JSON (ook als leeg)
+            if ($request->has('testresultaten') && is_array($request->testresultaten)) {
+                $updateData['testresultaten'] = json_encode($request->testresultaten);
+                \Log::info('📊 Testresultaten worden opgeslagen:', [
+                    'aantal_rijen' => count($request->testresultaten),
+                    'eerste_rij' => $request->testresultaten[0] ?? null,
+                    'json_preview' => substr($updateData['testresultaten'], 0, 200)
+                ]);
+            } else {
+                // Als geen testresultaten in request, behoud bestaande
+                \Log::info('⚠️ Geen testresultaten in request - behoud bestaande');
+            }
+            
+            // 📝 COMPLETE LOG: Log ALLE velden die naar database gaan
+            \Log::info('💾 === COMPLETE UPDATE DATA ===', [
+                'datum' => $updateData['datum'] ?? 'NULL',
+                'testtype' => $updateData['testtype'] ?? 'NULL',
+                'testlocatie' => $updateData['testlocatie'] ?? 'NULL',
+                'protocol' => $updateData['protocol'] ?? 'NULL',
+                'startwattage' => $updateData['startwattage'] ?? 'NULL',
+                'stappen_min' => $updateData['stappen_min'] ?? 'NULL',
+                'stappen_watt' => $updateData['stappen_watt'] ?? 'NULL',
+                'analyse_methode' => $updateData['analyse_methode'] ?? 'NULL',
+                'aerobe_drempel_vermogen' => $updateData['aerobe_drempel_vermogen'] ?? 'NULL',
+                'anaerobe_drempel_vermogen' => $updateData['anaerobe_drempel_vermogen'] ?? 'NULL',
+                'testresultaten_present' => isset($updateData['testresultaten']),
+                'total_fields' => count($updateData)
             ]);
-
-            \Log::info('✅ Auto-save EDIT succesvol', ['test_id' => $test->id]);
+            
+            // Update bestaande test
+            $test->update($updateData);
+            
+            // 🔍 VERIFICATIE: Check of data echt is opgeslagen
+            $test->refresh();
+            \Log::info('✅ === VERIFICATIE NA DATABASE SAVE ===', [
+                'protocol_in_db' => $test->protocol ?? 'NULL',
+                'startwattage_in_db' => $test->startwattage ?? 'NULL',
+                'stappen_min_in_db' => $test->stappen_min ?? 'NULL',
+                'stappen_watt_in_db' => $test->stappen_watt ?? 'NULL',
+                'testresultaten_length' => strlen($test->testresultaten ?? ''),
+                'analyse_methode_in_db' => $test->analyse_methode ?? 'NULL'
+            ]);
 
             return response()->json([
                 'success' => true,
@@ -364,6 +406,7 @@ class InspanningstestController extends Controller {
         } catch (\Exception $e) {
             \Log::error('❌ Auto-save EDIT fout', [
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
                 'test_id' => $test->id
             ]);
 
@@ -379,10 +422,12 @@ class InspanningstestController extends Controller {
      */
     public function autoSave(Request $request, Klant $klant)
     {
-        \Log::info('💾 AUTO-SAVE aangeroepen', [
+        \Log::info('� WAARSCHUWING: autoSave (CREATE) aangeroepen maar zou autoSaveEdit (EDIT) moeten zijn!', [
             'klant_id' => $klant->id,
             'testtype' => $request->testtype,
-            'has_testresultaten' => $request->has('testresultaten')
+            'has_testresultaten' => $request->has('testresultaten'),
+            'url' => $request->fullUrl(),
+            'method' => $request->method()
         ]);
 
         try {
