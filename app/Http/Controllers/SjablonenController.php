@@ -1079,442 +1079,79 @@ class SjablonenController extends Controller
     }
 
     /**
-     * Generate mobility table HTML
+     * Upload een nieuwe achtergrond afbeelding
      */
-    private function generateMobilityTable($bikefit)
+    public function uploadBackground(Request $request)
     {
-        // This would generate the actual mobility table based on your bikefit data
-        // For now, return placeholder
-        return '<div class="mobility-table">
-                    <h3>Mobiliteit Rapport</h3>
-                    <p>Mobiliteit data voor: ' . ($bikefit->klant->naam ?? 'Onbekend') . '</p>
-                    <!-- Add your actual mobility table generation logic here -->
-                </div>';
-    }
-    
-    /**
-     * Hide table borders for CKEditor layout tables
-     */
-    private function hideCKEditorTableBorders($content)
-    {
-        // Voeg CSS toe om alle tabelranden te verbergen
-        $css = '<style>
-            table, table td, table th, table tr {
-                border: none !important;
-                border-collapse: collapse !important;
-                border-spacing: 0 !important;
-            }
-            table {
-                border: 0 !important;
-                cellspacing: 0 !important;
-                cellpadding: 5px !important;
-            }
-            td, th {
-                border: 0 !important;
-                padding: 5px !important;
-            }
-            /* Preview placeholder styling */
-            .preview-placeholder {
-                background: #f3f4f6;
-                border: 2px dashed #9ca3af;
-                padding: 20px;
-                margin: 10px 0;
-                text-align: center;
-                border-radius: 8px;
-                color: #6b7280;
-            }
-            .preview-placeholder h4 {
-                margin: 0 0 10px 0;
-                color: #374151;
-            }
-        </style>';
-        
-        // Voeg CSS toe aan het begin van de content
-        return $css . $content;
-    }
-    
-    /**
-     * Replace Bikefit HTML components with actual rendered HTML - BACK TO WORKING VERSION
-     */
-    private function replaceBikefitHTMLComponents($content, $bikefit, $results)
-    {
-        // Voor/na berekeningen maken
-        $bikefitVoor = clone $bikefit;
-        $bikefitVoor->context = 'voor';
-        $bikefitNa = clone $bikefit;
-        $bikefitNa->context = 'na';
-        
-        // Herbereken results voor voor/na
-        $bikefitCalculator = new \App\Services\BikefitCalculator();
-        $resultsNa = $bikefitCalculator->calculate($bikefitNa);
-        $resultsVoor = $bikefitCalculator->calculate($bikefitVoor, $resultsNa);
-        
-        // TERUG NAAR LARAVEL VIEW RENDERING
         try {
-            // Resultaten VOOR
-            $resultatenVoorHtml = view('bikefit._results_section', [
-                'results' => $resultsVoor, 
-                'bikefit' => $bikefitVoor
-            ])->render();
-            $content = str_replace('$ResultatenVoor$', $resultatenVoorHtml, $content);
+            $request->validate([
+                'background' => 'required|image|max:10240' // 10MB max
+            ]);
+
+            $file = $request->file('background');
+            $filename = time() . '_' . $file->getClientOriginalName();
             
-            // Resultaten NA
-            $resultatenNaHtml = view('bikefit._results_section', [
-                'results' => $resultsNa, 
-                'bikefit' => $bikefitNa
-            ])->render();
-            $content = str_replace('$ResultatenNa$', $resultatenNaHtml, $content);
+            // Zorg dat de backgrounds directory bestaat
+            $backgroundsPath = public_path('backgrounds');
+            if (!file_exists($backgroundsPath)) {
+                mkdir($backgroundsPath, 0755, true);
+            }
             
-            // Prognose zitpositie
-            $prognoseZitpositieHtml = view('bikefit._prognose_zitpositie_report', [
-                'bikefit' => $bikefit,
-                'results' => $results
-            ])->render();
-            $content = str_replace('$Bikefit.prognose_zitpositie_html$', $prognoseZitpositieHtml, $content);
-            
-            // Body measurements - 5% KLEINER + TAHOMA FONT
-            $bodyMeasurementsCSS = '<style>
-                /* 5% KLEINER LICHAAMSMATEN DIAGRAM */
-                *[class*="body"],
-                *[class*="measurement"],
-                *[class*="lichaam"],
-                *[class*="diagram"],
-                *[class*="bikefit"] div:has(svg),
-                div:has(svg[viewBox]),
-                svg[viewBox],
-                svg,
-                .body-measurements,
-                .lichaamsmaten,
-                .body-measurements-block,
-                .measurements-container,
-                .measurements,
-                .measurement-diagram,
-                .bikefit-measurements {
-                    transform: scale(0.95) !important;
-                    transform-origin: left !important;
-                    margin: 10px auto !important;
-                    font-family: Tahoma, Arial, sans-serif !important;
-                    width: auto !important;
-                    height: auto !important;
-                }
-                
-                /* 5% KLEINERE SVG ELEMENTEN */
-                svg {
-                    transform: scale(0.95) !important;
-                    transform-origin: left !important;
-                    width: auto !important;
-                    height: auto !important;
-                    max-width: none !important;
-                    max-height: none !important;
-                }
-                
-                /* CONTAINER RUIMTE VOOR KLEINER DIAGRAM */
-                div:has(svg) {
-                    padding: 10px !important;
-                    margin: 5px auto !important;
-                    overflow: visible !important;
-                }
-                
-                /* FORCEER ALLE TEKST OP TAHOMA */
-                * {
-                    font-family: Tahoma, Arial, sans-serif !important;
-                }
-                
-                /* ALLE SVG TEKST GROTER EN DIKKER */
-                svg text,
-                svg tspan,
-                text,
-                tspan {
-                    font-family: Tahoma, Arial, sans-serif !important;
-                    font-weight: 600 !important;
-                    font-size: 11px !important;
-                }
-                
-                /* ALLE MOGELIJKE CIJFER ELEMENTEN */
-                .value,
-                .number,
-                .measurement-value,
-                span:contains("cm"),
-                span:contains("."),
-                *[class*="value"] {
-                    font-family: Tahoma, Arial, sans-serif !important;
-                    font-weight: 600 !important;
-                    font-size: 12px !important;
-                }
-            </style>';
-            
-            $bodyMeasurementsHtml = $bodyMeasurementsCSS . view('bikefit._body_measurements', [
-                'bikefit' => $bikefit
-            ])->render();
-            $content = str_replace('$Bikefit.body_measurements_block_html$', $bodyMeasurementsHtml, $content);
-            
-            // Mobiliteit resultaten - HERSTELD + VERBETERDE CSS
-            $mobiliteitCSS = '<style>
-                .mobility-table {
-                    width: 100% !important;
-                    max-width: 1000px !important;
-                    margin: 20px auto !important;
-                }
-                .mobility-table table {
-                    width: 100% !important;
-                    border-collapse: separate !important;
-                    border-spacing: 0 !important;
-                    border: 1px solid #d1d5db !important;
-                    border-radius: 8px !important;
-                    overflow: hidden !important;
-                    font-size: 14px !important;
-                }
-                .mobility-table th,
-                .mobility-table td {
-                    border: 1px solid #e5e7eb !important;
-                    padding: 12px 16px !important;
-                    text-align: center !important;
-                    vertical-align: middle !important;
-                }
-                .mobility-table th {
-                    background-color: #c8e1eb !important;
-                    font-weight: 600 !important;
-                    text-align: center !important;
-                }
-                .mobility-table td:first-child {
-                    text-align: left !important;
-                    font-weight: 600 !important;
-                    width: 40% !important;
-                }
-            </style>';
-            
-            $mobiliteitHtml = $mobiliteitCSS . view('bikefit._mobility_results', [
-                'bikefit' => $bikefitNa
-            ])->render();
-            $content = str_replace('$MobiliteitTabel$', $mobiliteitHtml, $content);
-            
-            // Mobiliteit klant tabel - HERSTELD + VERBETERDE STYLING
-            $mobiliteitklantData = [
-                'slr_links' => $bikefit->straight_leg_raise_links ?? '',
-                'slr_rechts' => $bikefit->straight_leg_raise_rechts ?? '',
-                'knieflexie_links' => $bikefit->knieflexie_links ?? '',
-                'knieflexie_rechts' => $bikefit->knieflexie_rechts ?? '',
-                'heup_endorotatie_links' => $bikefit->heup_endorotatie_links ?? '',
-                'heup_endorotatie_rechts' => $bikefit->heup_endorotatie_rechts ?? '',
-                'heup_exorotatie_links' => $bikefit->heup_exorotatie_links ?? '',
-                'heup_exorotatie_rechts' => $bikefit->heup_exorotatie_rechts ?? '',
-                'enkeldorsiflexie_links' => $bikefit->enkeldorsiflexie_links ?? '',
-                'enkeldorsiflexie_rechts' => $bikefit->enkeldorsiflexie_rechts ?? '',
-                'one_leg_squat_links' => $bikefit->one_leg_squat_links ?? '',
-                'one_leg_squat_rechts' => $bikefit->one_leg_squat_rechts ?? '',
-            ];
-            
-            // AANGEPASTE CSS VOOR MOBILITEIT TABEL - KLEINERE SCORES + ALLEEN HEADER BLAUW + ZWARTE TEKST
-            $mobiliteitTableCSS = '<style>
-                /* Container fix voor volledige zichtbaarheid */
-                .page-content, .report-content, .generated-content {
-                    width: 100% !important;
-                    max-width: none !important;
-                    overflow-x: auto !important;
-                }
-                
-                .mobility-report-table,
-                table.mobility-report-table,
-                div .mobility-report-table {
-                    width: 100% !important;
-                    max-width: 100% !important;
-                    margin: 10px 0 !important;
-                    border-collapse: separate !important;
-                    border-spacing: 0 !important;
-                    border: 1px solid #d1d5db !important;
-                    border-radius: 6px !important;
-                    overflow: hidden !important;
-                    font-size: 11px !important;
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-                    table-layout: fixed !important;
-                }
-                .mobility-report-table th,
-                .mobility-report-table td,
-                table.mobility-report-table th,
-                table.mobility-report-table td {
-                    border: 1px solid #e5e7eb !important;
-                    padding: 8px 6px !important;
-                    text-align: center !important;
-                    vertical-align: top !important;
-                    font-size: 10px !important;
-                    line-height: 1.2 !important;
-                    word-wrap: break-word !important;
-                    min-height: 40px !important;
-                }
-                
-                /* ALLEEN ECHTE HEADER BLAUW - NIET EERSTE RIJ DATA */
-                .mobility-report-table thead th,
-                table.mobility-report-table thead th,
-                .mobility-report-table > thead > tr > th,
-                table.mobility-report-table > thead > tr > th {
-                    background-color: #c8e1eb !important;
-                    color: #1f2937 !important;
-                    font-weight: 600 !important;
-                    border: 1px solid #a5c9d6 !important;
-                    border-bottom: 2px solid #a5c9d6 !important;
-                    text-align: center !important;
-                    font-size: 11px !important;
-                    padding: 8px !important;
-                    vertical-align: middle !important;
-                }
-                
-                /* KLEINERE LINKSE KOLOM - VAN 25% NAAR 18% + ZWARTE TEKST */
-                .mobility-report-table .test-name,
-                table.mobility-report-table .test-name,
-                .mobility-report-table td:first-child,
-                table.mobility-report-table td:first-child {
-                    text-align: left !important;
-                    font-weight: 600 !important;
-                    width: 20% !important;
-                    background-color: #f8fafc !important;
-                    font-size: 10px !important;
-                    vertical-align: top !important;
-                    padding: 12px 8px !important;
-                    color: #000000 !important;
-                }
-                
-                /* VEEL BREDERE SCORE KOLOMMEN - VAN 38.75% NAAR 42.5% */
-                .mobility-report-table .score-cell,
-                table.mobility-report-table .score-cell,
-                .mobility-report-table td:not(:first-child),
-                table.mobility-report-table td:not(:first-child) {
-                    text-align: center !important;
-                    width: 42.5% !important;
-                    font-weight: 500 !important;
-                    font-size: 10px !important;
-                    vertical-align: top !important;
-                    padding: 12px 4px !important;
-                }
-                
-                /* HEEL KLEINE BALKJES - GEEN SCORE TEKST */
-                .mobility-report-table .score-bars,
-                .mobility-report-table .score-text,
-                table.mobility-report-table .score-bars,
-                table.mobility-report-table .score-text,
-                .mobility-report-table .score-container,
-                table.mobility-report-table .score-container,
-                .mobility-report-table .score-wrapper,
-                table.mobility-report-table .score-wrapper {
-                    font-size: 3px !important;
-                    line-height: 0.9 !important;
-                }
-                
-                .mobility-report-table .score-bar,
-                table.mobility-report-table .score-bar,
-                .mobility-report-table .score-block,
-                table.mobility-report-table .score-block {
-                    height: 3px !important;
-                    margin: 0px !important;
-                    border-radius: 1px !important;
-                    display: inline-block !important;
-                    width: 6px !important;
-                    font-size: 3px !important;
-                }
-                
-                /* VERBERG ALLE SCORE LABELS EN TEKST */
-                .mobility-report-table .score-label,
-                table.mobility-report-table .score-label,
-                .mobility-report-table .score-value,
-                table.mobility-report-table .score-value {
-                    display: none !important;
-                    visibility: hidden !important;
-                    font-size: 0px !important;
-                    height: 0px !important;
-                    margin: 0px !important;
-                    padding: 0px !important;
-                }
-                
-                /* SCORE CONTAINERS MINIMAAL */
-                .mobility-report-table .score-container,
-                table.mobility-report-table .score-container {
-                    margin: 0px !important;
-                    padding: 0px !important;
-                }
-                
-                /* UITLEG TEKST BETER LEESBAAR */
-                .mobility-report-table p,
-                .mobility-report-table .explanation {
-                    font-size: 9px !important;
-                    line-height: 1.3 !important;
-                    margin: 4px 0 !important;
-                    text-align: justify !important;
-                }
-                
-                /* ULTRA STERKE OVERRIDES VOOR ALLE SCORE ELEMENTEN */
-                * .mobility-report-table td {
-                    text-align: center !important;
-                    font-size: 10px !important;
-                    white-space: normal !important;
-                    min-height: 40px !important;
-                }
-                * .mobility-report-table td:first-child {
-                    text-align: left !important;
-                    font-weight: 600 !important;
-                    white-space: normal !important;
-                    font-size: 10px !important;
-                    width: 15% !important;
-                    color: #000000 !important;
-                }
-                * .mobility-report-table th {
-                    font-size: 11px !important;
-                    min-height: 30px !important;
-                }
-                
-                /* MEGA STERKE SCORE OVERRIDES - VERBERG ALLE TEKST + KLEINERE BALKEN */
-                * .mobility-report-table .score-bar,
-                * .mobility-report-table .score-block {
-                    height: 3px !important;
-                    width: 6px !important;
-                    font-size: 2px !important;
-                    margin: 0px !important;
-                }
-                * .mobility-report-table .score-label,
-                * .mobility-report-table .score-value,
-                * .mobility-report-table .score-text,
-                * .mobility-report-table span,
-                * .mobility-report-table small {
-                    display: none !important;
-                    visibility: hidden !important;
-                    font-size: 0px !important;
-                    line-height: 0 !important;
-                    height: 0px !important;
-                    width: 0px !important;
-                    margin: 0px !important;
-                    padding: 0px !important;
-                    opacity: 0 !important;
-                }
-                
-                /* EXTRA STERKE OVERRIDES VOOR ALLE TEKST IN SCORE CELLEN */
-                .mobility-report-table td:not(:first-child) span,
-                table.mobility-report-table td:not(:first-child) span,
-                .mobility-report-table td:not(:first-child) small,
-                table.mobility-report-table td:not(:first-child) small,
-                .mobility-report-table .score-cell span,
-                table.mobility-report-table .score-cell span {
-                    display: none !important;
-                    visibility: hidden !important;
-                    font-size: 0px !important;
-                    height: 0px !important;
-                    opacity: 0 !important;
-                }
-            </style>';
-            
-            $mobiliteitklantHtml = $mobiliteitTableCSS . view('bikefit._mobility_table_report', [
-                'mobiliteitklant' => $mobiliteitklantData
-            ])->render();
-            $content = str_replace('$mobiliteitklant$', $mobiliteitklantHtml, $content);
-            
+            // Verplaats bestand naar public/backgrounds
+            $file->move($backgroundsPath, $filename);
+
+            \Log::info('✅ Achtergrond geüpload', ['filename' => $filename]);
+
+            return response()->json([
+                'success' => true,
+                'filename' => $filename,
+                'message' => 'Achtergrond succesvol geüpload'
+            ]);
+
         } catch (\Exception $e) {
-            \Log::error('Error rendering bikefit HTML components: ' . $e->getMessage());
-            // Fallback bij fouten
-            $content = str_replace('$ResultatenVoor$', '<p><em>Resultaten VOOR kunnen niet worden geladen</em></p>', $content);
-            $content = str_replace('$ResultatenNa$', '<p><em>Resultaten NA kunnen niet worden geladen</em></p>', $content);
-            $content = str_replace('$Bikefit.prognose_zitpositie_html$', '<p><em>Prognose zitpositie kan niet worden geladen</em></p>', $content);
-            $content = str_replace('$MobiliteitTabel$', '<p><em>Mobiliteit tabel kan niet worden geladen</em></p>', $content);
-            $content = str_replace('$mobiliteitklant$', '<p><em>Mobiliteit klant tabel kan niet worden geladen</em></p>', $content);
-            $content = str_replace('$Bikefit.body_measurements_block_html$', '<p><em>Lichaamsmaten kunnen niet worden geladen</em></p>', $content);
+            \Log::error('❌ Achtergrond upload fout', ['error' => $e->getMessage()]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Fout bij uploaden: ' . $e->getMessage()
+            ], 500);
         }
-        
-        return $content;
     }
+
+    /**
+     * Verwijder een achtergrond afbeelding
+     */
+    public function deleteBackground($filename)
+    {
+        try {
+            $filePath = public_path('backgrounds/' . $filename);
+            
+            if (!file_exists($filePath)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bestand niet gevonden'
+                ], 404);
+            }
+
+            // Verwijder bestand
+            unlink($filePath);
+
+            \Log::info('✅ Achtergrond verwijderd', ['filename' => $filename]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Achtergrond succesvol verwijderd'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Achtergrond delete fout', ['error' => $e->getMessage()]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Fout bij verwijderen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // ...existing code...
 }

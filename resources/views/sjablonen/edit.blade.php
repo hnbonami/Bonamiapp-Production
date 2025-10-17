@@ -289,18 +289,40 @@
                     
                     <!-- Achtergronden Sectie -->
                     <div class="mb-6">
-                        <h4 class="font-medium text-gray-900 mb-3">Achtergronden</h4>
+                        <h4 class="font-medium text-gray-900 mb-3 flex items-center justify-between">
+                            <span>Achtergronden</span>
+                            <button onclick="uploadNewBackground()" class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">
+                                + Upload
+                            </button>
+                        </h4>
                         <div class="background-selector">
                             <div class="background-option" onclick="setPageBackground('')" title="Geen achtergrond">
                                 <div class="aspect-[210/297] bg-gray-100 flex items-center justify-center text-xs text-gray-500">
                                     Geen
                                 </div>
                             </div>
-                            @for($i = 1; $i <= 10; $i++)
-                                <div class="background-option" onclick="setPageBackground('{{ $i }}.png')" title="Achtergrond {{ $i }}">
-                                    <img src="/backgrounds/{{ $i }}.png" alt="Background {{ $i }}" class="w-full aspect-[210/297] object-cover">
+                            @php
+                                // Scan de public/backgrounds directory voor alle afbeeldingen
+                                $backgroundsPath = public_path('backgrounds');
+                                $backgrounds = [];
+                                
+                                if (file_exists($backgroundsPath)) {
+                                    $files = scandir($backgroundsPath);
+                                    foreach ($files as $file) {
+                                        if (in_array(strtolower(pathinfo($file, PATHINFO_EXTENSION)), ['png', 'jpg', 'jpeg', 'gif'])) {
+                                            $backgrounds[] = $file;
+                                        }
+                                    }
+                                    sort($backgrounds, SORT_NATURAL);
+                                }
+                            @endphp
+                            
+                            @foreach($backgrounds as $background)
+                                <div class="background-option relative" onclick="setPageBackground('{{ $background }}')" title="Achtergrond {{ $background }}">
+                                    <img src="/backgrounds/{{ $background }}" alt="Background {{ $background }}" class="w-full aspect-[210/297] object-cover">
+                                    <button onclick="deleteBackground('{{ $background }}', event)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs hover:bg-red-700" title="Verwijderen">×</button>
                                 </div>
-                            @endfor
+                            @endforeach
                         </div>
                     </div>
                 </div>
@@ -745,6 +767,70 @@
             setTimeout(() => {
                 notification.remove();
             }, 3000);
+        }
+
+        function uploadNewBackground() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const formData = new FormData();
+                formData.append('background', file);
+                formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+                
+                try {
+                    const response = await fetch('/sjablonen/backgrounds/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        showNotification('Achtergrond geüpload!', 'success');
+                        location.reload();
+                    } else {
+                        showNotification('Fout bij uploaden: ' + (data.message || 'Onbekende fout'), 'error');
+                    }
+                } catch (error) {
+                    showNotification('Fout bij uploaden', 'error');
+                    console.error(error);
+                }
+            };
+            
+            input.click();
+        }
+
+        function deleteBackground(filename, event) {
+            event.stopPropagation();
+            
+            if (!confirm(`Weet je zeker dat je "${filename}" wilt verwijderen?`)) {
+                return;
+            }
+            
+            fetch('/sjablonen/backgrounds/' + encodeURIComponent(filename), {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Achtergrond verwijderd!', 'success');
+                    location.reload();
+                } else {
+                    showNotification('Fout bij verwijderen', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Fout bij verwijderen', 'error');
+                console.error(error);
+            });
         }
 
         // Auto-save every 30 seconds
