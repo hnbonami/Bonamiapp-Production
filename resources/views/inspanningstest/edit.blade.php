@@ -1478,11 +1478,55 @@ document.addEventListener('DOMContentLoaded', function() {
     updateProtocolFields();
     
     // 🚀 Automatisch Bonami zones laden...
-    if (typeof updateTrainingszones === 'function') {
-        const currentTesttype = document.getElementById('testtype').value;
-        updateTrainingszones(currentTesttype);
-    } else {
-        console.warn('⚠️ updateTrainingszones functie niet beschikbaar bij laden');
+    setTimeout(() => {
+        console.log('🎯 EDIT MODE: Laden trainingszones...');
+        if (typeof updateTrainingszones === 'function') {
+            updateTrainingszones();
+        } else {
+            console.warn('⚠️ updateTrainingszones functie niet beschikbaar bij laden');
+        }
+    }, 500);
+    
+    // 🔧 NIEUWE: Grafiek + Drempel event listeners voor EDIT mode
+    const analyseMethodeSelect = document.getElementById('analyse_methode');
+    if (analyseMethodeSelect) {
+        analyseMethodeSelect.addEventListener('change', function() {
+            console.log('📊 Analyse methode gewijzigd naar:', this.value);
+            
+            // Toon/verberg D-max Modified configuratie
+            const dmaxModifiedConfig = document.getElementById('dmax-modified-config');
+            if (dmaxModifiedConfig) {
+                if (this.value === 'dmax_modified') {
+                    dmaxModifiedConfig.style.display = 'block';
+                } else {
+                    dmaxModifiedConfig.style.display = 'none';
+                }
+            }
+            
+            // Trigger grafiek update indien testresultaten beschikbaar
+            const testresultatenBody = document.getElementById('testresultaten-body');
+            if (testresultatenBody && testresultatenBody.rows.length > 0) {
+                console.log('🔄 Triggering grafiek update...');
+                updateGrafiekEnDrempels();
+            }
+        });
+        
+        // Trigger initial grafiek bij laden als er data is
+        setTimeout(() => {
+            const testresultatenBody = document.getElementById('testresultaten-body');
+            const analyseMethode = analyseMethodeSelect.value;
+            
+            console.log('🔍 Initial grafiek check:', {
+                hasTestresultaten: testresultatenBody && testresultatenBody.rows.length > 0,
+                analyseMethode: analyseMethode,
+                rows: testresultatenBody ? testresultatenBody.rows.length : 0
+            });
+            
+            if (testresultatenBody && testresultatenBody.rows.length > 0 && analyseMethode) {
+                console.log('✅ EDIT: Laden grafiek met bestaande data...');
+                updateGrafiekEnDrempels();
+            }
+        }, 1000);
     }
     
     // 🔧 LAAD BESTAANDE TESTRESULTATEN (EDIT MODE)
@@ -1524,7 +1568,180 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 1000); // Wacht tot tabel volledig gegenereerd is
     @endif
+    
+    // 🎯 EVENT LISTENERS voor zones update bij drempelwaarden wijziging
+    ['aerobe_drempel_vermogen', 'aerobe_drempel_hartslag', 'anaerobe_drempel_vermogen', 'anaerobe_drempel_hartslag', 'maximale_hartslag_bpm'].forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('change', function() {
+                console.log(`🔄 Drempelwaarde ${fieldId} gewijzigd naar:`, this.value);
+                if (typeof updateTrainingszones === 'function') {
+                    console.log('🎯 Zones worden herberekend...');
+                    updateTrainingszones();
+                }
+            });
+        }
+    });
+    
+    // 🎯 EVENT LISTENERS voor zones configuratie wijzigingen
+    ['zones_methode', 'zones_aantal', 'zones_eenheid'].forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('change', function() {
+                console.log(`🔄 Zones configuratie ${fieldId} gewijzigd naar:`, this.value);
+                if (typeof updateTrainingszones === 'function') {
+                    updateTrainingszones();
+                }
+            });
+        }
+    });
 });
+
+// === GRAFIEK EN DREMPELS UPDATE FUNCTIE (NIEUW VOOR EDIT) ===
+function updateGrafiekEnDrempels() {
+    console.log('📊 updateGrafiekEnDrempels() gestart');
+    
+    const analyseMethode = document.getElementById('analyse_methode')?.value;
+    const testresultatenBody = document.getElementById('testresultaten-body');
+    
+    if (!analyseMethode) {
+        console.log('⚠️ Geen analyse methode geselecteerd');
+        document.getElementById('grafiek-container').style.display = 'none';
+        document.getElementById('grafiek-instructies').style.display = 'none';
+        return;
+    }
+    
+    if (!testresultatenBody || testresultatenBody.rows.length === 0) {
+        console.log('⚠️ Geen testresultaten beschikbaar');
+        return;
+    }
+    
+    // Verzamel testresultaten data
+    const testresultaten = [];
+    for (let i = 0; i < testresultatenBody.rows.length; i++) {
+        const row = testresultatenBody.rows[i];
+        const inputs = row.getElementsByTagName('input');
+        
+        const rowData = {};
+        for (let j = 0; j < inputs.length; j++) {
+            const input = inputs[j];
+            const name = input.name.match(/\[([^\]]+)\]$/)?.[1];
+            if (name && input.value) {
+                rowData[name] = parseFloat(input.value);
+            }
+        }
+        
+        if (Object.keys(rowData).length > 0) {
+            testresultaten.push(rowData);
+        }
+    }
+    
+    console.log('📊 Testresultaten verzameld:', testresultaten.length, 'rijen');
+    
+    if (testresultaten.length < 3) {
+        console.log('⚠️ Minimaal 3 testresultaten nodig voor grafiek');
+        return;
+    }
+    
+    // Toon grafiek container
+    document.getElementById('grafiek-container').style.display = 'block';
+    document.getElementById('grafiek-instructies').style.display = 'block';
+    
+    // Genereer grafiek
+    tekenGrafiek(testresultaten, analyseMethode);
+}
+
+// Functie om grafiek te tekenen
+function tekenGrafiek(testresultaten, analyseMethode) {
+    console.log('📈 tekenGrafiek() met', testresultaten.length, 'punten');
+    
+    const canvas = document.getElementById('hartslagLactaatGrafiek');
+    if (!canvas) {
+        console.log('❌ Canvas niet gevonden');
+        return;
+    }
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy bestaande chart indien aanwezig
+    if (window.inspanningstestChart) {
+        window.inspanningstestChart.destroy();
+    }
+    
+    // Bereid data voor
+    const labels = testresultaten.map((r, i) => r.tijd || r.vermogen || r.snelheid || `Stap ${i+1}`);
+    const hartslagData = testresultaten.map(r => r.hartslag || null);
+    const lactaatData = testresultaten.map(r => r.lactaat || null);
+    
+    // Maak chart
+    window.inspanningstestChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Hartslag (bpm)',
+                    data: hartslagData,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    yAxisID: 'y',
+                    tension: 0.3
+                },
+                {
+                    label: 'Lactaat (mmol/L)',
+                    data: lactaatData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    yAxisID: 'y1',
+                    tension: 0.3
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                title: {
+                    display: true,
+                    text: `Hartslag & Lactaat Progressie (${analyseMethode})`
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Hartslag (bpm)'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Lactaat (mmol/L)'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    }
+                }
+            }
+        }
+    });
+    
+    console.log('✅ Grafiek succesvol getekend');
+}
 
 // === COMPLETE AI ANALYSE FUNCTIE (IDENTIEK AAN CREATE) ===
 async function generateCompleteAIAnalysis() {
