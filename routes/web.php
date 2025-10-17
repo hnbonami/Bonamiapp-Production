@@ -1225,3 +1225,7 @@ Route::post('/api/ai-advice', [App\Http\Controllers\InspanningstestController::c
         ->name('inspanningstest.auto-save-edit');
     Route::post('klanten/{klant}/inspanningstest/auto-save', [InspanningstestController::class, 'autoSave'])
         ->name('inspanningstest.auto-save');
+
+// AI Complete Analyse route voor inspanningstesten
+Route::post('inspanningstest/ai-complete-analysis', [InspanningstestController::class, 'generateCompleteAIAnalysis'])
+    ->name('inspanningstest.ai-complete-analysis');

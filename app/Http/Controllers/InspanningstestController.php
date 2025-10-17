@@ -625,106 +625,169 @@ class InspanningstestController extends Controller {
     }
     
     /**
-     * Genereer complete AI analyse - KRACHTIGE FALLBACK VERSIE (Commit 7f9069c)
+     * Genereer complete AI analyse voor inspanningstest (SUPER UITGEBREIDE FALLBACK!)
      */
-    private function generateCompleteAIAnalysis($testData)
+    public function generateCompleteAIAnalysis(Request $request)
     {
-        // === GEBRUIK ALTIJD FALLBACK: Uitgebreide analyse zonder AI service ===
-        $analysis = $this->generateDetailedFallbackAnalysis($testData);
-        
-        return response()->json([
-            'success' => true,
-            'analysis' => $analysis,
-            'method' => 'fallback_detailed_original'
-        ]);
-    }
-    
-    /**
-     * KRACHTIGE FALLBACK: Genereer gedetailleerde analyse zonder externe AI (ORIGINEEL)
-     */
-    private function generateDetailedFallbackAnalysis($data)
-    {
-        $testtype = $data['testtype'] ?? 'fietstest';
-        $isLooptest = str_contains($testtype, 'loop');
-        $isZwemtest = str_contains($testtype, 'zwem');
-        
-        // Bepaal eenheid
-        $eenheid = 'Watt';
-        if ($isLooptest) $eenheid = 'km/h';
-        if ($isZwemtest) $eenheid = 'min/100m';
-        
-        // Haal alle data op
-        $lt1 = $data['aerobe_drempel_vermogen'] ?? null;
-        $lt2 = $data['anaerobe_drempel_vermogen'] ?? null;
-        $lt1_hr = $data['aerobe_drempel_hartslag'] ?? null;
-        $lt2_hr = $data['anaerobe_drempel_hartslag'] ?? null;
-        $gewicht = $data['lichaamsgewicht_kg'] ?? null;
-        $leeftijd = $data['leeftijd'] ?? 35;
-        $doelstellingen = $data['specifieke_doelstellingen'] ?? 'Algemene fitheid verbetering';
-        $trainingstatus = $data['gemiddelde_trainingstatus'] ?? null;
-        $hrmax = $data['maximale_hartslag_bpm'] ?? (220 - $leeftijd);
-        $hrrust = $data['hartslag_rust_bpm'] ?? 60;
-        
-        // Start met uitgebreide analyse
-        $analyse = "═══════════════════════════════════════════════════════════════════\n";
-        $analyse .= "           🏆 COMPLETE INSPANNINGSTEST ANALYSE\n";
-        $analyse .= "                    " . strtoupper($testtype) . "\n";
-        $analyse .= "═══════════════════════════════════════════════════════════════════\n\n";
-        
-        // === 1. PERSOONLIJKE GEGEVENS ===
-        $analyse .= "👤 PERSOONLIJKE GEGEVENS:\n";
-        $analyse .= "─────────────────────────────────────────────────────────────────\n";
-        $analyse .= sprintf("• Leeftijd: %d jaar\n", $leeftijd);
-        if ($gewicht) {
-            $analyse .= sprintf("• Gewicht: %.1f kg\n", $gewicht);
-            if (isset($data['lichaamslengte_cm'])) {
-                $bmi = round($gewicht / (($data['lichaamslengte_cm']/100) ** 2), 1);
-                $analyse .= sprintf("• BMI: %.1f ", $bmi);
-                if ($bmi < 18.5) $analyse .= "(Ondergewicht)\n";
-                elseif ($bmi < 25) $analyse .= "(Normaal gewicht)\n";
-                elseif ($bmi < 30) $analyse .= "(Overgewicht)\n";
-                else $analyse .= "(Obesitas)\n";
+        try {
+            \Log::info('🤖 Complete AI analyse aangevraagd', [
+                'request_data' => $request->all()
+            ]);
+
+            // Haal klant data op als beschikbaar
+            $klant = null;
+            if ($request->has('klant_id')) {
+                $klant = \App\Models\Klant::find($request->klant_id);
             }
+
+            // === SUPER UITGEBREIDE FALLBACK ANALYSE (IDENTIEK AAN CREATE) ===
+            $testtype = $request->testtype ?? 'onbekend';
+            $datum = $request->datum ?? date('Y-m-d');
+            
+            // Drempelwaarden
+            $LT1_power = $request->aerobe_drempel_vermogen ?? 0;
+            $LT2_power = $request->anaerobe_drempel_vermogen ?? 0;
+            $LT1_HR = $request->aerobe_drempel_hartslag ?? 0;
+            $LT2_HR = $request->anaerobe_drempel_hartslag ?? 0;
+            
+            // Klant gegevens
+            $geslacht = $klant->geslacht ?? 'Man';
+            $leeftijd = $klant ? \Carbon\Carbon::parse($klant->geboortedatum)->age : 35;
+            
+            $uitgebreideAnalyse = "🏃‍♂️ INSPANNINGSTEST ANALYSE\n\n";
+            $uitgebreideAnalyse .= "Geautomatiseerde analyse op basis van uw testresultaten\n\n";
+            $uitgebreideAnalyse .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            
+            // TESTOVERZICHT
+            $uitgebreideAnalyse .= "📊 TESTOVERZICHT\n\n";
+            $uitgebreideAnalyse .= "• Testtype: " . ucfirst($testtype) . "\n";
+            $uitgebreideAnalyse .= "• Datum: " . date('d-m-Y', strtotime($datum)) . "\n";
+            $uitgebreideAnalyse .= "• Locatie: " . ($request->testlocatie ?? 'Bonami sportmedisch centrum') . "\n";
+            $uitgebreideAnalyse .= "• Analyse methode: " . ($request->analyse_methode == 'dmax_modified' ? 'Dmax modified' : 'Lactaat steady state') . "\n\n";
+            $uitgebreideAnalyse .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            
+            // ATLET PROFIEL
+            $uitgebreideAnalyse .= "👤 ATLET PROFIEL\n\n";
+            $uitgebreideAnalyse .= "• Leeftijd: {$leeftijd} jaar\n";
+            $uitgebreideAnalyse .= "• Geslacht: {$geslacht}\n\n";
+            
+            if ($request->specifieke_doelstellingen) {
+                $uitgebreideAnalyse .= "Uw doelstellingen:\n";
+                $uitgebreideAnalyse .= $request->specifieke_doelstellingen . "\n\n";
+            } else {
+                $uitgebreideAnalyse .= "Algemene fitheid verbetering\n\n";
+            }
+            
+            $uitgebreideAnalyse .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            
+            // DREMPELWAARDEN
+            $uitgebreideAnalyse .= "🎯 GEMETEN DREMPELWAARDEN\n\n";
+            $uitgebreideAnalyse .= "Aërobe Drempel (LT1)\n\n";
+            
+            if ($testtype == 'looptest') {
+                $uitgebreideAnalyse .= "• Snelheid: " . number_format($LT1_power, 1) . " km/u\n";
+            } else {
+                $uitgebreideAnalyse .= "• Vermogen/Snelheid: " . number_format($LT1_power, 0) . " Watt\n";
+            }
+            $uitgebreideAnalyse .= "• Hartslag: " . number_format($LT1_HR, 0) . " bpm\n\n";
+            
+            $uitgebreideAnalyse .= "Anaërobe Drempel (LT2)\n\n";
+            if ($testtype == 'looptest') {
+                $uitgebreideAnalyse .= "• Snelheid: " . number_format($LT2_power, 1) . " km/u\n";
+            } else {
+                $uitgebreideAnalyse .= "• Vermogen/Snelheid: " . number_format($LT2_power, 0) . " Watt\n";
+            }
+            $uitgebreideAnalyse .= "• Hartslag: " . number_format($LT2_HR, 0) . " bpm\n\n";
+            
+            $uitgebreideAnalyse .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            
+            // TRAININGSADVIES
+            $uitgebreideAnalyse .= "💪 TRAININGSADVIES\n\n";
+            $uitgebreideAnalyse .= "Polarized Training (80/20 principe)\n\n";
+            $uitgebreideAnalyse .= "Voor optimale resultaten raden we het 80/20 trainingsmodel aan:\n\n";
+            
+            $uitgebreideAnalyse .= "1. Aërobe Basistraining (80 procent van trainingstijd)\n\n";
+            if ($testtype == 'looptest') {
+                $uitgebreideAnalyse .= "• Train onder de aërobe drempel (LT1): < " . number_format($LT1_power, 1) . " km/u of < " . number_format($LT1_HR, 0) . " bpm\n";
+            } else {
+                $uitgebreideAnalyse .= "• Train onder de aërobe drempel (LT1): < " . number_format($LT1_power, 0) . " Watt of < " . number_format($LT1_HR, 0) . " bpm\n";
+            }
+            $uitgebreideAnalyse .= "• Dit voelt als een comfortabel tempo waar je nog makkelijk kunt praten\n";
+            $uitgebreideAnalyse .= "• Duur: 60-120 minuten per sessie\n";
+            $uitgebreideAnalyse .= "• Frequentie: 4-5x per week\n";
+            $uitgebreideAnalyse .= "• Effect: Verbetert vetstofwisseling, uithoudingsvermogen en aerobe capaciteit\n\n";
+            
+            $uitgebreideAnalyse .= "2. Drempel/Interval Training (15 procent van trainingstijd)\n\n";
+            if ($testtype == 'looptest') {
+                $uitgebreideAnalyse .= "• Train rond de anaërobe drempel (LT2): " . number_format($LT2_power, 1) . " km/u of " . number_format($LT2_HR, 0) . " bpm\n";
+            } else {
+                $uitgebreideAnalyse .= "• Train rond de anaërobe drempel (LT2): " . number_format($LT2_power, 0) . " Watt of " . number_format($LT2_HR, 0) . " bpm\n";
+            }
+            $uitgebreideAnalyse .= "• Dit voelt als een zwaar maar houdbaar tempo\n";
+            $uitgebreideAnalyse .= "• Voorbeelden:\n";
+            $uitgebreideAnalyse .= "  ◦ 4-6x 5 minuten bij LT2 met 2-3 min rust\n";
+            $uitgebreideAnalyse .= "  ◦ 3x 10 minuten bij LT2 met 5 min rust\n";
+            $uitgebreideAnalyse .= "  ◦ 2x 20 minuten bij LT2 met 10 min rust\n";
+            $uitgebreideAnalyse .= "• Frequentie: 1-2x per week\n";
+            $uitgebreideAnalyse .= "• Effect: Verhoogt de anaërobe drempel en VO2max\n\n";
+            
+            $uitgebreideAnalyse .= "3. Herstel en Mobiliteit (5 procent van trainingstijd)\n\n";
+            $uitgebreideAnalyse .= "• Zeer lage intensiteit of complete rust\n";
+            $uitgebreideAnalyse .= "• Yoga, stretching, massage\n";
+            $uitgebreideAnalyse .= "• Slaap: minimaal 7-8 uur per nacht\n\n";
+            
+            $uitgebreideAnalyse .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            
+            // SPECIFIEK ADVIES
+            if ($request->specifieke_doelstellingen) {
+                $uitgebreideAnalyse .= "🎯 SPECIFIEK ADVIES VOOR UW DOELSTELLINGEN\n\n";
+                $uitgebreideAnalyse .= $request->specifieke_doelstellingen . "\n\n";
+                $uitgebreideAnalyse .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            }
+            
+            // PROGRESSIE
+            $uitgebreideAnalyse .= "📈 PROGRESSIE EN HERTEST\n\n";
+            $uitgebreideAnalyse .= "Verwachte verbeteringen (8-12 weken consistent trainen):\n\n";
+            $uitgebreideAnalyse .= "• Aërobe drempel: 5-10 procent verbetering\n";
+            $uitgebreideAnalyse .= "• Anaërobe drempel: 3-8 procent verbetering\n";
+            $uitgebreideAnalyse .= "• Verbeterde loopeconomie of fietsefficiency\n";
+            $uitgebreideAnalyse .= "• Lagere hartslag bij zelfde intensiteit (betere efficiency)\n";
+            $uitgebreideAnalyse .= "• Sneller herstel tussen inspanningen\n\n";
+            
+            $uitgebreideAnalyse .= "Wanneer hertesten?\n\n";
+            $uitgebreideAnalyse .= "• Na 8-12 weken gestructureerd trainen\n";
+            $uitgebreideAnalyse .= "• Bij plateau in prestaties\n";
+            $uitgebreideAnalyse .= "• Voor belangrijke wedstrijden of events\n";
+            $uitgebreideAnalyse .= "• Na een trainingsperiode wijziging\n\n";
+            
+            $uitgebreideAnalyse .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            
+            // METRICS
+            $uitgebreideAnalyse .= "📊 TE MONITOREN METRICS\n\n";
+            $uitgebreideAnalyse .= "Volg deze waarden om progressie te zien:\n\n";
+            $uitgebreideAnalyse .= "✅ Hartslag bij vaste trainingsintensiteit (moet dalen)\n";
+            $uitgebreideAnalyse .= "✅ Gemiddelde snelheid/vermogen (moet stijgen)\n";
+            $uitgebreideAnalyse .= "✅ Herstellijden tussen intervallen (moet verkorten)\n";
+            $uitgebreideAnalyse .= "✅ Algemeen energieniveau en slaapkwaliteit\n";
+            $uitgebreideAnalyse .= "✅ Watt/kg ratio (moet stijgen)\n\n";
+            
+            $uitgebreideAnalyse .= "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            $uitgebreideAnalyse .= "💡 Voor een nog uitgebreidere AI-gegenereerde analyse met meer specifieke adviezen, voeg OpenAI credits toe aan uw account.\n";
+
+            return response()->json([
+                'success' => true,
+                'analysis' => $uitgebreideAnalyse,
+                'method' => 'fallback_detailed_original'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Complete AI analyse fout: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Fout bij genereren AI analyse: ' . $e->getMessage()
+            ], 500);
         }
-        if (isset($data['vetpercentage'])) {
-            $analyse .= sprintf("• Vetpercentage: %.1f%%\n", $data['vetpercentage']);
-        }
-        $analyse .= "\n";
-        
-        // === 2. DOELSTELLINGEN ANALYSE ===
-        $analyse .= "🎯 SPECIFIEKE DOELSTELLINGEN:\n";
-        $analyse .= "─────────────────────────────────────────────────────────────────\n";
-        $analyse .= $doelstellingen . "\n\n";
-        
-        // Analyseer doelstellingen  
-        $analyse .= "📋 DOELANALYSE:\n";
-        if (stripos($doelstellingen, 'wedstrijd') !== false || stripos($doelstellingen, 'competitie') !== false) {
-            $analyse .= "✓ Wedstrijdgericht - Focus op race-specifieke voorbereiding\n";
-            $analyse .= "  • Periodiseer naar wedstrijdkalender\n";
-            $analyse .= "  • Oefen tactische situaties\n";
-            $analyse .= "  • Simuleer wedstrijdintensiteit\n";
-        } elseif (stripos($doelstellingen, 'gravel') !== false || stripos($doelstellingen, 'mtb') !== false) {
-            $analyse .= "✓ Off-road specialist - Variabel inspanningspatroon\n";
-            $analyse .= "  • Train variabele intensiteit\n";
-            $analyse .= "  • Focus op technische vaardigheden\n";
-            $analyse .= "  • Korte power intervallen\n";
-        } elseif (stripos($doelstellingen, 'gran fondo') !== false || stripos($doelstellingen, 'lange afstand') !== false) {
-            $analyse .= "✓ Lange afstand specialist - Duurvermogen cruciaal\n";
-            $analyse .= "  • Bouw groot volume basis\n";
-            $analyse .= "  • Train voedingsstrategie\n";
-            $analyse .= "  • Tempo work essentieel\n";
-        } else {
-            $analyse .= "✓ Algemene fitheid - Breed trainingsschema\n";
-            $analyse .= "  • Gevarieerde training\n";
-            $analyse .= "  • Geleidelijke progressie\n";
-            $analyse .= "  • Focus op plezier en gezondheid\n";
-        }
-        $analyse .= "\n";
-        
-        // === 3-10: Alle andere secties blijven hetzelfde... ===
-        // (Voeg hier de rest van de originele analyse toe)
-        
-        return $analyse;
     }
     
     /**

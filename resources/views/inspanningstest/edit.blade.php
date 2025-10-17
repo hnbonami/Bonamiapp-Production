@@ -1526,6 +1526,93 @@ document.addEventListener('DOMContentLoaded', function() {
     @endif
 });
 
+// === COMPLETE AI ANALYSE FUNCTIE (IDENTIEK AAN CREATE) ===
+async function generateCompleteAIAnalysis() {
+    console.log('🤖 generateCompleteAIAnalysis() gestart');
+    
+    const btn = document.getElementById('ai-complete-btn');
+    const textarea = document.getElementById('complete_ai_analyse');
+    
+    if (!btn || !textarea) {
+        console.log('❌ AI button of textarea niet gevonden');
+        return;
+    }
+    
+    // Disable button tijdens generatie
+    btn.disabled = true;
+    btn.innerHTML = '⏳ AI aan het werk...';
+    textarea.value = '⏳ AI analyseert alle testdata...';
+    
+    try {
+        // Verzamel ALLE testparameters
+        const testData = {
+            testtype: document.getElementById('testtype')?.value || '',
+            datum: document.getElementById('datum')?.value || '',
+            specifieke_doelstellingen: document.getElementById('specifieke_doelstellingen')?.value || '',
+            lichaamslengte_cm: document.getElementById('lichaamslengte_cm')?.value || '',
+            lichaamsgewicht_kg: document.getElementById('lichaamsgewicht_kg')?.value || '',
+            bmi: document.getElementById('bmi')?.value || '',
+            vetpercentage: document.getElementById('vetpercentage')?.value || '',
+            hartslag_rust_bpm: document.getElementById('hartslag_rust_bpm')?.value || '',
+            maximale_hartslag_bpm: document.getElementById('maximale_hartslag_bpm')?.value || '',
+            slaapkwaliteit: document.getElementById('slaapkwaliteit')?.value || '',
+            eetlust: document.getElementById('eetlust')?.value || '',
+            gevoel_op_training: document.getElementById('gevoel_op_training')?.value || '',
+            stressniveau: document.getElementById('stressniveau')?.value || '',
+            gemiddelde_trainingstatus: document.getElementById('gemiddelde_trainingstatus')?.value || '',
+            testlocatie: document.getElementById('testlocatie')?.value || '',
+            startwattage: document.getElementById('startwattage')?.value || '',
+            stappen_min: document.getElementById('stappen_min')?.value || '',
+            stappen_watt: document.getElementById('stappen_watt')?.value || '',
+            aerobe_drempel_vermogen: document.getElementById('aerobe_drempel_vermogen')?.value || '',
+            aerobe_drempel_hartslag: document.getElementById('aerobe_drempel_hartslag')?.value || '',
+            anaerobe_drempel_vermogen: document.getElementById('anaerobe_drempel_vermogen')?.value || '',
+            anaerobe_drempel_hartslag: document.getElementById('anaerobe_drempel_hartslag')?.value || '',
+            analyse_methode: document.getElementById('analyse_methode')?.value || ''
+        };
+        
+        console.log('📊 Test data verzameld:', testData);
+        
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        const response = await fetch('{{ route("inspanningstest.ai-complete-analysis") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(testData)
+        });
+        
+        console.log('📡 API response status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`API fout: ${response.status} - ${errorText}`);
+        }
+        
+        const result = await response.json();
+        console.log('✅ AI analyse ontvangen:', result);
+        
+        // 🔧 KRITIEKE FIX: API geeft 'analysis' terug (Engels), niet 'analyse' (Nederlands)
+        const analyseText = result.analyse || result.analysis;
+        
+        if (result.success && analyseText) {
+            textarea.value = analyseText;
+            console.log('✅ Complete AI analyse succesvol gegenereerd');
+        } else {
+            throw new Error(result.message || 'Onbekende fout');
+        }
+        
+    } catch (error) {
+        console.error('❌ AI analyse fout:', error);
+        textarea.value = `❌ Fout bij genereren AI analyse:\n\n${error.message}\n\nProbeer het opnieuw of vul handmatig in.`;
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🤖 Genereer Complete Analyse';
+    }
+}
+
 // === TRAININGSZONES EXPORT FUNCTIE (VEILIG) ===
 function exportZonesData() {
     console.log('📊 exportZonesData() aangeroepen');
