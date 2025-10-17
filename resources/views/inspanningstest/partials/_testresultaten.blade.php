@@ -4,21 +4,22 @@
 <style>
     .rapport-testresultaten {
         font-family: Tahoma, Arial, sans-serif;
-        font-size: 11px;
-        line-height: 1.4;
+        font-size: 13px;
+        line-height: 1.5;
         color: #0a152dff;
         margin: 20px 0;
-        width: 120%;
+        width: 130%;
     }
     
     .rapport-testresultaten h3 {
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 700;
         color: #0a152dff;
         margin: 15px 0 10px 0;
         padding: 8px 10px;
         background-color: #c8e1eb;
         border-left: 4px solid #0f4c75;
+        border-radius: 8px;
     }
     
     .testresultaten-table {
@@ -28,7 +29,7 @@
         margin: 15px 0;
         background: white;
         border: 3px solid #c8e1eb;
-        border-radius: 8px;
+        border-radius: 12px;
         overflow: hidden;
     }
     
@@ -40,19 +41,24 @@
         padding: 10px 12px;
         text-align: center;
         font-weight: 700;
-        font-size: 11px;
+        font-size: 13px;
         color: #0a152dff;
         border-bottom: 2px solid #c8e1eb;
         border-right: 1px solid #e5e7eb;
     }
     
+    .testresultaten-table th:first-child {
+        border-top-left-radius: 10px;
+    }
+    
     .testresultaten-table th:last-child {
         border-right: none;
+        border-top-right-radius: 10px;
     }
     
     .testresultaten-table td {
         padding: 8px 12px;
-        font-size: 11px;
+        font-size: 13px;
         color: #0a152dff;
         border-bottom: 1px solid #e5e7eb;
         border-right: 1px solid #e5e7eb;
@@ -65,6 +71,14 @@
     
     .testresultaten-table tbody tr:last-child td {
         border-bottom: none;
+    }
+    
+    .testresultaten-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 10px;
+    }
+    
+    .testresultaten-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 10px;
     }
     
     .testresultaten-table tbody tr:nth-child(even) {
@@ -85,13 +99,14 @@
         padding: 12px 15px;
         background: #f4e8c0ff;
         border-left: 4px solid #f5b444ff;
-        font-size: 10px;
+        font-size: 12px;
         line-height: 1.6;
         color: #78350f;
+        border-radius: 8px;
     }
     
     .rapport-toelichting-box h4 {
-        font-size: 11px;
+        font-size: 13px;
         font-weight: 700;
         color: #92400e;
         margin: 0 0 8px 0;
@@ -155,27 +170,24 @@
     }
     
     // Bepaal kolomlabels op basis van testtype
-    $vermogenLabel = $isLooptest ? 'Snelheid<br><span style="font-size: 9px; font-weight: normal;">(km/h)</span>' : 
-                      ($isZwemtest ? 'Tempo<br><span style="font-size: 9px; font-weight: normal;">(mm:ss)</span>' : 
-                       'Vermogen<br><span style="font-size: 9px; font-weight: normal;">(W)</span>');
+    $vermogenLabel = $isLooptest ? 'Snelheid<br><span style="font-size: 11px; font-weight: normal;">(km/h)</span>' : 
+                      ($isZwemtest ? 'Tempo<br><span style="font-size: 11px; font-weight: normal;">(mm:ss)</span>' : 
+                       'Vermogen<br><span style="font-size: 11px; font-weight: normal;">(W)</span>');
     
     // Voor veldtest lopen: toon afstand in plaats van tijd
-    $eersteKolomLabel = ($isVeldtest && $isLooptest) ? 'Afstand<br><span style="font-size: 9px; font-weight: normal;">(m)</span>' : 
-                        'Tijd<br><span style="font-size: 9px; font-weight: normal;">(min)</span>';
+    $eersteKolomLabel = ($isVeldtest && $isLooptest) ? 'Afstand<br><span style="font-size: 11px; font-weight: normal;">(m)</span>' : 
+                        'Tijd<br><span style="font-size: 11px; font-weight: normal;">(min)</span>';
 @endphp
 
 <div class="rapport-testresultaten">
-    <h3>📋 Testresultaten</h3>
-    <p style="font-size: 10px; color: #6b7280; margin: 8px 0;">Gemeten waarden per stap tijdens de inspanningstest. Elk blok vertegenwoordigt een intensiteitsniveau.</p>
-    
     @if(is_array($resultaten) && count($resultaten) > 0)
         <table class="testresultaten-table">
             <thead>
                 <tr>
                     <th>{!! $eersteKolomLabel !!}</th>
                     <th>{!! $vermogenLabel !!}</th>
-                    <th>Hartslag<br><span style="font-size: 9px; font-weight: normal;">(bpm)</span></th>
-                    <th>Lactaat<br><span style="font-size: 9px; font-weight: normal;">(mmol/L)</span></th>
+                    <th>Hartslag<br><span style="font-size: 11px; font-weight: normal;">(bpm)</span></th>
+                    <th>Lactaat<br><span style="font-size: 11px; font-weight: normal;">(mmol/L)</span></th>
                     <th>Borg</th>
                 </tr>
             </thead>
@@ -203,7 +215,7 @@
                     @endphp
                     <tr class="{{ $highlightClass }}">
                         <td>{{ ($isVeldtest && $isLooptest) ? ($stap['afstand'] ?? '-') : ($stap['tijd'] ?? '-') }}</td>
-                        <td style="color: #2563eb; font-weight: 600;">
+                        <td style="color: #1d1f22ff; font-weight: 600;">
                             @if($isLooptest)
                                 {{ number_format($stap['snelheid'] ?? 0, 1, ',', '.') }}
                             @elseif($isZwemtest)
@@ -217,8 +229,8 @@
                                 {{ number_format($stap['vermogen'] ?? 0, 0, ',', '.') }}
                             @endif
                         </td>
-                        <td style="color: #dc2626; font-weight: 600;">{{ $stap['hartslag'] ?? '-' }}</td>
-                        <td style="color: #16a34a; font-weight: 600;">{{ number_format($stap['lactaat'] ?? 0, 1, ',', '.') }}</td>
+                        <td style="color: #1d1f22ff; font-weight: 600;">{{ $stap['hartslag'] ?? '-' }}</td>
+                        <td style="color: #1d1f22ff; font-weight: 600;">{{ number_format($stap['lactaat'] ?? 0, 1, ',', '.') }}</td>
                         <td>
                             @if($isLT1Stap)
                                 <span style="color: #dc2626; font-weight: 700;">🔴 LT1 (Aëroob)</span>
@@ -233,7 +245,7 @@
             </tbody>
         </table>
         
-        <div style="text-align: right; font-size: 10px; color: #6b7280; margin: 10px 0;">
+        <div style="text-align: right; font-size: 12px; color: #6b7280; margin: 10px 0;">
             <strong>Totaal aantal metingen:</strong> {{ count($resultaten) }}
         </div>
         
@@ -281,10 +293,10 @@
             </p>
         </div>
     @else
-        <div style="text-align: center; padding: 30px 20px; background: #f9fafb; border-radius: 8px; border: 1px dashed #d1d5db;">
+        <div style="text-align: center; padding: 30px 20px; background: #f9fafb; border-radius: 12px; border: 1px dashed #d1d5db;">
             <div style="font-size: 32px; margin-bottom: 10px;">📋</div>
-            <p style="color: #6b7280; font-size: 11px; font-weight: 600;">Geen testresultaten beschikbaar</p>
-            <p style="color: #9ca3af; font-size: 9px; margin-top: 5px;">Er zijn nog geen meetwaarden ingevoerd voor deze inspanningstest.</p>
+            <p style="color: #6b7280; font-size: 13px; font-weight: 600;">Geen testresultaten beschikbaar</p>
+            <p style="color: #9ca3af; font-size: 11px; margin-top: 5px;">Er zijn nog geen meetwaarden ingevoerd voor deze inspanningstest.</p>
         </div>
     @endif
 </div>

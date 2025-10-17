@@ -1,9 +1,28 @@
-{{-- Algemene Info + Lichaamssamenstelling - Rapport Versie (Print-ready) --}}
+{{-- Algemene Info + Lichaamssam    .rapport-algemene-info h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f4c75;
+        margin: 15px 0 10px 0;
+        padding: 8px 10px;
+        background-color: #f0f9ffff;
+        border-left: 4px solid #c8e1eb;
+        border-radius: 8px;
+    }
+    
+    .rapport-doelstellingen-box {
+        margin: 10px 0;
+        padding: 10px;
+        background: #f0f9ff;
+        border-left: 3px solid #c8e1eb;
+        font-size: 13px;
+        line-height: 1.6;
+        border-radius: 8px;
+    } Versie (Print-ready) --}}
 <style>
     .rapport-algemene-info {
         font-family: Tahoma, Arial, sans-serif;
-        font-size: 11px;
-        line-height: 1.4;
+        font-size: 13px;
+        line-height: 1.5;
         color: #1f2937;
         width: 120%;
     }
@@ -36,17 +55,19 @@
         color: #0f4c75;
         margin: 15px 0 10px 0;
         padding: 8px 10px;
-        background-color: #c8e1eb;
-        border-left: 4px solid #0f4c75;
+        background-color: #f0f9ffff;
+        border-left: 4px solid #c8e1eb;
+        border-radius: 8px;
     }
     
     .rapport-doelstellingen-box {
         margin: 10px 0;
         padding: 10px;
-        background: #f0f9ff;
-        border-left: 3px solid #c8e1eb;
-        font-size: 11px;
+        background: #ffffffff;
+        border-left: 3px solid #ffffffff;
+        font-size: 13px;
         line-height: 1.5;
+        border-radius: 8px;
     }
     
     .rapport-grid-2col {
@@ -60,10 +81,11 @@
         margin: 10px 0;
         padding: 10px 12px;
         background: #fef9e6ff;
-        border-left: 4px solid #42ffa1ff;
-        font-size: 10px;
-        line-height: 1.5;
+        border-left: 4px solid #f59e0b;
+        font-size: 14px;
+        line-height: 1.6;
         color: #78350f;
+        border-radius: 8px;
     }
     
     .rapport-evaluatie-box strong {
