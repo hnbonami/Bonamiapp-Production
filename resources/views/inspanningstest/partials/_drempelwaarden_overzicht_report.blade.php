@@ -4,27 +4,32 @@
 <style>
     .rapport-drempelwaarden {
         font-family: Tahoma, Arial, sans-serif;
-        font-size: 11px;
-        line-height: 1.4;
+        font-size: 13px;
+        line-height: 1.5;
         color: #1f2937;
-        width: 120%;
+        width: 130%;
     }
     
     .rapport-drempelwaarden h3 {
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 700;
         color: #0f4c75;
         margin: 15px 0 10px 0;
         padding: 8px 10px;
-        background-color: #c8e1eb;
-        border-left: 4px solid #0f4c75;
+        background-color: #f0f9ffff;
+        border-left: 4px solid #c8e1eb;
+        border-radius: 8px;
     }
     
     .drempelwaarden-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
         margin: 10px 0;
         background: white;
+        border: 3px solid #c8e1eb;
+        border-radius: 12px;
+        overflow: hidden;
     }
     
     .drempelwaarden-table thead {
@@ -32,20 +37,47 @@
     }
     
     .drempelwaarden-table th {
-        padding: 6px 8px;
+        padding: 8px 10px;
         text-align: center;
         font-weight: 700;
-        font-size: 10px;
+        font-size: 12px;
         color: #374151;
         border-bottom: 2px solid #c8e1eb;
+        border-right: 1px solid #e5e7eb;
+    }
+    
+    .drempelwaarden-table th:first-child {
+        border-top-left-radius: 10px;
+    }
+    
+    .drempelwaarden-table th:last-child {
+        border-right: none;
+        border-top-right-radius: 10px;
     }
     
     .drempelwaarden-table td {
-        padding: 5px 8px;
-        font-size: 11px;
+        padding: 6px 10px;
+        font-size: 13px;
         color: #1f2937;
         border-bottom: 1px solid #e5e7eb;
+        border-right: 1px solid #e5e7eb;
         text-align: center;
+    }
+    
+    .drempelwaarden-table td:last-child {
+        border-right: none;
+    }
+    
+    .drempelwaarden-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .drempelwaarden-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 10px;
+    }
+    
+    .drempelwaarden-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 10px;
     }
     
     .drempelwaarden-table tbody tr:nth-child(odd) {
@@ -61,9 +93,10 @@
         padding: 10px 12px;
         background: #f8f6eeff;
         border-left: 4px solid #fcdaa0ff;
-        font-size: 10px;
-        line-height: 1.5;
+        font-size: 13px;
+        line-height: 1.6;
         color: #78350f;
+        border-radius: 8px;
     }
     
     .rapport-evaluatie-box strong {
@@ -214,23 +247,23 @@
 
 <div class="rapport-drempelwaarden">
     <h3>📈 Drempelwaarden Overzicht</h3>
-    <p style="font-size: 10px; color: #6b7280; margin: 8px 0;">Samenvatting van gemeten prestatieparameters bij aërobe en anaërobe drempel</p>
+    <p style="font-size: 12px; color: #6b7280; margin: 8px 0;">Samenvatting van gemeten prestatieparameters bij aërobe en anaërobe drempel</p>
     
     <table class="drempelwaarden-table">
         <thead>
             <tr>
                 <th>Drempel</th>
                 @if($isLooptest)
-                    <th>Snelheid<br><span style="font-size: 9px; font-weight: normal;">(km/h)</span></th>
-                    <th>Tempo<br><span style="font-size: 9px; font-weight: normal;">(min/km)</span></th>
+                    <th>Snelheid<br><span style="font-size: 11px; font-weight: normal;">(km/h)</span></th>
+                    <th>Tempo<br><span style="font-size: 11px; font-weight: normal;">(min/km)</span></th>
                 @elseif($isZwemtest)
-                    <th>Tempo<br><span style="font-size: 9px; font-weight: normal;">(min/100m)</span></th>
+                    <th>Tempo<br><span style="font-size: 11px; font-weight: normal;">(min/100m)</span></th>
                 @else
-                    <th>Vermogen<br><span style="font-size: 9px; font-weight: normal;">(W)</span></th>
-                    <th>Vermogen<br><span style="font-size: 9px; font-weight: normal;">(W/kg)</span></th>
+                    <th>Vermogen<br><span style="font-size: 11px; font-weight: normal;">(W)</span></th>
+                    <th>Vermogen<br><span style="font-size: 11px; font-weight: normal;">(W/kg)</span></th>
                 @endif
-                <th>Hartslag<br><span style="font-size: 9px; font-weight: normal;">(bpm)</span></th>
-                <th>Lactaat<br><span style="font-size: 9px; font-weight: normal;">(mmol/L)</span></th>
+                <th>Hartslag<br><span style="font-size: 11px; font-weight: normal;">(bpm)</span></th>
+                <th>Lactaat<br><span style="font-size: 11px; font-weight: normal;">(mmol/L)</span></th>
                 <th>% Max</th>
             </tr>
         </thead>
@@ -290,7 +323,7 @@
         </tbody>
     </table>
     
-    <div style="text-align: right; font-size: 9px; color: #6b7280; margin: 8px 0;">
+    <div style="text-align: right; font-size: 11px; color: #6b7280; margin: 8px 0;">
         <strong>LT1:</strong> Aërobe drempel (lactaat ~2.0 mmol/L) · 
         <strong>LT2:</strong> Anaërobe drempel (lactaat ~4.0 mmol/L)
     </div>

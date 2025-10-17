@@ -1,4 +1,22 @@
-{{-- Trainingszones - Rapport Versie (Print-ready) --}}
+{{--    .rapport-trainingszones {
+        font-family: Tahoma, Arial, sans-serif;
+        font-size: 13px;
+        line-height: 1.5;
+        color: #1f2937;
+        margin: 20px 0;
+        width: 120%;
+    }
+    
+    .rapport-trainingszones h3 {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0f4c75;
+        margin: 15px 0 10px 0;
+        padding: 8px 10px;
+        background-color: #c8e1eb;
+        border-left: 4px solid #c8e1eb;
+        border-radius: 8px;
+    }Rapport Versie (Print-ready) --}}
 {{-- Variabele sleutel: {{INSPANNINGSTEST_TRAININGSZONES}} --}}
 
 <style>
@@ -8,7 +26,7 @@
         line-height: 1.4;
         color: #1f2937;
         margin: 20px 0;
-        width: 120%;
+        width: 130%;
     }
     
     .rapport-trainingszones h3 {
@@ -23,9 +41,13 @@
     
     .trainingszones-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
         margin: 10px 0;
         background: white;
+        border: 3px solid #c8e1eb;
+        border-radius: 12px;
+        overflow: hidden;
     }
     
     .trainingszones-table thead {
@@ -33,20 +55,40 @@
     }
     
     .trainingszones-table th {
-        padding: 5px 6px;
+        padding: 8px 8px;
         text-align: center;
         font-weight: 700;
-        font-size: 9px;
+        font-size: 11px;
         color: #374151;
         border-bottom: 2px solid #c8e1eb;
     }
     
+    .trainingszones-table th:first-child {
+        border-top-left-radius: 10px;
+    }
+    
+    .trainingszones-table th:last-child {
+        border-top-right-radius: 10px;
+    }
+    
     .trainingszones-table td {
-        padding: 4px 6px;
-        font-size: 10px;
+        padding: 6px 8px;
+        font-size: 12px;
         color: #1f2937;
         border-bottom: 1px solid #e5e7eb;
         text-align: center;
+    }
+    
+    .trainingszones-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .trainingszones-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 10px;
+    }
+    
+    .trainingszones-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 10px;
     }
     
     .zone-naam-cel {

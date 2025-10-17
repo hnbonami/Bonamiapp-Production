@@ -8,7 +8,7 @@
         line-height: 1.4;
         color: #0a152dff;
         margin: 20px 0;
-        width: 120%;
+        width: 105%;
     }
     
     .rapport-grafiek h3 {
