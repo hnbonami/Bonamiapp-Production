@@ -2,21 +2,22 @@
 <style>
     .rapport-trainingstatus {
         font-family: Tahoma, Arial, sans-serif;
-        font-size: 11px;
-        line-height: 1.4;
+        font-size: 13px;
+        line-height: 1.5;
         color: #1f2937;
         margin: 20px 0;
-        width: 120%;
+        width: 130%;
     }
     
     .rapport-trainingstatus h3 {
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 700;
         color: #0f4c75;
         margin: 15px 0 10px 0;
         padding: 8px 10px;
-        background-color: #c8e1eb;
-        border-left: 4px solid #0f4c75;
+        background-color: #f0f9ffff;
+        border-left: 4px solid #c8e1eb;
+        border-radius: 8px;
     }
     
     .trainingstatus-grid {
@@ -35,7 +36,7 @@
     .trainingstatus-label {
         font-weight: 600;
         color: #374151;
-        font-size: 10px;
+        font-size: 12px;
         margin-bottom: 8px;
         display: block;
     }
@@ -43,7 +44,7 @@
     .trainingstatus-labels {
         display: flex;
         justify-content: space-between;
-        font-size: 9px;
+        font-size: 11px;
         color: #6b7280;
         margin-top: 6px;
         padding: 0 2px;
@@ -52,7 +53,7 @@
     .trainingstatus-score {
         text-align: center;
         font-weight: 700;
-        font-size: 20px;
+        font-size: 22px;
         margin-top: 8px;
         color: #1f2937;
     }
@@ -84,27 +85,27 @@
         margin: 20px 0 15px 0;
         padding: 15px 20px;
         background: #f0f9ff;
-        border-left: 4px solid #3b82f6;
-        border-radius: 4px;
+        border-left: 4px solid #c8e1eb;
+        border-radius: 8px;
         text-align: center;
     }
     
     .rapport-gemiddelde-score strong {
-        font-size: 12px;
+        font-size: 14px;
         color: #1e40af;
         display: block;
         margin-bottom: 8px;
     }
     
     .rapport-gemiddelde-score .score-groot {
-        font-size: 36px;
+        font-size: 38px;
         font-weight: 700;
         color: #3b82f6;
         line-height: 1;
     }
     
     .rapport-gemiddelde-score .score-label {
-        font-size: 10px;
+        font-size: 12px;
         color: #6b7280;
         margin-top: 8px;
         line-height: 1.5;
@@ -114,10 +115,11 @@
         margin: 15px 0;
         padding: 12px 15px;
         background: #fff7ed;
-        border-left: 4px solid #f59e0b;
-        font-size: 11px;
+        border-left: 4px solid #fff7ed;
+        font-size: 13px;
         line-height: 1.6;
         color: #78350f;
+        border-radius: 8px;
     }
     
     .rapport-advies-box strong {
@@ -129,16 +131,17 @@
         margin: 10px 0;
         padding: 10px 12px;
         background: #f9fafb;
-        border-left: 3px solid #6b7280;
-        font-size: 10px;
+        border-left: 3px solid #f9fafb;
+        font-size: 12px;
         color: #374151;
+        border-radius: 8px;
     }
 </style>
 
 <div class="rapport-trainingstatus">
     <h3>💪 Trainingstatus bij Test</h3>
     
-    <p style="margin: 5px 0 15px 0; font-size: 10px; color: #6b7280; font-style: italic;">
+    <p style="margin: 5px 0 15px 0; font-size: 12px; color: #6b7280; font-style: italic;">
         Algemene conditie en herstelstatus op testmoment
     </p>
     

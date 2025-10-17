@@ -18,7 +18,7 @@
         margin: 15px 0 10px 0;
         padding: 8px 10px;
         background-color: #c8e1eb;
-        border-left: 4px solid #0f4c75;
+        border-left: 4px solid #c8e1eb;
     }
     
     .trainingszones-table {
