@@ -7,7 +7,6 @@ use App\Helpers\SjabloonHelper;
 use App\Services\AIAnalysisService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Exception;
 
 class InspanningstestController extends Controller {
     /**
@@ -231,16 +230,21 @@ class InspanningstestController extends Controller {
      */
     public function edit(Klant $klant, Inspanningstest $test)
     {
-        \Log::info('� Edit inspanningstest opgehaald', [
-            'test_id' => $test->id,
-            'klant_id' => $klant->id,
-            'testtype' => $test->testtype
-        ]);
-
-        return view('inspanningstest.edit', [
-            'klant' => $klant,
-            'inspanningstest' => $test // Gebruik 'inspanningstest' naam voor de view
-        ]);
+        // Check of de test bij deze klant hoort
+        if ($test->klant_id !== $klant->id) {
+            abort(404);
+        }
+        
+        // Laad testresultaten uit JSON kolom
+        $testresultaten = [];
+        if ($test->testresultaten) {
+            $testresultaten = json_decode($test->testresultaten, true) ?? [];
+        }
+        
+        // Geef $test door als $inspanningstest voor consistentie met de view
+        $inspanningstest = $test;
+        
+        return view('inspanningstest.edit', compact('klant', 'inspanningstest', 'testresultaten'));
     }
 
     /**
@@ -746,7 +750,7 @@ class InspanningstestController extends Controller {
             }
             
             // PROGRESSIE
-            $uitgebreideAnalyse .= "📈 PROGRESSIE EN HERTEST\n\n";
+            $uitgebreideAnalyse .= "📈 PROGRESSIE EN HERSTEST\n\n";
             $uitgebreideAnalyse .= "Verwachte verbeteringen (8-12 weken consistent trainen):\n\n";
             $uitgebreideAnalyse .= "• Aërobe drempel: 5-10 procent verbetering\n";
             $uitgebreideAnalyse .= "• Anaërobe drempel: 3-8 procent verbetering\n";
