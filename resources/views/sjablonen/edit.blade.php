@@ -291,8 +291,8 @@
                     <div class="mb-6">
                         <h4 class="font-medium text-gray-900 mb-3 flex items-center justify-between">
                             <span>Achtergronden</span>
-                            <button onclick="uploadNewBackground()" class="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600">
-                                + Upload
+                            <button onclick="uploadNewBackground()" class="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 font-medium shadow-sm border border-blue-700 transition-colors">
+                                📤 Upload
                             </button>
                         </h4>
                         <div class="background-selector">
