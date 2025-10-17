@@ -1153,5 +1153,31 @@ class SjablonenController extends Controller
         }
     }
 
-    // ...existing code...
+    /**
+     * Verberg CKEditor tabel borders voor cleane PDF output
+     */
+    private function hideCKEditorTableBorders($html)
+    {
+        // Verwijder CKEditor tabel styling voor PDF
+        $html = preg_replace('/<table[^>]*class="[^"]*cke[^"]*"[^>]*>/', '<table style="border-collapse: collapse;">', $html);
+        
+        // Voeg CSS toe om tabel borders te verbergen
+        $tableStyles = '
+        <style>
+            table { border-collapse: collapse; border: none !important; }
+            table td, table th { border: none !important; padding: 8px; }
+            .cke_editable table { border: none !important; }
+        </style>';
+        
+        // Voeg styles toe aan head als die bestaat, anders aan begin van body
+        if (strpos($html, '</head>') !== false) {
+            $html = str_replace('</head>', $tableStyles . '</head>', $html);
+        } else if (strpos($html, '<body') !== false) {
+            $html = preg_replace('/<body[^>]*>/', '$0' . $tableStyles, $html);
+        } else {
+            $html = $tableStyles . $html;
+        }
+        
+        return $html;
+    }
 }
