@@ -172,14 +172,10 @@
         <table class="testresultaten-table">
             <thead>
                 <tr>
-                    <th>#</th>
                     <th>{!! $eersteKolomLabel !!}</th>
                     <th>{!! $vermogenLabel !!}</th>
                     <th>Hartslag<br><span style="font-size: 9px; font-weight: normal;">(bpm)</span></th>
                     <th>Lactaat<br><span style="font-size: 9px; font-weight: normal;">(mmol/L)</span></th>
-                    @if(!$isLooptest && !$isZwemtest)
-                        <th>RPM</th>
-                    @endif
                     <th>Borg</th>
                 </tr>
             </thead>
@@ -206,7 +202,6 @@
                         $highlightClass = ($isLT1Stap || $isLT2Stap) ? 'stap-highlight' : '';
                     @endphp
                     <tr class="{{ $highlightClass }}">
-                        <td><strong>{{ $index + 1 }}</strong></td>
                         <td>{{ ($isVeldtest && $isLooptest) ? ($stap['afstand'] ?? '-') : ($stap['tijd'] ?? '-') }}</td>
                         <td style="color: #2563eb; font-weight: 600;">
                             @if($isLooptest)
@@ -224,9 +219,6 @@
                         </td>
                         <td style="color: #dc2626; font-weight: 600;">{{ $stap['hartslag'] ?? '-' }}</td>
                         <td style="color: #16a34a; font-weight: 600;">{{ number_format($stap['lactaat'] ?? 0, 1, ',', '.') }}</td>
-                        @if(!$isLooptest && !$isZwemtest)
-                            <td>{{ $stap['rpm'] ?? '-' }}</td>
-                        @endif
                         <td>
                             @if($isLT1Stap)
                                 <span style="color: #dc2626; font-weight: 700;">🔴 LT1 (Aëroob)</span>
