@@ -857,7 +857,7 @@ class SjablonenController extends Controller
                 $content = $this->replaceBikefitHTMLComponents($content, $bikefit, $results);
                 
                 // Add mobility table if available
-                $content = str_replace('$mobility_table_report$', $this->generateMobilityTable($bikefit), $content);
+                $content = str_replace('$mobility_table_report$', $this->generateMobiliteitTabel($bikefit), $content);
                 
                 // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
                 $content = $this->hideCKEditorTableBorders($content);
@@ -1177,6 +1177,82 @@ class SjablonenController extends Controller
         } else {
             $html = $tableStyles . $html;
         }
+        
+        return $html;
+    }
+
+    /**
+     * Vervang Bikefit HTML componenten in template content
+     */
+    private function replaceBikefitHTMLComponents($content, $bikefit, $klant)
+    {
+        // Mobiliteitstabel HTML genereren
+        $mobiliteitTabelHtml = '';
+        if ($bikefit->straight_leg_raise_links || $bikefit->knieflexie_links) {
+            $mobiliteitTabelHtml = $this->generateMobiliteitTabel($bikefit);
+        }
+        
+        // Vervang de HTML component placeholders
+        $replacements = [
+            '$mobiliteitstabel_html$' => $mobiliteitTabelHtml,
+            '$mobility_table_report$' => $mobiliteitTabelHtml,
+            '$_mobility_table$' => $mobiliteitTabelHtml,
+            '$mobility_results$' => $mobiliteitTabelHtml,
+        ];
+        
+        foreach ($replacements as $placeholder => $value) {
+            $content = str_replace($placeholder, $value, $content);
+        }
+        
+        return $content;
+    }
+    
+    /**
+     * Genereer mobiliteitstabel HTML voor in rapporten (alias voor generateMobiliteitTabelHtml)
+     */
+    private function generateMobiliteitTabel($bikefit)
+    {
+        return $this->generateMobiliteitTabelHtml($bikefit);
+    }
+    
+    /**
+     * Genereer mobiliteitstabel HTML voor in rapporten
+     */
+    private function generateMobiliteitTabelHtml($bikefit)
+    {
+        $html = '<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">';
+        $html .= '<thead>';
+        $html .= '<tr style="background-color: #c8e1eb;">';
+        $html .= '<th style="padding: 10px; border: 1px solid #a8c1cb; text-align: left;">Mobiliteitstest</th>';
+        $html .= '<th style="padding: 10px; border: 1px solid #a8c1cb; text-align: center;">Links</th>';
+        $html .= '<th style="padding: 10px; border: 1px solid #a8c1cb; text-align: center;">Rechts</th>';
+        $html .= '<th style="padding: 10px; border: 1px solid #a8c1cb; text-align: center;">Norm</th>';
+        $html .= '</tr>';
+        $html .= '</thead>';
+        $html .= '<tbody>';
+        
+        $tests = [
+            ['naam' => 'Straight Leg Raise', 'links' => $bikefit->straight_leg_raise_links, 'rechts' => $bikefit->straight_leg_raise_rechts, 'norm' => '70°'],
+            ['naam' => 'Knieflexie', 'links' => $bikefit->knieflexie_links, 'rechts' => $bikefit->knieflexie_rechts, 'norm' => '130°'],
+            ['naam' => 'Heup Endorotatie', 'links' => $bikefit->heup_endorotatie_links, 'rechts' => $bikefit->heup_endorotatie_rechts, 'norm' => '35°'],
+            ['naam' => 'Heup Exorotatie', 'links' => $bikefit->heup_exorotatie_links, 'rechts' => $bikefit->heup_exorotatie_rechts, 'norm' => '45°'],
+            ['naam' => 'Enkeldorsiflexie', 'links' => $bikefit->enkeldorsiflexie_links, 'rechts' => $bikefit->enkeldorsiflexie_rechts, 'norm' => '10°'],
+            ['naam' => 'One Leg Squat', 'links' => $bikefit->one_leg_squat_links, 'rechts' => $bikefit->one_leg_squat_rechts, 'norm' => 'Neutraal'],
+        ];
+        
+        foreach ($tests as $test) {
+            if ($test['links'] || $test['rechts']) {
+                $html .= '<tr>';
+                $html .= '<td style="padding: 8px; border: 1px solid #ddd;">' . $test['naam'] . '</td>';
+                $html .= '<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">' . ($test['links'] ?? '-') . '</td>';
+                $html .= '<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">' . ($test['rechts'] ?? '-') . '</td>';
+                $html .= '<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">' . $test['norm'] . '</td>';
+                $html .= '</tr>';
+            }
+        }
+        
+        $html .= '</tbody>';
+        $html .= '</table>';
         
         return $html;
     }
