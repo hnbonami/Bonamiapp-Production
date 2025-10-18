@@ -214,6 +214,7 @@
             border-radius: 8px;
             overflow: hidden;
             transition: all 0.2s;
+            position: relative;
         }
         
         .background-option:hover {
@@ -224,6 +225,33 @@
         .background-option.selected {
             border-color: #059669;
             box-shadow: 0 0 0 2px #10b981;
+        }
+        
+        /* Delete button styling - altijd zichtbaar */
+        .background-option .delete-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background-color: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .background-option .delete-btn:hover {
+            background-color: #dc2626;
+            transform: scale(1.1);
         }
         
         .cke_contents {
@@ -320,7 +348,7 @@
                             @foreach($backgrounds as $background)
                                 <div class="background-option relative" onclick="setPageBackground('{{ $background }}')" title="Achtergrond {{ $background }}">
                                     <img src="/backgrounds/{{ $background }}" alt="Background {{ $background }}" class="w-full aspect-[210/297] object-cover">
-                                    <button onclick="deleteBackground('{{ $background }}', event)" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs hover:bg-red-700" title="Verwijderen">×</button>
+                                    <button onclick="deleteBackground('{{ $background }}', event)" class="delete-btn" title="Verwijderen">×</button>
                                 </div>
                             @endforeach
                         </div>
