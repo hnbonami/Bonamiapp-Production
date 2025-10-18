@@ -103,6 +103,11 @@ class SjabloonService
             $html = str_replace('{{inspanningstest.testlocatie}}', $inspanningstest->testlocatie ?? '', $html);
             $html = str_replace('{{inspanningstest.protocol}}', $inspanningstest->protocol ?? '', $html);
             $html = str_replace('{{inspanningstest.specifieke_doelstellingen}}', $inspanningstest->specifieke_doelstellingen ?? '', $html);
+            $html = str_replace('{{inspanningstest.weersomstandigheden}}', $inspanningstest->weersomstandigheden ?? '', $html);
+            $html = str_replace('{{inspanningstest.startwattage}}', $inspanningstest->startwattage ?? '', $html);
+            $html = str_replace('{{inspanningstest.stappen_min}}', $inspanningstest->stappen_min ?? '', $html);
+            $html = str_replace('{{inspanningstest.stappen_watt}}', $inspanningstest->stappen_watt ?? '', $html);
+            $html = str_replace('{{inspanningstest.analyse_methode}}', $inspanningstest->analyse_methode ?? '', $html);
             
             // Lichaamsmetingen
             $html = str_replace('{{inspanningstest.lichaamslengte}}', $inspanningstest->lichaamslengte_cm ?? '', $html);
@@ -110,12 +115,28 @@ class SjabloonService
             $html = str_replace('{{inspanningstest.bmi}}', $inspanningstest->bmi ?? '', $html);
             $html = str_replace('{{inspanningstest.hartslag_rust}}', $inspanningstest->hartslag_rust_bpm ?? '', $html);
             $html = str_replace('{{inspanningstest.hartslag_max}}', $inspanningstest->maximale_hartslag_bpm ?? '', $html);
+            $html = str_replace('{{inspanningstest.vetpercentage}}', $inspanningstest->vetpercentage ?? '', $html);
+            $html = str_replace('{{inspanningstest.buikomtrek}}', $inspanningstest->buikomtrek_cm ?? '', $html);
             
             // Drempelwaarden
             $html = str_replace('{{inspanningstest.aerobe_drempel_vermogen}}', $inspanningstest->aerobe_drempel_vermogen ?? '', $html);
             $html = str_replace('{{inspanningstest.aerobe_drempel_hartslag}}', $inspanningstest->aerobe_drempel_hartslag ?? '', $html);
             $html = str_replace('{{inspanningstest.anaerobe_drempel_vermogen}}', $inspanningstest->anaerobe_drempel_vermogen ?? '', $html);
             $html = str_replace('{{inspanningstest.anaerobe_drempel_hartslag}}', $inspanningstest->anaerobe_drempel_hartslag ?? '', $html);
+            
+            // Trainingstatus velden
+            $html = str_replace('{{inspanningstest.slaapkwaliteit}}', $inspanningstest->slaapkwaliteit ?? '', $html);
+            $html = str_replace('{{inspanningstest.eetlust}}', $inspanningstest->eetlust ?? '', $html);
+            $html = str_replace('{{inspanningstest.gevoel_op_training}}', $inspanningstest->gevoel_op_training ?? '', $html);
+            $html = str_replace('{{inspanningstest.stressniveau}}', $inspanningstest->stressniveau ?? '', $html);
+            $html = str_replace('{{inspanningstest.gemiddelde_trainingstatus}}', $inspanningstest->gemiddelde_trainingstatus ?? '', $html);
+            $html = str_replace('{{inspanningstest.training_dag_voor_test}}', $inspanningstest->training_dag_voor_test ?? '', $html);
+            $html = str_replace('{{inspanningstest.training_2d_voor_test}}', $inspanningstest->training_2d_voor_test ?? '', $html);
+            
+            // Besluit/Advies velden
+            $html = str_replace('{{inspanningstest.besluit_lichaamssamenstelling}}', $inspanningstest->besluit_lichaamssamenstelling ?? '', $html);
+            $html = str_replace('{{inspanningstest.advies_aerobe_drempel}}', $inspanningstest->advies_aerobe_drempel ?? '', $html);
+            $html = str_replace('{{inspanningstest.advies_anaerobe_drempel}}', $inspanningstest->advies_anaerobe_drempel ?? '', $html);
             
             // HTML Componenten via Blade partials
             try {
@@ -133,7 +154,9 @@ class SjabloonService
                 $inspanningstestCopy->testresultaten = $testresultaten;
                 $inspanningstestCopy->trainingszones_data = $trainingszones;
                 
-                // Vervang HTML componenten
+                // Vervang ALLE HTML componenten uit commit b50924a
+                
+                // 1. Algemene info
                 if (strpos($html, '{{INSPANNINGSTEST_ALGEMEEN}}') !== false) {
                     $partialHtml = view('inspanningstest.partials._algemene_info_report', [
                         'inspanningstest' => $inspanningstestCopy,
@@ -142,6 +165,31 @@ class SjabloonService
                     $html = str_replace('{{INSPANNINGSTEST_ALGEMEEN}}', $partialHtml, $html);
                 }
                 
+                // 2. Trainingstatus
+                if (strpos($html, '{{INSPANNINGSTEST_TRAININGSTATUS}}') !== false) {
+                    $partialHtml = view('inspanningstest.partials._trainingstatus_report', [
+                        'inspanningstest' => $inspanningstestCopy
+                    ])->render();
+                    $html = str_replace('{{INSPANNINGSTEST_TRAININGSTATUS}}', $partialHtml, $html);
+                }
+                
+                // 3. Testresultaten
+                if (strpos($html, '{{INSPANNINGSTEST_TESTRESULTATEN}}') !== false) {
+                    $partialHtml = view('inspanningstest.partials._testresultaten', [
+                        'inspanningstest' => $inspanningstestCopy
+                    ])->render();
+                    $html = str_replace('{{INSPANNINGSTEST_TESTRESULTATEN}}', $partialHtml, $html);
+                }
+                
+                // 4. Grafiek analyse
+                if (strpos($html, '{{INSPANNINGSTEST_GRAFIEK}}') !== false) {
+                    $partialHtml = view('inspanningstest.partials._grafiek_analyse_report', [
+                        'inspanningstest' => $inspanningstestCopy
+                    ])->render();
+                    $html = str_replace('{{INSPANNINGSTEST_GRAFIEK}}', $partialHtml, $html);
+                }
+                
+                // 5. Trainingszones
                 if (strpos($html, '{{INSPANNINGSTEST_TRAININGSZONES}}') !== false) {
                     $partialHtml = view('inspanningstest.partials._trainingszones_report', [
                         'inspanningstest' => $inspanningstestCopy
@@ -149,11 +197,50 @@ class SjabloonService
                     $html = str_replace('{{INSPANNINGSTEST_TRAININGSZONES}}', $partialHtml, $html);
                 }
                 
+                // 6. Drempelwaarden overzicht
+                if (strpos($html, '{{INSPANNINGSTEST_DREMPELS}}') !== false) {
+                    $partialHtml = view('inspanningstest.partials._drempelwaarden_overzicht_report', [
+                        'inspanningstest' => $inspanningstestCopy
+                    ])->render();
+                    $html = str_replace('{{INSPANNINGSTEST_DREMPELS}}', $partialHtml, $html);
+                }
+                
+                // 7. AI Analyse - Gecombineerd (backward compatibility)
+                if (strpos($html, '{{INSPANNINGSTEST_AI_ANALYSE}}') !== false) {
+                    $aiDeel1Html = view('inspanningstest.partials._ai_analyse_report_deel1', [
+                        'inspanningstest' => $inspanningstestCopy
+                    ])->render();
+                    
+                    $aiDeel2Html = view('inspanningstest.partials._ai_analyse_report_deel2', [
+                        'inspanningstest' => $inspanningstestCopy
+                    ])->render();
+                    
+                    $combinedHtml = $aiDeel1Html . '<div style="page-break-before: always;"></div>' . $aiDeel2Html;
+                    $html = str_replace('{{INSPANNINGSTEST_AI_ANALYSE}}', $combinedHtml, $html);
+                }
+                
+                // 8. AI Analyse Deel 1
                 if (strpos($html, '{{INSPANNINGSTEST_AI_ANALYSE_DEEL1}}') !== false) {
                     $partialHtml = view('inspanningstest.partials._ai_analyse_report_deel1', [
                         'inspanningstest' => $inspanningstestCopy
                     ])->render();
                     $html = str_replace('{{INSPANNINGSTEST_AI_ANALYSE_DEEL1}}', $partialHtml, $html);
+                }
+                
+                // 9. AI Analyse Deel 2
+                if (strpos($html, '{{INSPANNINGSTEST_AI_ANALYSE_DEEL2}}') !== false) {
+                    $partialHtml = view('inspanningstest.partials._ai_analyse_report_deel2', [
+                        'inspanningstest' => $inspanningstestCopy
+                    ])->render();
+                    $html = str_replace('{{INSPANNINGSTEST_AI_ANALYSE_DEEL2}}', $partialHtml, $html);
+                }
+                
+                // 10. AI Analyse Deel 3
+                if (strpos($html, '{{INSPANNINGSTEST_AI_ANALYSE_DEEL3}}') !== false) {
+                    $partialHtml = view('inspanningstest.partials._ai_analyse_report_deel3', [
+                        'inspanningstest' => $inspanningstestCopy
+                    ])->render();
+                    $html = str_replace('{{INSPANNINGSTEST_AI_ANALYSE_DEEL3}}', $partialHtml, $html);
                 }
                 
             } catch (\Exception $e) {
