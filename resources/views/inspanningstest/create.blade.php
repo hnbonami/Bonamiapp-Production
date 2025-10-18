@@ -779,11 +779,11 @@ const tableConfigs = {
         inputTypes: ['number', 'number', 'number', 'number', 'number'],
         steps: ['', '', '0.1', '', '']
     },
-    'looptest': { // Inspanningstest lopen
+    'looptest': { // Inspanningstest lopen - MET KOMMAGETALLEN
         headers: ['Tijd (min)', 'Snelheid (km/h)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'],
         fields: ['tijd', 'snelheid', 'lactaat', 'hartslag', 'borg'],
         inputTypes: ['number', 'number', 'number', 'number', 'number'],
-        steps: ['', '0.1', '0.1', '', '']
+        steps: ['', '0.5', '0.1', '', ''] // 0.5 voor snelheid (8.0, 8.5, 9.0, etc.)
     },
     'veldtest_lopen': { // Veldtest lopen
         headers: ['Afstand (m)', 'Tijd (min)', 'Tijd (sec)', 'Lactaat (mmol/L)', 'Hartslag (bpm)', 'Borg'],
@@ -1276,6 +1276,22 @@ document.addEventListener('DOMContentLoaded', function() {
         standardProtocolField1.style.display = 'block';
         standardProtocolField2.style.display = 'block';
         standardProtocolField3.style.display = 'block';
+        
+        // 🔧 PAS STAPPEN VELD AAN voor looptesten - CRUCIALE FIX!
+        const stappenInput = document.getElementById('stappen_watt');
+        const stappenLabel = document.querySelector('label[for="stappen_watt"]');
+        
+        if (selectedType === 'looptest' || selectedType === 'veldtest_lopen') {
+            // Voor looptesten: kommagetallen toestaan
+            stappenInput.step = '0.5'; // Toestaan: 0.5, 1.0, 1.5, 2.0 km/h
+            stappenLabel.textContent = 'Stappen (km/h)';
+            console.log('✅ Looptest: stappen_watt.step = 0.5');
+        } else {
+            // Voor andere testen: hele getallen
+            stappenInput.step = '1';
+            stappenLabel.textContent = 'Stappen (Watt)';
+            console.log('✅ Fietstest: stappen_watt.step = 1');
+        }
         
         // Update tabel op basis van testtype
         updateTable(selectedType);
