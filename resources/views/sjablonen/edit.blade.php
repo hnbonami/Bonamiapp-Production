@@ -776,29 +776,54 @@
             
             input.onchange = async (e) => {
                 const file = e.target.files[0];
-                if (!file) return;
+                if (!file) {
+                    console.log('❌ Geen bestand geselecteerd');
+                    return;
+                }
+                
+                console.log('📤 Upload gestart:', file.name, 'Size:', file.size);
+                
+                // Toon loading notificatie
+                showNotification('Uploaden: ' + file.name + '...', 'success');
                 
                 const formData = new FormData();
                 formData.append('background', file);
                 formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
                 
                 try {
+                    console.log('🚀 Verzenden naar /sjablonen/backgrounds/upload');
+                    
                     const response = await fetch('/sjablonen/backgrounds/upload', {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json',
+                        }
                     });
                     
+                    console.log('📡 Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error('Upload mislukt met status: ' + response.status);
+                    }
+                    
                     const data = await response.json();
+                    console.log('📡 Response data:', data);
                     
                     if (data.success) {
-                        showNotification('Achtergrond geüpload!', 'success');
-                        location.reload();
+                        showNotification('✅ Achtergrond geüpload: ' + data.filename, 'success');
+                        console.log('✅ Upload succesvol, reloading...');
+                        // Wacht 1 seconde zodat gebruiker de melding ziet
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
                     } else {
-                        showNotification('Fout bij uploaden: ' + (data.message || 'Onbekende fout'), 'error');
+                        showNotification('❌ Fout: ' + (data.message || 'Onbekende fout'), 'error');
+                        console.error('❌ Upload failed:', data);
                     }
                 } catch (error) {
-                    showNotification('Fout bij uploaden', 'error');
-                    console.error(error);
+                    console.error('❌ Upload error:', error);
+                    showNotification('❌ Netwerk fout: ' + error.message, 'error');
                 }
             };
             

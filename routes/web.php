@@ -740,6 +740,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('sjablonen/{sjabloon}/pages/{pagina}/update', [\App\Http\Controllers\SjablonenController::class, 'updatePagina'])->name('sjablonen.pagina.update');
     Route::post('sjablonen/{sjabloon}/pages', [\App\Http\Controllers\SjablonenController::class, 'addPagina'])->name('sjablonen.pagina.add');
     Route::delete('sjablonen/{sjabloon}/pages/{pagina}', [\App\Http\Controllers\SjablonenController::class, 'deletePagina'])->name('sjablonen.pagina.delete');
+    
+    // Achtergrond upload routes - NIEUW TOEGEVOEGD
+    Route::post('sjablonen/backgrounds/upload', [\App\Http\Controllers\SjablonenController::class, 'uploadBackground'])->name('sjablonen.backgrounds.upload');
+    Route::delete('sjablonen/backgrounds/{filename}', [\App\Http\Controllers\SjablonenController::class, 'deleteBackground'])->name('sjablonen.backgrounds.delete');
 });
 
 // Rapport routes
