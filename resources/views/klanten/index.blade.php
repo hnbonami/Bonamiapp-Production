@@ -40,22 +40,26 @@
     <a href="{{ route('klanten.export') }}" aria-label="Export Excel" title="Export Excel" class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-800" style="margin-right:0.2rem;text-decoration:none;">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10l5 5 5-5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15V3"/></svg>
     </a>
-    <form method="GET" action="" id="zoekForm" style="display:inline-flex;align-items:center;gap:0.3em;margin-left:auto;">
-        <input type="text" name="zoek" id="zoekInput" value="{{ request('zoek') }}" placeholder="Zoek klant..." style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:160px;box-shadow:0 1px 3px #f3f4f6;" />
-    </form>
+    <input 
+        type="text" 
+        id="searchKlanten" 
+        placeholder="Zoek klant..." 
+        value="{{ request('zoek') }}"
+        style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:180px;box-shadow:0 1px 3px #f3f4f6;margin-left:auto;" 
+        autocomplete="off"
+    />
 </div>
+
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const zoekInput = document.getElementById('zoekInput');
-    let timeout = null;
-    if (zoekInput) {
-        zoekInput.addEventListener('input', function() {
-            clearTimeout(timeout);
-            timeout = setTimeout(function() {
-                document.getElementById('zoekForm').submit();
-            }, 400);
-        });
-    }
+// Simple search - gewoon client-side filtering
+document.getElementById('searchKlanten').addEventListener('input', function(e) {
+    const zoekterm = e.target.value.toLowerCase();
+    const rijen = document.querySelectorAll('tbody tr');
+    
+    rijen.forEach(rij => {
+        const tekst = rij.textContent.toLowerCase();
+        rij.style.display = tekst.includes(zoekterm) ? '' : 'none';
+    });
 });
 </script>
 <div class="overflow-x-auto bg-white/80 rounded-xl shadow border border-gray-100">
@@ -120,4 +124,5 @@ document.addEventListener('DOMContentLoaded', function() {
         </tbody>
     </table>
 </div>
+
 @endsection

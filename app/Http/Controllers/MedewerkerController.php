@@ -14,11 +14,31 @@ class MedewerkerController extends Controller
     /**
      * Display a listing of medewerkers
      */
-    public function index()
+    public function index(Request $request)
     {
-        $medewerkers = User::where('role', '!=', 'klant')
-                          ->orderBy('created_at', 'desc')
-                          ->get();
+        \Log::info('🔍 Medewerkers index aangeroepen');
+        
+        // Zoekfunctionaliteit
+        $zoekterm = $request->input('zoek');
+        
+        if ($zoekterm) {
+            \Log::info('🔎 Zoeken naar medewerkers', ['zoekterm' => $zoekterm]);
+            
+            $medewerkers = User::where('role', '!=', 'klant')
+                ->where(function($query) use ($zoekterm) {
+                    $query->where('name', 'like', '%' . $zoekterm . '%')
+                          ->orWhere('voornaam', 'like', '%' . $zoekterm . '%')
+                          ->orWhere('email', 'like', '%' . $zoekterm . '%');
+                })
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            \Log::info('✅ Zoekresultaten gevonden', ['aantal' => $medewerkers->count()]);
+        } else {
+            $medewerkers = User::where('role', '!=', 'klant')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
         
         return view('medewerkers.index', compact('medewerkers'));
     }

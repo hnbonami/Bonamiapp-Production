@@ -77,17 +77,30 @@ class KlantController extends Controller
         
         return redirect()->route('klanten.show', $klant)->with('success', 'Klant succesvol bijgewerkt!');
     }
-    public function index()
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
     {
-        $zoek = request('zoek');
-        $klanten = Klant::query();
-        if ($zoek) {
-            $klanten = $klanten->where(function($query) use ($zoek) {
-                $query->where('naam', 'like', "%$zoek%")
-                      ->orWhere('voornaam', 'like', "%$zoek%");
-            });
+        \Log::info('🔍 ROUTE REGISTERED: klanten using KlantController');
+        
+        // Zoekfunctionaliteit
+        $zoekterm = $request->input('zoek');
+        
+        if ($zoekterm) {
+            \Log::info('🔎 Zoeken naar klanten', ['zoekterm' => $zoekterm]);
+            
+            $klanten = Klant::where(function($query) use ($zoekterm) {
+                $query->where('naam', 'like', '%' . $zoekterm . '%')
+                      ->orWhere('voornaam', 'like', '%' . $zoekterm . '%')
+                      ->orWhere('email', 'like', '%' . $zoekterm . '%');
+            })->orderBy('created_at', 'desc')->get();
+            
+            \Log::info('✅ Zoekresultaten gevonden', ['aantal' => $klanten->count()]);
+        } else {
+            $klanten = Klant::orderBy('created_at', 'desc')->get();
         }
-        $klanten = $klanten->get();
+        
         return view('klanten.index', compact('klanten'));
     }
 

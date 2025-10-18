@@ -46,10 +46,28 @@
 
     <!-- Search Bar - compact zoals klanten -->
     <div style="display:flex;gap:0.7em;align-items:center;margin:1.2em 0;">
-        <form method="GET" action="" id="zoekForm" style="display:inline-flex;align-items:center;gap:0.3em;margin-left:auto;">
-            <input type="text" name="zoek" id="zoekMedewerker" value="{{ request('zoek') }}" placeholder="Zoek medewerker..." style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:160px;box-shadow:0 1px 3px #f3f4f6;" />
-        </form>
+        <input 
+            type="text" 
+            id="searchMedewerkers" 
+            placeholder="Zoek medewerker..." 
+            value="{{ request('zoek') }}"
+            style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:180px;box-shadow:0 1px 3px #f3f4f6;margin-left:auto;" 
+            autocomplete="off"
+        />
     </div>
+    
+    <script>
+    // Simple search - gewoon client-side filtering
+    document.getElementById('searchMedewerkers').addEventListener('input', function(e) {
+        const zoekterm = e.target.value.toLowerCase();
+        const rijen = document.querySelectorAll('#medewerkersTableBody tr');
+        
+        rijen.forEach(rij => {
+            const tekst = rij.textContent.toLowerCase();
+            rij.style.display = tekst.includes(zoekterm) ? '' : 'none';
+        });
+    });
+    </script>
 
     <!-- Medewerkers Table -->
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
@@ -212,14 +230,41 @@
 <!-- JavaScript voor zoekfunctionaliteit - exact zoals klanten -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const zoekInput = document.getElementById('zoekMedewerker');
+    const zoekInput = document.getElementById('zoekInputMedewerkers');
+    const zoekForm = document.getElementById('zoekFormMedewerkers');
     let timeout = null;
-    if (zoekInput) {
-        zoekInput.addEventListener('input', function() {
+    
+    console.log('🔍 Medewerkers zoekfunctie actief', {
+        input: zoekInput ? 'found' : 'NOT FOUND',
+        form: zoekForm ? 'found' : 'NOT FOUND',
+        formAction: zoekForm ? zoekForm.action : 'N/A'
+    });
+    
+    if (zoekInput && zoekForm) {
+        zoekInput.addEventListener('input', function(e) {
             clearTimeout(timeout);
+            const zoekwaarde = this.value.trim();
+            console.log('⌨️ Input event fired:', zoekwaarde);
+            
             timeout = setTimeout(function() {
-                document.getElementById('zoekForm').submit();
+                console.log('📤 Submitting form to:', zoekForm.action);
+                console.log('📝 Form method:', zoekForm.method);
+                console.log('🔑 Search value:', zoekwaarde);
+                
+                // Force submit
+                zoekForm.submit();
+                console.log('✅ Submit called');
             }, 400);
+        });
+        
+        // Test om te zien of form submit überhaupt werkt
+        zoekForm.addEventListener('submit', function(e) {
+            console.log('🚀 Form submit event triggered!');
+        });
+    } else {
+        console.error('❌ Zoek elementen niet gevonden!', {
+            inputExists: !!zoekInput,
+            formExists: !!zoekForm
         });
     }
 });
