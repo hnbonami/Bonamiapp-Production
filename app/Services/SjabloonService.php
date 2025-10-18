@@ -9,9 +9,9 @@ use App\Services\BikefitCalculator;
 class SjabloonService
 {
     /**
-     * Vervang placeholders in HTML op basis van de meegegeven bikefit/klant.
+     * Vervang placeholders in HTML op basis van de meegegeven bikefit/klant/inspanningstest.
      */
-    public function vervangSleutels(string $html, ?Bikefit $bikefit = null, ?Klant $klant = null): string
+    public function vervangSleutels(string $html, ?Bikefit $bikefit = null, ?Klant $klant = null, $inspanningstest = null): string
     {
         // Vervang basis klant gegevens
         if ($klant) {
@@ -19,6 +19,61 @@ class SjabloonService
             $html = str_replace('$Voornaam$', $klant->voornaam ?? '', $html);
             $html = str_replace('$Email$', $klant->email ?? '', $html);
             $html = str_replace('$Telefoon$', $klant->telefoon ?? '', $html);
+            
+            // Nieuwe sleutels voor klant
+            $html = str_replace('{{klant.naam}}', $klant->naam ?? '', $html);
+            $html = str_replace('{{klant.voornaam}}', $klant->voornaam ?? '', $html);
+            $html = str_replace('{{klant.email}}', $klant->email ?? '', $html);
+            $html = str_replace('{{klant.telefoon}}', $klant->telefoon ?? '', $html);
+        }
+        
+        // Vervang inspanningstest gegevens
+        if ($inspanningstest) {
+            // Datum - BELANGRIJK: format correct
+            $testdatum = '';
+            if (isset($inspanningstest->testdatum)) {
+                $testdatum = \Carbon\Carbon::parse($inspanningstest->testdatum)->format('d-m-Y');
+            } elseif (isset($inspanningstest->datum)) {
+                $testdatum = \Carbon\Carbon::parse($inspanningstest->datum)->format('d-m-Y');
+            }
+            
+            $html = str_replace('{{inspanningstest.testdatum}}', $testdatum, $html);
+            $html = str_replace('{{inspanningstest.datum}}', $testdatum, $html);
+            
+            // Basis velden
+            $html = str_replace('{{inspanningstest.testtype}}', $inspanningstest->testtype ?? '', $html);
+            $html = str_replace('{{inspanningstest.testlocatie}}', $inspanningstest->testlocatie ?? 'Bonami sportmedisch centrum', $html);
+            $html = str_replace('{{inspanningstest.protocol}}', $inspanningstest->protocol ?? '', $html);
+            $html = str_replace('{{inspanningstest.weersomstandigheden}}', $inspanningstest->weersomstandigheden ?? '', $html);
+            $html = str_replace('{{inspanningstest.specifieke_doelstellingen}}', $inspanningstest->specifieke_doelstellingen ?? '', $html);
+            
+            // Lichaamsmetingen
+            $html = str_replace('{{inspanningstest.lichaamslengte}}', $inspanningstest->lichaamslengte_cm ?? '', $html);
+            $html = str_replace('{{inspanningstest.lichaamsgewicht}}', $inspanningstest->lichaamsgewicht_kg ?? '', $html);
+            $html = str_replace('{{inspanningstest.bmi}}', $inspanningstest->bmi ?? '', $html);
+            $html = str_replace('{{inspanningstest.vetpercentage}}', $inspanningstest->vetpercentage ?? '', $html);
+            $html = str_replace('{{inspanningstest.buikomtrek}}', $inspanningstest->buikomtrek_cm ?? '', $html);
+            
+            // Hartslag
+            $html = str_replace('{{inspanningstest.hartslag_rust}}', $inspanningstest->hartslag_rust_bpm ?? '', $html);
+            $html = str_replace('{{inspanningstest.hartslag_max}}', $inspanningstest->maximale_hartslag_bpm ?? '', $html);
+            
+            // Drempelwaarden
+            $html = str_replace('{{inspanningstest.aerobe_drempel_vermogen}}', $inspanningstest->aerobe_drempel_vermogen ?? '', $html);
+            $html = str_replace('{{inspanningstest.aerobe_drempel_hartslag}}', $inspanningstest->aerobe_drempel_hartslag ?? '', $html);
+            $html = str_replace('{{inspanningstest.anaerobe_drempel_vermogen}}', $inspanningstest->anaerobe_drempel_vermogen ?? '', $html);
+            $html = str_replace('{{inspanningstest.anaerobe_drempel_hartslag}}', $inspanningstest->anaerobe_drempel_hartslag ?? '', $html);
+            
+            // Trainingstatus
+            $html = str_replace('{{inspanningstest.slaapkwaliteit}}', $inspanningstest->slaapkwaliteit ?? '', $html);
+            $html = str_replace('{{inspanningstest.eetlust}}', $inspanningstest->eetlust ?? '', $html);
+            $html = str_replace('{{inspanningstest.gevoel_op_training}}', $inspanningstest->gevoel_op_training ?? '', $html);
+            $html = str_replace('{{inspanningstest.stressniveau}}', $inspanningstest->stressniveau ?? '', $html);
+            $html = str_replace('{{inspanningstest.gemiddelde_trainingstatus}}', $inspanningstest->gemiddelde_trainingstatus ?? '', $html);
+            
+            // Training voor test
+            $html = str_replace('{{inspanningstest.training_dag_voor_test}}', $inspanningstest->training_dag_voor_test ?? '', $html);
+            $html = str_replace('{{inspanningstest.training_2d_voor_test}}', $inspanningstest->training_2d_voor_test ?? '', $html);
         }
 
         // Vervang bikefit gegevens

@@ -8,7 +8,7 @@
         line-height: 1.5;
         color: #1f2937;
         margin: 15px 0;
-        width: 120%;
+        width: 130%;
     }
     
     .rapport-ai-deel1 h3 {

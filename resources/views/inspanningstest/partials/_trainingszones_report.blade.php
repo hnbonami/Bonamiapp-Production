@@ -30,13 +30,14 @@
     }
     
     .rapport-trainingszones h3 {
-        font-size: 14px;
+        font-size: 16px;
         font-weight: 700;
         color: #0f4c75;
         margin: 15px 0 10px 0;
         padding: 8px 10px;
         background-color: #c8e1eb;
         border-left: 4px solid #c8e1eb;
+        border-radius: 8px;
     }
     
     .trainingszones-table {
@@ -102,13 +103,14 @@
         padding: 10px 12px;
         background: #fcf7e7ff;
         border-left: 4px solid #f6c877ff;
-        font-size: 9px;
-        line-height: 1.5;
+        font-size: 11px;
+        line-height: 1.6;
         color: #78350f;
+        border-radius: 8px;
     }
     
     .rapport-zones-uitleg h4 {
-        font-size: 10px;
+        font-size: 12px;
         font-weight: 700;
         color: #92400e;
         margin: 0 0 6px 0;
@@ -152,7 +154,7 @@
 
 <div class="rapport-trainingszones">
     <h3>🎯 Trainingszones</h3>
-    <p style="font-size: 10px; color: #6b7280; margin: 8px 0;">Persoonlijke trainingszones op basis van gemeten drempelwaarden</p>
+    <p style="font-size: 12px; color: #6b7280; margin: 8px 0;">Persoonlijke trainingszones op basis van gemeten drempelwaarden</p>
     
     @if(count($trainingszones) > 0)
         <table class="trainingszones-table">
@@ -335,8 +337,8 @@
         </div>
         
     @else
-        <div style="text-align: center; padding: 20px; background: #fef3c7; border-radius: 4px;">
-            <p style="color: #92400e; font-size: 10px;">⚠️ Geen trainingszones beschikbaar</p>
+        <div style="text-align: center; padding: 20px; background: #fef3c7; border-radius: 8px;">
+            <p style="color: #92400e; font-size: 12px;">⚠️ Geen trainingszones beschikbaar</p>
         </div>
     @endif
 </div>

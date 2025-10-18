@@ -918,27 +918,17 @@ class SjablonenController extends Controller
                 // Replace template variables with real inspanningstest data
                 $content = $page->content ?? '<p>Geen content</p>';
                 
-                // Klant data
-                if ($inspanningstest->klant) {
-                    $content = str_replace('{{klant.naam}}', $inspanningstest->klant->naam ?? '', $content);
-                    $content = str_replace('{{klant.voornaam}}', $inspanningstest->klant->voornaam ?? '', $content);
-                    $content = str_replace('{{klant.email}}', $inspanningstest->klant->email ?? '', $content);
-                    $content = str_replace('{{klant.telefoonnummer}}', $inspanningstest->klant->telefoonnummer ?? '', $content);
-                    $content = str_replace('{{klant.geboortedatum}}', $inspanningstest->klant->geboortedatum ?? '', $content);
-                    $content = str_replace('{{klant.geslacht}}', $inspanningstest->klant->geslacht ?? '', $content);
-                    $content = str_replace('{{klant.straatnaam}}', $inspanningstest->klant->straatnaam ?? '', $content);
-                    $content = str_replace('{{klant.huisnummer}}', $inspanningstest->klant->huisnummer ?? '', $content);
-                    $content = str_replace('{{klant.postcode}}', $inspanningstest->klant->postcode ?? '', $content);
-                    $content = str_replace('{{klant.stad}}', $inspanningstest->klant->stad ?? '', $content);
-                    $content = str_replace('{{klant.sport}}', $inspanningstest->klant->sport ?? '', $content);
-                    $content = str_replace('{{klant.niveau}}', $inspanningstest->klant->niveau ?? '', $content);
-                    $content = str_replace('{{klant.club}}', $inspanningstest->klant->club ?? '', $content);
-                    $content = str_replace('{{klant.herkomst}}', $inspanningstest->klant->herkomst ?? '', $content);
-                    $content = str_replace('{{klant.status}}', $inspanningstest->klant->status ?? '', $content);
-                }
+                // ✅ GEBRUIK SJABLOONSERVICE VOOR PLACEHOLDER REPLACEMENT
+                $sjabloonService = new \App\Services\SjabloonService();
+                $content = $sjabloonService->vervangSleutels(
+                    $content, 
+                    null, // geen bikefit
+                    $inspanningstest->klant, // klant
+                    $inspanningstest // inspanningstest!
+                );
                 
-                // Alle Inspanningstest data - COMPLEET
-                $content = str_replace('{{test.testdatum}}', $inspanningstest->testdatum ?? '', $content);
+                // Legacy {{test.*}} placeholders voor backward compatibility
+                $content = str_replace('{{test.testdatum}}', $inspanningstest->datum ? \Carbon\Carbon::parse($inspanningstest->datum)->format('d-m-Y') : '', $content);
                 $content = str_replace('{{test.testtype}}', $inspanningstest->testtype ?? '', $content);
                 $content = str_replace('{{test.specifieke_doelstellingen}}', $inspanningstest->specifieke_doelstellingen ?? '', $content);
                 $content = str_replace('{{test.lichaamslengte_cm}}', $inspanningstest->lichaamslengte_cm ?? '', $content);
