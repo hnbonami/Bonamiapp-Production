@@ -354,7 +354,7 @@
                 </a>
             @endif
             
-            @if(Auth::user() && Auth::user()->role !== 'klant')
+            @if(Auth::user() && Auth::user()->role === 'admin')
                 <a href="/instagram" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('instagram*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Instagram
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\InstagramPost::count() }}</span>
@@ -445,7 +445,7 @@
             <!-- Beheer-tabblad helemaal onderaan -->
             @if(Auth::user() && Auth::user()->role === 'admin')
             @endif
-                @if(Auth::user() && Auth::user()->role !== 'klant')
+                @if(Auth::user() && Auth::user()->role === 'admin')
                 <!-- Instagram -->
                 <a href="/instagram" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('instagram*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('instagram*') ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('instagram*'))
