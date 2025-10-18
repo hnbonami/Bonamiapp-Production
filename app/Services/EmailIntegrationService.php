@@ -1080,7 +1080,7 @@ class EmailIntegrationService
                     'recipient_email' => $referringCustomer->email,
                     'recipient_name' => $referringCustomer->voornaam . ' ' . $referringCustomer->naam,
                     'subject' => $subject,
-                    'body_html' => $body,
+                    'body_html' => $body ?? '', // 🔥 FIX: body_html is verplicht
                     'email_template_id' => $template->id,
                     'trigger_name' => 'referral_thank_you',
                     'status' => 'sent',
@@ -1097,7 +1097,7 @@ class EmailIntegrationService
                         'recipient_email' => $referringCustomer->email,
                         'recipient_name' => $referringCustomer->voornaam . ' ' . $referringCustomer->naam,
                         'subject' => $subject,
-                        'body_html' => $body ?? '',
+                        'body_html' => $body ?? '', // 🔥 FIX: body_html is verplicht
                         'email_template_id' => $template->id,
                         'trigger_name' => 'referral_thank_you',
                         'status' => 'sent',
