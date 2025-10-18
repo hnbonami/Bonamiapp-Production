@@ -578,11 +578,57 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3 class="text-xl font-bold mt-8 mb-4">Trainingszones Berekening</h3>
                     
                     <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
-                        <p class="text-blue-800 text-sm">
-                            🏃‍♂️ <strong>Automatische Zones:</strong> Kies een wetenschappelijke methode om trainingszones te berekenen op basis van je gemeten drempels.
-                            De zones worden live bijgewerkt wanneer je de configuratie wijzigt.
-                        </p>
+                        <div class="flex items-center justify-between gap-4">
+                            <p class="text-blue-800 text-sm flex-1">
+                                🏃‍♂️ <strong>Automatische Zones:</strong> Kies een wetenschappelijke methode om trainingszones te berekenen op basis van je gemeten drempels.
+                                De zones worden live bijgewerkt wanneer je de configuratie wijzigt.
+                            </p>
+                            <button type="button" 
+                                    id="herbereken-zones-btn"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm whitespace-nowrap flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Zones Updaten
+                            </button>
+                        </div>
                     </div>
+
+                    <script>
+                        // Veilige knop handler voor zones updaten
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const herberekeBtn = document.getElementById('herbereken-zones-btn');
+                            
+                            if (herberekeBtn) {
+                                herberekeBtn.addEventListener('click', function() {
+                                    console.log('🔄 Zones Updaten knop geklikt');
+                                    
+                                    // Check of updateTrainingszones functie bestaat
+                                    if (typeof updateTrainingszones === 'function') {
+                                        console.log('✅ updateTrainingszones functie gevonden, uitvoeren...');
+                                        
+                                        // Voer bestaande functie uit
+                                        updateTrainingszones();
+                                        
+                                        // Toon feedback
+                                        herberekeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Bijgewerkt!';
+                                        herberekeBtn.classList.add('bg-green-600');
+                                        herberekeBtn.classList.remove('bg-blue-600');
+                                        
+                                        // Reset na 2 seconden
+                                        setTimeout(() => {
+                                            herberekeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> Zones Updaten';
+                                            herberekeBtn.classList.remove('bg-green-600');
+                                            herberekeBtn.classList.add('bg-blue-600');
+                                        }, 2000);
+                                    } else {
+                                        console.warn('⚠️ updateTrainingszones functie niet gevonden');
+                                        alert('Selecteer eerst een berekenings methode voor de trainingszones.');
+                                    }
+                                });
+                            }
+                        });
+                    </script>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div class="mb-4">
