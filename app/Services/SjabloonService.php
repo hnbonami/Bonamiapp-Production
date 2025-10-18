@@ -197,6 +197,14 @@ class SjabloonService
                     $html = str_replace('{{INSPANNINGSTEST_TRAININGSZONES}}', $partialHtml, $html);
                 }
                 
+                // 5b. ZONES alias (backward compatibility)
+                if (strpos($html, '{{INSPANNINGSTEST_ZONES}}') !== false) {
+                    $partialHtml = view('inspanningstest.partials._trainingszones_report', [
+                        'inspanningstest' => $inspanningstestCopy
+                    ])->render();
+                    $html = str_replace('{{INSPANNINGSTEST_ZONES}}', $partialHtml, $html);
+                }
+                
                 // 6. Drempelwaarden overzicht
                 if (strpos($html, '{{INSPANNINGSTEST_DREMPELS}}') !== false) {
                     $partialHtml = view('inspanningstest.partials._drempelwaarden_overzicht_report', [
