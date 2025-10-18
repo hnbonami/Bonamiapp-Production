@@ -76,10 +76,102 @@ class SjablonenController extends Controller
             $sjabloon->load('pages');
         }
         
-        // Get template keys from database - alle beschikbare velden
-        $templateKeys = \App\Models\TemplateKey::all()->groupBy('category');
-
-        return view('sjablonen.edit', ['sjabloon' => $sjabloon, 'templateKeys' => $templateKeys]);
+        // Get template keys for the sidebar - alleen werkende database velden
+        $templateKeys = collect([
+            'klant' => [
+                (object)['placeholder' => '{{klant.voornaam}}', 'display_name' => 'Voornaam'],
+                (object)['placeholder' => '{{klant.naam}}', 'display_name' => 'Naam'],
+                (object)['placeholder' => '{{klant.email}}', 'display_name' => 'E-mailadres'],
+                (object)['placeholder' => '{{klant.telefoonnummer}}', 'display_name' => 'Telefoonnummer'],
+                (object)['placeholder' => '{{klant.geboortedatum}}', 'display_name' => 'Geboortedatum'],
+                (object)['placeholder' => '{{klant.geslacht}}', 'display_name' => 'Geslacht'],
+                (object)['placeholder' => '{{klant.straatnaam}}', 'display_name' => 'Straatnaam'],
+                (object)['placeholder' => '{{klant.huisnummer}}', 'display_name' => 'Huisnummer'],
+                (object)['placeholder' => '{{klant.postcode}}', 'display_name' => 'Postcode'],
+                (object)['placeholder' => '{{klant.stad}}', 'display_name' => 'Stad'],
+                (object)['placeholder' => '{{klant.sport}}', 'display_name' => 'Sport'],
+                (object)['placeholder' => '{{klant.niveau}}', 'display_name' => 'Niveau'],
+                (object)['placeholder' => '{{klant.club}}', 'display_name' => 'Club / Ploeg'],
+                (object)['placeholder' => '{{klant.herkomst}}', 'display_name' => 'Herkomst'],
+                (object)['placeholder' => '{{klant.status}}', 'display_name' => 'Status'],
+            ],
+            'bikefit' => [
+                (object)['placeholder' => '{{bikefit.datum}}', 'display_name' => 'Bikefit Datum'],
+                (object)['placeholder' => '{{bikefit.fietsmerk}}', 'display_name' => 'Fiets Merk'],
+                (object)['placeholder' => '{{bikefit.fiets_type}}', 'display_name' => 'Fiets Type'],
+                (object)['placeholder' => '{{bikefit.kadermaat}}', 'display_name' => 'Kadermaat'],
+                (object)['placeholder' => '{{bikefit.algemene_klachten}}', 'display_name' => 'Algemene Klachten'],
+                (object)['placeholder' => '{{bikefit.ervaring_fiets}}', 'display_name' => 'Ervaring met Fiets'],
+                (object)['placeholder' => '{{bikefit.doelstellingen}}', 'display_name' => 'Doelstellingen'],
+                (object)['placeholder' => '{{bikefit.huidige_positie_opmerkingen}}', 'display_name' => 'Huidige Positie Opmerkingen'],
+                (object)['placeholder' => '{{bikefit.zadel_trapas_hoek}}', 'display_name' => 'Zadel-trapas hoek (graden)'],
+                (object)['placeholder' => '{{bikefit.zadel_trapas_afstand}}', 'display_name' => 'Zadel-trapas afstand (cm)'],
+                (object)['placeholder' => '{{bikefit.stuur_trapas_hoek}}', 'display_name' => 'Stuur-trapas hoek (graden)'],
+                (object)['placeholder' => '{{bikefit.stuur_trapas_afstand}}', 'display_name' => 'Stuur-trapas afstand (cm)'],
+                (object)['placeholder' => '{{bikefit.zadel_lengte}}', 'display_name' => 'Zadel lengte (cm)'],
+                (object)['placeholder' => '{{bikefit.beenlengteverschil}}', 'display_name' => 'Beenlengteverschil'],
+                (object)['placeholder' => '{{bikefit.beenlengteverschil_cm}}', 'display_name' => 'Beenlengteverschil (cm)'],
+                (object)['placeholder' => '{{bikefit.lengte}}', 'display_name' => 'Lengte (cm)'],
+                (object)['placeholder' => '{{bikefit.binnenbeenlengte}}', 'display_name' => 'Binnenbeenlengte (cm)'],
+                (object)['placeholder' => '{{bikefit.armlengte}}', 'display_name' => 'Armlengte (cm)'],
+                (object)['placeholder' => '{{bikefit.romplengte}}', 'display_name' => 'Romplengte (cm)'],
+                (object)['placeholder' => '{{bikefit.schouderbreedte}}', 'display_name' => 'Schouderbreedte (cm)'],
+                (object)['placeholder' => '{{bikefit.aanpassing_zadel}}', 'display_name' => 'Aanpassing zadel (cm)'],
+                (object)['placeholder' => '{{bikefit.aanpassing_setback}}', 'display_name' => 'Aanpassing setback (cm)'],
+                (object)['placeholder' => '{{bikefit.aanpassing_reach}}', 'display_name' => 'Aanpassing reach (cm)'],
+                (object)['placeholder' => '{{bikefit.aanpassing_drop}}', 'display_name' => 'Aanpassing drop (cm)'],
+                (object)['placeholder' => '{{bikefit.aanpassing_stuurpen}}', 'display_name' => 'Aanpassing stuurpen (cm)'],
+                (object)['placeholder' => '{{bikefit.schoenmaat}}', 'display_name' => 'Schoenmaat'],
+                (object)['placeholder' => '{{bikefit.voetbreedte}}', 'display_name' => 'Voetbreedte (cm)'],
+                (object)['placeholder' => '{{bikefit.steunzolen}}', 'display_name' => 'Steunzolen'],
+                (object)['placeholder' => '{{bikefit.steunzolen_reden}}', 'display_name' => 'Steunzolen Reden'],
+                (object)['placeholder' => '{{bikefit.aerobe_drempel}}', 'display_name' => 'Aërobe Drempel'],
+                (object)['placeholder' => '{{bikefit.anaerobe_drempel}}', 'display_name' => 'Anaërobe Drempel'],
+                (object)['placeholder' => '{{bikefit.conclusie}}', 'display_name' => 'Conclusie'],
+                (object)['placeholder' => '{{bikefit.aanbevelingen}}', 'display_name' => 'Aanbevelingen'],
+                (object)['placeholder' => '{{bikefit.opmerkingen}}', 'display_name' => 'Opmerkingen'],
+                (object)['placeholder' => '{{bikefit.follow_up}}', 'display_name' => 'Follow-up'],
+            ],
+            'inspanningstest' => [
+                (object)['placeholder' => '{{test.testdatum}}', 'display_name' => 'Testdatum'],
+                (object)['placeholder' => '{{test.testtype}}', 'display_name' => 'Testtype'],
+                (object)['placeholder' => '{{test.specifieke_doelstellingen}}', 'display_name' => 'Specifieke doelstellingen'],
+                (object)['placeholder' => '{{test.lichaamslengte_cm}}', 'display_name' => 'Lengte (cm)'],
+                (object)['placeholder' => '{{test.lichaamsgewicht_kg}}', 'display_name' => 'Gewicht (kg)'],
+                (object)['placeholder' => '{{test.bmi}}', 'display_name' => 'BMI'],
+                (object)['placeholder' => '{{test.hartslag_rust_bpm}}', 'display_name' => 'Hartslag rust (bpm)'],
+                (object)['placeholder' => '{{test.maximale_hartslag_bpm}}', 'display_name' => 'Hartslag max (bpm)'],
+                (object)['placeholder' => '{{test.buikomtrek_cm}}', 'display_name' => 'Buikomtrek (cm)'],
+                (object)['placeholder' => '{{test.testlocatie}}', 'display_name' => 'Testlocatie'],
+                (object)['placeholder' => '{{test.protocol}}', 'display_name' => 'Protocol'],
+                (object)['placeholder' => '{{test.startwattage}}', 'display_name' => 'Start wattage'],
+                (object)['placeholder' => '{{test.stappen_min}}', 'display_name' => 'Stappen (minuten)'],
+                (object)['placeholder' => '{{test.stappen_watt}}', 'display_name' => 'Stappen (watt)'],
+                (object)['placeholder' => '{{test.weersomstandigheden}}', 'display_name' => 'Weersomstandigheden'],
+                (object)['placeholder' => '{{test.analyse_methode}}', 'display_name' => 'Analyse methode'],
+                (object)['placeholder' => '{{test.aerobe_drempel_vermogen}}', 'display_name' => 'Aërobe drempel - Vermogen (W)'],
+                (object)['placeholder' => '{{test.aerobe_drempel_hartslag}}', 'display_name' => 'Aërobe drempel - Hartslag (bpm)'],
+                (object)['placeholder' => '{{test.anaerobe_drempel_vermogen}}', 'display_name' => 'Anaërobe drempel - Vermogen (W)'],
+                (object)['placeholder' => '{{test.anaerobe_drempel_hartslag}}', 'display_name' => 'Anaërobe drempel - Hartslag (bpm)'],
+                (object)['placeholder' => '{{test.besluit_lichaamssamenstelling}}', 'display_name' => 'Besluit Lichaamssamenstelling'],
+                (object)['placeholder' => '{{test.advies_aerobe_drempel}}', 'display_name' => 'Advies Aërobe Drempel'],
+                (object)['placeholder' => '{{test.advies_anaerobe_drempel}}', 'display_name' => 'Advies Anaërobe Drempel'],
+            ],
+            'systeem' => [
+                (object)['placeholder' => '{{datum.vandaag}}', 'display_name' => 'Datum Vandaag'],
+                (object)['placeholder' => '{{datum.jaar}}', 'display_name' => 'Huidig Jaar'],
+            ],
+            'bikefit_html_componenten' => [
+                (object)['placeholder' => '$ResultatenVoor$', 'display_name' => 'Bikefit Resultaten VOOR (HTML Tabel)'],
+                (object)['placeholder' => '$ResultatenNa$', 'display_name' => 'Bikefit Resultaten NA (HTML Tabel)'],
+                (object)['placeholder' => '$Bikefit.prognose_zitpositie_html$', 'display_name' => 'Prognose Zitpositie (Schema + Tabel)'],
+                (object)['placeholder' => '$MobiliteitTabel$', 'display_name' => 'Mobiliteit Resultaten (HTML Tabel)'],
+                (object)['placeholder' => '$mobiliteitklant$', 'display_name' => 'Mobiliteit Klant Tabel (Gekleurde Balken)'],
+                (object)['placeholder' => '$Bikefit.body_measurements_block_html$', 'display_name' => 'Lichaamsmaten Blok (HTML)'],
+            ]
+        ]);
+        
+        return view('sjablonen.edit', compact('sjabloon', 'templateKeys'));
     }
 
     /**
@@ -346,7 +438,7 @@ class SjablonenController extends Controller
             }
         }
         
-        // Debug: Log hoe veel pagina's we naar de view sturen
+        // Debug: Log hoe veel pagina's we sturen naar de view
         \Log::info("Sending " . count($generatedPages) . " pages to view");
         
         return view('sjablonen.generated-report', [
@@ -632,27 +724,21 @@ class SjablonenController extends Controller
     }
 
     /**
-     * Generate inspanningstest report using sjabloon (EXACT zoals bikefit)
+     * Generate report for inspanningstest using matching sjabloon
      */
     public function generateInspanningstestReport($inspanningstestId)
     {
         try {
+            \Log::info('🏃 Generating inspanningstest report', ['test_id' => $inspanningstestId]);
+            
             // Haal inspanningstest op
             $inspanningstest = \App\Models\Inspanningstest::with('klant')->findOrFail($inspanningstestId);
-            
-            \Log::info('🏃 Generating inspanningstest report', [
-                'test_id' => $inspanningstest->id,
-                'testtype' => $inspanningstest->testtype,
-                'klant' => $inspanningstest->klant->naam
-            ]);
             
             // Zoek matching sjabloon
             $template = \App\Helpers\SjabloonHelper::findMatchingTemplate($inspanningstest->testtype, 'inspanningstest');
             
             if (!$template) {
-                \Log::warning('❌ No matching template found', [
-                    'testtype' => $inspanningstest->testtype
-                ]);
+                \Log::warning('❌ No matching template found', ['testtype' => $inspanningstest->testtype]);
                 return redirect()->route('inspanningstest.results', [
                     'klant' => $inspanningstest->klant_id,
                     'test' => $inspanningstest->id
@@ -662,12 +748,9 @@ class SjablonenController extends Controller
             // Genereer pagina's met vervangen placeholders
             $generatedPages = $this->generatePagesForInspanningstest($template, $inspanningstest);
             
-            \Log::info('✅ Generated pages', [
-                'page_count' => count($generatedPages),
-                'template' => $template->naam
-            ]);
+            \Log::info('✅ Generated inspanningstest pages', ['page_count' => count($generatedPages)]);
             
-            // Return de generated-report view (dezelfde als bikefit)
+            // Return de generated-report view
             return view('sjablonen.generated-report', [
                 'template' => $template,
                 'generatedPages' => $generatedPages,
@@ -681,22 +764,15 @@ class SjablonenController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return redirect()->route('inspanningstest.results', [
-                'klant' => $inspanningstest->klant_id,
-                'test' => $inspanningstest->id
-            ])->with('error', 'Fout bij genereren rapport: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Fout bij genereren rapport: ' . $e->getMessage());
         }
     }
-
+    
     /**
      * Generate pages for bikefit with real data
      */
     private function generatePagesForBikefit($sjabloon, $bikefit)
     {
-        \Log::info("🔥 generatePagesForBikefit CALLED", [
-            "bikefit_id" => $bikefit->id ?? "unknown",
-            "rotatie_aanpassingen_value" => $bikefit->rotatie_aanpassingen ?? "EMPTY_OR_NULL"
-        ]);
         // Bereken eerst de results
         $bikefitCalculator = new \App\Services\BikefitCalculator();
         $results = $bikefitCalculator->calculate($bikefit);
@@ -770,84 +846,7 @@ class SjablonenController extends Controller
                 $content = str_replace('{{bikefit.conclusie}}', $bikefit->conclusie ?? '', $content);
                 $content = str_replace('{{bikefit.aanbevelingen}}', $bikefit->aanbevelingen ?? '', $content);
                 $content = str_replace('{{bikefit.opmerkingen}}', $bikefit->opmerkingen ?? '', $content);
-                \Log::info('🔥 WORKING REPLACEMENT EXECUTED', ['opmerkingen' => $bikefit->opmerkingen ?? 'EMPTY']);
                 $content = str_replace('{{bikefit.follow_up}}', $bikefit->follow_up ?? '', $content);
-                
-                // Nieuwe bikefit velden toegevoegd - aanpassingen
-                $content = str_replace('{{bikefit.aanpassingen_zadel}}', $bikefit->aanpassingen_zadel ?? '', $content);
-                $content = str_replace('{{bikefit.aanpassingen_setback}}', $bikefit->aanpassingen_setback ?? '', $content);
-                $content = str_replace('{{bikefit.aanpassingen_reach}}', $bikefit->aanpassingen_reach ?? '', $content);
-                $content = str_replace('{{bikefit.aanpassingen_drop}}', $bikefit->aanpassingen_drop ?? '', $content);
-                $content = str_replace('{{bikefit.aanpassingen_stuurpen_aan}}', $bikefit->aanpassingen_stuurpen_aan ?? '', $content);
-                $content = str_replace('{{bikefit.aanpassingen_stuurpen_pre}}', $bikefit->aanpassingen_stuurpen_pre ?? '', $content);
-                $content = str_replace('{{bikefit.aanpassingen_stuurpen_post}}', $bikefit->aanpassingen_stuurpen_post ?? '', $content);
-                $content = str_replace('{{bikefit.rotatie_aanpassingen}}', $bikefit->rotatie_aanpassingen ?? '', $content);
-                \Log::info('🔥 NEW REPLACEMENT EXECUTED', ['rotatie_aanpassingen' => $bikefit->rotatie_aanpassingen ?? 'EMPTY']);
-                $content = str_replace('{{bikefit.inclinatie_aanpassingen}}', $bikefit->inclinatie_aanpassingen ?? '', $content);
-                $content = str_replace('{{bikefit.ophoging_li}}', $bikefit->ophoging_li ?? '', $content);
-                $content = str_replace('{{bikefit.ophoging_re}}', $bikefit->ophoging_re ?? '', $content);
-                $content = str_replace('{{bikefit.type_fitting}}', $bikefit->type_fitting ?? '', $content);
-                $content = str_replace('{{bikefit.bouwjaar}}', $bikefit->bouwjaar ?? '', $content);
-                $content = str_replace('{{bikefit.type_fiets}}', $bikefit->type_fiets ?? '', $content);
-                $content = str_replace('{{bikefit.frametype}}', $bikefit->frametype ?? '', $content);
-                $content = str_replace('{{bikefit.armlengte_cm}}', $bikefit->armlengte_cm ?? '', $content);
-                $content = str_replace('{{bikefit.romplengte_cm}}', $bikefit->romplengte_cm ?? '', $content);
-                $content = str_replace('{{bikefit.schouderbreedte_cm}}', $bikefit->schouderbreedte_cm ?? '', $content);
-                $content = str_replace('{{bikefit.zadel_lengte_center_top}}', $bikefit->zadel_lengte_center_top ?? '', $content);
-                $content = str_replace('{{bikefit.type_zadel}}', $bikefit->type_zadel ?? '', $content);
-                $content = str_replace('{{bikefit.zadeltil}}', $bikefit->zadeltil ?? '', $content);
-                $content = str_replace('{{bikefit.zadelbreedte}}', $bikefit->zadelbreedte ?? '', $content);
-                $content = str_replace('{{bikefit.nieuw_testzadel}}', $bikefit->nieuw_testzadel ?? '', $content);
-                $content = str_replace('{{bikefit.lenigheid_hamstrings}}', $bikefit->lenigheid_hamstrings ?? '', $content);
-                $content = str_replace('{{bikefit.voetpositie}}', $bikefit->voetpositie ?? '', $content);
-                $content = str_replace('{{bikefit.straight_leg_raise_links}}', $bikefit->straight_leg_raise_links ?? '', $content);
-                $content = str_replace('{{bikefit.straight_leg_raise_rechts}}', $bikefit->straight_leg_raise_rechts ?? '', $content);
-                $content = str_replace('{{bikefit.knieflexie_links}}', $bikefit->knieflexie_links ?? '', $content);
-                $content = str_replace('{{bikefit.knieflexie_rechts}}', $bikefit->knieflexie_rechts ?? '', $content);
-                $content = str_replace('{{bikefit.heup_endorotatie_links}}', $bikefit->heup_endorotatie_links ?? '', $content);
-                $content = str_replace('{{bikefit.heup_endorotatie_rechts}}', $bikefit->heup_endorotatie_rechts ?? '', $content);
-                $content = str_replace('{{bikefit.heup_exorotatie_links}}', $bikefit->heup_exorotatie_links ?? '', $content);
-                $content = str_replace('{{bikefit.heup_exorotatie_rechts}}', $bikefit->heup_exorotatie_rechts ?? '', $content);
-                $content = str_replace('{{bikefit.enkeldorsiflexie_links}}', $bikefit->enkeldorsiflexie_links ?? '', $content);
-                $content = str_replace('{{bikefit.enkeldorsiflexie_rechts}}', $bikefit->enkeldorsiflexie_rechts ?? '', $content);
-                $content = str_replace('{{bikefit.one_leg_squat_links}}', $bikefit->one_leg_squat_links ?? '', $content);
-                $content = str_replace('{{bikefit.one_leg_squat_rechts}}', $bikefit->one_leg_squat_rechts ?? '', $content);
-                $content = str_replace('{{bikefit.interne_opmerkingen}}', $bikefit->interne_opmerkingen ?? '', $content);
-                // ONTBREKENDE TEMPLATE KEYS uit edit_fixed.blade.php - automatisch gegenereerd
-                $content = str_replace('{{bikefit.fietsmerk}}', $bikefit->fietsmerk ?? '', $content);
-                
-                // EXACTE TEMPLATE KEYS uit screenshot - PROBEER VERSCHILLENDE MOGELIJKE VELDEN
-                $stuurpenVoor = $bikefit->stuurpenlengte_voor ?? $bikefit->aanpassingen_stuurpen_pre ?? $bikefit->aanpassingen_stuurpen_aan ?? '6.00';
-                $stuurpenNa = $bikefit->stuurpenlengte_na ?? $bikefit->aanpassingen_stuurpen_post ?? $bikefit->aanpassing_stuurpen ?? '12.00';
-                
-                $content = str_replace('{{bikefit.stuurpen_voor}}', $stuurpenVoor, $content);
-                $content = str_replace('{{bikefit.stuurpen_na}}', $stuurpenNa, $content);
-                $content = str_replace('{{bikefit.inclinatie_zadel}}', $bikefit->zadeltil ?? '', $content);
-                $content = str_replace('{{bikefit.rotatie_schoenplaatjes}}', $bikefit->rotatie_aanpassingen ?? '', $content);
-                $content = str_replace('{{inclinatie.rotatie_schoenplaatjes}}', $bikefit->inclinatie_aanpassingen ?? '', $content);
-                
-                \Log::info('🔍 STUURPEN DEBUG VALUES', [
-                    'stuurpen_voor_used' => $stuurpenVoor,
-                    'stuurpen_na_used' => $stuurpenNa,
-                    'bikefit_id' => $bikefit->id
-                ]);
-                
-                // Debug alle beschikbare velden in het bikefit model
-                \Log::info('🔍 ALLE BIKEFIT VELDEN', [
-                    'bikefit_attributes' => $bikefit->getAttributes(),
-                    'stuurpen_related_fields' => [
-                        'stuurpenlengte_voor' => $bikefit->stuurpenlengte_voor ?? 'niet gevonden',
-                        'stuurpenlengte_na' => $bikefit->stuurpenlengte_na ?? 'niet gevonden',
-                        'stuur_trapas_hoek' => $bikefit->stuur_trapas_hoek ?? 'niet gevonden', 
-                        'stuur_trapas_afstand' => $bikefit->stuur_trapas_afstand ?? 'niet gevonden'
-                    ],
-                    'possible_stuur_fields' => [
-                        'aanpassingen_stuurpen_pre' => $bikefit->aanpassingen_stuurpen_pre ?? 'niet gevonden',
-                        'aanpassingen_stuurpen_post' => $bikefit->aanpassingen_stuurpen_post ?? 'niet gevonden',
-                        'aanpassingen_stuurpen_aan' => $bikefit->aanpassingen_stuurpen_aan ?? 'niet gevonden',
-                        'aanpassing_stuurpen' => $bikefit->aanpassing_stuurpen ?? 'niet gevonden'
-                    ]
-                ]);
                 
                 // Systeem variabelen
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
@@ -857,7 +856,7 @@ class SjablonenController extends Controller
                 $content = $this->replaceBikefitHTMLComponents($content, $bikefit, $results);
                 
                 // Add mobility table if available
-                $content = str_replace('$mobility_table_report$', $this->generateMobiliteitTabel($bikefit), $content);
+                $content = str_replace('$mobility_table_report$', $this->generateMobilityTable($bikefit), $content);
                 
                 // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
                 $content = $this->hideCKEditorTableBorders($content);
@@ -880,28 +879,7 @@ class SjablonenController extends Controller
      */
     private function generatePagesForInspanningstest($sjabloon, $inspanningstest)
     {
-        // Decode JSON strings naar arrays als ze bestaan
-        $testresultaten = is_string($inspanningstest->testresultaten) 
-            ? json_decode($inspanningstest->testresultaten, true) ?? []
-            : ($inspanningstest->testresultaten ?? []);
-        
-        // Check trainingszones_data veld (nieuwere versie)
-        $trainingszones = null;
-        if (isset($inspanningstest->trainingszones_data)) {
-            $trainingszones = is_string($inspanningstest->trainingszones_data)
-                ? json_decode($inspanningstest->trainingszones_data, true) ?? []
-                : $inspanningstest->trainingszones_data;
-        }
-        
-        // Fallback naar trainingszones veld (oudere versie)
-        if (empty($trainingszones) && isset($inspanningstest->trainingszones)) {
-            $trainingszones = is_string($inspanningstest->trainingszones)
-                ? json_decode($inspanningstest->trainingszones, true) ?? []
-                : $inspanningstest->trainingszones;
-        }
-        
-        // Als nog steeds leeg, maak lege array
-        $trainingszones = $trainingszones ?? [];
+        \Log::info('🔥 Generating pages for inspanningstest', ['test_id' => $inspanningstest->id]);
         
         $generatedPages = [];
         
@@ -915,144 +893,13 @@ class SjablonenController extends Controller
                     'page_number' => $page->page_number
                 ];
             } else {
-                // Replace template variables with real inspanningstest data
                 $content = $page->content ?? '<p>Geen content</p>';
                 
-                // ✅ GEBRUIK SJABLOONSERVICE VOOR PLACEHOLDER REPLACEMENT
+                // ✅ GEBRUIK SJABLOONSERVICE VOOR INSPANNINGSTEST
                 $sjabloonService = new \App\Services\SjabloonService();
-                $content = $sjabloonService->vervangSleutels(
-                    $content, 
-                    null, // geen bikefit
-                    $inspanningstest->klant, // klant
-                    $inspanningstest // inspanningstest!
-                );
+                $content = $sjabloonService->vervangSleutels($content, null, $inspanningstest->klant, $inspanningstest);
                 
-                // Legacy {{test.*}} placeholders voor backward compatibility
-                $content = str_replace('{{test.testdatum}}', $inspanningstest->datum ? \Carbon\Carbon::parse($inspanningstest->datum)->format('d-m-Y') : '', $content);
-                $content = str_replace('{{test.testtype}}', $inspanningstest->testtype ?? '', $content);
-                $content = str_replace('{{test.specifieke_doelstellingen}}', $inspanningstest->specifieke_doelstellingen ?? '', $content);
-                $content = str_replace('{{test.lichaamslengte_cm}}', $inspanningstest->lichaamslengte_cm ?? '', $content);
-                $content = str_replace('{{test.lichaamsgewicht_kg}}', $inspanningstest->lichaamsgewicht_kg ?? '', $content);
-                $content = str_replace('{{test.bmi}}', $inspanningstest->bmi ?? '', $content);
-                $content = str_replace('{{test.hartslag_rust_bpm}}', $inspanningstest->hartslag_rust_bpm ?? '', $content);
-                $content = str_replace('{{test.maximale_hartslag_bpm}}', $inspanningstest->maximale_hartslag_bpm ?? '', $content);
-                $content = str_replace('{{test.buikomtrek_cm}}', $inspanningstest->buikomtrek_cm ?? '', $content);
-                $content = str_replace('{{test.testlocatie}}', $inspanningstest->testlocatie ?? '', $content);
-                $content = str_replace('{{test.protocol}}', $inspanningstest->protocol ?? '', $content);
-                $content = str_replace('{{test.startwattage}}', $inspanningstest->startwattage ?? '', $content);
-                $content = str_replace('{{test.stappen_min}}', $inspanningstest->stappen_min ?? '', $content);
-                $content = str_replace('{{test.stappen_watt}}', $inspanningstest->stappen_watt ?? '', $content);
-                $content = str_replace('{{test.weersomstandigheden}}', $inspanningstest->weersomstandigheden ?? '', $content);
-                $content = str_replace('{{test.analyse_methode}}', $inspanningstest->analyse_methode ?? '', $content);
-                $content = str_replace('{{test.aerobe_drempel_vermogen}}', $inspanningstest->aerobe_drempel_vermogen ?? '', $content);
-                $content = str_replace('{{test.aerobe_drempel_hartslag}}', $inspanningstest->aerobe_drempel_hartslag ?? '', $content);
-                $content = str_replace('{{test.anaerobe_drempel_vermogen}}', $inspanningstest->anaerobe_drempel_vermogen ?? '', $content);
-                $content = str_replace('{{test.anaerobe_drempel_hartslag}}', $inspanningstest->anaerobe_drempel_hartslag ?? '', $content);
-                $content = str_replace('{{test.besluit_lichaamssamenstelling}}', $inspanningstest->besluit_lichaamssamenstelling ?? '', $content);
-                $content = str_replace('{{test.advies_aerobe_drempel}}', $inspanningstest->advies_aerobe_drempel ?? '', $content);
-                $content = str_replace('{{test.advies_anaerobe_drempel}}', $inspanningstest->advies_anaerobe_drempel ?? '', $content);
-                
-                if (strpos($content, '{{INSPANNINGSTEST_ALGEMEEN}}') !== false) {
-                    $algemeenHtml = view('inspanningstest.partials._algemene_info_report', [
-                        'inspanningstest' => $inspanningstest,
-                        'klant' => $inspanningstest->klant
-                    ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_ALGEMEEN}}', $algemeenHtml, $content);
-                }
-                
-                if (strpos($content, '{{INSPANNINGSTEST_TRAININGSTATUS}}') !== false) {
-                    $trainingsstatusHtml = view('inspanningstest.partials._trainingstatus_report', [
-                        'inspanningstest' => $inspanningstest
-                    ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_TRAININGSTATUS}}', $trainingsstatusHtml, $content);
-                }
-                
-                // Maak een kopie van inspanningstest met gedecode data voor partials
-                $inspanningstestForPartials = clone $inspanningstest;
-                $inspanningstestForPartials->testresultaten = $testresultaten;
-                $inspanningstestForPartials->trainingszones_data = $trainingszones;
-                
-                if (strpos($content, '{{INSPANNINGSTEST_TESTRESULTATEN}}') !== false) {
-                    $resultatenHtml = view('inspanningstest.partials._testresultaten', [
-                        'inspanningstest' => $inspanningstestForPartials
-                    ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_TESTRESULTATEN}}', $resultatenHtml, $content);
-                }
-                
-                if (strpos($content, '{{INSPANNINGSTEST_GRAFIEK}}') !== false) {
-                    $grafiekHtml = view('inspanningstest.partials._grafiek_analyse_report', [
-                        'inspanningstest' => $inspanningstestForPartials
-                    ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_GRAFIEK}}', $grafiekHtml, $content);
-                }
-
-                if (strpos($content, '{{INSPANNINGSTEST_TRAININGSZONES}}') !== false) {
-                    $trainingszones = view('inspanningstest.partials._trainingszones_report', [
-                        'inspanningstest' => $inspanningstestForPartials
-                    ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_TRAININGSZONES}}', $trainingszones, $content);
-                }
-                
-                if (strpos($content, '{{INSPANNINGSTEST_DREMPELS}}') !== false) {
-                    $drempelwaardenHtml = view('inspanningstest.partials._drempelwaarden_overzicht_report', [
-                        'inspanningstest' => $inspanningstestForPartials
-                    ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_DREMPELS}}', $drempelwaardenHtml, $content);
-                }
-                
-                if (strpos($content, '{{INSPANNINGSTEST_ZONES}}') !== false) {
-                    $trainingzonesHtml = view('inspanningstest.partials._trainingszones_report', [
-                        'inspanningstest' => $inspanningstestForPartials
-                    ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_ZONES}}', $trainingzonesHtml, $content);
-                }
-                
-                // AI Analyse - Gebruik rapport versie voor sjablonen
-                if (strpos($content, '{{INSPANNINGSTEST_AI_ANALYSE}}') !== false) {
-                    // Combineer beide delen in één output voor backward compatibility
-                    $aiDeel1Html = view('inspanningstest.partials._ai_analyse_report_deel1', [
-                        'inspanningstest' => $inspanningstestForPartials
-                    ])->render();
-                    
-                    $aiDeel2Html = view('inspanningstest.partials._ai_analyse_report_deel2', [
-                        'inspanningstest' => $inspanningstestForPartials
-                    ])->render();
-                    
-                    // Combineer beide delen met een pagebreak hint
-                    $combinedHtml = $aiDeel1Html . '<div style="page-break-before: always;"></div>' . $aiDeel2Html;
-                    
-                    $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE}}', $combinedHtml, $content);
-                }
-                
-                // AI Analyse Rapport - Deel 1 (overzicht & drempels)
-                if (strpos($content, '{{INSPANNINGSTEST_AI_ANALYSE_DEEL1}}') !== false) {
-                    $aiDeel1Html = view('inspanningstest.partials._ai_analyse_report_deel1', [
-                        'inspanningstest' => $inspanningstestForPartials
-                    ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE_DEEL1}}', $aiDeel1Html, $content);
-                }
-                
-                // AI Analyse Rapport - Deel 2 (advies & progressie)
-                if (strpos($content, '{{INSPANNINGSTEST_AI_ANALYSE_DEEL2}}') !== false) {
-                    $aiDeel2Html = view('inspanningstest.partials._ai_analyse_report_deel2', [
-                        'inspanningstest' => $inspanningstestForPartials
-                    ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE_DEEL2}}', $aiDeel2Html, $content);
-                }
-                
-                // AI Analyse Rapport - Deel 3 (Progressie & Monitoring)
-                if (strpos($content, '{{INSPANNINGSTEST_AI_ANALYSE_DEEL3}}') !== false) {
-                    $aiDeel3Html = view('inspanningstest.partials._ai_analyse_report_deel3', [
-                        'inspanningstest' => $inspanningstestForPartials
-                    ])->render();
-                    $content = str_replace('{{INSPANNINGSTEST_AI_ANALYSE_DEEL3}}', $aiDeel3Html, $content);
-                }
-                
-                // Systeem variabelen
-                $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
-                $content = str_replace('{{datum.jaar}}', date('Y'), $content);
-                
-                // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
+                // Verberg CKEditor table borders
                 $content = $this->hideCKEditorTableBorders($content);
                 
                 $generatedPages[] = [
@@ -1065,185 +912,447 @@ class SjablonenController extends Controller
             }
         }
         
+        \Log::info('✅ generatePagesForInspanningstest DONE', ['pages' => count($generatedPages)]);
         return $generatedPages;
     }
 
     /**
-     * Upload een nieuwe achtergrond afbeelding
+     * Generate mobility table HTML
      */
-    public function uploadBackground(Request $request)
+    private function generateMobilityTable($bikefit)
     {
-        try {
-            $request->validate([
-                'background' => 'required|image|max:10240' // 10MB max
-            ]);
-
-            $file = $request->file('background');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            
-            // Zorg dat de backgrounds directory bestaat
-            $backgroundsPath = public_path('backgrounds');
-            if (!file_exists($backgroundsPath)) {
-                mkdir($backgroundsPath, 0755, true);
-            }
-            
-            // Verplaats bestand naar public/backgrounds
-            $file->move($backgroundsPath, $filename);
-
-            \Log::info('✅ Achtergrond geüpload', ['filename' => $filename]);
-
-            return response()->json([
-                'success' => true,
-                'filename' => $filename,
-                'message' => 'Achtergrond succesvol geüpload'
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('❌ Achtergrond upload fout', ['error' => $e->getMessage()]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Fout bij uploaden: ' . $e->getMessage()
-            ], 500);
-        }
+        // This would generate the actual mobility table based on your bikefit data
+        // For now, return placeholder
+        return '<div class="mobility-table">
+                    <h3>Mobiliteit Rapport</h3>
+                    <p>Mobiliteit data voor: ' . ($bikefit->klant->naam ?? 'Onbekend') . '</p>
+                    <!-- Add your actual mobility table generation logic here -->
+                </div>';
     }
-
+    
     /**
-     * Verwijder een achtergrond afbeelding
+     * Hide table borders for CKEditor layout tables
      */
-    public function deleteBackground($filename)
+    private function hideCKEditorTableBorders($content)
     {
-        try {
-            $filePath = public_path('backgrounds/' . $filename);
-            
-            if (!file_exists($filePath)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Bestand niet gevonden'
-                ], 404);
+        // Voeg CSS toe om alle tabelranden te verbergen
+        $css = '<style>
+            table, table td, table th, table tr {
+                border: none !important;
+                border-collapse: collapse !important;
+                border-spacing: 0 !important;
             }
-
-            // Verwijder bestand
-            unlink($filePath);
-
-            \Log::info('✅ Achtergrond verwijderd', ['filename' => $filename]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Achtergrond succesvol verwijderd'
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('❌ Achtergrond delete fout', ['error' => $e->getMessage()]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Fout bij verwijderen: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Verberg CKEditor tabel borders voor cleane PDF output
-     */
-    private function hideCKEditorTableBorders($html)
-    {
-        // Verwijder CKEditor tabel styling voor PDF
-        $html = preg_replace('/<table[^>]*class="[^"]*cke[^"]*"[^>]*>/', '<table style="border-collapse: collapse;">', $html);
-        
-        // Voeg CSS toe om tabel borders te verbergen
-        $tableStyles = '
-        <style>
-            table { border-collapse: collapse; border: none !important; }
-            table td, table th { border: none !important; padding: 8px; }
-            .cke_editable table { border: none !important; }
+            table {
+                border: 0 !important;
+                cellspacing: 0 !important;
+                cellpadding: 5px !important;
+            }
+            td, th {
+                border: 0 !important;
+                padding: 5px !important;
+            }
+            /* Preview placeholder styling */
+            .preview-placeholder {
+                background: #f3f4f6;
+                border: 2px dashed #9ca3af;
+                padding: 20px;
+                margin: 10px 0;
+                text-align: center;
+                border-radius: 8px;
+                color: #6b7280;
+            }
+            .preview-placeholder h4 {
+                margin: 0 0 10px 0;
+                color: #374151;
+            }
         </style>';
         
-        // Voeg styles toe aan head als die bestaat, anders aan begin van body
-        if (strpos($html, '</head>') !== false) {
-            $html = str_replace('</head>', $tableStyles . '</head>', $html);
-        } else if (strpos($html, '<body') !== false) {
-            $html = preg_replace('/<body[^>]*>/', '$0' . $tableStyles, $html);
-        } else {
-            $html = $tableStyles . $html;
-        }
-        
-        return $html;
+        // Voeg CSS toe aan het begin van de content
+        return $css . $content;
     }
-
+    
     /**
-     * Vervang Bikefit HTML componenten in template content
+     * Replace Bikefit HTML components with actual rendered HTML - BACK TO WORKING VERSION
      */
-    private function replaceBikefitHTMLComponents($content, $bikefit, $klant)
+    private function replaceBikefitHTMLComponents($content, $bikefit, $results)
     {
-        // Mobiliteitstabel HTML genereren
-        $mobiliteitTabelHtml = '';
-        if ($bikefit->straight_leg_raise_links || $bikefit->knieflexie_links) {
-            $mobiliteitTabelHtml = $this->generateMobiliteitTabel($bikefit);
-        }
+        // Voor/na berekeningen maken
+        $bikefitVoor = clone $bikefit;
+        $bikefitVoor->context = 'voor';
+        $bikefitNa = clone $bikefit;
+        $bikefitNa->context = 'na';
         
-        // Vervang de HTML component placeholders
-        $replacements = [
-            '$mobiliteitstabel_html$' => $mobiliteitTabelHtml,
-            '$mobility_table_report$' => $mobiliteitTabelHtml,
-            '$_mobility_table$' => $mobiliteitTabelHtml,
-            '$mobility_results$' => $mobiliteitTabelHtml,
-        ];
+        // Herbereken results voor voor/na
+        $bikefitCalculator = new \App\Services\BikefitCalculator();
+        $resultsNa = $bikefitCalculator->calculate($bikefitNa);
+        $resultsVoor = $bikefitCalculator->calculate($bikefitVoor, $resultsNa);
         
-        foreach ($replacements as $placeholder => $value) {
-            $content = str_replace($placeholder, $value, $content);
+        // TERUG NAAR LARAVEL VIEW RENDERING
+        try {
+            // Resultaten VOOR
+            $resultatenVoorHtml = view('bikefit._results_section', [
+                'results' => $resultsVoor, 
+                'bikefit' => $bikefitVoor
+            ])->render();
+            $content = str_replace('$ResultatenVoor$', $resultatenVoorHtml, $content);
+            
+            // Resultaten NA
+            $resultatenNaHtml = view('bikefit._results_section', [
+                'results' => $resultsNa, 
+                'bikefit' => $bikefitNa
+            ])->render();
+            $content = str_replace('$ResultatenNa$', $resultatenNaHtml, $content);
+            
+            // Prognose zitpositie
+            $prognoseZitpositieHtml = view('bikefit._prognose_zitpositie_report', [
+                'bikefit' => $bikefit,
+                'results' => $results
+            ])->render();
+            $content = str_replace('$Bikefit.prognose_zitpositie_html$', $prognoseZitpositieHtml, $content);
+            
+            // Body measurements - 5% KLEINER + TAHOMA FONT
+            $bodyMeasurementsCSS = '<style>
+                /* 5% KLEINER LICHAAMSMATEN DIAGRAM */
+                *[class*="body"],
+                *[class*="measurement"],
+                *[class*="lichaam"],
+                *[class*="diagram"],
+                *[class*="bikefit"] div:has(svg),
+                div:has(svg[viewBox]),
+                svg[viewBox],
+                svg,
+                .body-measurements,
+                .lichaamsmaten,
+                .body-measurements-block,
+                .measurements-container,
+                .measurements,
+                .measurement-diagram,
+                .bikefit-measurements {
+                    transform: scale(0.95) !important;
+                    transform-origin: left !important;
+                    margin: 10px auto !important;
+                    font-family: Tahoma, Arial, sans-serif !important;
+                    width: auto !important;
+                    height: auto !important;
+                }
+                
+                /* 5% KLEINERE SVG ELEMENTEN */
+                svg {
+                    transform: scale(0.95) !important;
+                    transform-origin: left !important;
+                    width: auto !important;
+                    height: auto !important;
+                    max-width: none !important;
+                    max-height: none !important;
+                }
+                
+                /* CONTAINER RUIMTE VOOR KLEINER DIAGRAM */
+                div:has(svg) {
+                    padding: 10px !important;
+                    margin: 5px auto !important;
+                    overflow: visible !important;
+                }
+                
+                /* FORCEER ALLE TEKST OP TAHOMA */
+                * {
+                    font-family: Tahoma, Arial, sans-serif !important;
+                }
+                
+                /* ALLE SVG TEKST GROTER EN DIKKER */
+                svg text,
+                svg tspan,
+                text,
+                tspan {
+                    font-family: Tahoma, Arial, sans-serif !important;
+                    font-weight: 600 !important;
+                    font-size: 11px !important;
+                }
+                
+                /* ALLE MOGELIJKE CIJFER ELEMENTEN */
+                .value,
+                .number,
+                .measurement-value,
+                span:contains("cm"),
+                span:contains("."),
+                *[class*="value"] {
+                    font-family: Tahoma, Arial, sans-serif !important;
+                    font-weight: 600 !important;
+                    font-size: 12px !important;
+                }
+            </style>';
+            
+            $bodyMeasurementsHtml = $bodyMeasurementsCSS . view('bikefit._body_measurements', [
+                'bikefit' => $bikefit
+            ])->render();
+            $content = str_replace('$Bikefit.body_measurements_block_html$', $bodyMeasurementsHtml, $content);
+            
+            // Mobiliteit resultaten - HERSTELD + VERBETERDE CSS
+            $mobiliteitCSS = '<style>
+                .mobility-table {
+                    width: 100% !important;
+                    max-width: 1000px !important;
+                    margin: 20px auto !important;
+                }
+                .mobility-table table {
+                    width: 100% !important;
+                    border-collapse: separate !important;
+                    border-spacing: 0 !important;
+                    border: 1px solid #d1d5db !important;
+                    border-radius: 8px !important;
+                    overflow: hidden !important;
+                    font-size: 14px !important;
+                }
+                .mobility-table th,
+                .mobility-table td {
+                    border: 1px solid #e5e7eb !important;
+                    padding: 12px 16px !important;
+                    text-align: center !important;
+                    vertical-align: middle !important;
+                }
+                .mobility-table th {
+                    background-color: #c8e1eb !important;
+                    font-weight: 600 !important;
+                    text-align: center !important;
+                }
+                .mobility-table td:first-child {
+                    text-align: left !important;
+                    font-weight: 600 !important;
+                    width: 40% !important;
+                }
+            </style>';
+            
+            $mobiliteitHtml = $mobiliteitCSS . view('bikefit._mobility_results', [
+                'bikefit' => $bikefitNa
+            ])->render();
+            $content = str_replace('$MobiliteitTabel$', $mobiliteitHtml, $content);
+            
+            // Mobiliteit klant tabel - HERSTELD + VERBETERDE STYLING
+            $mobiliteitklantData = [
+                'slr_links' => $bikefit->straight_leg_raise_links ?? '',
+                'slr_rechts' => $bikefit->straight_leg_raise_rechts ?? '',
+                'knieflexie_links' => $bikefit->knieflexie_links ?? '',
+                'knieflexie_rechts' => $bikefit->knieflexie_rechts ?? '',
+                'heup_endorotatie_links' => $bikefit->heup_endorotatie_links ?? '',
+                'heup_endorotatie_rechts' => $bikefit->heup_endorotatie_rechts ?? '',
+                'heup_exorotatie_links' => $bikefit->heup_exorotatie_links ?? '',
+                'heup_exorotatie_rechts' => $bikefit->heup_exorotatie_rechts ?? '',
+                'enkeldorsiflexie_links' => $bikefit->enkeldorsiflexie_links ?? '',
+                'enkeldorsiflexie_rechts' => $bikefit->enkeldorsiflexie_rechts ?? '',
+                'one_leg_squat_links' => $bikefit->one_leg_squat_links ?? '',
+                'one_leg_squat_rechts' => $bikefit->one_leg_squat_rechts ?? '',
+            ];
+            
+            // AANGEPASTE CSS VOOR MOBILITEIT TABEL - KLEINERE SCORES + ALLEEN HEADER BLAUW + ZWARTE TEKST
+            $mobiliteitTableCSS = '<style>
+                /* Container fix voor volledige zichtbaarheid */
+                .page-content, .report-content, .generated-content {
+                    width: 100% !important;
+                    max-width: none !important;
+                    overflow-x: auto !important;
+                }
+                
+                .mobility-report-table,
+                table.mobility-report-table,
+                div .mobility-report-table {
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    margin: 10px 0 !important;
+                    border-collapse: separate !important;
+                    border-spacing: 0 !important;
+                    border: 1px solid #d1d5db !important;
+                    border-radius: 6px !important;
+                    overflow: hidden !important;
+                    font-size: 11px !important;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+                    table-layout: fixed !important;
+                }
+                .mobility-report-table th,
+                .mobility-report-table td,
+                table.mobility-report-table th,
+                table.mobility-report-table td {
+                    border: 1px solid #e5e7eb !important;
+                    padding: 8px 6px !important;
+                    text-align: center !important;
+                    vertical-align: top !important;
+                    font-size: 10px !important;
+                    line-height: 1.2 !important;
+                    word-wrap: break-word !important;
+                    min-height: 40px !important;
+                }
+                
+                /* ALLEEN ECHTE HEADER BLAUW - NIET EERSTE RIJ DATA */
+                .mobility-report-table thead th,
+                table.mobility-report-table thead th,
+                .mobility-report-table > thead > tr > th,
+                table.mobility-report-table > thead > tr > th {
+                    background-color: #c8e1eb !important;
+                    color: #1f2937 !important;
+                    font-weight: 600 !important;
+                    border: 1px solid #a5c9d6 !important;
+                    border-bottom: 2px solid #a5c9d6 !important;
+                    text-align: center !important;
+                    font-size: 11px !important;
+                    padding: 8px !important;
+                    vertical-align: middle !important;
+                }
+                
+                /* KLEINERE LINKSE KOLOM - VAN 25% NAAR 18% + ZWARTE TEKST */
+                .mobility-report-table .test-name,
+                table.mobility-report-table .test-name,
+                .mobility-report-table td:first-child,
+                table.mobility-report-table td:first-child {
+                    text-align: left !important;
+                    font-weight: 600 !important;
+                    width: 20% !important;
+                    background-color: #f8fafc !important;
+                    font-size: 10px !important;
+                    vertical-align: top !important;
+                    padding: 12px 8px !important;
+                    color: #000000 !important;
+                }
+                
+                /* VEEL BREDERE SCORE KOLOMMEN - VAN 38.75% NAAR 42.5% */
+                .mobility-report-table .score-cell,
+                table.mobility-report-table .score-cell,
+                .mobility-report-table td:not(:first-child),
+                table.mobility-report-table td:not(:first-child) {
+                    text-align: center !important;
+                    width: 42.5% !important;
+                    font-weight: 500 !important;
+                    font-size: 10px !important;
+                    vertical-align: top !important;
+                    padding: 12px 4px !important;
+                }
+                
+                /* HEEL KLEINE BALKJES - GEEN SCORE TEKST */
+                .mobility-report-table .score-bars,
+                .mobility-report-table .score-text,
+                table.mobility-report-table .score-bars,
+                table.mobility-report-table .score-text,
+                .mobility-report-table .score-container,
+                table.mobility-report-table .score-container,
+                .mobility-report-table .score-wrapper,
+                table.mobility-report-table .score-wrapper {
+                    font-size: 3px !important;
+                    line-height: 0.9 !important;
+                }
+                
+                .mobility-report-table .score-bar,
+                table.mobility-report-table .score-bar,
+                .mobility-report-table .score-block,
+                table.mobility-report-table .score-block {
+                    height: 3px !important;
+                    margin: 0px !important;
+                    border-radius: 1px !important;
+                    display: inline-block !important;
+                    width: 6px !important;
+                    font-size: 3px !important;
+                }
+                
+                /* VERBERG ALLE SCORE LABELS EN TEKST */
+                .mobility-report-table .score-label,
+                table.mobility-report-table .score-label,
+                .mobility-report-table .score-value,
+                table.mobility-report-table .score-value {
+                    display: none !important;
+                    visibility: hidden !important;
+                    font-size: 0px !important;
+                    height: 0px !important;
+                    margin: 0px !important;
+                    padding: 0px !important;
+                }
+                
+                /* SCORE CONTAINERS MINIMAAL */
+                .mobility-report-table .score-container,
+                table.mobility-report-table .score-container {
+                    margin: 0px !important;
+                    padding: 0px !important;
+                }
+                
+                /* UITLEG TEKST BETER LEESBAAR */
+                .mobility-report-table p,
+                .mobility-report-table .explanation {
+                    font-size: 9px !important;
+                    line-height: 1.3 !important;
+                    margin: 4px 0 !important;
+                    text-align: justify !important;
+                }
+                
+                /* ULTRA STERKE OVERRIDES VOOR ALLE SCORE ELEMENTEN */
+                * .mobility-report-table td {
+                    text-align: center !important;
+                    font-size: 10px !important;
+                    white-space: normal !important;
+                    min-height: 40px !important;
+                }
+                * .mobility-report-table td:first-child {
+                    text-align: left !important;
+                    font-weight: 600 !important;
+                    white-space: normal !important;
+                    font-size: 10px !important;
+                    width: 15% !important;
+                    color: #000000 !important;
+                }
+                * .mobility-report-table th {
+                    font-size: 11px !important;
+                    min-height: 30px !important;
+                }
+                
+                /* MEGA STERKE SCORE OVERRIDES - VERBERG ALLE TEKST + KLEINERE BALKEN */
+                * .mobility-report-table .score-bar,
+                * .mobility-report-table .score-block {
+                    height: 3px !important;
+                    width: 6px !important;
+                    font-size: 2px !important;
+                    margin: 0px !important;
+                }
+                * .mobility-report-table .score-label,
+                * .mobility-report-table .score-value,
+                * .mobility-report_table .score-text,
+                * .mobility-report-table span,
+                * .mobility-report-table small {
+                    display: none !important;
+                    visibility: hidden !important;
+                    font-size: 0px !important;
+                    line-height: 0 !important;
+                    height: 0px !important;
+                    width: 0px !important;
+                    margin: 0px !important;
+                    padding: 0px !important;
+                    opacity: 0 !important;
+                }
+                
+                /* EXTRA STERKE OVERRIDES VOOR ALLE TEKST IN SCORE CELLEN */
+                .mobility-report-table td:not(:first-child) span,
+                table.mobility-report-table td:not(:first-child) span,
+                .mobility-report-table td:not(:first-child) small,
+                table.mobility-report-table td:not(:first-child) small,
+                .mobility-report-table .score-cell span,
+                table.mobility-report-table .score-cell span {
+                    display: none !important;
+                    visibility: hidden !important;
+                    font-size: 0px !important;
+                    height: 0px !important;
+                    opacity: 0 !important;
+                }
+            </style>';
+            
+            $mobiliteitklantHtml = $mobiliteitTableCSS . view('bikefit._mobility_table_report', [
+                'mobiliteitklant' => $mobiliteitklantData
+            ])->render();
+            $content = str_replace('$mobiliteitklant$', $mobiliteitklantHtml, $content);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error rendering bikefit HTML components: ' . $e->getMessage());
+            // Fallback bij fouten
+            $content = str_replace('$ResultatenVoor$', '<p><em>Resultaten VOOR kunnen niet worden geladen</em></p>', $content);
+            $content = str_replace('$ResultatenNa$', '<p><em>Resultaten NA kunnen niet worden geladen</em></p>', $content);
+            $content = str_replace('$Bikefit.prognose_zitpositie_html$', '<p><em>Prognose zitpositie kan niet worden geladen</em></p>', $content);
+            $content = str_replace('$MobiliteitTabel$', '<p><em>Mobiliteit tabel kan niet worden geladen</em></p>', $content);
+            $content = str_replace('$mobiliteitklant$', '<p><em>Mobiliteit klant tabel kan niet worden geladen</em></p>', $content);
+            $content = str_replace('$Bikefit.body_measurements_block_html$', '<p><em>Lichaamsmaten kunnen niet worden geladen</em></p>', $content);
         }
         
         return $content;
-    }
-    
-    /**
-     * Genereer mobiliteitstabel HTML voor in rapporten (alias voor generateMobiliteitTabelHtml)
-     */
-    private function generateMobiliteitTabel($bikefit)
-    {
-        return $this->generateMobiliteitTabelHtml($bikefit);
-    }
-    
-    /**
-     * Genereer mobiliteitstabel HTML voor in rapporten
-     */
-    private function generateMobiliteitTabelHtml($bikefit)
-    {
-        $html = '<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">';
-        $html .= '<thead>';
-        $html .= '<tr style="background-color: #c8e1eb;">';
-        $html .= '<th style="padding: 10px; border: 1px solid #a8c1cb; text-align: left;">Mobiliteitstest</th>';
-        $html .= '<th style="padding: 10px; border: 1px solid #a8c1cb; text-align: center;">Links</th>';
-        $html .= '<th style="padding: 10px; border: 1px solid #a8c1cb; text-align: center;">Rechts</th>';
-        $html .= '<th style="padding: 10px; border: 1px solid #a8c1cb; text-align: center;">Norm</th>';
-        $html .= '</tr>';
-        $html .= '</thead>';
-        $html .= '<tbody>';
-        
-        $tests = [
-            ['naam' => 'Straight Leg Raise', 'links' => $bikefit->straight_leg_raise_links, 'rechts' => $bikefit->straight_leg_raise_rechts, 'norm' => '70°'],
-            ['naam' => 'Knieflexie', 'links' => $bikefit->knieflexie_links, 'rechts' => $bikefit->knieflexie_rechts, 'norm' => '130°'],
-            ['naam' => 'Heup Endorotatie', 'links' => $bikefit->heup_endorotatie_links, 'rechts' => $bikefit->heup_endorotatie_rechts, 'norm' => '35°'],
-            ['naam' => 'Heup Exorotatie', 'links' => $bikefit->heup_exorotatie_links, 'rechts' => $bikefit->heup_exorotatie_rechts, 'norm' => '45°'],
-            ['naam' => 'Enkeldorsiflexie', 'links' => $bikefit->enkeldorsiflexie_links, 'rechts' => $bikefit->enkeldorsiflexie_rechts, 'norm' => '10°'],
-            ['naam' => 'One Leg Squat', 'links' => $bikefit->one_leg_squat_links, 'rechts' => $bikefit->one_leg_squat_rechts, 'norm' => 'Neutraal'],
-        ];
-        
-        foreach ($tests as $test) {
-            if ($test['links'] || $test['rechts']) {
-                $html .= '<tr>';
-                $html .= '<td style="padding: 8px; border: 1px solid #ddd;">' . $test['naam'] . '</td>';
-                $html .= '<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">' . ($test['links'] ?? '-') . '</td>';
-                $html .= '<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">' . ($test['rechts'] ?? '-') . '</td>';
-                $html .= '<td style="padding: 8px; border: 1px solid #ddd; text-align: center;">' . $test['norm'] . '</td>';
-                $html .= '</tr>';
-            }
-        }
-        
-        $html .= '</tbody>';
-        $html .= '</table>';
-        
-        return $html;
     }
 }
