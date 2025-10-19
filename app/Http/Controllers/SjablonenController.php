@@ -848,6 +848,17 @@ class SjablonenController extends Controller
                 $content = str_replace('{{bikefit.opmerkingen}}', $bikefit->opmerkingen ?? '', $content);
                 $content = str_replace('{{bikefit.follow_up}}', $bikefit->follow_up ?? '', $content);
                 
+                // ONTBREKENDE ZADEL EN SCHOENPLAATJES VELDEN - UIT SCREENSHOT
+                $content = str_replace('{{bikefit.type_zadel}}', $bikefit->type_zadel ?? '', $content);
+                $content = str_replace('{{bikefit.zadelbreedte}}', $bikefit->zadelbreedte ?? '', $content);
+                $content = str_replace('{{bikefit.inclinatie_zadel}}', $bikefit->inclinatie_zadel ?? '', $content);
+                $content = str_replace('{{bikefit.rotatie_schoenplaatjes}}', $bikefit->rotatie_schoenplaatjes ?? '', $content);
+                $content = str_replace('{{bikefit.inclinatie_schoenplaatjes}}', $bikefit->inclinatie_schoenplaatjes ?? '', $content);
+                $content = str_replace('{{bikefit.ophoging_li}}', $bikefit->ophoging_li ?? '', $content);
+                $content = str_replace('{{bikefit.ophoging_re}}', $bikefit->ophoging_re ?? '', $content);
+                $content = str_replace('{{bikefit.ophoging_links}}', $bikefit->ophoging_links ?? '', $content);
+                $content = str_replace('{{bikefit.ophoging_rechts}}', $bikefit->ophoging_rechts ?? '', $content);
+                
                 // Systeem variabelen
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
                 $content = str_replace('{{datum.jaar}}', date('Y'), $content);
