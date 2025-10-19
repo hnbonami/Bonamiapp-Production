@@ -15,92 +15,63 @@
 
 
 <div class="max-w-4xl pt-0 pb-6">
-    <h2 class="text-2xl font-semibold mb-6 text-left">Profiel van {{ $klant->voornaam }} {{ $klant->naam }}</h2>
+    <h2 class="text-2xl font-semibold mb-4 text-left">Profiel van {{ $klant->voornaam }} {{ $klant->naam }}</h2>
 
-    <!-- Header met avatar en kerngegevens -->
-    <div class="flex items-start mb-6" style="gap:3.75rem;">
-        <div class="flex flex-col items-start gap-2">
-            @if($klant->avatar_path)
-                <img src="{{ asset('storage/'.$klant->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover flex-none" style="width:200px;height:200px;" />
-            @elseif($klant->user && $klant->user->avatar_path)
-                <img src="{{ asset('storage/'.$klant->user->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover flex-none" style="width:200px;height:200px;" />
-            @else
-                <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold flex-none" style="width:200px;height:200px;font-size:72px;">
-                    {{ strtoupper(substr($klant->voornaam,0,1)) }}
-                </div>
-            @endif
-                                    <div style="display: flex; gap: 8px; align-items: center;">
-                            <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" style="margin: 0;">
-                                @csrf
-                                <label for="avatar-upload" style="background: #c8e1eb; color: #333; padding: 8px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: none;">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                        <circle cx="12" cy="13" r="4"></circle>
-                                    </svg>
-                                </label>
-                                <input type="file" id="avatar-upload" name="avatar" accept="image/*" style="display: none;" onchange="this.form.submit()">
-                            </form>
-                            
-                            <a href="/instellingen" style="background: #c8e1eb; color: #333; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; display: inline-block;">
-                                Profielinstellingen
-                            </a>
+    <!-- Compacte Header met avatar en kerngegevens -->
+    <div class="flex items-start gap-6 mb-6">
+        <!-- Avatar met overlay -->
+        <div class="relative" style="width:120px;height:120px;">
+            <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form" style="margin: 0;">
+                @csrf
+                <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
+                    @if($klant->avatar_path)
+                        <img src="{{ asset('storage/'.$klant->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                    @elseif($klant->user && $klant->user->avatar_path)
+                        <img src="{{ asset('storage/'.$klant->user->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                    @else
+                        <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:120px;height:120px;font-size:48px;">
+                            {{ strtoupper(substr($klant->voornaam,0,1)) }}
                         </div>
-            <script>
-            document.addEventListener('DOMContentLoaded', function(){
-                const input = document.getElementById('avatarKlantInline');
-                const trigger = document.getElementById('avatarBtnKlantInline');
-                const camBtn = document.getElementById('avatarCamBtnKlantInline');
-                const submit = document.getElementById('avatarSubmitKlantInline');
-                if (trigger && input) {
-                    trigger.addEventListener('click', function(){
-                        input.removeAttribute('capture');
-                        input.click();
-                    });
-                }
-                if (camBtn && input) {
-                    camBtn.addEventListener('click', function(){
-                        input.setAttribute('capture', 'environment');
-                        input.click();
-                    });
-                }
-                input?.addEventListener('change', function(){
-                    if (input.files && input.files[0]) {
-                        submit.style.display='inline-block';
-                        trigger.textContent='Kies opnieuw';
-                    }
-                });
-            });
-            </script>
+                    @endif
+                    <!-- Camera overlay icon -->
+                    <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(200, 225, 235, 0.95); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                            <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                    </div>
+                </label>
+                <input type="file" id="avatar-upload" name="avatar" accept="image/*" style="display: none;" onchange="this.form.submit()">
+            </form>
         </div>
-    <div class="grid grid-cols-2 gap-x-10 gap-y-0">
-            <!-- Rij 1 -->
+
+        <!-- Klantgegevens in 2 rijen van 3 -->
+        <div class="flex-1 grid grid-cols-3 gap-x-6 gap-y-4">
             <div>
                 <p class="text-sm font-medium text-gray-500">Klantnummer</p>
-                <p class="mt-1 text-lg text-gray-900">{{ $klant->id }}</p>
+                <p class="mt-1 text-base text-gray-900 font-semibold">{{ $klant->id }}</p>
             </div>
             <div>
                 <p class="text-sm font-medium text-gray-500">Status</p>
-                <p class="mt-1 text-lg">
-                    <span class="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
+                <p class="mt-1">
+                    <span class="px-2.5 py-1 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
                 </p>
             </div>
-            <!-- Rij 2 -->
-            <div style="margin-top:20px;">
+            <div>
                 <p class="text-sm font-medium text-gray-500">Geslacht</p>
-                <p class="mt-1 text-lg text-gray-900">{{ $klant->geslacht ?? 'Niet opgegeven' }}</p>
+                <p class="mt-1 text-base text-gray-900">{{ $klant->geslacht ?? 'Niet opgegeven' }}</p>
             </div>
-            <div style="margin-top:20px;">
+            <div>
                 <p class="text-sm font-medium text-gray-500">E-mailadres</p>
-                <p class="mt-1 text-lg text-gray-900">{{ $klant->email }}</p>
+                <p class="mt-1 text-base text-gray-900">{{ $klant->email }}</p>
             </div>
-            <!-- Rij 3 -->
-            <div style="margin-top:15px;">
+            <div>
                 <p class="text-sm font-medium text-gray-500">Geboortedatum</p>
-                <p class="mt-1 text-lg text-gray-900">{{ $klant->geboortedatum ? \Carbon\Carbon::parse($klant->geboortedatum)->format('d-m-Y') : 'Niet opgegeven' }}</p>
+                <p class="mt-1 text-base text-gray-900">{{ $klant->geboortedatum ? \Carbon\Carbon::parse($klant->geboortedatum)->format('d-m-Y') : 'Niet opgegeven' }}</p>
             </div>
-            <div style="margin-top:15px;">
+            <div>
                 <p class="text-sm font-medium text-gray-500">Hoe gevonden</p>
-                <p class="mt-1 text-lg text-gray-900">{{ $klant->herkomst ?? 'Niet opgegeven' }}</p>
+                <p class="mt-1 text-base text-gray-900">{{ $klant->herkomst ?? 'Niet opgegeven' }}</p>
             </div>
         </div>
     </div>
