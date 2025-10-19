@@ -848,16 +848,51 @@ class SjablonenController extends Controller
                 $content = str_replace('{{bikefit.opmerkingen}}', $bikefit->opmerkingen ?? '', $content);
                 $content = str_replace('{{bikefit.follow_up}}', $bikefit->follow_up ?? '', $content);
                 
-                // ONTBREKENDE ZADEL EN SCHOENPLAATJES VELDEN - UIT SCREENSHOT
+                // ONTBREKENDE ZADEL EN SCHOENPLAATJES VELDEN - CORRECTE DATABASE VELDNAMEN
                 $content = str_replace('{{bikefit.type_zadel}}', $bikefit->type_zadel ?? '', $content);
                 $content = str_replace('{{bikefit.zadelbreedte}}', $bikefit->zadelbreedte ?? '', $content);
-                $content = str_replace('{{bikefit.inclinatie_zadel}}', $bikefit->inclinatie_zadel ?? '', $content);
-                $content = str_replace('{{bikefit.rotatie_schoenplaatjes}}', $bikefit->rotatie_schoenplaatjes ?? '', $content);
-                $content = str_replace('{{bikefit.inclinatie_schoenplaatjes}}', $bikefit->inclinatie_schoenplaatjes ?? '', $content);
+                
+                // Zadel inclinatie - DATABASE VELD = zadeltil
+                $zadelInclinatie = $bikefit->zadeltil ?? '';
+                $content = str_replace('{{bikefit.inclinatie_zadel}}', $zadelInclinatie, $content);
+                $content = str_replace('{{bikefit.zadelinclinatie}}', $zadelInclinatie, $content);
+                $content = str_replace('{{bikefit.zadeltil}}', $zadelInclinatie, $content);
+                
+                // Schoenplaatjes rotatie - DATABASE VELD = rotatie_aanpassingen
+                $schoenplaatjesRotatie = $bikefit->rotatie_aanpassingen ?? '';
+                $content = str_replace('{{bikefit.rotatie_schoenplaatjes}}', $schoenplaatjesRotatie, $content);
+                $content = str_replace('{{bikefit.schoenplaatjes_rotatie}}', $schoenplaatjesRotatie, $content);
+                $content = str_replace('{{bikefit.rotatie_aanpassingen}}', $schoenplaatjesRotatie, $content);
+                // FIX: verkeerde prefix in sjabloon
+                $content = str_replace('{{inclinatie.rotatie_schoenplaatjes}}', $schoenplaatjesRotatie, $content);
+                
+                // Schoenplaatjes inclinatie - DATABASE VELD = inclinatie_aanpassingen
+                $schoenplaatjesInclinatie = $bikefit->inclinatie_aanpassingen ?? '';
+                $content = str_replace('{{bikefit.inclinatie_schoenplaatjes}}', $schoenplaatjesInclinatie, $content);
+                $content = str_replace('{{bikefit.schoenplaatjes_inclinatie}}', $schoenplaatjesInclinatie, $content);
+                $content = str_replace('{{bikefit.inclinatie_aanpassingen}}', $schoenplaatjesInclinatie, $content);
+                
+                // Ophoging - DATABASE VELDEN = ophoging_li en ophoging_re
                 $content = str_replace('{{bikefit.ophoging_li}}', $bikefit->ophoging_li ?? '', $content);
                 $content = str_replace('{{bikefit.ophoging_re}}', $bikefit->ophoging_re ?? '', $content);
-                $content = str_replace('{{bikefit.ophoging_links}}', $bikefit->ophoging_links ?? '', $content);
-                $content = str_replace('{{bikefit.ophoging_rechts}}', $bikefit->ophoging_rechts ?? '', $content);
+                $content = str_replace('{{bikefit.ophoging_links}}', $bikefit->ophoging_li ?? '', $content);
+                $content = str_replace('{{bikefit.ophoging_rechts}}', $bikefit->ophoging_re ?? '', $content);
+                
+                // Stuurpen lengte VOOR - DATABASE VELD = aanpassingen_stuurpen_pre
+                $stuurpenVoor = $bikefit->aanpassingen_stuurpen_pre ?? '';
+                $content = str_replace('{{bikefit.stuurpenlengte_voor}}', $stuurpenVoor, $content);
+                $content = str_replace('{{bikefit.stuurpen_lengte_voor}}', $stuurpenVoor, $content);
+                $content = str_replace('{{bikefit.aanpassingen_stuurpen_pre}}', $stuurpenVoor, $content);
+                // FIX: korte variant zonder "lengte"
+                $content = str_replace('{{bikefit.stuurpen_voor}}', $stuurpenVoor, $content);
+                
+                // Stuurpen lengte NA - DATABASE VELD = aanpassingen_stuurpen_post
+                $stuurpenNa = $bikefit->aanpassingen_stuurpen_post ?? '';
+                $content = str_replace('{{bikefit.stuurpenlengte_na}}', $stuurpenNa, $content);
+                $content = str_replace('{{bikefit.stuurpen_lengte_na}}', $stuurpenNa, $content);
+                $content = str_replace('{{bikefit.aanpassingen_stuurpen_post}}', $stuurpenNa, $content);
+                // FIX: korte variant zonder "lengte"
+                $content = str_replace('{{bikefit.stuurpen_na}}', $stuurpenNa, $content);
                 
                 // Systeem variabelen
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
