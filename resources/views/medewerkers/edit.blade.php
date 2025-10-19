@@ -65,16 +65,14 @@
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
-                    <div class="mb-4">
-                        <label for="geboortedatum" class="block text-sm font-medium text-gray-700 mb-2">Geboortedatum</label>
-                        <input type="date" 
-                               name="geboortedatum" 
-                               id="geboortedatum" 
-                               value="{{ old('geboortedatum', $medewerker->geboortedatum?->format('Y-m-d')) }}" 
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    </div>
-
-                    <div class="mb-4">
+                <div class="mb-6">
+                    <label for="geboortedatum" class="block text-sm font-medium text-gray-700 mb-2">Geboortedatum</label>
+                    <input type="date" 
+                           name="geboortedatum" 
+                           id="geboortedatum"
+                           value="{{ old('geboortedatum', $medewerker->geboortedatum ? (is_string($medewerker->geboortedatum) ? \Carbon\Carbon::parse($medewerker->geboortedatum)->format('Y-m-d') : $medewerker->geboortedatum->format('Y-m-d')) : '') }}"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>                    <div class="mb-4">
                         <label for="geslacht" class="block text-sm font-medium text-gray-700 mb-2">Geslacht</label>
                         <select name="geslacht" 
                                 id="geslacht" 
@@ -157,16 +155,15 @@
                         </select>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="startdatum" class="block text-sm font-medium text-gray-700 mb-2">Startdatum</label>
-                        <input type="date" 
-                               name="startdatum" 
-                               id="startdatum" 
-                               value="{{ old('startdatum', $medewerker->startdatum?->format('Y-m-d')) }}" 
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    </div>
-
-                    <div class="mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="mb-6">
+                    <label for="startdatum" class="block text-sm font-medium text-gray-700 mb-2">Startdatum</label>
+                    <input type="date" 
+                           name="startdatum" 
+                           id="startdatum"
+                           value="{{ old('startdatum', $medewerker->startdatum ? (is_string($medewerker->startdatum) ? \Carbon\Carbon::parse($medewerker->startdatum)->format('Y-m-d') : $medewerker->startdatum->format('Y-m-d')) : '') }}"
+                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                </div>                    <div class="mb-4">
                         <label for="contract_type" class="block text-sm font-medium text-gray-700 mb-2">Contract Type</label>
                         <select name="contract_type" 
                                 id="contract_type" 
@@ -198,7 +195,7 @@
                 
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-3">Welke functies mag deze medewerker uitvoeren?</label>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="flex items-center">
                             <input type="checkbox" 
                                    name="bikefit" 
@@ -222,19 +219,6 @@
                             <label for="recht_inspanningstest" class="ml-3 block text-sm font-medium text-gray-700">
                                 Inspanningstest
                                 <span class="block text-xs text-gray-500">Kan inspanningstests aanmaken en beheren</span>
-                            </label>
-                        </div>
-
-                        <div class="flex items-center">
-                            <input type="checkbox" 
-                                   name="upload_documenten" 
-                                   value="1" 
-                                   id="recht_upload_documenten"
-                                   {{ old('upload_documenten', $medewerker->upload_documenten) ? 'checked' : '' }}
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                            <label for="recht_upload_documenten" class="ml-3 block text-sm font-medium text-gray-700">
-                                Upload documenten
-                                <span class="block text-xs text-gray-500">Kan documenten uploaden en bewerken</span>
                             </label>
                         </div>
                     </div>

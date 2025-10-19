@@ -56,7 +56,6 @@ class MedewerkerController extends Controller
      */
     public function store(Request $request)
     {
-        // EERSTE TEST: Check of deze method überhaupt wordt aangeroepen
         \Log::info('🚨 MedewerkerController@store CALLED', [
             'request_method' => $request->method(),
             'all_input' => $request->all(),
@@ -68,42 +67,82 @@ class MedewerkerController extends Controller
             'voornaam' => 'required|string|max:255',
             'achternaam' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'telefoon' => 'nullable|string|max:20',
-            'rol' => 'required|in:admin,medewerker'
+            'telefoonnummer' => 'nullable|string|max:20',
+            'geboortedatum' => 'nullable|date',
+            'geslacht' => 'nullable|in:Man,Vrouw,Anders',
+            'straatnaam' => 'nullable|string|max:255',
+            'huisnummer' => 'nullable|string|max:20',
+            'postcode' => 'nullable|string|max:10',
+            'stad' => 'nullable|string|max:255',
+            'functie' => 'nullable|string|max:255',
+            'rol' => 'nullable|in:admin,manager,medewerker,stagiair',
+            'startdatum' => 'nullable|date',
+            'contract_type' => 'nullable|in:Vast,Tijdelijk,Freelance,Stage',
+            'status' => 'required|in:Actief,Inactief,Verlof,Ziek',
+            'bikefit' => 'nullable|boolean',
+            'inspanningstest' => 'nullable|boolean',
+            'upload_documenten' => 'nullable|boolean',
+            'notities' => 'nullable|string',
+            'avatar' => 'nullable|image|max:2048'
         ]);
 
         try {
             \Log::info('🔄 Creating new employee (medewerker)', [
                 'email' => $validated['email'],
-                'role' => $validated['rol'],
+                'role' => $validated['rol'] ?? 'medewerker',
                 'name' => $validated['voornaam'] . ' ' . $validated['achternaam']
             ]);
 
             // Generate a temporary password
             $temporaryPassword = Str::random(12);
             
-            // Create user record with ALL required fields for medewerkers
+            // Handle avatar upload
+            $avatarPath = null;
+            if ($request->hasFile('avatar')) {
+                $avatarPath = $request->file('avatar')->store('avatars', 'public');
+                \Log::info('✅ Avatar uploaded', ['path' => $avatarPath]);
+            }
+            
+            // Create user record met ALLE velden
             $user = User::create([
                 'name' => $validated['voornaam'] . ' ' . $validated['achternaam'],
-                'voornaam' => $validated['voornaam'], // BELANGRIJK: voornaam voor email templates
-                'achternaam' => $validated['achternaam'], // BELANGRIJK: achternaam voor email templates
+                'voornaam' => $validated['voornaam'],
+                'achternaam' => $validated['achternaam'],
                 'email' => $validated['email'],
                 'password' => Hash::make($temporaryPassword),
-                'role' => $validated['rol'],
-                'telefoon' => $validated['telefoon'] ?? null, // BELANGRIJK: telefoon veld
+                'role' => $validated['rol'] ?? 'medewerker',
+                'telefoonnummer' => $validated['telefoonnummer'] ?? null,
+                'geboortedatum' => $validated['geboortedatum'] ?? null,
+                'geslacht' => $validated['geslacht'] ?? null,
+                'straatnaam' => $validated['straatnaam'] ?? null,
+                'huisnummer' => $validated['huisnummer'] ?? null,
+                'postcode' => $validated['postcode'] ?? null,
+                'stad' => $validated['stad'] ?? null,
+                'functie' => $validated['functie'] ?? null,
+                'startdatum' => $validated['startdatum'] ?? null,
+                'contract_type' => $validated['contract_type'] ?? null,
+                'status' => $validated['status'] ?? 'Actief',
+                'bikefit' => $request->has('bikefit') ? 1 : 0,
+                'inspanningstest' => $request->has('inspanningstest') ? 1 : 0,
+                'upload_documenten' => $request->has('upload_documenten') ? 1 : 0,
+                'notities' => $validated['notities'] ?? null,
+                'avatar_path' => $avatarPath,
                 'email_verified_at' => now(), // Auto-verify employee emails
             ]);
 
-            \Log::info('✅ User record created successfully with all fields', [
+            \Log::info('✅ User record created successfully with ALL fields', [
                 'user_id' => $user->id,
                 'email' => $user->email,
                 'role' => $user->role,
                 'voornaam' => $user->voornaam,
                 'achternaam' => $user->achternaam,
-                'telefoon' => $user->telefoon,
-                'name' => $user->name,
+                'telefoonnummer' => $user->telefoonnummer,
+                'geboortedatum' => $user->geboortedatum,
+                'functie' => $user->functie,
+                'bikefit' => $user->bikefit,
+                'inspanningstest' => $user->inspanningstest,
+                'upload_documenten' => $user->upload_documenten,
                 'created_at' => $user->created_at,
-                'user_exists_check' => $user->exists ? 'YES' : 'NO'
             ]);
 
             // IMMEDIATE CHECK: Verify user exists in database right after creation
@@ -146,22 +185,6 @@ class MedewerkerController extends Controller
                 \Log::error('❌ Welcome email system error: ' . $emailError->getMessage(), [
                     'email' => $user->email,
                     'trace' => $emailError->getTraceAsString()
-                ]);
-            }
-
-            // EXTRA VERIFICATIE: Check of user daadwerkelijk is aangemaakt
-            $verifyUser = User::where('email', $validated['email'])->first();
-            if ($verifyUser) {
-                \Log::info('✅ VERIFICATION: User was successfully created and saved', [
-                    'user_id' => $verifyUser->id,
-                    'email' => $verifyUser->email,
-                    'role' => $verifyUser->role,
-                    'database_check' => 'SUCCESS'
-                ]);
-            } else {
-                \Log::error('❌ VERIFICATION FAILED: User was created but not found in database!', [
-                    'email' => $validated['email'],
-                    'database_check' => 'FAILED'
                 ]);
             }
 
@@ -218,18 +241,59 @@ class MedewerkerController extends Controller
             'voornaam' => 'required|string|max:255',
             'achternaam' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $medewerker->id,
-            'telefoon' => 'nullable|string|max:20',
-            'rol' => 'required|in:admin,medewerker'
+            'telefoonnummer' => 'nullable|string|max:20',
+            'geboortedatum' => 'nullable|date',
+            'geslacht' => 'nullable|in:Man,Vrouw,Anders',
+            'straatnaam' => 'nullable|string|max:255',
+            'huisnummer' => 'nullable|string|max:20',
+            'postcode' => 'nullable|string|max:10',
+            'stad' => 'nullable|string|max:255',
+            'functie' => 'nullable|string|max:255',
+            'rol' => 'nullable|in:admin,manager,medewerker,stagiair',
+            'startdatum' => 'nullable|date',
+            'contract_type' => 'nullable|in:Vast,Tijdelijk,Freelance,Stage',
+            'status' => 'required|in:Actief,Inactief,Verlof,Ziek',
+            'bikefit' => 'nullable|boolean',
+            'inspanningstest' => 'nullable|boolean',
+            'upload_documenten' => 'nullable|boolean',
+            'notities' => 'nullable|string',
+            'avatar' => 'nullable|image|max:2048'
         ]);
 
         try {
+            // Handle avatar upload
+            $avatarPath = $medewerker->avatar_path;
+            if ($request->hasFile('avatar')) {
+                // Verwijder oude avatar als die bestaat
+                if ($avatarPath && \Storage::disk('public')->exists($avatarPath)) {
+                    \Storage::disk('public')->delete($avatarPath);
+                }
+                $avatarPath = $request->file('avatar')->store('avatars', 'public');
+                \Log::info('✅ Avatar updated', ['path' => $avatarPath]);
+            }
+
             $medewerker->update([
                 'name' => $validated['voornaam'] . ' ' . $validated['achternaam'],
                 'voornaam' => $validated['voornaam'],
                 'achternaam' => $validated['achternaam'],
                 'email' => $validated['email'],
-                'role' => $validated['rol'],
-                'telefoon' => $validated['telefoon'] ?? null,
+                'role' => $validated['rol'] ?? $medewerker->role,
+                'telefoonnummer' => $validated['telefoonnummer'] ?? null,
+                'geboortedatum' => $validated['geboortedatum'] ?? null,
+                'geslacht' => $validated['geslacht'] ?? null,
+                'straatnaam' => $validated['straatnaam'] ?? null,
+                'huisnummer' => $validated['huisnummer'] ?? null,
+                'postcode' => $validated['postcode'] ?? null,
+                'stad' => $validated['stad'] ?? null,
+                'functie' => $validated['functie'] ?? null,
+                'startdatum' => $validated['startdatum'] ?? null,
+                'contract_type' => $validated['contract_type'] ?? null,
+                'status' => $validated['status'] ?? $medewerker->status,
+                'bikefit' => $request->has('bikefit') ? 1 : 0,
+                'inspanningstest' => $request->has('inspanningstest') ? 1 : 0,
+                'upload_documenten' => $request->has('upload_documenten') ? 1 : 0,
+                'notities' => $validated['notities'] ?? null,
+                'avatar_path' => $avatarPath,
             ]);
 
             \Log::info('✅ Employee updated successfully', [

@@ -15,26 +15,36 @@ class User extends Authenticatable
     /**
      * The attributes that are mass assignable.
      *
-     * @var list<string>
+     * @var array<int, string>
      */
     protected $fillable = [
-        'voornaam',
-        'naam',
         'name',
+        'voornaam',
+        'achternaam',
         'email',
         'password',
+        'role',
         'telefoonnummer',
-        'geboortedatum', 
-        'adres',
-        'stad',
-        'postcode',
+        'geboortedatum',
         'geslacht',
         'avatar_path',
-        'role',
-        'klant_id',
-        'achternaam', // Voeg achternaam toe voor medewerkers
+        // Adresgegevens
+        'straatnaam',
+        'huisnummer',
+        'postcode',
+        'stad',
+        // Werkgerelateerde informatie
+        'functie',
+        'startdatum',
+        'contract_type',
+        'status',
+        // Rechten
+        'bikefit',
+        'inspanningstest',
+        'upload_documenten',
+        // Notities
+        'notities',
         'email_verified_at',
-        'telefoon', // Voeg telefoon toe voor medewerkers
     ];
 
     /**
