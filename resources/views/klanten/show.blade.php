@@ -154,6 +154,9 @@
             </div>
         </div>
     </form>
+
+    <h3 style="font-size:1.2em;margin-top:1.5em;margin-bottom:0.75em;">Testgeschiedenis en documenten</h3>
+
     @php
         $bikefits = $klant->bikefits->map(function($b) { $b->type = 'bikefit'; return $b; });
         $inspanningstests = $klant->inspanningstests->map(function($i) { $i->type = 'inspanningstest'; return $i; });
