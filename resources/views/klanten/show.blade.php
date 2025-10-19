@@ -108,7 +108,7 @@
     <!-- Actiesectie onder header met lijntje -->
     <div class="mt-8 border-t pt-6">
         @php $user = auth()->user(); @endphp
-        <div style="display:flex;gap:0.7em;align-items:center;margin-top:0;margin-bottom:0.8em;">
+        <div style="display:flex;gap:0.7em;align-items:center;margin-top:0;margin-bottom:0;">
             @if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->bikefit)))
             <a href="{{ route('bikefit.create', $klant->id) }}" style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;">+ Bikefit toevoegen</a>
             @endif
@@ -125,14 +125,35 @@
     </div>
 </div>
 
-<div style="margin-top:2em;">
-    <h3 style="font-size:1.2em;margin-bottom:0.5em;display:flex;align-items:center;justify-content:space-between;">
-        <span>Testgeschiedenis & Documenten</span>
-        <button onclick="document.getElementById('documentUploadForm').scrollIntoView({behavior: 'smooth'})" 
-                style="background:#c8e1eb;color:#111;padding:0.4em 1em;border-radius:7px;font-weight:600;font-size:0.85em;border:none;cursor:pointer;">
-            + Document uploaden
-        </button>
-    </h3>
+<div style="margin-top:1.5em;">
+    <h3 style="font-size:1.2em;margin-bottom:0.75em;">Bestanden uploaden</h3>
+    
+    <!-- Compact Document Upload Form -->
+    <form action="{{ route('klanten.documenten.store', $klant) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow-sm p-4 mb-4 border border-gray-200">
+        @csrf
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+            <div>
+                <label for="document" class="block text-xs font-medium text-gray-700 mb-1">Selecteer bestand</label>
+                <input type="file" name="document" id="document" required 
+                       class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50">
+            </div>
+            <div>
+                <label for="naam" class="block text-xs font-medium text-gray-700 mb-1">Naam (optioneel)</label>
+                <input type="text" name="naam" id="naam" placeholder="Document naam..."
+                       class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+            </div>
+            <div>
+                <label for="beschrijving" class="block text-xs font-medium text-gray-700 mb-1">Beschrijving (optioneel)</label>
+                <input type="text" name="beschrijving" id="beschrijving" placeholder="Korte beschrijving..."
+                       class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+            </div>
+            <div>
+                <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                    Uploaden
+                </button>
+            </div>
+        </div>
+    </form>
     @php
         $bikefits = $klant->bikefits->map(function($b) { $b->type = 'bikefit'; return $b; });
         $inspanningstests = $klant->inspanningstests->map(function($i) { $i->type = 'inspanningstest'; return $i; });
@@ -285,41 +306,6 @@
     @else
         <div style="color:#6b7280;">Nog geen testen geregistreerd.</div>
     @endif
-</div>
-
-<!-- Document Upload Form -->
-<div id="documentUploadForm" style="margin-top:3em;">
-    <h3 style="font-size:1.2em;margin-bottom:1em;display:flex;align-items:center;gap:0.5em;">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-        </svg>
-        Document Uploaden
-    </h3>
-
-    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-        <form action="{{ route('klanten.documenten.store', $klant) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-            @csrf
-            <div>
-                <label for="document" class="block text-sm font-medium text-gray-700 mb-2">Selecteer bestand</label>
-                <input type="file" name="document" id="document" required 
-                       class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
-                <p class="mt-1 text-xs text-gray-500">PDF, Word, Excel, afbeeldingen (max 10MB)</p>
-            </div>
-            <div>
-                <label for="naam" class="block text-sm font-medium text-gray-700 mb-2">Documentnaam (optioneel)</label>
-                <input type="text" name="naam" id="naam" placeholder="Bijv. Medisch attest 2024"
-                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div>
-                <label for="beschrijving" class="block text-sm font-medium text-gray-700 mb-2">Beschrijving (optioneel)</label>
-                <textarea name="beschrijving" id="beschrijving" rows="2" placeholder="Extra notities over dit document..."
-                          class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
-            </div>
-            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                Document Uploaden
-            </button>
-        </form>
-    </div>
 </div>
 
 @endsection
