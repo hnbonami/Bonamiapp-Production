@@ -88,8 +88,8 @@
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
                     <div style="background:#c8e1eb;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
-                            <circle cx="5.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/><path d="M14 17h-8l2-11h9c.6 0 1 .4 1 1v7c0 .6-.4 1-1 1h-2"/><path d="M6 6l3-3 3 3"/>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6l3.4 9H18"/><path d="M5.5 17.5L8 10l4 1"/><path d="M12 11l4-5h2.5"/><path d="M12 11l-3 6"/>
                         </svg>
                     </div>
                     <h4 class="font-semibold text-gray-900 text-sm">Bikefit</h4>
