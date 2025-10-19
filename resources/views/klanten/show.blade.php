@@ -76,57 +76,147 @@
         </div>
     </div>
 
-    <!-- Actiesectie onder header met lijntje -->
-    <div class="mt-8 border-t pt-6">
-        @php $user = auth()->user(); @endphp
-        <div style="display:flex;gap:0.7em;align-items:center;margin-top:0;margin-bottom:0;">
+    <!-- Snelle Acties sectie -->
+    <div style="margin-top:1.5em;">
+        <h3 style="font-size:1.2em;margin-bottom:0.75em;">Snelle Acties</h3>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            @php $user = auth()->user(); @endphp
+            
             @if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->bikefit)))
-            <a href="{{ route('bikefit.create', $klant->id) }}" style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;">+ Bikefit toevoegen</a>
+            <!-- Bikefit Card -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                <div class="flex items-center gap-2 mb-2">
+                    <div style="background:#c8e1eb;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+                            <circle cx="5.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/><path d="M14 17h-8l2-11h9c.6 0 1 .4 1 1v7c0 .6-.4 1-1 1h-2"/><path d="M6 6l3-3 3 3"/>
+                        </svg>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 text-sm">Bikefit</h4>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Nieuwe bikefit meting toevoegen</p>
+                <a href="{{ route('bikefit.create', $klant->id) }}" class="block w-full text-center" style="background:#c8e1eb;color:#111;padding:0.5rem 0.75rem;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.813rem;">
+                    + Toevoegen
+                </a>
+            </div>
             @endif
+            
             @if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->inspanningstest)))
-            <a href="{{ route('inspanningstest.create', $klant->id) }}" style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;">+ Inspanningstest toevoegen</a>
+            <!-- Inspanningstest Card -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                <div class="flex items-center gap-2 mb-2">
+                    <div style="background:#c8e1eb;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                        </svg>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 text-sm">Inspanningstest</h4>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Nieuwe insp.test toevoegen</p>
+                <a href="{{ route('inspanningstest.create', $klant->id) }}" class="block w-full text-center" style="background:#c8e1eb;color:#111;padding:0.5rem 0.75rem;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.813rem;">
+                    + Toevoegen
+                </a>
+            </div>
             @endif
+            
+            <!-- Document Upload Card -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                <div class="flex items-center gap-2 mb-2">
+                    <div style="background:#c8e1eb;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 text-sm">Document</h4>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Document uploaden voor klant</p>
+                <button type="button" onclick="openUploadModal()" class="block w-full text-center" style="background:#c8e1eb;color:#111;padding:0.5rem 0.75rem;border-radius:6px;font-weight:600;font-size:0.813rem;border:none;cursor:pointer;">
+                    Upload
+                </button>
+            </div>
+            
             @if($user && ($user->role === 'admin' || $user->role === 'medewerker'))
-                <form action="{{ route('klanten.sendInvitation', $klant) }}" method="POST" class="inline">
+            <!-- Uitnodiging Card -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                <div class="flex items-center gap-2 mb-2">
+                    <div style="background:#c8e1eb;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                    </div>
+                    <h4 class="font-semibold text-gray-900 text-sm">Uitnodiging</h4>
+                </div>
+                <p class="text-xs text-gray-600 mb-3">Profieluitnodiging versturen</p>
+                <form action="{{ route('klanten.sendInvitation', $klant) }}" method="POST">
                     @csrf
-                    <button type="submit" style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;border:none;cursor:pointer;">Uitnodiging profiel</button>
+                    <button type="submit" class="block w-full text-center" style="background:#c8e1eb;color:#111;padding:0.5rem 0.75rem;border-radius:6px;font-weight:600;font-size:0.813rem;border:none;cursor:pointer;">
+                        Versturen
+                    </button>
                 </form>
+            </div>
             @endif
         </div>
     </div>
 </div>
 
-<div style="margin-top:1.5em;">
-    <h3 style="font-size:1.2em;margin-bottom:0.75em;">Bestanden uploaden</h3>
-    
-    <!-- Compact Document Upload Form -->
-    <form action="{{ route('klanten.documenten.store', $klant) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-lg shadow-sm p-4 mb-4 border border-gray-200">
-        @csrf
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
-            <div>
-                <label for="document" class="block text-xs font-medium text-gray-700 mb-1">Selecteer bestand</label>
-                <input type="file" name="document" id="document" required 
-                       class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50">
+<!-- Upload Modal -->
+<div id="uploadModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+    <div class="bg-white rounded-lg shadow-xl" style="width:90%;max-width:600px;padding:2rem;position:relative;">
+        <button onclick="closeUploadModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;">&times;</button>
+        
+        <h3 style="font-size:1.25rem;font-weight:600;margin-bottom:1.5rem;">Document Uploaden</h3>
+        
+        <form action="{{ route('klanten.documenten.store', $klant) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div style="margin-bottom:1rem;">
+                <label for="modal-document" class="block text-sm font-medium text-gray-700 mb-2">Selecteer bestand *</label>
+                <input type="file" name="document" id="modal-document" required 
+                       class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50" style="padding:0.625rem 0.75rem;">
             </div>
-            <div>
-                <label for="naam" class="block text-xs font-medium text-gray-700 mb-1">Naam (optioneel)</label>
-                <input type="text" name="naam" id="naam" placeholder="Document naam..."
-                       class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+            <div style="margin-bottom:1rem;">
+                <label for="modal-naam" class="block text-sm font-medium text-gray-700 mb-2">Naam (optioneel)</label>
+                <input type="text" name="naam" id="modal-naam" placeholder="Document naam..."
+                       class="block w-full text-sm border border-gray-300 rounded-lg" style="padding:0.625rem 0.75rem;">
             </div>
-            <div>
-                <label for="beschrijving" class="block text-xs font-medium text-gray-700 mb-1">Beschrijving (optioneel)</label>
-                <input type="text" name="beschrijving" id="beschrijving" placeholder="Korte beschrijving..."
-                       class="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg">
+            <div style="margin-bottom:1.5rem;">
+                <label for="modal-beschrijving" class="block text-sm font-medium text-gray-700 mb-2">Beschrijving (optioneel)</label>
+                <input type="text" name="beschrijving" id="modal-beschrijving" placeholder="Korte beschrijving..."
+                       class="block w-full text-sm border border-gray-300 rounded-lg" style="padding:0.625rem 0.75rem;">
             </div>
-            <div>
-                <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                <button type="button" onclick="closeUploadModal()" style="background:#e5e7eb;color:#374151;padding:0.625rem 1.5rem;border-radius:6px;font-weight:600;border:none;cursor:pointer;">
+                    Annuleren
+                </button>
+                <button type="submit" style="background:#3b82f6;color:white;padding:0.625rem 1.5rem;border-radius:6px;font-weight:600;border:none;cursor:pointer;">
                     Uploaden
                 </button>
             </div>
-        </div>
-    </form>
+        </form>
+    </div>
+</div>
 
-    <h3 style="font-size:1.2em;margin-top:1.5em;margin-bottom:0.75em;">Testgeschiedenis en documenten</h3>
+<script>
+function openUploadModal() {
+    document.getElementById('uploadModal').style.display = 'flex';
+}
+
+function closeUploadModal() {
+    document.getElementById('uploadModal').style.display = 'none';
+}
+
+// Sluit modal bij klik buiten de modal
+document.getElementById('uploadModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeUploadModal();
+    }
+});
+</script>
+
+<div style="margin-top:2em;">
+    <h3 style="font-size:1.2em;margin-bottom:0.75em;">Testgeschiedenis en documenten</h3>
 
     @php
         $bikefits = $klant->bikefits->map(function($b) { $b->type = 'bikefit'; return $b; });
