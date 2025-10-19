@@ -167,4 +167,12 @@ class Klant extends Model
             \Log::info('Avatar sync with user failed (klant_id column may not exist): ' . $e->getMessage());
         }
     }
+
+    /**
+     * Relatie met klant documenten
+     */
+    public function documenten()
+    {
+        return $this->hasMany(\App\Models\KlantDocument::class, 'klant_id')->orderBy('created_at', 'desc');
+    }
 }

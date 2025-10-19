@@ -152,32 +152,11 @@ class KlantController extends Controller
         }
         return redirect()->route('klanten.index')->with('success', 'Klant toegevoegd en loginmail verzonden!');
     }
-    public function show(Klant $klant)
+    public function show($id)
     {
-        $user = auth()->user();
-        if ($user->role === 'klant' && $user->email !== $klant->email) {
-            abort(403, 'Je mag alleen je eigen profiel bekijken.');
-        }
-
-        // Haal beide soorten tests op
-        $inspanningstests = $klant->inspanningstests()->get()->map(function ($test) {
-            $test->type = 'inspanningstest';
-            $test->test_id = $test->id;
-            $test->datum = $test->testdatum;
-            return $test;
-        });
-
-        $bikefits = $klant->bikefits()->get()->map(function ($test) {
-            $test->type = 'bikefit';
-            $test->test_id = $test->id;
-            $test->datum = $test->datum;
-            return $test;
-        });
-
-        // Voeg samen en sorteer
-        $testen = $inspanningstests->concat($bikefits)->sortByDesc('datum');
-
-        return view('klanten.show', compact('klant', 'testen'));
+        $klant = Klant::with('documenten')->findOrFail($id);
+        
+        return view('klanten.show', compact('klant'));
     }
     public function sendInvitation(Request $request, Klant $klant)
     {

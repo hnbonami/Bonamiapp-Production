@@ -241,6 +241,15 @@ Route::middleware('auth')->group(function () {
     // Export routes
     Route::get('medewerkers-export', fn() => Excel::download(new MedewerkersExport, 'medewerkers.xlsx'))->name('medewerkers.export');
     Route::get('klanten-export', fn() => Excel::download(new KlantenExport, 'klanten.xlsx'))->name('klanten.export');
+    
+    // Klant documenten routes
+    Route::prefix('klanten/{klant}')->group(function () {
+        Route::post('/documenten', [App\Http\Controllers\KlantDocumentController::class, 'store'])->name('klanten.documenten.store');
+        Route::get('/documenten/{document}/download', [App\Http\Controllers\KlantDocumentController::class, 'download'])->name('klanten.documenten.download');
+        Route::get('/documenten/{document}/edit', [App\Http\Controllers\KlantDocumentController::class, 'edit'])->name('klanten.documenten.edit');
+        Route::put('/documenten/{document}', [App\Http\Controllers\KlantDocumentController::class, 'update'])->name('klanten.documenten.update');
+        Route::delete('/documenten/{document}', [App\Http\Controllers\KlantDocumentController::class, 'destroy'])->name('klanten.documenten.destroy');
+    });
 
     // 'Mijn profiel' route: altijd naar profiel bewerken
     Route::get('/mijn-profiel', function () {

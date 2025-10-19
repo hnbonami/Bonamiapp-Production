@@ -126,12 +126,25 @@
 </div>
 
 <div style="margin-top:2em;">
-    <h3 style="font-size:1.2em;margin-bottom:0.5em;">Testgeschiedenis</h3>
+    <h3 style="font-size:1.2em;margin-bottom:0.5em;display:flex;align-items:center;justify-content:space-between;">
+        <span>Testgeschiedenis & Documenten</span>
+        <button onclick="document.getElementById('documentUploadForm').scrollIntoView({behavior: 'smooth'})" 
+                style="background:#c8e1eb;color:#111;padding:0.4em 1em;border-radius:7px;font-weight:600;font-size:0.85em;border:none;cursor:pointer;">
+            + Document uploaden
+        </button>
+    </h3>
     @php
         $bikefits = $klant->bikefits->map(function($b) { $b->type = 'bikefit'; return $b; });
         $inspanningstests = $klant->inspanningstests->map(function($i) { $i->type = 'inspanningstest'; return $i; });
-        $testen = $bikefits->concat($inspanningstests)->sortByDesc(function($item) {
-            return $item->type === 'bikefit' ? ($item->datum ?? $item->created_at) : ($item->testdatum ?? $item->created_at);
+        $documenten = $klant->documenten->map(function($d) { $d->type = 'document'; return $d; });
+        $testen = $bikefits->concat($inspanningstests)->concat($documenten)->sortByDesc(function($item) {
+            if ($item->type === 'bikefit') {
+                return $item->datum ?? $item->created_at;
+            } elseif ($item->type === 'inspanningstest') {
+                return $item->testdatum ?? $item->created_at;
+            } else {
+                return $item->upload_datum ?? $item->created_at;
+            }
         });
     @endphp
     @if($testen->count())
@@ -155,6 +168,8 @@
                                 @else
                                     Datum onbekend
                                 @endif
+                            @elseif($test->type === 'document')
+                                {{ $test->upload_datum ? \Carbon\Carbon::parse($test->upload_datum)->format('d-m-Y') : $test->created_at->format('d-m-Y') }}
                             @else
                                 @if($test->testdatum)
                                     {{ is_string($test->testdatum) ? \Carbon\Carbon::parse($test->testdatum)->format('d-m-Y') : $test->testdatum->format('d-m-Y') }}
@@ -171,6 +186,18 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ ucfirst($test->testtype ?? 'Inspanningstest') }}
                             </td>
+                        @elseif($test instanceof App\Models\KlantDocument)
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <div class="flex items-center gap-2">
+                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                    <span class="text-gray-900">{{ $test->titel ?? 'Document' }}</span>
+                                    <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                                        {{ strtoupper($test->bestandstype) }}
+                                    </span>
+                                </div>
+                            </td>
                         @else
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 {{ class_basename($test) }}
@@ -185,9 +212,18 @@
                                     <a href="{{ route('bikefit.sjabloon-rapport', ['klant' => $klant->id, 'bikefit' => $test->id]) }}" aria-label="Preview Report" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" title="Preview Report">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                     </a>
-                                @else
+                                @elseif($test->type === 'inspanningstest')
                                     <a href="{{ route('inspanningstest.sjabloon-rapport', ['klant' => $klant->id, 'test' => $test->id]) }}" aria-label="Preview Report" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" title="Preview Report">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </a>
+                                @elseif($test->type === 'document')
+                                    <a href="{{ route('klanten.documenten.download', [$klant, $test]) }}" aria-label="Download" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" title="Download">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                        </svg>
+                                    </a>
+                                    <a href="{{ route('klanten.documenten.edit', [$klant, $test]) }}" aria-label="Bewerk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" title="Bewerk">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                     </a>
                                 @endif
                             @if($test->type === 'bikefit')
@@ -204,6 +240,14 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" onclick="return confirm('Weet je zeker dat je deze bikefit wilt verwijderen?')" aria-label="Wis" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-800" title="Wis">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6"/></svg>
+                                    </button>
+                                </form>
+                            @elseif($test->type === 'document')
+                                <form action="{{ route('klanten.documenten.destroy', [$klant, $test]) }}" method="POST" class="inline">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" onclick="return confirm('Weet je zeker dat je dit document wilt verwijderen?')" aria-label="Wis" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-800" title="Wis">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6"/></svg>
                                     </button>
                                 </form>
@@ -242,4 +286,40 @@
         <div style="color:#6b7280;">Nog geen testen geregistreerd.</div>
     @endif
 </div>
+
+<!-- Document Upload Form -->
+<div id="documentUploadForm" style="margin-top:3em;">
+    <h3 style="font-size:1.2em;margin-bottom:1em;display:flex;align-items:center;gap:0.5em;">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        Document Uploaden
+    </h3>
+
+    <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <form action="{{ route('klanten.documenten.store', $klant) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+            @csrf
+            <div>
+                <label for="document" class="block text-sm font-medium text-gray-700 mb-2">Selecteer bestand</label>
+                <input type="file" name="document" id="document" required 
+                       class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+                <p class="mt-1 text-xs text-gray-500">PDF, Word, Excel, afbeeldingen (max 10MB)</p>
+            </div>
+            <div>
+                <label for="naam" class="block text-sm font-medium text-gray-700 mb-2">Documentnaam (optioneel)</label>
+                <input type="text" name="naam" id="naam" placeholder="Bijv. Medisch attest 2024"
+                       class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label for="beschrijving" class="block text-sm font-medium text-gray-700 mb-2">Beschrijving (optioneel)</label>
+                <textarea name="beschrijving" id="beschrijving" rows="2" placeholder="Extra notities over dit document..."
+                          class="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Document Uploaden
+            </button>
+        </form>
+    </div>
+</div>
+
 @endsection
