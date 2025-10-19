@@ -269,6 +269,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get("sjablonen/{id}/preview", [\App\Http\Controllers\SjablonenController::class, "preview"])->name("sjablonen.preview");
     
     // Route::resource('sjablonen', App\Http\Controllers\SjablonenController::class);
+    
+    // Upload route voor achtergrondafbeeldingen
+    Route::post('/sjablonen/{sjabloon}/upload-background', [SjablonenController::class, 'uploadBackground'])
+        ->name('sjablonen.uploadBackground');
 });
 
 // Temporary debug route: render profile as user id 1 (only for local debugging)
@@ -733,6 +737,10 @@ Route::middleware(['auth'])->group(function () {
     // Testtype route MOET VOOR resource routes staan
     Route::get('sjablonen/testtypes/{categorie}', [\App\Http\Controllers\SjablonenController::class, 'getTesttypes'])->name('sjablonen.testtypes');
     
+    // Achtergrond upload routes - MOET VOOR resource routes staan om conflict te vermijden
+    Route::post('sjablonen/backgrounds/upload', [\App\Http\Controllers\SjablonenController::class, 'uploadBackground'])->name('sjablonen.backgrounds.upload');
+    Route::delete('sjablonen/backgrounds/{filename}', [\App\Http\Controllers\SjablonenController::class, 'deleteBackground'])->name('sjablonen.backgrounds.delete');
+    
     // HOOFDROUTE - DEZE WERKTE AL!!!
     Route::resource('sjablonen', \App\Http\Controllers\SjablonenController::class);
     
@@ -740,10 +748,6 @@ Route::middleware(['auth'])->group(function () {
     Route::post('sjablonen/{sjabloon}/pages/{pagina}/update', [\App\Http\Controllers\SjablonenController::class, 'updatePagina'])->name('sjablonen.pagina.update');
     Route::post('sjablonen/{sjabloon}/pages', [\App\Http\Controllers\SjablonenController::class, 'addPagina'])->name('sjablonen.pagina.add');
     Route::delete('sjablonen/{sjabloon}/pages/{pagina}', [\App\Http\Controllers\SjablonenController::class, 'deletePagina'])->name('sjablonen.pagina.delete');
-    
-    // Achtergrond upload routes - NIEUW TOEGEVOEGD
-    Route::post('sjablonen/backgrounds/upload', [\App\Http\Controllers\SjablonenController::class, 'uploadBackground'])->name('sjablonen.backgrounds.upload');
-    Route::delete('sjablonen/backgrounds/{filename}', [\App\Http\Controllers\SjablonenController::class, 'deleteBackground'])->name('sjablonen.backgrounds.delete');
 });
 
 // Rapport routes

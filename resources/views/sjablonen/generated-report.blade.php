@@ -96,6 +96,24 @@
             overflow: visible !important;
         }
         
+        /* FORCEER ALLE TEKST ZICHTBAAR BIJ PRINT - FIX VOOR VERDWIJNENDE NAAM/DATUM */
+        .page-content *,
+        .page-content h1,
+        .page-content h2,
+        .page-content h3,
+        .page-content h4,
+        .page-content p,
+        .page-content span,
+        .page-content div,
+        .page-content strong,
+        .report-page * {
+            opacity: 1 !important;
+            visibility: visible !important;
+            color: inherit !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
         /* Remove ALL scrollbars from page content */
         .page-content,
         .page-content *,
@@ -364,6 +382,21 @@
                 height: 257mm !important;
                 margin: 0 !important;
                 box-sizing: border-box !important;
+            }
+            
+            /* FORCEER ALLE TEKST ZICHTBAAR BIJ PRINT */
+            .page-content *,
+            .page-content h1,
+            .page-content h2,
+            .page-content h3,
+            .page-content p,
+            .page-content strong,
+            .report-page * {
+                opacity: 1 !important;
+                visibility: visible !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                color: inherit !important;
             }
             
             .no-print { 

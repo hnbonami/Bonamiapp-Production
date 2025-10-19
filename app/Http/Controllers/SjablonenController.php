@@ -357,6 +357,102 @@ class SjablonenController extends Controller
         ]);
     }
 
+    /**
+     * Upload achtergrondafbeelding voor sjablonen
+     */
+    public function uploadBackground(Request $request)
+    {
+        try {
+            \Log::info('🔥 uploadBackground called', [
+                'has_file' => $request->hasFile('background'),
+                'all_files' => $request->allFiles(),
+                'all_input' => $request->all()
+            ]);
+
+            $request->validate([
+                'background' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240', // Max 10MB
+            ]);
+
+            if ($request->hasFile('background')) {
+                $file = $request->file('background');
+                $fileName = 'background_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                
+                \Log::info('📁 Uploading file', [
+                    'filename' => $fileName,
+                    'original' => $file->getClientOriginalName(),
+                    'size' => $file->getSize()
+                ]);
+                
+                // Sla op in public/backgrounds directory
+                $destinationPath = public_path('backgrounds');
+                
+                // Zorg dat de directory bestaat
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+                
+                // Verplaats het bestand
+                $file->move($destinationPath, $fileName);
+                
+                \Log::info('✅ File uploaded successfully', ['path' => $destinationPath . '/' . $fileName]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Achtergrond succesvol geüpload!',
+                    'filename' => $fileName,
+                    'path' => '/backgrounds/' . $fileName
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Geen bestand ontvangen'
+            ], 400);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Background upload error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Fout bij uploaden: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verwijder achtergrondafbeelding
+     */
+    public function deleteBackground($filename)
+    {
+        try {
+            $path = public_path('backgrounds/' . $filename);
+            
+            if (file_exists($path)) {
+                unlink($path);
+                
+                \Log::info('✅ Background deleted', ['filename' => $filename]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Achtergrond verwijderd!'
+                ]);
+            }
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Bestand niet gevonden'
+            ], 404);
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Background delete error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Fout bij verwijderen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function preview($id)
     {
         // Find sjabloon
@@ -1353,7 +1449,7 @@ class SjablonenController extends Controller
                     margin: 0px !important;
                 }
                 * .mobility-report-table .score-label,
-                * .mobility-report-table .score-value,
+                * .mobility-report.table .score-value,
                 * .mobility-report_table .score-text,
                 * .mobility-report-table span,
                 * .mobility-report-table small {
@@ -1379,7 +1475,7 @@ class SjablonenController extends Controller
                     visibility: hidden !important;
                     font-size: 0px !important;
                     height: 0px !important;
-                    opacity: 0 !important;
+                                       opacity: 0 !important;
                 }
             </style>';
             
