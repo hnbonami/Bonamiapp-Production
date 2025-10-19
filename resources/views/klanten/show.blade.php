@@ -77,13 +77,14 @@
     </div>
 
     <!-- Snelle Acties sectie -->
+    @php $user = auth()->user(); @endphp
+    @if($user && ($user->role === 'admin' || $user->role === 'medewerker'))
     <div style="margin-top:1.5em;">
         <h3 style="font-size:1.2em;margin-bottom:0.75em;">Snelle Acties</h3>
         
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            @php $user = auth()->user(); @endphp
             
-            @if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->bikefit)))
+            @if($user->role === 'admin' || ($user->role === 'medewerker' && $user->bikefit))
             <!-- Bikefit Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
@@ -101,7 +102,7 @@
             </div>
             @endif
             
-            @if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->inspanningstest)))
+            @if($user->role === 'admin' || ($user->role === 'medewerker' && $user->inspanningstest))
             <!-- Inspanningstest Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
@@ -119,6 +120,7 @@
             </div>
             @endif
             
+            @if($user->role === 'admin' || ($user->role === 'medewerker' && $user->upload_documenten))
             <!-- Document Upload Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
@@ -136,8 +138,9 @@
                     Upload
                 </button>
             </div>
+            @endif
             
-            @if($user && ($user->role === 'admin' || $user->role === 'medewerker'))
+            @if($user->role === 'admin' || $user->role === 'medewerker')
             <!-- Uitnodiging Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
@@ -160,9 +163,11 @@
             @endif
         </div>
     </div>
+    @endif
 </div>
 
 <!-- Upload Modal -->
+@if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->upload_documenten)))
 <div id="uploadModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
     <div class="bg-white rounded-lg shadow-xl" style="width:90%;max-width:600px;padding:2rem;position:relative;">
         <button onclick="closeUploadModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;">&times;</button>
@@ -190,13 +195,14 @@
                 <button type="button" onclick="closeUploadModal()" style="background:#e5e7eb;color:#374151;padding:0.625rem 1.5rem;border-radius:6px;font-weight:600;border:none;cursor:pointer;">
                     Annuleren
                 </button>
-                <button type="submit" style="background:#3b82f6;color:white;padding:0.625rem 1.5rem;border-radius:6px;font-weight:600;border:none;cursor:pointer;">
+                <button type="submit" style="background:#c8e1eb;color:#111;padding:0.625rem 1.5rem;border-radius:6px;font-weight:600;border:none;cursor:pointer;">
                     Uploaden
                 </button>
             </div>
         </form>
     </div>
 </div>
+@endif
 
 <script>
 function openUploadModal() {
@@ -300,18 +306,20 @@ document.getElementById('uploadModal').addEventListener('click', function(e) {
                                 @elseif($test->type === 'inspanningstest')
                                     <a href="{{ route('inspanningstest.sjabloon-rapport', ['klant' => $klant->id, 'test' => $test->id]) }}" aria-label="Preview Report" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" title="Preview Report">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                    </a>
                                 @elseif($test->type === 'document')
                                     <a href="{{ route('klanten.documenten.download', [$klant, $test]) }}" aria-label="Download" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" title="Download">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
                                         </svg>
                                     </a>
+                                    @if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->upload_documenten)))
                                     <a href="{{ route('klanten.documenten.edit', [$klant, $test]) }}" aria-label="Bewerk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" title="Bewerk">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                     </a>
+                                    @endif
                                 @endif
                             @if($test->type === 'bikefit')
+                                @if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->bikefit)))
                                 <a href="{{ route('bikefit.edit', [$klant->id, $test->id]) }}" aria-label="Bewerk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" title="Bewerk">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                 </a>
@@ -328,7 +336,9 @@ document.getElementById('uploadModal').addEventListener('click', function(e) {
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6"/></svg>
                                     </button>
                                 </form>
+                                @endif
                             @elseif($test->type === 'document')
+                                @if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->upload_documenten)))
                                 <form action="{{ route('klanten.documenten.destroy', [$klant, $test]) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
@@ -336,16 +346,12 @@ document.getElementById('uploadModal').addEventListener('click', function(e) {
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6"/></svg>
                                     </button>
                                 </form>
+                                @endif
                             @else
-                                @php
-                                    $inspPdfPath = 'reports/' . $klant->id . '/inspanningstest_' . $test->id . '_report.pdf';
-                                @endphp
-                                {{-- Always show preview (open HTML preview) --}}
+                                @if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->inspanningstest)))
                                 <a href="{{ route('inspanningstest.edit', [$klant->id, $test->id]) }}" aria-label="Bewerk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" title="Bewerk">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
                                 </a>
-                                {{-- If a stored PDF exists, show download icon as well --}}
-                                <!-- Inspanningstest verslag-links verwijderd -->
                                 <form action="{{ route('inspanningstest.duplicate', [$klant->id, $test->id]) }}" method="POST" class="inline">
                                     @csrf
                                     <button type="submit" aria-label="Dupliceer" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800" title="Dupliceer">
@@ -359,6 +365,7 @@ document.getElementById('uploadModal').addEventListener('click', function(e) {
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6"/></svg>
                                     </button>
                                 </form>
+                                @endif
                             @endif
                             </div>
                         </td>

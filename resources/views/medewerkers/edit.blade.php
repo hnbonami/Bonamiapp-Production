@@ -198,7 +198,7 @@
                 
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-3">Welke functies mag deze medewerker uitvoeren?</label>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="flex items-center">
                             <input type="checkbox" 
                                    name="bikefit" 
@@ -222,6 +222,19 @@
                             <label for="recht_inspanningstest" class="ml-3 block text-sm font-medium text-gray-700">
                                 Inspanningstest
                                 <span class="block text-xs text-gray-500">Kan inspanningstests aanmaken en beheren</span>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center">
+                            <input type="checkbox" 
+                                   name="upload_documenten" 
+                                   value="1" 
+                                   id="recht_upload_documenten"
+                                   {{ old('upload_documenten', $medewerker->upload_documenten) ? 'checked' : '' }}
+                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                            <label for="recht_upload_documenten" class="ml-3 block text-sm font-medium text-gray-700">
+                                Upload documenten
+                                <span class="block text-xs text-gray-500">Kan documenten uploaden en bewerken</span>
                             </label>
                         </div>
                     </div>
