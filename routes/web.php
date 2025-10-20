@@ -1256,3 +1256,9 @@ Route::get('/import/klanten', [\App\Http\Controllers\KlantenController::class, '
 Route::post('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
 Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');
+
+// Inspanningstesten Import/Export routes
+Route::get('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'showImport'])->name('inspanningstesten.import.form');
+Route::post('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'import'])->name('inspanningstesten.import');
+Route::get('/download/inspanningstesten-template', [\App\Http\Controllers\InspanningstestenController::class, 'downloadTemplate'])->name('inspanningstesten.template');
+Route::get('/export/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'export'])->name('inspanningstesten.export');

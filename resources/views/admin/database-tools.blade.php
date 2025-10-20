@@ -60,6 +60,32 @@
                             </a>
                         </div>
                     </div>
+
+                    <!-- Inspanningstesten Import -->
+                    <div class="bg-orange-50 p-6 rounded-lg">
+                        <div class="flex items-center mb-4">
+                            <svg class="w-8 h-8 text-orange-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                            </svg>
+                            <h3 class="text-xl font-semibold text-orange-800">Inspanningstesten Toevoegen</h3>
+                        </div>
+                        <p class="text-orange-600 mb-4">Import inspanningstest gegevens uit Excel bestand</p>
+                        
+                        <div class="mb-4">
+                            <a href="{{ route('inspanningstesten.template') }}" class="inline-flex items-center text-orange-600 hover:text-orange-800 font-medium mb-3">
+                                📥 Download Template
+                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                </svg>
+                            </a>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <a href="/import/inspanningstesten" class="inline-flex items-center px-6 py-3 border border-transparent rounded-md font-semibold text-sm text-gray-800 uppercase tracking-widest transition ease-in-out duration-150" style="background-color: #c8e1eb; hover:background-color: #b3d4df;">
+                                📤 Import Inspanningstesten
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Data Exporteren -->
@@ -67,7 +93,7 @@
                     <h2 class="text-2xl font-bold text-gray-900 mb-4">Data Exporteren</h2>
                     <p class="text-gray-600 mb-6">Download alle data uit de database als Excel bestanden voor backup of analyse.</p>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <!-- Download Alle Klanten -->
                         <div class="bg-purple-50 p-6 rounded-lg">
                             <div class="flex items-center mb-4">
@@ -102,6 +128,25 @@
                             <div>
                                 <small class="text-yellow-600">
                                     Bevat: Klant info, metingen, posities, aanpassingen, resultaten
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Download Alle Inspanningstesten -->
+                        <div class="bg-red-50 p-6 rounded-lg">
+                            <div class="flex items-center mb-4">
+                                <svg class="w-8 h-8 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                                </svg>
+                                <h3 class="text-xl font-semibold text-red-800">Download Alle Inspanningstesten</h3>
+                            </div>
+                            <p class="text-red-600 mb-4">Export alle inspanningstest gegevens naar Excel</p>
+                            <a href="{{ route('inspanningstesten.export') }}" class="inline-flex items-center px-6 py-3 border border-transparent rounded-md font-semibold text-sm text-gray-800 uppercase tracking-widest transition ease-in-out duration-150 mb-3" style="background-color: #c8e1eb; hover:background-color: #b3d4df;">
+                                💾 Download Inspanningstesten
+                            </a>
+                            <div>
+                                <small class="text-red-600">
+                                    Bevat: Klant info, testdata, VO2max, zones, vermogen, hartslag
                                 </small>
                             </div>
                         </div>
