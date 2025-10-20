@@ -208,6 +208,12 @@ class BikefitController extends Controller
 
     public function update(Request $request, Klant $klant, Bikefit $bikefit)
     {
+        \Log::info('🔧 Bikefit UPDATE gestart', [
+            'klant_id' => $klant->id,
+            'bikefit_id' => $bikefit->id,
+            'request_method' => $request->method(),
+            'all_input' => $request->all()
+        ]);
 
         $data = $request->validate([
             'lengte_cm' => 'nullable|numeric',
@@ -237,6 +243,8 @@ class BikefitController extends Controller
             'opmerkingen' => 'nullable|string',
             'interne_opmerkingen' => 'nullable|string',
             // New fields
+            'datum' => 'nullable|date',
+            'testtype' => 'nullable|string',
             'fietsmerk' => 'nullable|string',
             'kadermaat' => 'nullable|string',
             'bouwjaar' => 'nullable|integer',
@@ -247,7 +255,7 @@ class BikefitController extends Controller
             'steunzolen' => 'nullable|in:0,1',
             'steunzolen_reden' => 'nullable|string',
             // Voetmeting
-            'schoenmaat' => 'nullable|integer|min:35|max:50',
+            'schoenmaat' => 'nullable|numeric|min:35|max:50',
             'voetbreedte' => 'nullable|numeric|min:6|max:13',
             'voetpositie' => 'nullable|in:neutraal,pronatie,supinatie',
             // Template selection for report rendering (nullable)
@@ -294,13 +302,31 @@ class BikefitController extends Controller
             ]
         ]);
 
+        \Log::info('✅ Validation passed, data:', [
+            'validated_keys' => array_keys($data),
+            'validated_count' => count($data)
+        ]);
+
         // Verwerk stuurpen data correct
         $data['aanpassingen_stuurpen_aan'] = $request->has('aanpassingen_stuurpen_aan') ? 1 : 0;
         $data['aanpassingen_stuurpen_pre'] = $request->input('aanpassingen_stuurpen_pre') ?: null;
         $data['aanpassingen_stuurpen_post'] = $request->input('aanpassingen_stuurpen_post') ?: null;
 
         // Update the bikefit
-        $bikefit->update($data);
+        \Log::info('💾 Updating bikefit met data...', [
+            'data_keys' => array_keys($data)
+        ]);
+        
+        try {
+            $bikefit->update($data);
+            \Log::info('✅ Bikefit update successful');
+        } catch (\Exception $e) {
+            \Log::error('❌ Bikefit update FAILED', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw $e;
+        }
 
         // Handle uitleensysteem data if provided
         if ($request->filled('onderdeel_type')) {
@@ -317,17 +343,20 @@ class BikefitController extends Controller
 
         // Check of de gebruiker op "Opslaan" heeft geklikt (naar results)
         if ($request->has('save_and_results')) {
+            \Log::info('🔄 Redirecting naar results');
             return redirect()->route('bikefit.results', ['klant' => $klant->id, 'bikefit' => $bikefit->id])
                 ->with('success', 'Bikefit bijgewerkt.');
         }
 
         // Check of de gebruiker op "Terug" heeft geklikt
         if ($request->has('save_and_back')) {
+            \Log::info('🔙 Redirecting naar klant show');
             return redirect()->route('klanten.show', $klant->id)
                 ->with('success', 'Bikefit bijgewerkt.');
         }
 
         // Herlaad bikefit met uploads-relatie en toon edit view
+        \Log::info('🔄 Returning to edit view');
         $bikefit = $klant->bikefits()->with('uploads')->findOrFail($bikefit->id);
         return view('bikefit.edit', compact('klant', 'bikefit'))
             ->with('success', 'Bikefit bijgewerkt.');
