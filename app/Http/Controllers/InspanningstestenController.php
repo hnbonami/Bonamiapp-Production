@@ -145,7 +145,7 @@ class InspanningstestenController extends Controller
             exit;
             
         } catch (\Exception $e) {
-            \Log::error('Inspanningstesten template download failed: ' . $e->getMessage());
+            Log::error('Inspanningstesten template download failed: ' . $e->getMessage());
             return back()->with('error', 'Template kon niet worden gedownload: ' . $e->getMessage());
         }
     }
@@ -196,11 +196,11 @@ class InspanningstestenController extends Controller
                     // Zoek klant op basis van email OF naam
                     $klant = null;
                     if (!empty($data['klant_email'])) {
-                        $klant = \App\Models\Klant::where('email', $data['klant_email'])->first();
+                        $klant = Klant::where('email', $data['klant_email'])->first();
                     }
                     
                     if (!$klant && !empty($data['klant_naam'])) {
-                        $klant = \App\Models\Klant::where(\DB::raw('CONCAT(voornaam, " ", naam)'), 'LIKE', '%' . $data['klant_naam'] . '%')->first();
+                        $klant = Klant::where(DB::raw('CONCAT(voornaam, " ", naam)'), 'LIKE', '%' . $data['klant_naam'] . '%')->first();
                     }
                     
                     if (!$klant) {
@@ -265,13 +265,13 @@ class InspanningstestenController extends Controller
                     ];
                     
                     // Maak inspanningstest aan
-                    \App\Models\Inspanningstest::create($testData);
+                    Inspanningstest::create($testData);
                     $importedCount++;
                     
                 } catch (\Exception $e) {
                     $skippedCount++;
                     $errors[] = "Rij " . ($i + 1) . ": " . $e->getMessage();
-                    \Log::error("Inspanningstest import error rij $i: " . $e->getMessage());
+                    Log::error("Inspanningstest import error rij $i: " . $e->getMessage());
                 }
             }
             
@@ -284,12 +284,12 @@ class InspanningstestenController extends Controller
                 $message .= ". Fouten: " . implode('; ', array_slice($errors, 0, 5));
             }
             
-            \Log::info("Inspanningstesten import: $importedCount succesvol, $skippedCount overgeslagen");
+            Log::info("Inspanningstesten import: $importedCount succesvol, $skippedCount overgeslagen");
             
             return redirect()->route('inspanningstesten.import.form')->with('success', $message);
             
         } catch (\Exception $e) {
-            \Log::error('Inspanningstesten import failed: ' . $e->getMessage());
+            Log::error('Inspanningstesten import failed: ' . $e->getMessage());
             return back()->with('error', 'Import mislukt: ' . $e->getMessage());
         }
     }
@@ -300,9 +300,9 @@ class InspanningstestenController extends Controller
     public function export()
     {
         try {
-            $testen = \App\Models\Inspanningstest::with('klant')->orderBy('datum', 'desc')->get();
+            $testen = Inspanningstest::with('klant')->orderBy('datum', 'desc')->get();
             
-            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $spreadsheet = new Spreadsheet();
             $sheet = $spreadsheet->getActiveSheet();
             
             // Headers
@@ -386,7 +386,7 @@ class InspanningstestenController extends Controller
                 $row++;
             }
             
-            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $writer = new Xlsx($spreadsheet);
             $filename = 'inspanningstesten_export_' . date('Y-m-d_His') . '.xlsx';
             
             header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -397,7 +397,7 @@ class InspanningstestenController extends Controller
             exit;
             
         } catch (\Exception $e) {
-            \Log::error('Inspanningstesten export failed: ' . $e->getMessage());
+            Log::error('Inspanningstesten export failed: ' . $e->getMessage());
             return back()->with('error', 'Export mislukt: ' . $e->getMessage());
         }
     }
