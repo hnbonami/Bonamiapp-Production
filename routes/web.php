@@ -1257,6 +1257,12 @@ Route::post('/import/klanten', [\App\Http\Controllers\KlantenController::class, 
 Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');
 
+// Bikefit Import/Export routes  
+Route::get('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
+Route::post('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
+Route::get('/import/bikefits/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template');
+Route::get('/export/bikefits', [\AppHttp\Controllers\BikefitController::class, 'exportBikefits'])->name('bikefits.export');
+
 // Inspanningstesten Import/Export routes
 Route::get('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'showImport'])->name('inspanningstesten.import.form');
 Route::post('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'import'])->name('inspanningstesten.import');

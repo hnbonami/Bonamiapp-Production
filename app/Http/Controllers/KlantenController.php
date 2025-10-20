@@ -305,7 +305,6 @@ class KlantenController extends Controller
                 'niveau',
                 'club',
                 'herkomst',
-                'hoe_ontdekt',
                 'opmerkingen',
                 'status'
             ];
@@ -335,9 +334,8 @@ class KlantenController extends Controller
             $sheet->setCellValue('M2', 'Gevorderd');
             $sheet->setCellValue('N2', 'Wielerclub Amsterdam');
             $sheet->setCellValue('O2', 'Google');
-            $sheet->setCellValue('P2', 'Online zoeken');
-            $sheet->setCellValue('Q2', 'Voorbeeld opmerking');
-            $sheet->setCellValue('R2', 'Actief');
+            $sheet->setCellValue('P2', 'Voorbeeld opmerking');
+            $sheet->setCellValue('Q2', 'Actief');
             
             // Maak Excel bestand
             $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
@@ -354,6 +352,44 @@ class KlantenController extends Controller
             \Log::error('Template download failed: ' . $e->getMessage());
             return back()->with('error', 'Template kon niet worden gedownload: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Helper functie om datum te converteren naar MySQL formaat
+     */
+    private function convertDateToMysql($date)
+    {
+        if (empty($date)) {
+            return null;
+        }
+        
+        // Als het een Excel numerieke datum is
+        if (is_numeric($date)) {
+            try {
+                $excelDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($date);
+                return $excelDate->format('Y-m-d');
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+        
+        // Probeer verschillende datum formaten
+        $formats = ['Y-m-d', 'd/m/Y', 'm/d/Y', 'd-m-Y', 'm-d-Y', 'Y/m/d'];
+        
+        foreach ($formats as $format) {
+            $dateObj = \DateTime::createFromFormat($format, $date);
+            if ($dateObj && $dateObj->format($format) === $date) {
+                return $dateObj->format('Y-m-d');
+            }
+        }
+        
+        // Laatste poging met strtotime
+        $timestamp = strtotime($date);
+        if ($timestamp !== false) {
+            return date('Y-m-d', $timestamp);
+        }
+        
+        return null;
     }
 
     /**
@@ -409,24 +445,26 @@ class KlantenController extends Controller
                     // Check of klant al bestaat (op basis van email)
                     $existingKlant = Klant::where('email', $data['email'])->first();
                     
+                    // Converteer geboortedatum naar MySQL formaat
+                    $geboortedatum = $this->convertDateToMysql($data['geboortedatum'] ?? null);
+                    
                     if ($existingKlant) {
                         // Update bestaande klant
                         $existingKlant->update([
                             'voornaam' => $data['voornaam'] ?? $existingKlant->voornaam,
                             'naam' => $data['naam'] ?? $existingKlant->naam,
                             'telefoonnummer' => $data['telefoonnummer'] ?? $existingKlant->telefoonnummer,
-                            'geboortedatum' => !empty($data['geboortedatum']) ? $data['geboortedatum'] : $existingKlant->geboortedatum,
+                            'geboortedatum' => $geboortedatum ?? $existingKlant->geboortedatum,
                             'geslacht' => $data['geslacht'] ?? $existingKlant->geslacht,
                             'straatnaam' => $data['straatnaam'] ?? $existingKlant->straatnaam,
                             'huisnummer' => $data['huisnummer'] ?? $existingKlant->huisnummer,
                             'postcode' => $data['postcode'] ?? $existingKlant->postcode,
                             'stad' => $data['stad'] ?? $existingKlant->stad,
-                            'land' => $data['land'] ?? $existingKlant->land,
+                            'land' => $data['land'] ?? $existingKlant->land ?? 'België',
                             'sport' => $data['sport'] ?? $existingKlant->sport,
                             'niveau' => $data['niveau'] ?? $existingKlant->niveau,
                             'club' => $data['club'] ?? $existingKlant->club,
                             'herkomst' => $data['herkomst'] ?? $existingKlant->herkomst,
-                            'hoe_ontdekt' => $data['hoe_ontdekt'] ?? $existingKlant->hoe_ontdekt,
                             'opmerkingen' => $data['opmerkingen'] ?? $existingKlant->opmerkingen,
                             'status' => $data['status'] ?? $existingKlant->status,
                         ]);
@@ -437,18 +475,17 @@ class KlantenController extends Controller
                             'naam' => $data['naam'],
                             'email' => $data['email'],
                             'telefoonnummer' => $data['telefoonnummer'] ?? null,
-                            'geboortedatum' => !empty($data['geboortedatum']) ? $data['geboortedatum'] : null,
+                            'geboortedatum' => $geboortedatum,
                             'geslacht' => $data['geslacht'] ?? null,
                             'straatnaam' => $data['straatnaam'] ?? null,
                             'huisnummer' => $data['huisnummer'] ?? null,
                             'postcode' => $data['postcode'] ?? null,
                             'stad' => $data['stad'] ?? null,
-                            'land' => $data['land'] ?? null,
+                            'land' => $data['land'] ?? 'België',
                             'sport' => $data['sport'] ?? null,
                             'niveau' => $data['niveau'] ?? null,
                             'club' => $data['club'] ?? null,
                             'herkomst' => $data['herkomst'] ?? null,
-                            'hoe_ontdekt' => $data['hoe_ontdekt'] ?? null,
                             'opmerkingen' => $data['opmerkingen'] ?? null,
                             'status' => $data['status'] ?? 'Actief',
                         ]);
@@ -498,7 +535,7 @@ class KlantenController extends Controller
                 'ID', 'Voornaam', 'Naam', 'Email', 'Telefoonnummer', 
                 'Geboortedatum', 'Geslacht', 'Straatnaam', 'Huisnummer',
                 'Postcode', 'Stad', 'Land', 'Sport', 'Niveau', 'Club',
-                'Herkomst', 'Hoe Ontdekt', 'Opmerkingen', 'Status', 
+                'Herkomst', 'Opmerkingen', 'Status', 
                 'Aangemaakt Op'
             ];
             
@@ -529,10 +566,9 @@ class KlantenController extends Controller
                 $sheet->setCellValue('N' . $row, $klant->niveau);
                 $sheet->setCellValue('O' . $row, $klant->club);
                 $sheet->setCellValue('P' . $row, $klant->herkomst);
-                $sheet->setCellValue('Q' . $row, $klant->hoe_ontdekt);
-                $sheet->setCellValue('R' . $row, $klant->opmerkingen);
-                $sheet->setCellValue('S' . $row, $klant->status);
-                $sheet->setCellValue('T' . $row, $klant->created_at ? $klant->created_at->format('Y-m-d H:i') : '');
+                $sheet->setCellValue('Q' . $row, $klant->opmerkingen);
+                $sheet->setCellValue('R' . $row, $klant->status);
+                $sheet->setCellValue('S' . $row, $klant->created_at ? $klant->created_at->format('Y-m-d H:i') : '');
                 $row++;
             }
             
