@@ -1783,4 +1783,201 @@ const fs = require('fs');
             }
         }
     }
+
+    /**
+     * Handle the bikefit Excel import
+     */
+    public function import(Request $request)
+    {
+        try {
+            // Check voor verschillende mogelijke veldnamen
+            $fieldName = $request->hasFile('file') ? 'file' : 'excel_file';
+            
+            $request->validate([
+                $fieldName => 'required|file|mimes:xlsx,xls,csv|max:10240'
+            ]);
+            
+            $file = $request->file($fieldName);
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+            
+            if (empty($rows)) {
+                return back()->with('error', 'Het Excel bestand is leeg');
+            }
+            
+            // Eerste rij bevat headers
+            $headers = array_map('strtolower', array_map('trim', $rows[0]));
+            $importedCount = 0;
+            $skippedCount = 0;
+            $errors = [];
+            
+            // Loop door alle data rijen (skip header)
+            for ($i = 1; $i < count($rows); $i++) {
+                $row = $rows[$i];
+                
+                // Skip lege rijen
+                if (empty(array_filter($row))) {
+                    continue;
+                }
+                
+                try {
+                    // Map kolommen naar data
+                    $data = [];
+                    foreach ($headers as $index => $header) {
+                        if (isset($row[$index])) {
+                            $data[$header] = $row[$index];
+                        }
+                    }
+                    
+                    // Debug logging voor testtype
+                    \Log::info("Import rij $i - testtype waarde:", [
+                        'testtype_raw' => $data['testtype'] ?? 'NIET GEVONDEN',
+                        'all_data_keys' => array_keys($data)
+                    ]);
+                    
+                    // Zoek klant op basis van email OF naam
+                    $klant = null;
+                    if (!empty($data['klant_email'])) {
+                        $klant = Klant::where('email', $data['klant_email'])->first();
+                    }
+                    
+                    if (!$klant && !empty($data['klant_naam'])) {
+                        $klant = Klant::where(\DB::raw('CONCAT(voornaam, " ", naam)'), 'LIKE', '%' . $data['klant_naam'] . '%')->first();
+                    }
+                    
+                    if (!$klant) {
+                        $skippedCount++;
+                        $errors[] = "Rij " . ($i + 1) . ": Klant niet gevonden";
+                        continue;
+                    }
+                    
+                    // Bereid bikefit data voor
+                    $bikefitData = [
+                        'klant_id' => $klant->id,
+                        'user_id' => auth()->id(),
+                        'datum' => !empty($data['datum']) ? $this->convertDateToMysql($data['datum']) : now()->format('Y-m-d'),
+                        'testtype' => !empty($data['testtype']) ? $data['testtype'] : 'standaard bikefit',
+                        'lengte_cm' => $data['lengte_cm'] ?? null,
+                        'binnenbeenlengte_cm' => $data['binnenbeenlengte_cm'] ?? null,
+                        'armlengte_cm' => $data['armlenge_cm'] ?? null,
+                        'romplengte_cm' => $data['romplengte_cm'] ?? null,
+                        'schouderbreedte_cm' => $data['schouderbreedte_cm'] ?? null,
+                        'fietsmerk' => $data['fietsmerk'] ?? null,
+                        'kadermaat' => $data['kadermaat'] ?? null,
+                        'bouwjaar' => $data['bouwjaar'] ?? null,
+                        'frametype' => $data['frametype'] ?? null,
+                        'type_fiets' => $data['type_fiets'] ?? null,
+                        'type_fitting' => $data['type_fitting'] ?? null,
+                        'zadel_trapas_hoek' => $data['zadel_trapas_hoek'] ?? null,
+                        'zadel_trapas_afstand' => $data['zadel_trapas_afstand'] ?? null,
+                        'stuur_trapas_hoek' => $data['stuur_trapas_hoek'] ?? null,
+                        'stuur_trapas_afstand' => $data['stuur_trapas_afstand'] ?? null,
+                        'zadel_lengte_center_top' => $data['zadel_lengte_center_top'] ?? null,
+                        'aanpassingen_zadel' => $data['aanpassingen_zadel'] ?? null,
+                        'aanpassingen_setback' => $data['aanpassingen_setback'] ?? null,
+                        'aanpassingen_reach' => $data['aanpassingen_reach'] ?? null,
+                        'aanpassingen_drop' => $data['aanpassingen_drop'] ?? null,
+                        'aanpassingen_stuurpen_aan' => isset($data['aanpassingen_stuurpen_aan']) && strtolower($data['aanpassingen_stuurpen_aan']) === 'ja' ? 1 : 0,
+                        'aanpassingen_stuurpen_pre' => $data['aanpassingen_stuurpen_pre'] ?? null,
+                        'aanpassingen_stuurpen_post' => $data['aanpassingen_stuurpen_post'] ?? null,
+                        'type_zadel' => $data['type_zadel'] ?? null,
+                        'zadeltil' => $data['zadeltil'] ?? null,
+                        'zadelbreedte' => $data['zadelbreedte'] ?? null,
+                        'nieuw_testzadel' => $data['nieuw_testzadel'] ?? null,
+                        'rotatie_aanpassingen' => $data['rotatie_aanpassingen'] ?? null,
+                        'inclinatie_aanpassingen' => $data['inclinatie_aanpassingen'] ?? null,
+                        'ophoging_li' => $data['ophoging_li'] ?? null,
+                        'ophoging_re' => $data['ophoging_re'] ?? null,
+                        'algemene_klachten' => $data['algemene_klachten'] ?? null,
+                        'beenlengteverschil' => isset($data['beenlengteverschil']) && strtolower($data['beenlengteverschil']) === 'ja' ? 1 : 0,
+                        'beenlengteverschil_cm' => $data['beenlengteverschil_cm'] ?? null,
+                        'lenigheid_hamstrings' => $data['lenigheid_hamstrings'] ?? null,
+                        'steunzolen' => isset($data['steunzolen']) && strtolower($data['steunzolen']) === 'ja' ? 1 : 0,
+                        'steunzolen_reden' => $data['steunzolen_reden'] ?? null,
+                        'schoenmaat' => $data['schoenmaat'] ?? null,
+                        'voetbreedte' => $data['voetbreedte'] ?? null,
+                        'voetpositie' => $data['voetpositie'] ?? null,
+                        'straight_leg_raise_links' => $data['straight_leg_raise_links'] ?? null,
+                        'straight_leg_raise_rechts' => $data['straight_leg_raise_rechts'] ?? null,
+                        'knieflexie_links' => $data['knieflexie_links'] ?? null,
+                        'knieflexie_rechts' => $data['knieflexie_rechts'] ?? null,
+                        'heup_endorotatie_links' => $data['heup_endorotatie_links'] ?? null,
+                        'heup_endorotatie_rechts' => $data['heup_endorotatie_rechts'] ?? null,
+                        'heup_exorotatie_links' => $data['heup_exorotatie_links'] ?? null,
+                        'heup_exorotatie_rechts' => $data['heup_exorotatie_rechts'] ?? null,
+                        'enkeldorsiflexie_links' => $data['enkeldorsiflexie_links'] ?? null,
+                        'enkeldorsiflexie_rechts' => $data['enkeldorsiflexie_rechts'] ?? null,
+                        'one_leg_squat_links' => $data['one_leg_squat_links'] ?? null,
+                        'one_leg_squat_rechts' => $data['one_leg_squat_rechts'] ?? null,
+                        'opmerkingen' => $data['opmerkingen'] ?? null,
+                        'interne_opmerkingen' => $data['interne_opmerkingen'] ?? null,
+                    ];
+                    
+                    Bikefit::create($bikefitData);
+                    $importedCount++;
+                    
+                } catch (\Exception $e) {
+                    $skippedCount++;
+                    $errors[] = "Rij " . ($i + 1) . ": " . $e->getMessage();
+                    \Log::error("Bikefit import error rij $i: " . $e->getMessage());
+                }
+            }
+            
+            $message = "Import voltooid! $importedCount bikefits geïmporteerd";
+            if ($skippedCount > 0) {
+                $message .= ", $skippedCount rijen overgeslagen";
+            }
+            
+            if (!empty($errors)) {
+                $message .= ". Fouten: " . implode('; ', array_slice($errors, 0, 5));
+            }
+            
+            \Log::info("Bikefit import: $importedCount succesvol, $skippedCount overgeslagen");
+            
+            return redirect()->route('bikefit.import.form')->with('success', $message);
+            
+        } catch (\Exception $e) {
+            \Log::error('Bikefit import failed: ' . $e->getMessage());
+            return back()->with('error', 'Import mislukt: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Helper functie om datum te converteren naar MySQL formaat
+     */
+    private function convertDateToMysql($date)
+    {
+        if (empty($date)) {
+            return null;
+        }
+        
+        // Als het een Excel numerieke datum is
+        if (is_numeric($date)) {
+            try {
+                $excelDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($date);
+                return $excelDate->format('Y-m-d');
+            } catch (\Exception $e) {
+                return null;
+            }
+        }
+        
+        // Probeer verschillende datum formaten
+        $formats = ['Y-m-d', 'd/m/Y', 'm/d/Y', 'd-m-Y', 'm-d-Y', 'Y/m/d'];
+        
+        foreach ($formats as $format) {
+            $dateObj = \DateTime::createFromFormat($format, $date);
+            if ($dateObj && $dateObj->format($format) === $date) {
+                return $dateObj->format('Y-m-d');
+            }
+        }
+        
+        // Laatste poging met strtotime
+        $timestamp = strtotime($date);
+        if ($timestamp !== false) {
+            return date('Y-m-d', $timestamp);
+        }
+        
+        return null;
+    }
 }
