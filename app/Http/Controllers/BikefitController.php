@@ -1213,574 +1213,363 @@ const fs = require('fs');
     /**
      * Handle the bikefit Excel import
      */
-    public function importBikefits(Request $request)
+    public function import(Request $request)
     {
-        $request->validate([
-            'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
-        ]);
-
         try {
-            $import = new \App\Imports\BikefitImport();
-            \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('excel_file'));
+            $request->validate([
+                'file' => 'required|file|mimes:xlsx,xls,csv|max:10240'
+            ]);
             
-            return redirect('/bikefit')->with('success', 'Bikefits succesvol geïmporteerd uit Excel bestand!');
+            $file = $request->file('file');
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
             
-        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
-            $failures = $e->failures();
-            $errors = [];
-            
-            foreach ($failures as $failure) {
-                $errors[] = "Rij {$failure->row()}: {$failure->attribute()} - " . implode(', ', $failure->errors());
+            if (empty($rows)) {
+                return back()->with('error', 'Het Excel bestand is leeg');
             }
             
-            return redirect()->back()
-                ->withErrors($errors)
-                ->with('error', 'Er zijn validatiefouten opgetreden bij het importeren van bikefits.');
+            // Eerste rij bevat headers
+            $headers = array_map('strtolower', array_map('trim', $rows[0]));
+            $importedCount = 0;
+            $skippedCount = 0;
+            $errors = [];
+            
+            // Loop door alle data rijen (skip header)
+            for ($i = 1; $i < count($rows); $i++) {
+                $row = $rows[$i];
                 
+                // Skip lege rijen
+                if (empty(array_filter($row))) {
+                    continue;
+                }
+                
+                try {
+                    // Map kolommen naar data
+                    $data = [];
+                    foreach ($headers as $index => $header) {
+                        if (isset($row[$index])) {
+                            $data[$header] = $row[$index];
+                        }
+                    }
+                    
+                    // Zoek klant op basis van email OF naam
+                    $klant = null;
+                    if (!empty($data['klant_email'])) {
+                        $klant = Klant::where('email', $data['klant_email'])->first();
+                    }
+                    
+                    if (!$klant && !empty($data['klant_naam'])) {
+                        $klant = Klant::where(\DB::raw('CONCAT(voornaam, " ", naam)'), 'LIKE', '%' . $data['klant_naam'] . '%')->first();
+                    }
+                    
+                    if (!$klant) {
+                        $skippedCount++;
+                        $errors[] = "Rij " . ($i + 1) . ": Klant niet gevonden";
+                        continue;
+                    }
+                    
+                    // Bereid bikefit data voor met CORRECTE veldnamen
+                    $bikefitData = [
+                        'klant_id' => $klant->id,
+                        'user_id' => auth()->id(),
+                        'datum' => !empty($data['datum']) ? $data['datum'] : now()->format('Y-m-d'),
+                        'testtype' => $data['testtype'] ?? 'Bikefit',
+                        
+                        // Basis metingen
+                        'lengte_cm' => $data['lengte_cm'] ?? null,
+                        'binnenbeenlengte_cm' => $data['binnenbeenlengte_cm'] ?? null,
+                        'schoenmaat' => $data['schoenmaat'] ?? null,
+                        'gewicht_kg' => $data['gewicht_kg'] ?? null,
+                        
+                        // Mobiliteit scores
+                        'mobiliteit_score' => $data['mobiliteit_score'] ?? null,
+                        'mobiliteit_heup' => $data['mobiliteit_heup'] ?? null,
+                        'mobiliteit_knie' => $data['mobiliteit_knie'] ?? null,
+                        'mobiliteit_enkel' => $data['mobiliteit_enkel'] ?? null,
+                        'mobiliteit_rug' => $data['mobiliteit_rug'] ?? null,
+                        'mobiliteit_schouder' => $data['mobiliteit_schouder'] ?? null,
+                        'mobiliteit_nek' => $data['mobiliteit_nek'] ?? null,
+                        
+                        // Frame metingen
+                        'framemaat' => $data['framemaat'] ?? null,
+                        'reach' => $data['reach'] ?? null,
+                        'stack' => $data['stack'] ?? null,
+                        
+                        // Zadel metingen VOOR
+                        'zadelhoogte_voor' => $data['zadelhoogte_voor'] ?? null,
+                        'zadelsetback_voor' => $data['zadelsetback_voor'] ?? null,
+                        'zadel_trapas_hoek_voor' => $data['zadel_trapas_hoek_voor'] ?? null,
+                        'zadel_trapas_afstand_voor' => $data['zadel_trapas_afstand_voor'] ?? null,
+                        
+                        // Zadel metingen NA
+                        'zadelhoogte_na' => $data['zadelhoogte_na'] ?? null,
+                        'zadelsetback_na' => $data['zadelsetback_na'] ?? null,
+                        'zadel_trapas_hoek_na' => $data['zadel_trapas_hoek_na'] ?? null,
+                        'zadel_trapas_afstand_na' => $data['zadel_trapas_afstand_na'] ?? null,
+                        
+                        // Stuur metingen VOOR
+                        'stuurhoogte_voor' => $data['stuurhoogte_voor'] ?? null,
+                        'stuur_bereik_voor' => $data['stuur_bereik_voor'] ?? null,
+                        'stuur_trapas_afstand_voor' => $data['stuur_trapas_afstand_voor'] ?? null,
+                        'stuur_zadel_drop_voor' => $data['stuur_zadel_drop_voor'] ?? null,
+                        
+                        // Stuur metingen NA
+                        'stuurhoogte_na' => $data['stuurhoogte_na'] ?? null,
+                        'stuur_bereik_na' => $data['stuur_bereik_na'] ?? null,
+                        'stuur_trapas_afstand_na' => $data['stuur_trapas_afstand_na'] ?? null,
+                        'stuur_zadel_drop_na' => $data['stuur_zadel_drop_na'] ?? null,
+                        
+                        // Crank en pedalen
+                        'cranklengte_voor' => $data['cranklengte_voor'] ?? null,
+                        'cranklengte_na' => $data['cranklengte_na'] ?? null,
+                        'pedaaltype' => $data['pedaaltype'] ?? null,
+                        
+                        // Schoen en cleats
+                        'schoenbreedte' => $data['schoenbreedte'] ?? null,
+                        'inlegzool' => $data['inlegzool'] ?? null,
+                        'cleatpositie_voor' => $data['cleatpositie_voor'] ?? null,
+                        'cleatpositie_na' => $data['cleatpositie_na'] ?? null,
+                        'cleat_offset' => $data['cleat_offset'] ?? null,
+                        
+                        // Hoeken en posities
+                        'kniehoek_voor' => $data['kniehoek_voor'] ?? null,
+                        'kniehoek_na' => $data['kniehoek_na'] ?? null,
+                        'rughoek_voor' => $data['rughoek_voor'] ?? null,
+                        'rughoek_na' => $data['rughoek_na'] ?? null,
+                        'ellebooghoek_voor' => $data['ellebooghoek_voor'] ?? null,
+                        'ellebooghoek_na' => $data['ellebooghoek_na'] ?? null,
+                        
+                        // Extra info
+                        'fietstype' => $data['fietstype'] ?? null,
+                        'merk_model' => $data['merk_model'] ?? null,
+                        'wielrenner_type' => $data['wielrenner_type'] ?? null,
+                        'voorkeur_rijstijl' => $data['voorkeur_rijstijl'] ?? null,
+                        'klachten_voor' => $data['klachten_voor'] ?? null,
+                        'aanbevelingen' => $data['aanbevelingen'] ?? null,
+                        'opmerkingen' => $data['opmerkingen'] ?? null,
+                        
+                        // Zadel info
+                        'zadelmerk_voor' => $data['zadelmerk_voor'] ?? null,
+                        'zadelmodel_voor' => $data['zadelmodel_voor'] ?? null,
+                        'zadelmerk_na' => $data['zadelmerk_na'] ?? null,
+                        'zadelmodel_na' => $data['zadelmodel_na'] ?? null,
+                        'zadelbreedte' => $data['zadelbreedte'] ?? null,
+                        
+                        // Stuur info
+                        'stuurtype' => $data['stuurtype'] ?? null,
+                        'stuurbreedte' => $data['stuurbreedte'] ?? null,
+                        'stembreedte' => $data['stembreedte'] ?? null,
+                        'stemlengte' => $data['stemlengte'] ?? null,
+                        'stemhoek' => $data['stemhoek'] ?? null,
+                    ];
+                    
+                    // Maak bikefit aan
+                    Bikefit::create($bikefitData);
+                    $importedCount++;
+                    
+                } catch (\Exception $e) {
+                    $skippedCount++;
+                    $errors[] = "Rij " . ($i + 1) . ": " . $e->getMessage();
+                    \Log::error("Bikefit import error rij $i: " . $e->getMessage());
+                }
+            }
+            
+            $message = "Import voltooid! $importedCount bikefits geïmporteerd";
+            if ($skippedCount > 0) {
+                $message .= ", $skippedCount rijen overgeslagen";
+            }
+            
+            if (!empty($errors)) {
+                $message .= ". Fouten: " . implode('; ', array_slice($errors, 0, 5));
+            }
+            
+            \Log::info("Bikefit import: $importedCount succesvol, $skippedCount overgeslagen");
+            
+            return redirect()->route('bikefit.import.form')->with('success', $message);
+            
         } catch (\Exception $e) {
-            \Log::error('Bikefit Excel import failed: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Er is een fout opgetreden bij het importeren: ' . $e->getMessage());
+            \Log::error('Bikefit import failed: ' . $e->getMessage());
+            return back()->with('error', 'Import mislukt: ' . $e->getMessage());
         }
     }
 
     /**
-     * Download bikefit Excel template
+     * Download Excel template voor bikefit import
      */
     public function downloadBikefitTemplate()
     {
-        $headers = [
-            // Klant koppeling (verplicht!)
-            'klant_email',
-            'klant_naam',
-            
-            // Algemeen
-            'datum',
-            'testtype',
-            'type_fitting',
-            
-            // Fiets info
-            'fietsmerk',
-            'kadermaat',
-            'bouwjaar',
-            'frametype',
-            
-            // Lichaamsmaten
-            'lengte_cm',
-            'binnenbeenlengte_cm',
-            'armlengte_cm',
-            'romplengte_cm',
-            'schouderbreedte_cm',
-            
-            // Zitpositie
-            'zadel_trapas_hoek',
-            'zadel_trapas_afstand',
-            'stuur_trapas_hoek',
-            'stuur_trapas_afstand',
-            'zadel_lengte_center_top',
-            
-            // Aanpassingen
-            'aanpassingen_zadel',
-            'aanpassingen_setback',
-            'aanpassingen_reach',
-            'aanpassingen_drop',
-            
-            // Stuurpen
-            'aanpassingen_stuurpen_aan',
-            'aanpassingen_stuurpen_pre',
-            'aanpassingen_stuurpen_post',
-            
-            // Zadel
-            'type_zadel',
-            'zadeltil',
-            'zadelbreedte',
-            'nieuw_testzadel',
-            
-            // Schoenplaatjes
-            'rotatie_aanpassingen',
-            'inclinatie_aanpassingen',
-            'ophoging_li',
-            'ophoging_re',
-            
-            // Anamnese
-            'algemene_klachten',
-            'beenlengteverschil',
-            'beenlengteverschil_cm',
-            'lenigheid_hamstrings',
-            'steunzolen',
-            'steunzolen_reden',
-            
-            // Voetmeting
-            'schoenmaat',
-            'voetbreedte',
-            'voetpositie',
-            
-            // Mobiliteit
-            'straight_leg_raise_links',
-            'straight_leg_raise_rechts',
-            'knieflexie_links',
-            'knieflexie_rechts',
-            'heup_endorotatie_links',
-            'heup_endorotatie_rechts',
-            'heup_exorotatie_links',
-            'heup_exorotatie_rechts',
-            'enkeldorsiflexie_links',
-            'enkeldorsiflexie_rechts',
-            'one_leg_squat_links',
-            'one_leg_squat_rechts',
-            
-            // Opmerkingen
-            'opmerkingen',
-            'interne_opmerkingen'
-        ];
-
-        $filename = 'bikefit_import_template.csv';
-        
-        return response()->streamDownload(function() use ($headers) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, $headers);
-            
-            // Add example row
-            fputcsv($file, [
-                'jan@example.com', // klant_email
-                'Jan Janssen', // klant_naam
-                '2024-01-15', // datum
-                'standaard bikefit', // testtype
-                'comfort', // type_fitting
-                'Trek', // fietsmerk
-                '56', // kadermaat
-                '2020', // bouwjaar
-                'racefiets', // frametype
-                '180', // lengte_cm
-                '85', // binnenbeenlengte_cm
-                '65', // armlengte_cm
-                '95', // romplengte_cm
-                '42', // schouderbreedte_cm
-                '75', // zadel_trapas_hoek
-                '74', // zadel_trapas_afstand
-                '80', // stuur_trapas_hoek
-                '65', // stuur_trapas_afstand
-                '14', // zadel_lengte_center_top
-                '2', // aanpassingen_zadel
-                '1', // aanpassingen_setback
-                '0', // aanpassingen_reach
-                '0', // aanpassingen_drop
-                'ja', // aanpassingen_stuurpen_aan
-                '100', // aanpassingen_stuurpen_pre
-                '90', // aanpassingen_stuurpen_post
-                'Selle Italia', // type_zadel
-                '0', // zadeltil
-                '143', // zadelbreedte
-                'Fizik Antares', // nieuw_testzadel
-                'nvt', // rotatie_aanpassingen
-                'nvt', // inclinatie_aanpassingen
-                '0', // ophoging_li
-                '0', // ophoging_re
-                'geen klachten', // algemene_klachten
-                'nee', // beenlengteverschil
-                '', // beenlengteverschil_cm
-                'gemiddeld', // lenigheid_hamstrings
-                'nee', // steunzolen
-                '', // steunzolen_reden
-                '44', // schoenmaat
-                '10', // voetbreedte
-                'neutraal', // voetpositie
-                'Hoog', // straight_leg_raise_links
-                'Hoog', // straight_leg_raise_rechts
-                'Gemiddeld', // knieflexie_links
-                'Gemiddeld', // knieflexie_rechts
-                '', // heup_endorotatie_links
-                '', // heup_endorotatie_rechts
-                '', // heup_exorotatie_links
-                '', // heup_exorotatie_rechts
-                '', // enkeldorsiflexie_links
-                '', // enkeldorsiflexie_rechts
-                '', // one_leg_squat_links
-                '', // one_leg_squat_rechts
-                'Alles goed gegaan', // opmerkingen
-                'Standaard bikefit' // interne_opmerkingen
-            ]);
-            
-            fclose($file);
-        }, $filename, ['Content-Type' => 'text/csv']);
-    }
-
-    /**
-     * Export all bikefits to Excel
-     */
-    public function exportBikefits()
-    {
-        $filename = 'bikefits_export_' . date('Y-m-d_H-i-s') . '.xlsx';
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\BikefitsExport, $filename);
-    }
-
-    /**
-     * Serve uploaded files for bikefit
-     */
-    public function serveUpload($uploadId)
-    {
-        $upload = \App\Models\Upload::findOrFail($uploadId);
-        
-        // Build the full path to the file
-        $fullPath = storage_path('app/public/' . $upload->path);
-        
-        // Check if file exists
-        if (!file_exists($fullPath)) {
-            abort(404, 'Bestand niet gevonden');
-        }
-        
-        // Return the file
-        return response()->file($fullPath, [
-            'Content-Type' => $upload->mime_type,
-            'Content-Disposition' => 'inline; filename="' . $upload->original_name . '"'
-        ]);
-    }
-
-    /**
-     * Handle uitleensysteem data from bikefit forms
-     */
-    private function handleUitleensysteem($request, $bikefit)
-    {
-        // Check if any uitleensysteem data is provided
-        if (!$request->filled('onderdeel_type')) {
-            return;
-        }
-
-        $uitleenData = [
-            'klant_id' => $bikefit->klant_id,
-            'bikefit_id' => $bikefit->id,
-            'onderdeel_type' => $request->input('onderdeel_type'),
-            'onderdeel_status' => $request->input('onderdeel_status'),
-            'automatisch_mailtje' => $request->boolean('automatisch_mailtje'),
-            'onderdeel_omschrijving' => $request->input('onderdeel_omschrijving'),
-        ];
-
-        // Handle type-specific data using the correct field names
-        $onderdeelType = $request->input('onderdeel_type');
-        
-        if (in_array($onderdeelType, ['testzadel', 'nieuw zadel'])) {
-            // Use zadel-specific fields with fallbacks
-            $uitleenData['zadel_merk'] = $request->input('zadel_merk');
-            $uitleenData['zadel_model'] = $request->input('zadel_model');
-            $uitleenData['zadel_type'] = $request->input('zadel_type');
-            $uitleenData['zadel_breedte'] = $request->input('zadel_breedte');
-        } else {
-            // For zooltjes and Lake schoenen, use the general fields
-            $uitleenData['zadel_merk'] = $request->input('overig_merk');
-        }
-
-        // Handle dates and other fields
-        $uitleenData['uitleen_datum'] = $request->input('uitgeleend_op');
-        $uitleenData['verwachte_retour_datum'] = $request->input('verwachte_terugbring_datum');
-        $uitleenData['opmerkingen'] = $request->input('onderdeel_opmerkingen');
-        $uitleenData['status'] = 'uitgeleend'; // EXPLICIET uitgeleend zetten
-
-        // Create testzadel record met logging
-        \Log::info('🔧 Creating new testzadel with status uitgeleend', [
-            'klant_id' => $uitleenData['klant_id'] ?? 'missing',
-            'bikefit_id' => $uitleenData['bikefit_id'] ?? 'missing', 
-            'status' => $uitleenData['status'],
-            'onderdeel_type' => $uitleenData['onderdeel_type'] ?? 'missing'
-        ]);
-        
-        \App\Models\Testzadel::create($uitleenData);
-    }
-
-    /**
-     * Update existing testzadel record
-     */
-    private function updateTestzadel($request, $testzadel)
-    {
-        $updateData = [
-            'onderdeel_type' => $request->input('onderdeel_type'),
-            'onderdeel_status' => $request->input('onderdeel_status'),
-            'automatisch_mailtje' => $request->boolean('automatisch_mailtje'),
-            'onderdeel_omschrijving' => $request->input('onderdeel_omschrijving'),
-        ];
-
-        // Handle type-specific data
-        $onderdeelType = $request->input('onderdeel_type');
-        
-        if (in_array($onderdeelType, ['testzadel', 'nieuw zadel'])) {
-            $updateData['zadel_merk'] = $request->input('zadel_merk');
-            $updateData['zadel_model'] = $request->input('zadel_model');
-            $updateData['zadel_type'] = $request->input('zadel_type');
-            $updateData['zadel_breedte'] = $request->input('zadel_breedte');
-        } else {
-            $updateData['zadel_merk'] = $request->input('overig_merk');
-        }
-
-        // Handle dates
-        $updateData['uitleen_datum'] = $request->input('uitgeleend_op');
-        $updateData['verwachte_retour_datum'] = $request->input('verwachte_terugbring_datum');
-        $updateData['opmerkingen'] = $request->input('onderdeel_opmerkingen');
-
-        $testzadel->update($updateData);
-    }
-
-    /**
-     * Schedule automatic reminder email for testzadel
-     */
-    private function scheduleReminderEmail($testzadel)
-    {
-        // Use the email integration service to schedule reminder
-        $emailService = new \App\Services\EmailIntegrationService();
-        
         try {
-            // Send testzadel reminder email
-            $variables = [
-                'voornaam' => $testzadel->klant->voornaam,
-                'naam' => $testzadel->klant->naam,
-                'email' => $testzadel->klant->email,
-                'onderdeel_type' => $testzadel->onderdeel_type,
-                'zadel_merk' => $testzadel->zadel_merk,
-                'zadel_model' => $testzadel->zadel_model,
-                'uitleen_datum' => $testzadel->uitleen_datum,
-                'verwachte_retour_datum' => $testzadel->verwachte_retour_datum,
-                'datum' => now()->format('d-m-Y'),
+            $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Header rij met alle bikefit velden
+            $headers = [
+                'klant_email',
+                'klant_naam',
+                'datum',
+                'testtype',
+                'lengte_cm',
+                'binnenbeenlengte_cm',
+                'schoenmaat',
+                'gewicht_kg',
+                'mobiliteit_score',
+                'mobiliteit_heup',
+                'mobiliteit_knie',
+                'mobiliteit_enkel',
+                'mobiliteit_rug',
+                'mobiliteit_schouder',
+                'mobiliteit_nek',
+                'framemaat',
+                'reach',
+                'stack',
+                'zadelhoogte_voor',
+                'zadelsetback_voor',
+                'zadel_trapas_hoek_voor',
+                'zadel_trapas_afstand_voor',
+                'zadelhoogte_na',
+                'zadelsetback_na',
+                'zadel_trapas_hoek_na',
+                'zadel_trapas_afstand_na',
+                'stuurhoogte_voor',
+                'stuur_bereik_voor',
+                'stuur_trapas_afstand_voor',
+                'stuur_zadel_drop_voor',
+                'stuurhoogte_na',
+                'stuur_bereik_na',
+                'stuur_trapas_afstand_na',
+                'stuur_zadel_drop_na',
+                'cranklengte_voor',
+                'cranklengte_na',
+                'pedaaltype',
+                'schoenbreedte',
+                'inlegzool',
+                'cleatpositie_voor',
+                'cleatpositie_na',
+                'cleat_offset',
+                'kniehoek_voor',
+                'kniehoek_na',
+                'rughoek_voor',
+                'rughoek_na',
+                'ellebooghoek_voor',
+                'ellebooghoek_na',
+                'fietstype',
+                'merk_model',
+                'wielrenner_type',
+                'voorkeur_rijstijl',
+                'klachten_voor',
+                'aanbevelingen',
+                'opmerkingen',
+                'zadelmerk_voor',
+                'zadelmodel_voor',
+                'zadelmerk_na',
+                'zadelmodel_na',
+                'zadelbreedte',
+                'stuurtype',
+                'stuurbreedte',
+                'stembreedte',
+                'stemlengte',
+                'stemhoek'
             ];
             
-            $emailResult = $emailService->sendTestzadelReminderEmail(
-                $testzadel->klant,
-                $variables
-            );
-            
-            if ($emailResult) {
-                $testzadel->update([
-                    'herinnering_verstuurd' => true,
-                    'herinnering_verstuurd_op' => now(),
-                    'laatste_herinnering' => now()
-                ]);
-                
-                \Log::info('Testzadel reminder email scheduled for: ' . $testzadel->klant->email);
+            // Zet headers in de eerste rij
+            $col = 'A';
+            foreach ($headers as $header) {
+                $sheet->setCellValue($col . '1', $header);
+                $sheet->getStyle($col . '1')->getFont()->setBold(true);
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+                $col++;
             }
             
-        } catch (\Exception $e) {
-            \Log::error('Failed to schedule testzadel reminder email: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Generate sjabloon-based report for bikefit
-     */
-    public function generateSjabloonReport($klantId, $bikefitId)
-    {
-        try {
-            $klant = Klant::findOrFail($klantId);
-            $bikefit = $klant->bikefits()->findOrFail($bikefitId);
-            
-            // Find matching sjabloon
-            $sjabloon = SjabloonHelper::findMatchingTemplate($bikefit->testtype, 'bikefit');
-            
-            if (!$sjabloon) {
-                return redirect()->back()
-                    ->with('error', 'Geen passend sjabloon gevonden voor testtype: ' . $bikefit->testtype);
-            }
-            
-            // Use SjablonenController to generate the report
-            $sjablonenController = new \App\Http\Controllers\SjablonenController();
-            return $sjablonenController->generateBikefitReport($bikefit->id);
-            
-        } catch (\Exception $e) {
-            \Log::error('Bikefit sjabloon report generation failed: ' . $e->getMessage());
-            return redirect()->back()
-                ->with('error', 'Er is een fout opgetreden bij het genereren van het rapport.');
-        }
-    }
-
-    /**
-     * Generate PDF EXACTLY like the working web report - EXACT COPY
-     */
-    public function generateSjabloonReportPdf($klantId, $bikefitId)
-    {
-        try {
-            // Get models
-            $klant = \App\Models\Klant::findOrFail($klantId);
-            $bikefit = \App\Models\Bikefit::where('id', $bikefitId)
-                ->where('klant_id', $klantId)
-                ->firstOrFail();
-
-            // Use the EXACT SAME method as the working web version
-            $sjablonenController = app(\App\Http\Controllers\SjablonenController::class);
-            $response = $sjablonenController->generateBikefitReport($bikefitId);
-            
-            // Get the HTML from the working response
-            if ($response instanceof \Illuminate\View\View) {
-                $html = $response->render();
-            } else {
-                $html = $response->getContent();
-            }
-            
-            // MINIMAL PDF styling - keep everything the same, just hide buttons
-            $pdfStyles = '
-            <style>
-                .no-print, .header-buttons, button { display: none !important; }
-                @media print {
-                    .no-print, .header-buttons, button { display: none !important; }
-                }
-            </style>';
-            
-            // Add ONLY the minimal styles to hide buttons
-            $html = str_replace('</head>', $pdfStyles . '</head>', $html);
-            
-            // Generate PDF with DomPDF - BASIC settings to preserve original
-            $pdf = \PDF::loadHTML($html);
-            $pdf->setPaper('A4', 'portrait');
-            $pdf->setOptions([
-                'isRemoteEnabled' => true,
-                'isHtml5ParserEnabled' => true
-            ]);
-            
-            $filename = 'Bikefit_Rapport_' . $klant->naam . '_' . date('Y-m-d') . '.pdf';
-            
-            return $pdf->download($filename);
-
-        } catch (\Exception $e) {
-            \Log::error('PDF generation failed: ' . $e->getMessage());
-            
-            return response()->json([
-                'error' => 'PDF generatie mislukt',
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Auto-save bikefit data via AJAX
-     */
-    public function autoSave(Request $request, $klantId, $bikefitId = null)
-    {
-        try {
-            if ($bikefitId) {
-                // Update existing bikefit
-                $bikefit = Bikefit::where('klant_id', $klantId)->findOrFail($bikefitId);
-                $bikefit->fill($request->all());
-                $bikefit->save();
-            } else {
-                // Create new bikefit
-                $bikefit = new Bikefit();
-                $bikefit->klant_id = $klantId;
-                $bikefit->fill($request->all());
-                $bikefit->save();
-            }
-
-            return response()->json([
-                'success' => true,
-                'bikefit_id' => $bikefit->id,
-                'message' => 'Auto-saved at ' . now()->format('H:i:s')
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Auto-save failed: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Save custom results for a bikefit context
-     */
-    public function saveCustomResults(Request $request, $klantId, $bikefitId)
-    {
-        try {
-            $bikefit = Bikefit::where('klant_id', $klantId)->findOrFail($bikefitId);
-            
-            \Log::info('Save Custom Results called', [
-                'klant_id' => $klantId,
-                'bikefit_id' => $bikefitId,
-                'request_data' => $request->all()
-            ]);
-
-            $context = $request->input('context'); // 'prognose', 'voor', 'na'
-            $customValues = $request->input('values', []);
-            
-            \Log::info('Processing save with context system', [
-                'context' => $context,
-                'values' => $customValues
-            ]);
-
-            // Use the BikefitCalculator service to save custom results
-            $calculator = app(\App\Services\BikefitCalculator::class);
-            $result = $calculator->saveCustomResults($bikefit, $context, $customValues);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Aangepaste waarden opgeslagen voor ' . $context,
-                'saved_count' => count($customValues)
-            ]);
-            
-        } catch (Exception $e) {
-            \Log::error('Save Custom Results error', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Fout bij opslaan: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Reset to calculated values for a bikefit context
-     */
-    public function resetToCalculated(Request $request, $klantId, $bikefitId)
-    {
-        try {
-            $bikefit = Bikefit::where('klant_id', $klantId)->findOrFail($bikefitId);
-            
-            $context = $request->input('context'); // 'prognose', 'voor', 'na'
-            $fieldNames = $request->input('fields', null); // optioneel: specifieke velden
-            
-            $calculator = app(\App\Services\BikefitCalculator::class);
-            $calculator->resetToCalculated($bikefit, $context, $fieldNames);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Waarden hersteld naar berekende waarden voor ' . $context
-            ]);
-            
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Fout bij herstellen: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Handle uitleensysteem fields by creating/updating testzadel records
-     */
-    private function handleUitleensysteemFields(Request $request, $klant, $bikefit)
-    {
-        // Only create testzadel if required fields are filled
-        if ($request->filled('onderdeel_type') && $request->filled('uitgeleend_op') && $request->filled('verwachte_terugbring_datum')) {
-            
-            // Check if testzadel already exists for this bikefit
-            $existingTestzadel = \App\Models\Testzadel::where('bikefit_id', $bikefit->id)->first();
-            
-            $testzadelData = [
-                'klant_id' => $klant->id,
-                'bikefit_id' => $bikefit->id,
-                'onderdeel_type' => $request->onderdeel_type,
-                'zadel_merk' => $request->zadel_merk,
-                'zadel_model' => $request->zadel_model,
-                'zadel_type' => $request->zadel_type ?: $request->input('zadel_type'), 
-                'zadel_breedte' => $request->input('zadel_breedte') ?: $request->input('zadelbreedte') ?: $request->input('breedte'), // Probeer verschillende veldnamen
-                'uitleen_datum' => $request->uitgeleend_op,
-                'verwachte_retour_datum' => $request->verwachte_terugbring_datum,
-                'opmerkingen' => $request->onderdeel_opmerkingen ?: $request->input('onderdeel_opmerkingen') ?: $request->input('opmerkingen') ?: $request->input('testzadel_opmerkingen') ?: $request->input('uitleen_opmerkingen'),
-                'automatisch_mailtje' => $request->has('automatisch_mailtje') ? true : false,
-                'status' => 'uitgeleend', // ALTIJD uitgeleend bij aanmaak vanuit bikefit
+            // Voeg een voorbeeld rij toe
+            $exampleData = [
+                'jan.jansen@example.com',
+                'Jan Jansen',
+                date('Y-m-d'),
+                'Bikefit',
+                '180',
+                '85',
+                '43',
+                '75',
+                '8',
+                '8',
+                '9',
+                '7',
+                '8',
+                '7',
+                '8',
+                '56',
+                '390',
+                '570',
+                '74.5',
+                '7',
+                '74',
+                '73',
+                '75',
+                '7.5',
+                '75',
+                '74',
+                '12',
+                '42',
+                '75',
+                '5',
+                '11',
+                '41',
+                '74',
+                '4',
+                '172.5',
+                '172.5',
+                'Look Keo',
+                'Normaal',
+                'Nee',
+                'Neutraal',
+                'Neutraal',
+                '0',
+                '145',
+                '143',
+                '40',
+                '38',
+                '135',
+                '133',
+                'Racefiets',
+                'Canyon Ultimate CF SLX',
+                'Sportief',
+                'Aero positie',
+                'Geen bijzonderheden',
+                'Zadel 5mm naar voren, stuurhoogte 1cm verlaagd',
+                'Klant is tevreden',
+                'Fizik',
+                'Arione',
+                'Fizik',
+                'Arione',
+                '140',
+                'Drop bar',
+                '42',
+                '31.8',
+                '110',
+                '-6'
             ];
             
-            if ($existingTestzadel) {
-                // Update existing testzadel
-                $existingTestzadel->update($testzadelData);
-            } else {
-                // Create new testzadel
-                \App\Models\Testzadel::create($testzadelData);
+            $col = 'A';
+            foreach ($exampleData as $value) {
+                $sheet->setCellValue($col . '2', $value);
+                $col++;
             }
+            
+            // Maak Excel bestand
+            $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+            $filename = 'bikefit_import_template_' . date('Y-m-d') . '.xlsx';
+            
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header('Content-Disposition: attachment;filename="' . $filename . '"');
+            header('Cache-Control: max-age=0');
+            
+            $writer->save('php://output');
+            exit;
+            
+        } catch (\Exception $e) {
+            \Log::error('Template download failed: ' . $e->getMessage());
+            return back()->with('error', 'Template kon niet worden gedownload: ' . $e->getMessage());
         }
     }
 }

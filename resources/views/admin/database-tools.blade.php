@@ -8,7 +8,7 @@
                 <h1 class="text-3xl font-bold text-gray-900 mb-6">📊 Database Tools</h1>
                 <p class="text-gray-600 mb-8">Upload Excel bestanden om grote hoeveelheden klanten en bikefits in één keer toe te voegen.</p>
                 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <!-- Klanten Import -->
                     <div class="bg-blue-50 p-6 rounded-lg">
                         <div class="flex items-center mb-4">
