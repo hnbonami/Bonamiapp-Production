@@ -1253,14 +1253,14 @@ Route::resource('klanten', \App\Http\Controllers\KlantenController::class);
 Route::post('klanten/{klant}/send-invitation', [\App\Http\Controllers\KlantenController::class, 'sendInvitation'])->name('klanten.send-invitation');
 
 // Klanten Import/Export routes
-Route::get('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
+Route::get('/import/klanten', [\AppHttp\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
 Route::post('/import/klanten', [\AppHttp\Controllers\KlantenController::class, 'import'])->name('klanten.import');
 Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');
 
 // Bikefit Import/Export routes  
 Route::get('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
-Route::post('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
+Route::post('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
 Route::get('/import/bikefits/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
 Route::get('/bikefit/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
 
@@ -1269,3 +1269,7 @@ Route::get('/import/inspanningstesten', [\App\Http\Controllers\Inspanningstesten
 Route::post('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'import'])->name('inspanningstesten.import');
 Route::get('/download/inspanningstesten-template', [\App\Http\Controllers\InspanningstestenController::class, 'downloadTemplate'])->name('inspanningstesten.template');
 Route::get('/export/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'export'])->name('inspanningstesten.export');
+
+// AI Analyse endpoints
+Route::post('/klanten/{klant}/inspanningstest/{test}/ai-analyse', [\App\Http\Controllers\InspanningstestController::class, 'generateCompleteAIAnalysis'])->name('inspanningstest.ai.analyse');
+Route::post('/klanten/{klant}/inspanningstest/{test}/update-zones', [\App\Http\Controllers\InspanningstestController::class, 'updateTrainingszones'])->name('inspanningstest.update.zones');
