@@ -1246,3 +1246,13 @@ Route::post('/api/ai-advice', [App\Http\Controllers\InspanningstestController::c
 // AI Complete Analyse route voor inspanningstesten
 Route::post('inspanningstest/ai-complete-analysis', [InspanningstestController::class, 'generateCompleteAIAnalysis'])
     ->name('inspanningstest.ai-complete-analysis');
+
+// Klanten routes
+Route::resource('klanten', \App\Http\Controllers\KlantenController::class);
+Route::post('klanten/{klant}/send-invitation', [\App\Http\Controllers\KlantenController::class, 'sendInvitation'])->name('klanten.send-invitation');
+
+// Klanten Import/Export routes
+Route::get('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
+Route::post('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
+Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');

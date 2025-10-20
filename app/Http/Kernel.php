@@ -1,4 +1,4 @@
-<?php
+git status<?php
 
 namespace App\Http;
 
