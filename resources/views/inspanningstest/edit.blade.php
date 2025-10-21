@@ -3767,84 +3767,404 @@ function berekenBonamiZones(aantal, eenheid) {
         // Schat maximaal vermogen als HRmax niet ingevuld is
         const maxVermogen = LT2 * 1.20; // 120% van LT2 als schatting voor max
         
-        // ZONE 1: HERSTEL (60-80% LT1)
-        zones.push({
-            naam: 'HERSTEL',
-            minVermogen: isLooptest ? parseFloat((LT1 * 0.60).toFixed(1)) : Math.round(LT1 * 0.60),
-            maxVermogen: isLooptest ? parseFloat((LT1 * 0.80).toFixed(1)) : Math.round(LT1 * 0.80),
-            minHartslag: Math.round(LT1_HR * 0.60),
-            maxHartslag: Math.round(LT1_HR * 0.80),
-            beschrijving: 'Actief herstel, zeer lage intensiteit',
-            kleur: '#E3F2FD',
-            borgMin: 6,
-            borgMax: 9
-        });
+        // === 3 ZONES ===
+        if (aantal === 3) {
+            // ZONE 1: AEROBE BASIS (60% LT1 → LT1)
+            zones.push({
+                naam: 'AEROBE BASIS',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.60).toFixed(1)) : Math.round(LT1 * 0.60),
+                maxVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+                minHartslag: Math.round(LT1_HR * 0.60),
+                maxHartslag: LT1_HR,
+                beschrijving: '60-100% van LT1 • Vetverbranding, duurtraining, aerobe basis',
+                kleur: '#E3F2FD',
+                borgMin: 6,
+                borgMax: 13
+            });
+            
+            // ZONE 2: TEMPO (LT1 → LT2)
+            zones.push({
+                naam: 'TEMPO',
+                minVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+                maxVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+                minHartslag: LT1_HR,
+                maxHartslag: LT2_HR,
+                beschrijving: 'Van LT1 tot LT2 • Sweet spot zone, tempo-intervallen, race pace',
+                kleur: '#FFF3E0',
+                borgMin: 14,
+                borgMax: 16
+            });
+            
+            // ZONE 3: HOOGINTENSIEF (LT2 → max)
+            zones.push({
+                naam: 'HOOGINTENSIEF',
+                minVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+                maxVermogen: isLooptest ? parseFloat(maxVermogen.toFixed(1)) : Math.round(maxVermogen),
+                minHartslag: LT2_HR,
+                maxHartslag: HRmax,
+                beschrijving: 'Van LT2 tot maximum • Anaëroob, korte intervallen, sprint & explosiviteit',
+                kleur: '#FFEBEE',
+                borgMin: 17,
+                borgMax: 20
+            });
+        }
         
-        // ZONE 2: LANGE DUUR (80-90% LT1)
-        zones.push({
-            naam: 'LANGE DUUR',
-            minVermogen: isLooptest ? parseFloat((LT1 * 0.80).toFixed(1)) : Math.round(LT1 * 0.80),
-            maxVermogen: isLooptest ? parseFloat((LT1 * 0.90).toFixed(1)) : Math.round(LT1 * 0.90),
-            minHartslag: Math.round(LT1_HR * 0.80),
-            maxHartslag: Math.round(LT1_HR * 0.90),
-            beschrijving: 'Steady-state duur, vetverbranding',
-            kleur: '#E8F5E8',
-            borgMin: 10,
-            borgMax: 11
-        });
+        // === 5 ZONES ===
+        else if (aantal === 5) {
+            // ZONE 1: HERSTEL (60-80% LT1)
+            zones.push({
+                naam: 'HERSTEL',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.60).toFixed(1)) : Math.round(LT1 * 0.60),
+                maxVermogen: isLooptest ? parseFloat((LT1 * 0.80).toFixed(1)) : Math.round(LT1 * 0.80),
+                minHartslag: Math.round(LT1_HR * 0.60),
+                maxHartslag: Math.round(LT1_HR * 0.80),
+                beschrijving: '60-80% van LT1 • Actief herstel en regeneratie',
+                kleur: '#E3F2FD',
+                borgMin: 6,
+                borgMax: 10
+            });
+            
+            // ZONE 2: DUUR (80% LT1 → LT1)
+            zones.push({
+                naam: 'DUUR',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.80).toFixed(1)) : Math.round(LT1 * 0.80),
+                maxVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+                minHartslag: Math.round(LT1_HR * 0.80),
+                maxHartslag: LT1_HR,
+                beschrijving: '80-100% van LT1 • Lange duurtraining, aerobe ontwikkeling',
+                kleur: '#E8F5E8',
+                borgMin: 11,
+                borgMax: 13
+            });
+            
+            // ZONE 3: TEMPO (LT1 → LT2)
+            zones.push({
+                naam: 'TEMPO',
+                minVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+                maxVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+                minHartslag: LT1_HR,
+                maxHartslag: LT2_HR,
+                beschrijving: 'Van LT1 tot LT2 • Sweet spot, tempo-intervals',
+                kleur: '#FFF3E0',
+                borgMin: 14,
+                borgMax: 16
+            });
+            
+            // ZONE 4: INTENSIEF (LT2 → 95% max)
+            const zone4Max = isLooptest ? parseFloat((maxVermogen * 0.95).toFixed(1)) : Math.round(maxVermogen * 0.95);
+            zones.push({
+                naam: 'INTENSIEF',
+                minVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+                maxVermogen: zone4Max,
+                minHartslag: LT2_HR,
+                maxHartslag: Math.round(HRmax * 0.95),
+                beschrijving: 'Van LT2 tot 95% max • Anaëroob, korte intervallen',
+                kleur: '#FFEBEE',
+                borgMin: 17,
+                borgMax: 18
+            });
+            
+            // ZONE 5: MAXIMAAL (95% max → max)
+            zones.push({
+                naam: 'MAXIMAAL',
+                minVermogen: zone4Max,
+                maxVermogen: isLooptest ? parseFloat(maxVermogen.toFixed(1)) : Math.round(maxVermogen),
+                minHartslag: Math.round(HRmax * 0.95),
+                maxHartslag: HRmax,
+                beschrijving: '95-100% van maximum • Sprint, explosiviteit, neuromusculaire training',
+                kleur: '#FFCDD2',
+                borgMin: 19,
+                borgMax: 20
+            });
+        }
         
-        // ZONE 3: EXTENSIEF (90% LT1 → LT1)
-        zones.push({
-            naam: 'EXTENSIEF',
-            minVermogen: isLooptest ? parseFloat((LT1 * 0.90).toFixed(1)) : Math.round(LT1 * 0.90),
-            maxVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
-            minHartslag: Math.round(LT1_HR * 0.90),
-            maxHartslag: LT1_HR,
-            beschrijving: 'Hoge aerobe zone, net onder LT1',
-            kleur: '#F1F8E9',
-            borgMin: 12,
-            borgMax: 13
-        });
+        // === 6 ZONES (STANDAARD) ===
+        else if (aantal === 6) {
+            // ZONE 1: HERSTEL (60-80% LT1)
+            zones.push({
+                naam: 'HERSTEL',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.60).toFixed(1)) : Math.round(LT1 * 0.60),
+                maxVermogen: isLooptest ? parseFloat((LT1 * 0.80).toFixed(1)) : Math.round(LT1 * 0.80),
+                minHartslag: Math.round(LT1_HR * 0.60),
+                maxHartslag: Math.round(LT1_HR * 0.80),
+                beschrijving: '60-80% van LT1 • Actief herstel, zeer lage intensiteit',
+                kleur: '#E3F2FD',
+                borgMin: 6,
+                borgMax: 9
+            });
+            
+            // ZONE 2: LANGE DUUR (80-90% LT1)
+            zones.push({
+                naam: 'LANGE DUUR',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.80).toFixed(1)) : Math.round(LT1 * 0.80),
+                maxVermogen: isLooptest ? parseFloat((LT1 * 0.90).toFixed(1)) : Math.round(LT1 * 0.90),
+                minHartslag: Math.round(LT1_HR * 0.80),
+                maxHartslag: Math.round(LT1_HR * 0.90),
+                beschrijving: '80-90% van LT1 • Steady-state duur, vetverbranding',
+                kleur: '#E8F5E8',
+                borgMin: 10,
+                borgMax: 11
+            });
+            
+            // ZONE 3: EXTENSIEF (90% LT1 → LT1)
+            zones.push({
+                naam: 'EXTENSIEF',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.90).toFixed(1)) : Math.round(LT1 * 0.90),
+                maxVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+                minHartslag: Math.round(LT1_HR * 0.90),
+                maxHartslag: LT1_HR,
+                beschrijving: '90-100% van LT1 • Hoge aerobe zone, net onder aërobe drempel',
+                kleur: '#F1F8E9',
+                borgMin: 12,
+                borgMax: 13
+            });
+            
+            // ZONE 4: INTENSIEF (LT1 → LT2)
+            zones.push({
+                naam: 'INTENSIEF',
+                minVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+                maxVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+                minHartslag: LT1_HR,
+                maxHartslag: LT2_HR,
+                beschrijving: 'Van LT1 tot LT2 • Tempo zone tussen aërobe en anaërobe drempel',
+                kleur: '#FFF3E0',
+                borgMin: 14,
+                borgMax: 15
+            });
+            
+            // ZONE 5: TEMPO (LT2 → 95% max)
+            const zone5Max = isLooptest ? parseFloat((maxVermogen * 0.95).toFixed(1)) : Math.round(maxVermogen * 0.95);
+            zones.push({
+                naam: 'TEMPO',
+                minVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+                maxVermogen: zone5Max,
+                minHartslag: LT2_HR,
+                maxHartslag: Math.round(HRmax * 0.95),
+                beschrijving: 'Van LT2 tot 95% max • Anaëroob, korte intensieve intervallen',
+                kleur: '#FFEBEE',
+                borgMin: 16,
+                borgMax: 17
+            });
+            
+            // ZONE 6: MAXIMAAL (95% max → max)
+            zones.push({
+                naam: 'MAXIMAAL',
+                minVermogen: zone5Max,
+                maxVermogen: isLooptest ? parseFloat(maxVermogen.toFixed(1)) : Math.round(maxVermogen),
+                minHartslag: Math.round(HRmax * 0.95),
+                maxHartslag: HRmax,
+                beschrijving: '95-100% van maximum • Zeer hoge intensiteit, sprint- en piekbelasting',
+                kleur: '#FFCDD2',
+                borgMin: 18,
+                borgMax: 20
+            });
+        }
         
-        // ZONE 4: INTENSIEF (LT1 → LT2)
-        zones.push({
-            naam: 'INTENSIEF',
-            minVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
-            maxVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
-            minHartslag: LT1_HR,
-            maxHartslag: LT2_HR,
-            beschrijving: 'Tempo net onder/aan anaerobe drempel',
-            kleur: '#FFF3E0',
-            borgMin: 14,
-            borgMax: 15
-        });
+        // === 7 ZONES ===
+        else if (aantal === 7) {
+            // ZONE 1: HERSTEL (60-75% LT1)
+            zones.push({
+                naam: 'HERSTEL',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.60).toFixed(1)) : Math.round(LT1 * 0.60),
+                maxVermogen: isLooptest ? parseFloat((LT1 * 0.75).toFixed(1)) : Math.round(LT1 * 0.75),
+                minHartslag: Math.round(LT1_HR * 0.60),
+                maxHartslag: Math.round(LT1_HR * 0.75),
+                beschrijving: '60-75% van LT1 • Actief herstel en regeneratie',
+                kleur: '#E3F2FD',
+                borgMin: 6,
+                borgMax: 9
+            });
+            
+            // ZONE 2: LANGE DUUR (75-90% LT1)
+            zones.push({
+                naam: 'LANGE DUUR',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.75).toFixed(1)) : Math.round(LT1 * 0.75),
+                maxVermogen: isLooptest ? parseFloat((LT1 * 0.90).toFixed(1)) : Math.round(LT1 * 0.90),
+                minHartslag: Math.round(LT1_HR * 0.75),
+                maxHartslag: Math.round(LT1_HR * 0.90),
+                beschrijving: '75-90% van LT1 • Steady-state duur, vetverbranding',
+                kleur: '#E8F5E8',
+                borgMin: 10,
+                borgMax: 11
+            });
+            
+            // ZONE 3: EXTENSIEF (90% LT1 → LT1)
+            zones.push({
+                naam: 'EXTENSIEF',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.90).toFixed(1)) : Math.round(LT1 * 0.90),
+                maxVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+                minHartslag: Math.round(LT1_HR * 0.90),
+                maxHartslag: LT1_HR,
+                beschrijving: '90-100% van LT1 • Hoge aerobe zone, net onder aërobe drempel',
+                kleur: '#F1F8E9',
+                borgMin: 12,
+                borgMax: 13
+            });
+            
+            // ZONE 4: INTENSIEF (LT1 → LT2)
+            zones.push({
+                naam: 'INTENSIEF',
+                minVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+                maxVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+                minHartslag: LT1_HR,
+                maxHartslag: LT2_HR,
+                beschrijving: 'Van LT1 tot LT2 • Tempo zone tussen aërobe en anaërobe drempel',
+                kleur: '#FFF3E0',
+                borgMin: 14,
+                borgMax: 15
+            });
+            
+            // ZONE 5: TEMPO (LT2 → 90% max)
+            const zone5Max = isLooptest ? parseFloat((maxVermogen * 0.90).toFixed(1)) : Math.round(maxVermogen * 0.90);
+            zones.push({
+                naam: 'TEMPO',
+                minVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+                maxVermogen: zone5Max,
+                minHartslag: LT2_HR,
+                maxHartslag: Math.round(HRmax * 0.90),
+                beschrijving: 'Van LT2 tot 90% max • Anaëroob, korte intervallen',
+                kleur: '#FFEBEE',
+                borgMin: 16,
+                borgMax: 17
+            });
+            
+            // ZONE 6: MAXIMAAL (90-97% max)
+            const zone6Max = isLooptest ? parseFloat((maxVermogen * 0.97).toFixed(1)) : Math.round(maxVermogen * 0.97);
+            zones.push({
+                naam: 'MAXIMAAL',
+                minVermogen: zone5Max,
+                maxVermogen: zone6Max,
+                minHartslag: Math.round(HRmax * 0.90),
+                maxHartslag: Math.round(HRmax * 0.97),
+                beschrijving: '90-97% van maximum • Zeer hoge intensiteit, sprint power',
+                kleur: '#FFCDD2',
+                borgMin: 18,
+                borgMax: 19
+            });
+            
+            // ZONE 7: ULTIEM (97-100% max)
+            zones.push({
+                naam: 'ULTIEM',
+                minVermogen: zone6Max,
+                maxVermogen: isLooptest ? parseFloat(maxVermogen.toFixed(1)) : Math.round(maxVermogen),
+                minHartslag: Math.round(HRmax * 0.97),
+                maxHartslag: HRmax,
+                beschrijving: '97-100% van maximum • Absolute piekbelasting, explosiviteit, neuromusculair',
+                kleur: '#FFE0E0',
+                borgMin: 20,
+                borgMax: 20
+            });
+        }
         
-        // ZONE 5: TEMPO (LT2 → 95% max)
-        const zone5Max = isLooptest ? parseFloat((maxVermogen * 0.95).toFixed(1)) : Math.round(maxVermogen * 0.95);
-        zones.push({
-            naam: 'TEMPO',
-            minVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
-            maxVermogen: zone5Max,
-            minHartslag: LT2_HR,
-            maxHartslag: Math.round(HRmax * 0.95),
-            beschrijving: 'Anaëroob, korte inspanningen',
-            kleur: '#FFEBEE',
-            borgMin: 16,
-            borgMax: 17
-        });
-        
-        // ZONE 6: MAXIMAAL (95% max → max)
-        zones.push({
-            naam: 'MAXIMAAL',
-            minVermogen: zone5Max,
-            maxVermogen: isLooptest ? parseFloat(maxVermogen.toFixed(1)) : Math.round(maxVermogen),
-            minHartslag: Math.round(HRmax * 0.95),
-            maxHartslag: HRmax,
-            beschrijving: 'Zeer hoge intensiteit, sprintniveau',
-            kleur: '#FFCDD2',
-            borgMin: 18,
-            borgMax: 20
-        });
+        // === 8 ZONES ===
+        else if (aantal === 8) {
+            // ZONE 1: HERSTEL (60-70% LT1)
+            zones.push({
+                naam: 'HERSTEL',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.60).toFixed(1)) : Math.round(LT1 * 0.60),
+                maxVermogen: isLooptest ? parseFloat((LT1 * 0.70).toFixed(1)) : Math.round(LT1 * 0.70),
+                minHartslag: Math.round(LT1_HR * 0.60),
+                maxHartslag: Math.round(LT1_HR * 0.70),
+                beschrijving: '60-70% van LT1 • Actief herstel en regeneratie',
+                kleur: '#E3F2FD',
+                borgMin: 6,
+                borgMax: 8
+            });
+            
+            // ZONE 2: BASIS DUUR (70-85% LT1)
+            zones.push({
+                naam: 'BASIS DUUR',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.70).toFixed(1)) : Math.round(LT1 * 0.70),
+                maxVermogen: isLooptest ? parseFloat((LT1 * 0.85).toFixed(1)) : Math.round(LT1 * 0.85),
+                minHartslag: Math.round(LT1_HR * 0.70),
+                maxHartslag: Math.round(LT1_HR * 0.85),
+                beschrijving: '70-85% van LT1 • Lange duurtraining, vetverbranding',
+                kleur: '#E8F5E8',
+                borgMin: 9,
+                borgMax: 11
+            });
+            
+            // ZONE 3: EXTENSIEF (85% LT1 → LT1)
+            zones.push({
+                naam: 'EXTENSIEF',
+                minVermogen: isLooptest ? parseFloat((LT1 * 0.85).toFixed(1)) : Math.round(LT1 * 0.85),
+                maxVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+                minHartslag: Math.round(LT1_HR * 0.85),
+                maxHartslag: LT1_HR,
+                beschrijving: '85-100% van LT1 • Hoge aerobe zone, net onder aërobe drempel',
+                kleur: '#F1F8E9',
+                borgMin: 12,
+                borgMax: 13
+            });
+            
+            // ZONE 4: SWEET SPOT (LT1 → 90% LT2)
+            const zone4Max = isLooptest ? parseFloat((LT2 * 0.90).toFixed(1)) : Math.round(LT2 * 0.90);
+            zones.push({
+                naam: 'SWEET SPOT',
+                minVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+                maxVermogen: zone4Max,
+                minHartslag: LT1_HR,
+                maxHartslag: Math.round(LT2_HR * 0.90),
+                beschrijving: 'Van LT1 tot 90% LT2 • Sweet spot zone, effectieve training met hoge belasting',
+                kleur: '#FFF9E0',
+                borgMin: 14,
+                borgMax: 14
+            });
+            
+            // ZONE 5: INTENSIEF (90% LT2 → LT2)
+            zones.push({
+                naam: 'INTENSIEF',
+                minVermogen: zone4Max,
+                maxVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+                minHartslag: Math.round(LT2_HR * 0.90),
+                maxHartslag: LT2_HR,
+                beschrijving: '90-100% van LT2 • Tempo zone net onder en op anaërobe drempel',
+                kleur: '#FFF3E0',
+                borgMin: 15,
+                borgMax: 16
+            });
+            
+            // ZONE 6: TEMPO (LT2 → 90% max)
+            const zone6Max = isLooptest ? parseFloat((maxVermogen * 0.90).toFixed(1)) : Math.round(maxVermogen * 0.90);
+            zones.push({
+                naam: 'TEMPO',
+                minVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+                maxVermogen: zone6Max,
+                minHartslag: LT2_HR,
+                maxHartslag: Math.round(HRmax * 0.90),
+                beschrijving: 'Van LT2 tot 90% max • Anaëroob, korte intensieve intervallen',
+                kleur: '#FFEBEE',
+                borgMin: 17,
+                borgMax: 17
+            });
+            
+            // ZONE 7: MAXIMAAL (90-95% max)
+            const zone7Max = isLooptest ? parseFloat((maxVermogen * 0.95).toFixed(1)) : Math.round(maxVermogen * 0.95);
+            zones.push({
+                naam: 'MAXIMAAL',
+                minVermogen: zone6Max,
+                maxVermogen: zone7Max,
+                minHartslag: Math.round(HRmax * 0.90),
+                maxHartslag: Math.round(HRmax * 0.95),
+                beschrijving: '90-95% van maximum • Zeer hoge intensiteit, sprint power',
+                kleur: '#FFCDD2',
+                borgMin: 18,
+                borgMax: 19
+            });
+            
+            // ZONE 8: ULTIEM (95-100% max)
+            zones.push({
+                naam: 'ULTIEM',
+                minVermogen: zone7Max,
+                maxVermogen: isLooptest ? parseFloat(maxVermogen.toFixed(1)) : Math.round(maxVermogen),
+                minHartslag: Math.round(HRmax * 0.95),
+                maxHartslag: HRmax,
+                beschrijving: '95-100% van maximum • Absolute piekbelasting, explosiviteit, neuromusculair',
+                kleur: '#FFE0E0',
+                borgMin: 20,
+                borgMax: 20
+            });
+        }
         
         console.log('✅ 6 Bonami zones volgens officiële formule:');
         zones.forEach((z, idx) => {
