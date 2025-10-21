@@ -592,6 +592,42 @@ document.addEventListener('DOMContentLoaded', function() {
                             </button>
                         </div>
                     </div>
+
+                    <script>
+                        // Veilige knop handler voor zones updaten
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const herberekeBtn = document.getElementById('herbereken-zones-btn');
+                            
+                            if (herberekeBtn) {
+                                herberekeBtn.addEventListener('click', function() {
+                                    console.log('🔄 Zones Updaten knop geklikt');
+                                    
+                                    // Check of updateTrainingszones functie bestaat
+                                    if (typeof updateTrainingszones === 'function') {
+                                        console.log('✅ updateTrainingszones functie gevonden, uitvoeren...');
+                                        
+                                        // Voer bestaande functie uit
+                                        updateTrainingszones();
+                                        
+                                        // Toon feedback
+                                        herberekeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Bijgewerkt!';
+                                        herberekeBtn.classList.add('bg-green-600');
+                                        herberekeBtn.classList.remove('bg-blue-600');
+                                        
+                                        // Reset na 2 seconden
+                                        setTimeout(() => {
+                                            herberekeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> Zones Updaten';
+                                            herberekeBtn.classList.remove('bg-green-600');
+                                            herberekeBtn.classList.add('bg-blue-600');
+                                        }, 2000);
+                                    } else {
+                                        console.warn('⚠️ updateTrainingszones functie niet gevonden');
+                                        alert('Selecteer eerst een berekenings methode voor de trainingszones.');
+                                    }
+                                });
+                            }
+                        });
+                    </script>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         <div class="mb-4">
@@ -615,6 +651,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <option value="5" {{ old('zones_aantal') == '5' ? 'selected' : '' }}>5 Zones (Standaard)</option>
                                 <option value="6" {{ old('zones_aantal', '6') == '6' ? 'selected' : '' }}>6 Zones (Bonami)</option>
                                 <option value="7" {{ old('zones_aantal') == '7' ? 'selected' : '' }}>7 Zones (Uitgebreid)</option>
+                                <option value="8" {{ old('zones_aantal') == '8' ? 'selected' : '' }}>8 Zones (Expert)</option>
                             </select>
                         </div>
 
@@ -631,19 +668,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
 
-                    <!-- Trainingszones Tabel Container -->
+                    <!-- Trainingszones Tabel Container - EXACT ZOALS EDIT.BLADE.PHP -->
                     <div id="trainingszones-container" class="mb-6" style="display: none;">
-                        <div class="bg-white border border-gray-300 rounded-lg overflow-hidden">
-                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-300">
-                                <h4 class="font-bold text-gray-900 flex items-center">
+                        <div class="bg-white border-2 border-indigo-200 rounded-xl overflow-hidden shadow-lg">
+                            <div class="bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 px-6 py-4 border-b-2 border-indigo-200">
+                                <h4 class="font-extrabold text-indigo-900 text-lg flex items-center">
                                     🎯 <span class="ml-2">Berekende Trainingszones</span>
-                                    <span id="zones-methode-label" class="ml-2 text-sm text-gray-600"></span>
+                                    <span id="zones-methode-label" class="ml-3 text-sm font-semibold text-indigo-600 bg-white px-3 py-1 rounded-full"></span>
                                 </h4>
                             </div>
                             
                             <div class="overflow-x-auto">
-                                <table id="trainingszones-tabel" class="w-full">
-                                    <thead id="zones-header" class="bg-gray-100">
+                                <table id="trainingszones-tabel" class="w-full border-collapse">
+                                    <thead id="zones-header" class="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100">
                                         <!-- Headers worden dynamisch gegenereerd -->
                                     </thead>
                                     <tbody id="zones-body">
@@ -652,12 +689,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </table>
                             </div>
                             
-                            <div class="bg-gray-50 px-4 py-3 border-t border-gray-300">
+                            <div class="bg-gradient-to-r from-gray-50 via-blue-50 to-gray-50 px-6 py-4 border-t-2 border-indigo-100">
                                 <div class="flex justify-between items-center">
-                                    <p class="text-xs text-gray-600" id="zones-tip-text">
+                                    <p class="text-xs text-gray-700 font-medium" id="zones-tip-text">
                                         💡 <strong>Tip:</strong> Deze zones zijn automatisch berekend. Bij 'Handmatig' kun je waarden aanpassen.
                                     </p>
-                                    <button type="button" onclick="exportZonesData()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                    <button type="button" onclick="exportZonesData()" class="text-indigo-700 hover:text-indigo-900 text-sm font-bold bg-white px-4 py-2 rounded-lg border-2 border-indigo-200 hover:bg-indigo-50 transition-all duration-200 shadow-sm">
                                         📊 Exporteer Zones
                                     </button>
                                 </div>
@@ -2491,7 +2528,7 @@ function exportZonesData() {
     alert('Export functionaliteit komt in de volgende stap!');
 }
 
-// === TRAININGSZONES BEREKENING FUNCTIONALITEIT ===
+// === TRAININGSZONES BEREKENING FUNCTIONALITEIT - EXACT KOPIE VAN EDIT.BLADE.PHP ===
 
 let huidigeZonesData = null;
 
@@ -2508,11 +2545,16 @@ function updateTrainingszones() {
     }
     
     const methode = methodeSelektor.value;
-    const aantal = parseInt(aantalSelektor.value) || 5;
+    const aantal = parseInt(aantalSelektor.value) || 6; // Default 6 voor Bonami
     const eenheid = eenheidSelektor.value;
     
+    console.log('⚙️ Zones configuratie:', { methode, aantal, eenheid });
+    
     const container = document.getElementById('trainingszones-container');
+    const methodeLabel = document.getElementById('zones-methode-label');
+    
     if (!methode) {
+        console.log('⚠️ Geen methode geselecteerd');
         container.style.display = 'none';
         return;
     }
@@ -2520,24 +2562,41 @@ function updateTrainingszones() {
     container.style.display = 'block';
     
     let zonesData = null;
+    let methodeLabelText = '';
     
     if (methode === 'bonami') {
         zonesData = berekenBonamiZones(aantal, eenheid);
+        methodeLabelText = '(Bonami Drempel Methode)';
     } else if (methode === 'karvonen') {
         zonesData = berekenKarvonenZones(aantal, eenheid);
+        methodeLabelText = '(Karvonen Hartslagreserve)';
     } else if (methode === 'handmatig') {
         zonesData = createHandmatigeZones(aantal, eenheid);
+        methodeLabelText = '(Handmatig aanpasbaar)';
+    }
+    
+    if (methodeLabel) {
+        methodeLabel.textContent = methodeLabelText;
     }
     
     if (zonesData) {
         genereerZonesTabel(zonesData, eenheid);
         huidigeZonesData = zonesData;
-        document.getElementById('trainingszones_data').value = JSON.stringify(zonesData);
-        console.log('✅ Trainingszones succesvol berekend');
+        
+        // Save naar hidden input voor form submit
+        const hiddenInput = document.getElementById('trainingszones_data');
+        if (hiddenInput) {
+            hiddenInput.value = JSON.stringify(zonesData);
+            console.log('💾 Zones data opgeslagen in hidden input');
+        }
+        
+        console.log('✅ Trainingszones succesvol berekend:', zonesData.length, 'zones');
+    } else {
+        console.log('⚠️ Geen zones data gegenereerd');
     }
 }
 
-// 🏆 BONAMI ZONES METHODE - gebaseerd op drempelwaarden
+// 🏆 BONAMI ZONES METHODE - EXACT ZOALS EDIT.BLADE.PHP
 function berekenBonamiZones(aantal, eenheid) {
     console.log('🎯 Bonami zones berekenen:', { aantal, eenheid });
     
@@ -2547,110 +2606,129 @@ function berekenBonamiZones(aantal, eenheid) {
     const anaerobeVermogen = parseFloat(document.getElementById('anaerobe_drempel_vermogen')?.value);
     const anaerobeHartslag = parseFloat(document.getElementById('anaerobe_drempel_hartslag')?.value);
     const maxHartslag = parseFloat(document.getElementById('maximale_hartslag_bpm')?.value);
+    const rustHartslag = parseFloat(document.getElementById('hartslag_rust_bpm')?.value) || 60;
     
-    console.log('📊 Drempelwaarden:', { aerobeVermogen, aerobeHartslag, anaerobeVermogen, anaerobeHartslag, maxHartslag });
+    console.log('📊 Drempelwaarden:', { 
+        aerobeVermogen, 
+        aerobeHartslag, 
+        anaerobeVermogen, 
+        anaerobeHartslag, 
+        maxHartslag,
+        rustHartslag 
+    });
     
     if (!aerobeVermogen || !anaerobeVermogen) {
-        console.log('⚠️ Geen drempelwaarden beschikbaar');
+        console.log('⚠️ Geen drempelwaarden beschikbaar - kan zones niet berekenen');
+        alert('⚠️ Bereken eerst de drempelwaarden (LT1 en LT2) via grafiek analyse voordat je trainingszones kunt genereren.');
         return null;
     }
     
-    // Bonami 6-zones systeem (gebaseerd op LT1 en LT2)
-    const zones = [
+    // Bonami 6-zones systeem (gebaseerd op LT1 en LT2) - EXACT zoals edit.blade.php
+    const bonamiZones = [
         {
             zone: 'Zone 1',
             naam: 'Herstel',
             doel: 'Actief herstel, zeer lage intensiteit',
             percentage_lt1: '< 75%',
-            percentage_lt2: '< 55%'
+            percentage_lt2: '< 55%',
+            multiplier_lt1_min: 0,
+            multiplier_lt1_max: 0.75,
+            multiplier_lt2_min: 0,
+            multiplier_lt2_max: 0.55
         },
         {
             zone: 'Zone 2',
             naam: 'Duurtraining',
             doel: 'Aerobe basis, vetverbranding',
             percentage_lt1: '75-95%',
-            percentage_lt2: '55-75%'
+            percentage_lt2: '55-75%',
+            multiplier_lt1_min: 0.75,
+            multiplier_lt1_max: 0.95,
+            multiplier_lt2_min: 0.55,
+            multiplier_lt2_max: 0.75
         },
         {
             zone: 'Zone 3',
             naam: 'Tempo',
             doel: 'Aerobe ontwikkeling, net onder LT1',
             percentage_lt1: '95-105%',
-            percentage_lt2: '75-85%'
+            percentage_lt2: '75-85%',
+            multiplier_lt1_min: 0.95,
+            multiplier_lt1_max: 1.05,
+            multiplier_lt2_min: 0.75,
+            multiplier_lt2_max: 0.85
         },
         {
             zone: 'Zone 4',
             naam: 'Drempel',
             doel: 'Lactaatdrempel training, tussen LT1 en LT2',
             percentage_lt1: '105-125%',
-            percentage_lt2: '85-100%'
+            percentage_lt2: '85-100%',
+            multiplier_lt1_min: 1.05,
+            multiplier_lt1_max: 1.25,
+            multiplier_lt2_min: 0.85,
+            multiplier_lt2_max: 1.00
         },
         {
             zone: 'Zone 5',
             naam: 'VO2max',
             doel: 'Maximale aerobe capaciteit, boven LT2',
             percentage_lt1: '125-150%',
-            percentage_lt2: '100-120%'
+            percentage_lt2: '100-120%',
+            multiplier_lt1_min: 1.25,
+            multiplier_lt1_max: 1.50,
+            multiplier_lt2_min: 1.00,
+            multiplier_lt2_max: 1.20
         },
         {
             zone: 'Zone 6',
             naam: 'Anaeroob',
             doel: 'Maximale inspanning, sprint power',
             percentage_lt1: '> 150%',
-            percentage_lt2: '> 120%'
+            percentage_lt2: '> 120%',
+            multiplier_lt1_min: 1.50,
+            multiplier_lt1_max: 2.00,
+            multiplier_lt2_min: 1.20,
+            multiplier_lt2_max: 1.50
         }
     ];
     
-    // Bereken concrete waarden per zone
-    const zonesMetWaarden = zones.map((zone, index) => {
+    // Bereken concrete waarden per zone - EXACT zoals edit.blade.php
+    const zonesMetWaarden = bonamiZones.slice(0, aantal).map((zone, index) => {
         let vermogenMin, vermogenMax, hartslagMin, hartslagMax;
         
-        // Bereken op basis van de percentage ranges
-        switch(index) {
-            case 0: // Zone 1: < 75% LT1
-                vermogenMin = 0;
-                vermogenMax = aerobeVermogen * 0.75;
-                hartslagMin = 60;
-                hartslagMax = aerobeHartslag ? aerobeHartslag * 0.75 : null;
-                break;
-            case 1: // Zone 2: 75-95% LT1
-                vermogenMin = aerobeVermogen * 0.75;
-                vermogenMax = aerobeVermogen * 0.95;
-                hartslagMin = aerobeHartslag ? aerobeHartslag * 0.75 : null;
-                hartslagMax = aerobeHartslag ? aerobeHartslag * 0.95 : null;
-                break;
-            case 2: // Zone 3: 95-105% LT1 (rond LT1)
-                vermogenMin = aerobeVermogen * 0.95;
-                vermogenMax = aerobeVermogen * 1.05;
-                hartslagMin = aerobeHartslag ? aerobeHartslag * 0.95 : null;
-                hartslagMax = aerobeHartslag ? aerobeHartslag * 1.05 : null;
-                break;
-            case 3: // Zone 4: tussen LT1 en LT2
-                vermogenMin = aerobeVermogen * 1.05;
-                vermogenMax = anaerobeVermogen;
-                hartslagMin = aerobeHartslag ? aerobeHartslag * 1.05 : null;
-                hartslagMax = anaerobeHartslag;
-                break;
-            case 4: // Zone 5: LT2 tot 120%
-                vermogenMin = anaerobeVermogen;
-                vermogenMax = anaerobeVermogen * 1.20;
-                hartslagMin = anaerobeHartslag;
-                hartslagMax = anaerobeHartslag ? anaerobeHartslag * 1.10 : null;
-                break;
-            case 5: // Zone 6: > 120% LT2
-                vermogenMin = anaerobeVermogen * 1.20;
-                vermogenMax = anaerobeVermogen * 1.50;
-                hartslagMin = anaerobeHartslag ? anaerobeHartslag * 1.10 : null;
-                hartslagMax = maxHartslag || (anaerobeHartslag ? anaerobeHartslag * 1.15 : null);
-                break;
+        // Gebruik LT1 (aërobe drempel) als primaire basis
+        vermogenMin = Math.round(aerobeVermogen * zone.multiplier_lt1_min);
+        vermogenMax = Math.round(aerobeVermogen * zone.multiplier_lt1_max);
+        
+        // Hartslag berekening
+        if (aerobeHartslag) {
+            hartslagMin = Math.round(rustHartslag + ((aerobeHartslag - rustHartslag) * zone.multiplier_lt1_min));
+            hartslagMax = Math.round(rustHartslag + ((aerobeHartslag - rustHartslag) * zone.multiplier_lt1_max));
+            
+            // Voor hogere zones: gebruik anaërobe hartslag als referentie
+            if (index >= 4 && anaerobeHartslag) {
+                hartslagMin = Math.round(anaerobeHartslag * zone.multiplier_lt2_min);
+                hartslagMax = Math.round(anaerobeHartslag * zone.multiplier_lt2_max);
+            }
+            
+            // Cap op max hartslag indien beschikbaar
+            if (maxHartslag) {
+                hartslagMax = Math.min(hartslagMax, maxHartslag);
+            }
+        } else {
+            hartslagMin = null;
+            hartslagMax = null;
         }
+        
+        console.log(`📊 Zone ${zone.zone}: Vermogen ${vermogenMin}-${vermogenMax}W, Hartslag ${hartslagMin}-${hartslagMax} bpm`);
         
         return {
             ...zone,
-            vermogen_min: Math.round(vermogenMin),
-            vermogen_max: Math.round(vermogenMax),
-            hartslag_min: hartslagMin ? Math.round(hartslagMin) : null,
-            hartslag_max: hartslagMax ? Math.round(hartslagMax) : null
+            vermogen_min: vermogenMin,
+            vermogen_max: vermogenMax,
+            hartslag_min: hartslagMin,
+            hartslag_max: hartslagMax
         };
     });
     
@@ -2658,7 +2736,7 @@ function berekenBonamiZones(aantal, eenheid) {
     return zonesMetWaarden;
 }
 
-// 🧮 KARVONEN METHODE - gebaseerd op hartslagreserve
+// 🧮 KARVONEN METHODE - EXACT zoals edit.blade.php
 function berekenKarvonenZones(aantal, eenheid) {
     console.log('🎯 Karvonen zones berekenen:', { aantal, eenheid });
     
@@ -2667,18 +2745,25 @@ function berekenKarvonenZones(aantal, eenheid) {
     
     if (!rustHartslag || !maxHartslag) {
         console.log('⚠️ Rust of max hartslag ontbreekt');
+        alert('⚠️ Voor Karvonen methode zijn zowel rust hartslag als maximale hartslag nodig.');
         return null;
     }
     
     const reserve = maxHartslag - rustHartslag;
     console.log('📊 Hartslagreserve:', reserve, '(', maxHartslag, '-', rustHartslag, ')');
     
-    // Karvonen zones op basis van % hartslagreserve
-    const percentages = aantal === 5 
-        ? [[50, 60], [60, 70], [70, 80], [80, 90], [90, 100]]
-        : aantal === 3
-        ? [[50, 70], [70, 85], [85, 100]]
-        : [[50, 65], [65, 75], [75, 82], [82, 89], [89, 94], [94, 100]];
+    // Karvonen zones op basis van % hartslagreserve - EXACT zoals edit.blade.php
+    const percentageSchema = {
+        3: [[50, 70], [70, 85], [85, 100]],
+        5: [[50, 60], [60, 70], [70, 80], [80, 90], [90, 100]],
+        6: [[50, 60], [60, 70], [70, 80], [80, 85], [85, 95], [95, 100]],
+        7: [[50, 60], [60, 70], [70, 76], [76, 82], [82, 89], [89, 94], [94, 100]],
+        8: [[50, 60], [60, 65], [65, 70], [70, 76], [76, 82], [82, 89], [89, 94], [94, 100]]
+    };
+    
+    const percentages = percentageSchema[aantal] || percentageSchema[5];
+    
+    const zoneNamen = ['Herstel', 'Duurtraining', 'Tempo', 'Drempel', 'VO2max', 'Anaeroob', 'Maximaal', 'Sprint'];
     
     const zones = percentages.map((range, index) => {
         const minHR = Math.round(rustHartslag + (reserve * range[0] / 100));
@@ -2686,10 +2771,12 @@ function berekenKarvonenZones(aantal, eenheid) {
         
         return {
             zone: `Zone ${index + 1}`,
-            naam: index === 0 ? 'Herstel' : index === percentages.length - 1 ? 'Maximaal' : `Intensiteit ${index}`,
+            naam: zoneNamen[index] || `Intensiteit ${index + 1}`,
             doel: `${range[0]}-${range[1]}% van hartslagreserve`,
             hartslag_min: minHR,
             hartslag_max: maxHR,
+            vermogen_min: null,
+            vermogen_max: null,
             percentage_lt1: '-',
             percentage_lt2: '-'
         };
@@ -2699,15 +2786,17 @@ function berekenKarvonenZones(aantal, eenheid) {
     return zones;
 }
 
-// ✋ HANDMATIGE ZONES - lege sjabloon voor handmatige invoer
+// ✋ HANDMATIGE ZONES - EXACT zoals edit.blade.php
 function createHandmatigeZones(aantal, eenheid) {
     console.log('🎯 Handmatige zones template maken:', { aantal, eenheid });
     
+    const zoneNamen = ['Herstel', 'Duurtraining', 'Tempo', 'Drempel', 'VO2max', 'Anaeroob', 'Maximaal', 'Sprint'];
     const zones = [];
+    
     for (let i = 1; i <= aantal; i++) {
         zones.push({
             zone: `Zone ${i}`,
-            naam: `Zone ${i}`,
+            naam: zoneNamen[i - 1] || `Zone ${i}`,
             doel: 'Handmatig in te vullen',
             vermogen_min: null,
             vermogen_max: null,
@@ -2719,12 +2808,14 @@ function createHandmatigeZones(aantal, eenheid) {
         });
     }
     
+    console.log('✅ Handmatige zones template gemaakt');
     return zones;
 }
 
-// 📊 GENEREER ZONES TABEL
+// 📊 GENEREER ZONES TABEL - EXACT zoals edit.blade.php
 function genereerZonesTabel(zonesData, eenheid) {
     console.log('📊 Zones tabel genereren voor eenheid:', eenheid);
+    console.log('📊 Zones data:', zonesData);
     
     const zonesHeader = document.getElementById('zones-header');
     const zonesBody = document.getElementById('zones-body');
@@ -2738,84 +2829,90 @@ function genereerZonesTabel(zonesData, eenheid) {
     zonesHeader.innerHTML = '';
     zonesBody.innerHTML = '';
     
-    // Bouw header op basis van eenheid
+    // Bouw header op basis van eenheid - EXACT zoals edit.blade.php
     let headerHTML = `
-        <tr class="bg-gradient-to-r from-gray-100 to-gray-200">
-            <th class="px-6 py-4 text-left text-sm font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">Zone</th>
-            <th class="px-6 py-4 text-left text-sm font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">Naam</th>
-            <th class="px-6 py-4 text-left text-sm font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">Doel</th>
+        <tr class="bg-gradient-to-r from-blue-100 via-indigo-100 to-purple-100">
+            <th class="px-4 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">Zone</th>
+            <th class="px-4 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">Naam</th>
+            <th class="px-4 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">Trainingsdoel</th>
     `;
     
     if (eenheid === 'hartslag' || eenheid === 'combinatie') {
-        headerHTML += `<th class="px-6 py-4 text-center text-sm font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">💓 Hartslag (bpm)</th>`;
+        headerHTML += `<th class="px-4 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">💓 Hartslag (bpm)</th>`;
     }
     
     if (eenheid === 'vermogen' || eenheid === 'combinatie') {
-        headerHTML += `<th class="px-6 py-4 text-center text-sm font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">⚡ Vermogen (W)</th>`;
+        headerHTML += `<th class="px-4 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">⚡ Vermogen (W)</th>`;
     }
     
     if (eenheid === 'snelheid' || eenheid === 'combinatie') {
         const snelheidLabel = currentTableType === 'veldtest_zwemmen' ? '🏊 Snelheid (min/100m)' : '🏃 Snelheid (km/h)';
-        headerHTML += `<th class="px-6 py-4 text-center text-sm font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">${snelheidLabel}</th>`;
+        headerHTML += `<th class="px-4 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">${snelheidLabel}</th>`;
     }
     
     headerHTML += `
-            <th class="px-6 py-4 text-center text-sm font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">% LT1</th>
-            <th class="px-6 py-4 text-center text-sm font-bold text-gray-800 uppercase tracking-wider">% LT2</th>
+            <th class="px-4 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">% LT1</th>
+            <th class="px-4 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">% LT2</th>
         </tr>
     `;
     
     zonesHeader.innerHTML = headerHTML;
     
-    // Kleurenschema per zone
+    // Kleurenschema per zone - EXACT zoals edit.blade.php
     const zoneKleuren = [
-        { bg: 'bg-blue-50', text: 'text-blue-800', border: 'border-blue-200' },      // Zone 1: Herstel
-        { bg: 'bg-green-50', text: 'text-green-800', border: 'border-green-200' },   // Zone 2: Duurtraining
-        { bg: 'bg-yellow-50', text: 'text-yellow-800', border: 'border-yellow-200' },// Zone 3: Tempo
-        { bg: 'bg-orange-50', text: 'text-orange-800', border: 'border-orange-200' },// Zone 4: Drempel
-        { bg: 'bg-red-50', text: 'text-red-800', border: 'border-red-200' },        // Zone 5: VO2max
-        { bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-200' } // Zone 6: Anaeroob
+        { bg: 'bg-blue-50', text: 'text-blue-900', border: 'border-blue-200', icon: '😌' },        // Zone 1: Herstel
+        { bg: 'bg-green-50', text: 'text-green-900', border: 'border-green-200', icon: '🚴' },     // Zone 2: Duurtraining
+        { bg: 'bg-yellow-50', text: 'text-yellow-900', border: 'border-yellow-200', icon: '⚡' },  // Zone 3: Tempo
+        { bg: 'bg-orange-50', text: 'text-orange-900', border: 'border-orange-200', icon: '🔥' },  // Zone 4: Drempel
+        { bg: 'bg-red-50', text: 'text-red-900', border: 'border-red-200', icon: '💪' },          // Zone 5: VO2max
+        { bg: 'bg-purple-50', text: 'text-purple-900', border: 'border-purple-200', icon: '🚀' }, // Zone 6: Anaeroob
+        { bg: 'bg-pink-50', text: 'text-pink-900', border: 'border-pink-200', icon: '⚡' },       // Zone 7: Maximaal
+        { bg: 'bg-red-100', text: 'text-red-900', border: 'border-red-300', icon: '💥' }         // Zone 8: Sprint
     ];
     
-    // Bouw body rows
+    // Bouw body rows - EXACT zoals edit.blade.php
     let bodyHTML = '';
     zonesData.forEach((zone, index) => {
         const kleuren = zoneKleuren[index] || zoneKleuren[0];
         
         bodyHTML += `
-            <tr class="${kleuren.bg} hover:bg-opacity-80 transition-all duration-200 border-b ${kleuren.border}">
-                <td class="px-6 py-4 text-base font-extrabold ${kleuren.text} border-r border-gray-200">${zone.zone}</td>
-                <td class="px-6 py-4 text-base font-bold ${kleuren.text} border-r border-gray-200">${zone.naam}</td>
-                <td class="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">${zone.doel}</td>
+            <tr class="${kleuren.bg} hover:shadow-md hover:scale-[1.01] transition-all duration-200 border-b ${kleuren.border}">
+                <td class="px-4 py-3 text-sm font-extrabold ${kleuren.text} border-r border-gray-200">
+                    ${kleuren.icon} ${zone.zone}
+                </td>
+                <td class="px-4 py-3 text-sm font-bold ${kleuren.text} border-r border-gray-200">${zone.naam}</td>
+                <td class="px-4 py-3 text-xs text-gray-700 border-r border-gray-200">${zone.doel}</td>
         `;
         
         if (eenheid === 'hartslag' || eenheid === 'combinatie') {
             const hsMin = zone.hartslag_min || '-';
             const hsMax = zone.hartslag_max || '-';
-            bodyHTML += `<td class="px-6 py-4 text-base text-center text-blue-700 font-bold border-r border-gray-200">💓 ${hsMin} - ${hsMax}</td>`;
+            bodyHTML += `<td class="px-4 py-3 text-sm text-center font-bold border-r border-gray-200" style="color: #dc2626;">💓 ${hsMin} - ${hsMax}</td>`;
         }
         
         if (eenheid === 'vermogen' || eenheid === 'combinatie') {
             const vmMin = zone.vermogen_min || '-';
             const vmMax = zone.vermogen_max || '-';
-            bodyHTML += `<td class="px-6 py-4 text-base text-center text-green-700 font-bold border-r border-gray-200">⚡ ${vmMin} - ${vmMax}</td>`;
+            bodyHTML += `<td class="px-4 py-3 text-sm text-center font-bold border-r border-gray-200" style="color: #059669;">⚡ ${vmMin} - ${vmMax}</td>`;
         }
         
         if (eenheid === 'snelheid' || eenheid === 'combinatie') {
             const snelheidIcon = currentTableType === 'veldtest_zwemmen' ? '🏊' : '🏃';
-            bodyHTML += `<td class="px-6 py-4 text-base text-center text-purple-700 font-bold border-r border-gray-200">${snelheidIcon} -</td>`;
+            const snMin = zone.snelheid_min || '-';
+            const snMax = zone.snelheid_max || '-';
+            bodyHTML += `<td class="px-4 py-3 text-sm text-center font-bold border-r border-gray-200" style="color: #7c3aed;">${snelheidIcon} ${snMin} - ${snMax}</td>`;
         }
         
         bodyHTML += `
-                <td class="px-6 py-4 text-sm text-center text-gray-600 font-medium border-r border-gray-200">${zone.percentage_lt1}</td>
-                <td class="px-6 py-4 text-sm text-center text-gray-600 font-medium">${zone.percentage_lt2}</td>
+                <td class="px-4 py-3 text-xs text-center text-gray-600 font-semibold border-r border-gray-200">${zone.percentage_lt1}</td>
+                <td class="px-4 py-3 text-xs text-center text-gray-600 font-semibold">${zone.percentage_lt2}</td>
             </tr>
         `;
     });
     
     zonesBody.innerHTML = bodyHTML;
     
-    console.log('✅ Zones tabel gegenereerd met', zonesData.length, 'zones en kleuren');
+    console.log('✅ Zones tabel gegenereerd met', zonesData.length, 'zones en visuele styling');
 }
 
 // === HERBEREKEN ZONES KNOP ===
