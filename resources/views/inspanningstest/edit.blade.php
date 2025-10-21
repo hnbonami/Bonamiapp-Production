@@ -3622,7 +3622,7 @@ function exportZonesData() {
 
 // 🔧 NIEUWE FUNCTIE: Update handmatige zone waarden
 function updateHandmatigeZone(zoneIndex, field, value) {
-    console.log(`🔧 updateHandmatigeZone: Zone ${zoneIndex}, veld ${field} = ${value}`);
+    console.log(`🔧 updateHandmatigeZone: Zone ${zoneIndex}, veld ${field} = "${value}"`);
     
     if (!huidigeZonesData || !huidigeZonesData[zoneIndex]) {
         console.log('❌ Geen zones data beschikbaar voor update');
@@ -3630,9 +3630,17 @@ function updateHandmatigeZone(zoneIndex, field, value) {
     }
     
     // Update de waarde in de zones data
-    huidigeZonesData[zoneIndex][field] = parseFloat(value) || 0;
+    // Voor tekstvelden (naam, beschrijving): gebruik string waarde
+    // Voor numerieke velden: gebruik parseFloat
+    if (field === 'naam' || field === 'beschrijving') {
+        huidigeZonesData[zoneIndex][field] = value; // Behoud string waarde
+        console.log(`✅ Tekstveld "${field}" bijgewerkt naar: "${value}"`);
+    } else {
+        huidigeZonesData[zoneIndex][field] = parseFloat(value) || 0;
+        console.log(`✅ Numeriek veld "${field}" bijgewerkt naar: ${parseFloat(value) || 0}`);
+    }
     
-    console.log(`✅ Zone ${zoneIndex} bijgewerkt:`, huidigeZonesData[zoneIndex]);
+    console.log(`✅ Zone ${zoneIndex} volledig bijgewerkt:`, huidigeZonesData[zoneIndex]);
     
     // Update de hidden input met de nieuwe data
     document.getElementById('trainingszones_data').value = JSON.stringify(huidigeZonesData);

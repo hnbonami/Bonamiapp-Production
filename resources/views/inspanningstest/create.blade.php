@@ -706,7 +706,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="hidden" name="trainingszones_data" id="trainingszones_data" value="{{ old('trainingszones_data') }}">
 
 
-    </div>                    <!-- Sjabloon notificatie - EENVOUDIGE VERSIE -->
+                    </div>
+                    
+                    <!-- Sjabloon notificatie - EENVOUDIGE VERSIE -->
                     <div id="sjabloon-notificatie" class="mt-6 mb-6" style="background: #e3f2fd; border: 2px solid #2196f3; padding: 15px; border-radius: 8px;">
                         <strong style="color: #1976d2;">📋 Selecteer een testtype om te zien of er een sjabloon beschikbaar is voor rapportgeneratie.</strong>
                     </div>
@@ -3596,7 +3598,7 @@ function exportZonesData() {
 
 // 🔧 NIEUWE FUNCTIE: Update handmatige zone waarden
 function updateHandmatigeZone(zoneIndex, field, value) {
-    console.log(`🔧 updateHandmatigeZone: Zone ${zoneIndex}, veld ${field} = ${value}`);
+    console.log(`🔧 updateHandmatigeZone: Zone ${zoneIndex}, veld ${field} = "${value}"`);
     
     if (!huidigeZonesData || !huidigeZonesData[zoneIndex]) {
         console.log('❌ Geen zones data beschikbaar voor update');
@@ -3604,9 +3606,17 @@ function updateHandmatigeZone(zoneIndex, field, value) {
     }
     
     // Update de waarde in de zones data
-    huidigeZonesData[zoneIndex][field] = parseFloat(value) || 0;
+    // Voor tekstvelden (naam, beschrijving): gebruik string waarde
+    // Voor numerieke velden: gebruik parseFloat
+    if (field === 'naam' || field === 'beschrijving') {
+        huidigeZonesData[zoneIndex][field] = value; // Behoud string waarde
+        console.log(`✅ Tekstveld "${field}" bijgewerkt naar: "${value}"`);
+    } else {
+        huidigeZonesData[zoneIndex][field] = parseFloat(value) || 0;
+        console.log(`✅ Numeriek veld "${field}" bijgewerkt naar: ${parseFloat(value) || 0}`);
+    }
     
-    console.log(`✅ Zone ${zoneIndex} bijgewerkt:`, huidigeZonesData[zoneIndex]);
+    console.log(`✅ Zone ${zoneIndex} volledig bijgewerkt:`, huidigeZonesData[zoneIndex]);
     
     // Update de hidden input met de nieuwe data
     document.getElementById('trainingszones_data').value = JSON.stringify(huidigeZonesData);

@@ -116,13 +116,21 @@
                         
                         // Zone kleur (uit berekening)
                         $zoneKleur = $zone['kleur'] ?? '#FFFFFF';
+                        
+                        // DEBUG: Log de zone naam
+                        \Log::info("Zone {$index} naam: " . ($zone['naam'] ?? 'GEEN NAAM'));
+                        \Log::info("Zone {$index} beschrijving: " . ($zone['beschrijving'] ?? 'GEEN BESCHRIJVING'));
+                        
+                        // Gebruik de echte naam uit de database
+                        $zoneNaam = $zone['naam'] ?? ('Zone ' . ($index + 1));
+                        $zoneBeschrijving = $zone['beschrijving'] ?? '';
                     @endphp
                     <tr class="border-b border-gray-200 hover:bg-opacity-80 transition-colors duration-150" style="background-color: {{ $zoneKleur }};">
                         {{-- Zone naam en beschrijving --}}
                         <td class="px-4 py-3 border-r border-gray-200">
-                            <div class="font-bold text-sm text-gray-900">{{ $zone['naam'] ?? 'Zone ' . ($index + 1) }}</div>
-                            @if(isset($zone['beschrijving']))
-                                <div class="text-xs text-gray-600 mt-1">{{ $zone['beschrijving'] }}</div>
+                            <div class="font-bold text-sm text-gray-900">{{ $zoneNaam }}</div>
+                            @if(!empty($zoneBeschrijving))
+                                <div class="text-xs text-gray-600 mt-1">{{ $zoneBeschrijving }}</div>
                             @endif
                         </td>
                         

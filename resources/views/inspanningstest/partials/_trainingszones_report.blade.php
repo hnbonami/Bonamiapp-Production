@@ -180,7 +180,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($trainingszones as $zone)
+                @foreach($trainingszones as $index => $zone)
                     @php
                         $minMinPerKm = null;
                         $maxMinPerKm = null;
@@ -194,9 +194,15 @@
                             : '-';
                         
                         $zoneKleur = $zone['kleur'] ?? '#FFFFFF';
+                        
+                        // DEBUG: Log de zone naam
+                        \Log::info("Zone {$index} naam: " . ($zone['naam'] ?? 'GEEN NAAM'));
+                        
+                        // Gebruik de echte naam uit de database
+                        $zoneNaam = $zone['naam'] ?? ('Zone ' . ($index + 1));
                     @endphp
                     <tr style="background-color: {{ $zoneKleur }};">
-                        <td class="zone-naam-cel">{{ $zone['naam'] ?? '-' }}</td>
+                        <td class="zone-naam-cel">{{ $zoneNaam }}</td>
                         <td style="color: #dc2626; font-weight: 600; border-right: 1px solid #e5e7eb;">
                             {{ isset($zone['minHartslag']) ? round($zone['minHartslag']) : '-' }}
                         </td>
