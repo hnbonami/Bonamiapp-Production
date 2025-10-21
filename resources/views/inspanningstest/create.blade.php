@@ -42,8 +42,8 @@
 }
 </style>
 
-<!-- Chart.js library - versie zonder source maps voor geen console warnings -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Chart.js library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- CSRF Token voor AI AJAX calls -->
 <meta name="csrf-token" content="{{ csrf_token() }}">
 @if ($errors->any())
@@ -421,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div id="testresultaten-table" class="mb-6">
                         <table class="w-full border border-gray-300 mb-4">
                             <thead id="testresultaten-header">
-                                <!-- Headers worden dynamisch tegengeeregend -->
+                                <!-- Headers worden dynamisch gegenereerd -->
                             </thead>
                             <tbody id="testresultaten-body">
                                 <!-- Rijen worden dynamisch gegenereerd -->
@@ -668,19 +668,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
 
-                    <!-- Trainingszones Tabel Container - EXACT ZOALS EDIT.BLADE.PHP -->
+                    <!-- Trainingszones Tabel Container -->
                     <div id="trainingszones-container" class="mb-6" style="display: none;">
-                        <div class="bg-white border-2 border-indigo-200 rounded-xl overflow-hidden shadow-lg">
-                            <div class="bg-gradient-to-r from-indigo-50 via-blue-50 to-purple-50 px-6 py-4 border-b-2 border-indigo-200">
-                                <h4 class="font-extrabold text-indigo-900 text-lg flex items-center">
+                        <div class="bg-white border border-gray-300 rounded-lg overflow-hidden">
+                            <div class="bg-gray-50 px-4 py-3 border-b border-gray-300">
+                                <h4 class="font-bold text-gray-900 flex items-center">
                                     🎯 <span class="ml-2">Berekende Trainingszones</span>
-                                    <span id="zones-methode-label" class="ml-3 text-sm font-semibold text-indigo-600 bg-white px-3 py-1 rounded-full"></span>
+                                    <span id="zones-methode-label" class="ml-2 text-sm text-gray-600"></span>
                                 </h4>
                             </div>
                             
                             <div class="overflow-x-auto">
-                                <table id="trainingszones-tabel" class="w-full border-collapse">
-                                    <thead id="zones-header" class="bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100">
+                                <table id="trainingszones-tabel" class="w-full">
+                                    <thead id="zones-header" class="bg-gray-100">
                                         <!-- Headers worden dynamisch gegenereerd -->
                                     </thead>
                                     <tbody id="zones-body">
@@ -689,12 +689,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                 </table>
                             </div>
                             
-                            <div class="bg-gradient-to-r from-gray-50 via-blue-50 to-gray-50 px-6 py-4 border-t-2 border-indigo-100">
+                            <div class="bg-gray-50 px-4 py-3 border-t border-gray-300">
                                 <div class="flex justify-between items-center">
-                                    <p class="text-xs text-gray-700 font-medium" id="zones-tip-text">
+                                    <p class="text-xs text-gray-600" id="zones-tip-text">
                                         💡 <strong>Tip:</strong> Deze zones zijn automatisch berekend. Bij 'Handmatig' kun je waarden aanpassen.
                                     </p>
-                                    <button type="button" onclick="exportZonesData()" class="text-indigo-700 hover:text-indigo-900 text-sm font-bold bg-white px-4 py-2 rounded-lg border-2 border-indigo-200 hover:bg-indigo-50 transition-all duration-200 shadow-sm">
+                                    <button type="button" onclick="exportZonesData()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
                                         📊 Exporteer Zones
                                     </button>
                                 </div>
@@ -737,9 +737,9 @@ document.addEventListener('DOMContentLoaded', function() {
 let rowCount = 0;
 let currentTableType = '';
 
-// 🔥 BELANGRIJK: Voor CREATE mode is er GEEN bestaande data
-const existingTestresultaten = []; // CREATE: geen bestaande data
-console.log('📊 CREATE MODE: Geen bestaande testresultaten');
+// 🔥 BELANGRIJK: Voor CREATE pagina zijn er GEEN bestaande testresultaten
+const existingTestresultaten = [];
+console.log('📊 CREATE mode: Geen bestaande testresultaten');
 
 // Functie om huidige tabeldata te bewaren voordat tabel wordt gecleared
 function preserveCurrentTableData() {
@@ -957,10 +957,6 @@ function updateTable(testType) {
     const header = document.getElementById('testresultaten-header');
     const tbody = document.getElementById('testresultaten-body');
     
-    // Bewaar huidige data voordat we clearen
-    const currentData = preserveCurrentTableData();
-    console.log('Bewaarde data voor testtype wijziging:', currentData);
-    
     // Clear existing content
     header.innerHTML = '';
     tbody.innerHTML = '';
@@ -970,6 +966,17 @@ function updateTable(testType) {
     
     // Set header
     header.innerHTML = generateTableHeader(testType);
+    
+    // 🔥 PRIORITEIT: Laad bestaande data uit database ALS DIE ER IS
+    if (existingTestresultaten && existingTestresultaten.length > 0) {
+        console.log('✅ Laden van bestaande testresultaten:', existingTestresultaten.length, 'rijen');
+        existingTestresultaten.forEach(data => {
+            tbody.innerHTML += generateTableRow(testType, rowCount, data);
+            rowCount++;
+        });
+        console.log('✅ Bestaande data geladen in tabel');
+        return;
+    }
     
     // Voor veldtest lopen met protocol, voeg vooringevulde rijen toe
     if (testType === 'veldtest_lopen') {
@@ -1404,7 +1411,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else if (selectedType === 'veldtest_fietsen') {
             // Veldtest fietsen: toon standaard velden + weersomstandigheden
-
             weersomstandighedenField.style.display = 'block';
             startLabel.textContent = 'Start wattage (watt)';
             stappenWattLabel.textContent = 'Stappen (watt)';
@@ -1539,9 +1545,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Event listener voor analyse methode
     const analyseMethodeSelect = document.getElementById('analyse_methode');
-    if (analyseMethodeSelect) {
-        analyseMethodeSelect.addEventListener('change', handleAnalyseMethodeChange);
-    }
+    analyseMethodeSelect.addEventListener('change', handleAnalyseMethodeChange);
     
     // Event listener voor D-max Modified drempelwaarde wijziging
     const dmaxThresholdInput = document.getElementById('dmax_modified_threshold');
@@ -1574,6 +1578,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (zonesMethodeSelect) {
         zonesMethodeSelect.addEventListener('change', function() {
             console.log('🎯 Zones methode gewijzigd naar:', this.value);
+            // Volledige herberekening bij methode wijziging
             updateTrainingszones();
         });
     }
@@ -1581,6 +1586,8 @@ document.addEventListener('DOMContentLoaded', function() {
     if (zonesAantalSelect) {
         zonesAantalSelect.addEventListener('change', function() {
             console.log('🔢 Zones aantal gewijzigd naar:', this.value);
+            console.log('🔄 HERBEREKENING: Aantal zones gewijzigd, zones worden opnieuw berekend...');
+            // BELANGRIJK: Volledig herberekenen, niet alleen toevoegen/verwijderen
             updateTrainingszones();
         });
     }
@@ -1588,46 +1595,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (zonesEenheidSelect) {
         zonesEenheidSelect.addEventListener('change', function() {
             console.log('📊 Zones eenheid gewijzigd naar:', this.value);
+            // Volledige herberekening bij eenheid wijziging
             updateTrainingszones();
         });
     }
-    
-    // 🔥 NIEUWE FUNCTIONALITEIT: Auto-update zones bij drempelwaarde wijzigingen
-    const drempelInputs = document.querySelectorAll('.drempel-input');
-    drempelInputs.forEach(input => {
-        // Debounce timer om niet bij elke toetsaanslag te updaten
-        let debounceTimer;
-        
-        input.addEventListener('input', function() {
-            clearTimeout(debounceTimer);
-            
-            // Wacht 800ms na laatste wijziging voordat zones worden bijgewerkt
-            debounceTimer = setTimeout(() => {
-                const methodeSelektor = document.getElementById('zones_methode');
-                
-                // Update zones alleen als er een methode geselecteerd is
-                if (methodeSelektor && methodeSelektor.value) {
-                    console.log('🔄 Drempelwaarde gewijzigd, zones worden automatisch bijgewerkt...');
-                    
-                    // Toon korte feedback
-                    toonZonesUpdateFeedback();
-                    
-                    // Update zones
-                    updateTrainingszones();
-                }
-            }, 800);
-        });
-    });
-    
-    console.log('✅ Auto-update voor drempelwaarden geactiveerd');
 });
 
 // Grafiek variabelen
 let hartslagLactaatChart = null;
 let aerobeThresholdLine = null;
 let anaerobeThresholdLine = null;
-let isDragging = false;
-let draggedThreshold = null;
 
 // Functie om analyse methode wijziging te behandelen
 function handleAnalyseMethodeChange() {
@@ -1637,17 +1614,22 @@ function handleAnalyseMethodeChange() {
     const dmaxModifiedConfig = document.getElementById('dmax-modified-config');
     
     console.log('Analyse methode gewijzigd naar:', selectedMethod);
+    console.log('Container gevonden:', !!grafiekContainer);
+    console.log('Instructies gevonden:', !!grafiekInstructies);
     
     // Toon/verberg D-max Modified configuratie
     if (selectedMethod === 'dmax_modified') {
         dmaxModifiedConfig.style.display = 'block';
+        console.log('✅ D-max Modified configuratie getoond');
     } else {
         dmaxModifiedConfig.style.display = 'none';
+        console.log('❌ D-max Modified configuratie verborgen');
     }
     
     if (selectedMethod && selectedMethod !== '') {
         grafiekContainer.style.display = 'block';
         grafiekInstructies.style.display = 'block';
+        console.log('Container en instructies zichtbaar gemaakt voor methode:', selectedMethod);
         generateChart();
     } else {
         grafiekContainer.style.display = 'none';
@@ -1658,100 +1640,6 @@ function handleAnalyseMethodeChange() {
             hartslagLactaatChart = null;
         }
     }
-}
-
-// 🎯 NIEUWE FUNCTIE: Handmatig herberekenen van zones (voor de knop)
-function herberekeTrainingszones() {
-    console.log('🔄 Handmatige herberekening van zones gestart...');
-    
-    const methodeSelektor = document.getElementById('zones_methode');
-    
-    if (!methodeSelektor || !methodeSelektor.value) {
-        alert('Selecteer eerst een berekenings methode voor de trainingszones.');
-        return;
-    }
-    
-    // Toon feedback
-    toonZonesUpdateFeedback('🔄 Zones worden herberekend...');
-    
-    // Update zones
-    setTimeout(() => {
-        updateTrainingszones();
-        toonZonesUpdateFeedback('✅ Zones succesvol herberekend!');
-    }, 100);
-}
-
-// 🎨 HULPFUNCTIE: Toon korte feedback bij zones update
-function toonZonesUpdateFeedback(message = '🔄 Zones bijgewerkt') {
-    const container = document.getElementById('trainingszones-container');
-    
-    if (!container) return;
-    
-    // Maak feedback element
-    const feedback = document.createElement('div');
-    feedback.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 transition-opacity duration-300';
-    feedback.textContent = message;
-    feedback.style.opacity = '0';
-    
-    document.body.appendChild(feedback);
-    
-    // Fade in
-    setTimeout(() => {
-        feedback.style.opacity = '1';
-    }, 10);
-    
-    // Fade out en verwijder na 2 seconden
-    setTimeout(() => {
-        feedback.style.opacity = '0';
-        setTimeout(() => {
-            document.body.removeChild(feedback);
-        }, 300);
-    }, 2000);
-}
-
-// 🔥 HULPFUNCTIE: Voeg nieuwe rij toe aan testresultaten tabel
-function addRow() {
-    const tbody = document.querySelector('#testresultaten-tabel tbody');
-    if (!tbody) {
-        console.error('❌ Testresultaten tabel body niet gevonden');
-        return;
-    }
-    
-    const rowCount = tbody.querySelectorAll('tr').length;
-    const newRow = document.createElement('tr');
-    newRow.className = 'hover:bg-gray-50';
-    
-    newRow.innerHTML = `
-        <td class="px-4 py-2 border">
-            <input type="number" name="testresultaten[${rowCount}][tijd_minuten]" 
-                   class="w-full px-2 py-1 border rounded" placeholder="Min" min="0">
-        </td>
-        <td class="px-4 py-2 border">
-            <input type="number" name="testresultaten[${rowCount}][vermogen_watt]" 
-                   class="w-full px-2 py-1 border rounded" placeholder="Watt" min="0">
-        </td>
-        <td class="px-4 py-2 border">
-            <input type="number" name="testresultaten[${rowCount}][hartslag_bpm]" 
-                   class="w-full px-2 py-1 border rounded" placeholder="BPM" min="0">
-        </td>
-        <td class="px-4 py-2 border">
-            <input type="number" name="testresultaten[${rowCount}][lactaat_mmol]" 
-                   class="w-full px-2 py-1 border rounded" placeholder="mmol/L" min="0" step="0.1">
-        </td>
-        <td class="px-4 py-2 border">
-            <input type="number" name="testresultaten[${rowCount}][borg_rpe]" 
-                   class="w-full px-2 py-1 border rounded" placeholder="6-20" min="6" max="20">
-        </td>
-        <td class="px-4 py-2 border text-center">
-            <button type="button" onclick="this.closest('tr').remove()" 
-                    class="text-red-600 hover:text-red-800 font-bold">
-                ✕
-            </button>
-        </td>
-    `;
-    
-    tbody.appendChild(newRow);
-    console.log('✅ Nieuwe testresultaten rij toegevoegd');
 }
 
 // Functie om data uit de tabel te lezen
@@ -1785,29 +1673,42 @@ function getTableData() {
             }
         });
         
-        // SPECIALE BEHANDELING voor veldtest lopen: bereken snelheid EN voeg hartslag toe
-        if (currentTableType === 'veldtest_lopen' && rowData.afstand && rowData.tijd_min) {
-            const afstandKm = rowData.afstand / 1000;
-            const tijdMinuten = rowData.tijd_min + ((rowData.tijd_sec || 0) / 60);
-            const tijdUur = tijdMinuten / 60;
-            if (tijdUur > 0) {
-                rowData.snelheid = afstandKm / tijdUur;
-                console.log(`  🏃 Berekende snelheid: ${rowData.snelheid.toFixed(2)} km/h`);
-            }
+    // SPECIALE BEHANDELING voor veldtest lopen: bereken snelheid EN voeg hartslag toe
+    if (currentTableType === 'veldtest_lopen' && rowData.afstand && rowData.tijd_min) {
+        const afstandKm = rowData.afstand / 1000; // meter naar km
+        const tijdMinuten = rowData.tijd_min + ((rowData.tijd_sec || 0) / 60); // totale tijd in minuten
+        const tijdUur = tijdMinuten / 60; // minuten naar uur
+        if (tijdUur > 0) {
+            rowData.snelheid = afstandKm / tijdUur; // km/h
+            console.log(`  🏃 Berekende snelheid: ${rowData.snelheid.toFixed(2)} km/h (${rowData.afstand}m in ${tijdMinuten.toFixed(2)}min)`);
         }
-        
-        // SPECIALE BEHANDELING voor veldtest zwemmen
-        if (currentTableType === 'veldtest_zwemmen' && rowData.afstand && rowData.tijd_min) {
-            const totaleTijdSec = (rowData.tijd_min * 60) + (rowData.tijd_sec || 0);
-            if (totaleTijdSec > 0 && rowData.afstand > 0) {
-                rowData.snelheid = (totaleTijdSec / 60) * (100 / rowData.afstand);
-                console.log(`  🏊 Berekende zwemsnelheid: ${rowData.snelheid.toFixed(2)} min/100m`);
-            }
+        // Zorg dat hartslag aanwezig is
+        if (rowData.hartslag) {
+            console.log(`  ❤️ Hartslag aanwezig: ${rowData.hartslag} bpm`);
         }
+    }
+    
+    // SPECIALE BEHANDELING voor veldtest zwemmen: bereken snelheid (min/100m) EN voeg hartslag toe
+    if (currentTableType === 'veldtest_zwemmen' && rowData.afstand && rowData.tijd_min) {
+        // Bereken totale tijd in seconden
+        const totaleTijdSec = (rowData.tijd_min * 60) + (rowData.tijd_sec || 0);
+        if (totaleTijdSec > 0 && rowData.afstand > 0) {
+            // Bereken min/100m (zwemnotatie)
+            rowData.snelheid = (totaleTijdSec / 60) * (100 / rowData.afstand); // min/100m
+            console.log(`  🏊 Berekende zwemsnelheid: ${rowData.snelheid.toFixed(2)} min/100m (${rowData.afstand}m in ${totaleTijdSec}sec)`);
+        }
+        // Zorg dat hartslag aanwezig is
+        if (rowData.hartslag) {
+            console.log(`  ❤️ Hartslag aanwezig: ${rowData.hartslag} bpm`);
+        }
+    }        console.log('RowData:', rowData);
         
         // Only add row if it has useful data
         if (Object.values(rowData).some(val => val !== null && val !== '')) {
             data.push(rowData);
+            console.log('Rij toegevoegd aan data');
+        } else {
+            console.log('Rij NIET toegevoegd (geen nuttige data)');
         }
     }
     
@@ -1815,514 +1716,1299 @@ function getTableData() {
     return data;
 }
 
-// === GRAFIEK GENERATIE FUNCTIONALITEIT ===
-
-// Functie om drempelwaarden te berekenen op basis van geselecteerde methode
-function calculateThresholds() {
-    const selectedMethod = document.getElementById('analyse_methode').value;
-    const tableData = getTableData();
+// Functie om verschillende analyse methodes toe te passen
+function calculateThresholds(data, method) {
+    if (!data || data.length < 3) return null;
     
-    console.log('calculateThresholds aangeroepen met methode:', selectedMethod);
-    console.log('Tabel data:', tableData);
+    // Filter data met geldige lactaat waarden
+    const validData = data.filter(row => row.lactaat !== null && row.lactaat > 0);
+    if (validData.length < 3) return null;
     
-    if (!selectedMethod || tableData.length === 0) {
-        console.log('Geen methode geselecteerd of geen data');
-        return null;
-    }
+    // Bepaal X-as veld op basis van testtype
+    const xField = currentTableType === 'fietstest' ? 'vermogen' : 
+                   currentTableType === 'looptest' ? 'snelheid' : 
+                   currentTableType === 'veldtest_lopen' ? 'snelheid' :
+                   currentTableType === 'veldtest_fietsen' ? 'vermogen' : 
+                   currentTableType === 'veldtest_zwemmen' ? 'snelheid' : 'tijd';
     
-    let result = null;
+    validData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
     
-    switch(selectedMethod) {
+    switch(method) {
         case 'dmax':
-            result = calculateDmax(tableData);
-            break;
+            return calculateDmax(validData, xField);
         case 'dmax_modified':
-            result = calculateDmaxModified(tableData);
-            break;
+            return calculateDmaxModified(validData, xField);
         case 'lactaat_steady_state':
-            result = calculateLactaatSteadyState(tableData);
-            break;
+            return calculateLactaatSteadyState(validData, xField);
         case 'hartslag_deflectie':
-            result = calculateHartslagDeflectie(tableData);
-            break;
-        case 'handmatig':
-            result = {
-                aerobe: {
-                    vermogen: parseFloat(document.getElementById('aerobe_drempel_vermogen').value) || null,
-                    hartslag: parseFloat(document.getElementById('aerobe_drempel_hartslag').value) || null
-                },
-                anaerobe: {
-                    vermogen: parseFloat(document.getElementById('anaerobe_drempel_vermogen').value) || null,
-                    hartslag: parseFloat(document.getElementById('anaerobe_drempel_hartslag').value) || null
-                }
+            return calculateHartslagDeflectie(validData, xField);
+        default:
+            return calculateDmax(validData, xField);
+    }
+}
+
+// Functie om waarde te interpoleren op basis van curve
+function interpolateValueOnCurve(validData, xField, targetValue, targetField) {
+    // Sorteer data
+    validData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
+    
+    // Vind het punt waar targetField de targetValue kruist
+    for (let i = 0; i < validData.length - 1; i++) {
+        const p1 = validData[i];
+        const p2 = validData[i + 1];
+        
+        if (p1[targetField] <= targetValue && p2[targetField] >= targetValue) {
+            // Lineaire interpolatie tussen de twee punten
+            const ratio = (targetValue - p1[targetField]) / (p2[targetField] - p1[targetField]);
+            const interpolatedX = p1[xField] + ratio * (p2[xField] - p1[xField]);
+            const interpolatedHartslag = p1.hartslag + ratio * (p2.hartslag - p1.hartslag);
+            
+            return {
+                [xField]: interpolatedX,
+                lactaat: targetValue,
+                hartslag: interpolatedHartslag
             };
-            break;
-    }
-    
-    console.log('Berekende drempelwaarden:', result);
-    return result;
-}
-
-// D-max methode (klassiek)
-function calculateDmax(data) {
-    console.log('🔬 D-max berekening gestart met data:', data);
-    
-    // Filter data met lactaat waarden
-    const lactaatData = data.filter(d => d.lactaat !== null && d.lactaat !== undefined);
-    
-    if (lactaatData.length < 3) {
-        console.log('❌ Onvoldoende lactaat data voor D-max');
-        return null;
-    }
-    
-    // Sorteer op vermogen/snelheid
-    const xField = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen' ? 'snelheid' : 
-                   currentTableType === 'veldtest_zwemmen' ? 'snelheid' : 'vermogen';
-    
-    lactaatData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
-    
-    // Fit polynoom door de punten
-    const xValues = lactaatData.map(d => d[xField]);
-    const yValues = lactaatData.map(d => d.lactaat);
-    
-    // Bereken rechte lijn tussen eerste en laatste punt
-    const x1 = xValues[0];
-    const y1 = yValues[0];
-    const x2 = xValues[xValues.length - 1];
-    const y2 = yValues[yValues.length - 1];
-    
-    // Vind punt met maximale afstand tot de lijn
-    let maxDistance = 0;
-    let maxIndex = 0;
-    
-    for (let i = 1; i < xValues.length - 1; i++) {
-        const x = xValues[i];
-        const y = yValues[i];
-        
-        // Bereken afstand tot lijn
-        const lineY = y1 + (y2 - y1) * (x - x1) / (x2 - x1);
-        const distance = Math.abs(y - lineY);
-        
-        if (distance > maxDistance) {
-            maxDistance = distance;
-            maxIndex = i;
-        }
-    }
-    
-    const dmaxPoint = lactaatData[maxIndex];
-    console.log('✅ D-max punt gevonden:', dmaxPoint);
-    
-    // Anaërobe drempel = D-max punt
-    // Aërobe drempel = 70% van anaërobe drempel
-    const anaerobeVermogen = dmaxPoint[xField];
-    const aerobeVermogen = anaerobeVermogen * 0.7;
-    
-    // Interpoleer hartslagen
-    const anaerobeHartslag = interpolateLinear(xValues, lactaatData.map(d => d.hartslag), anaerobeVermogen);
-    const aerobeHartslag = interpolateLinear(xValues, lactaatData.map(d => d.hartslag), aerobeVermogen);
-    
-    return {
-        aerobe: {
-            vermogen: aerobeVermogen,
-            hartslag: aerobeHartslag,
-            lactaat: interpolateLinear(xValues, yValues, aerobeVermogen)
-        },
-        anaerobe: {
-            vermogen: anaerobeVermogen,
-            hartslag: anaerobeHartslag,
-            lactaat: dmaxPoint.lactaat
-        }
-    };
-}
-
-// D-max Modified methode - EXACT zoals edit.blade.php
-function calculateDmaxModified(data) {
-    console.log('🔬 D-max Modified berekening gestart');
-    
-    const lactaatData = data.filter(d => d.lactaat !== null && d.lactaat !== undefined);
-    
-    if (lactaatData.length < 3) {
-        console.log('❌ Onvoldoende lactaat data voor D-max Modified');
-        return null;
-    }
-    
-    // Haal baseline + drempelwaarde op
-    const thresholdInput = document.getElementById('dmax_modified_threshold');
-    const thresholdIncrement = parseFloat(thresholdInput?.value) || 0.4;
-    
-    console.log('🔧 D-max Modified threshold increment:', thresholdIncrement);
-    
-    const xField = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen' ? 'snelheid' : 
-                   currentTableType === 'veldtest_zwemmen' ? 'snelheid' : 'vermogen';
-    
-    lactaatData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
-    
-    // Baseline = GEMIDDELDE van eerste 2 lactaatwaarden (stabielere baseline)
-    const baseline = lactaatData.length >= 2 
-        ? (lactaatData[0].lactaat + lactaatData[1].lactaat) / 2 
-        : lactaatData[0].lactaat;
-    
-    const threshold = baseline + thresholdIncrement;
-    
-    console.log(`📊 Baseline: ${baseline.toFixed(2)} mmol/L (avg eerste 2 punten)`);
-    console.log(`📊 Drempel: ${threshold.toFixed(2)} mmol/L (baseline + ${thresholdIncrement})`);
-    
-    // Vind punt waar lactaat de drempel overschrijdt
-    let anaerobePoint = null;
-    
-    for (let i = 0; i < lactaatData.length - 1; i++) {
-        const currentLactaat = lactaatData[i].lactaat;
-        const nextLactaat = lactaatData[i + 1].lactaat;
-        
-        console.log(`🔍 Punt ${i}: ${currentLactaat.toFixed(2)} mmol/L, Punt ${i+1}: ${nextLactaat.toFixed(2)} mmol/L`);
-        
-        if (currentLactaat < threshold && nextLactaat >= threshold) {
-            // Interpoleer exact kruispunt
-            const x1 = lactaatData[i][xField];
-            const x2 = lactaatData[i + 1][xField];
-            const y1 = currentLactaat;
-            const y2 = nextLactaat;
-            
-            const ratio = (threshold - y1) / (y2 - y1);
-            const xThreshold = x1 + ratio * (x2 - x1);
-            
-            anaerobePoint = xThreshold;
-            
-            console.log(`✅ Drempel gevonden tussen punt ${i} en ${i+1}`);
-            console.log(`   Interpolatie: ${x1.toFixed(1)} + ${ratio.toFixed(3)} * (${x2.toFixed(1)} - ${x1.toFixed(1)}) = ${xThreshold.toFixed(1)}`);
-            break;
-        }
-    }
-    
-    if (!anaerobePoint) {
-        console.log('❌ Geen drempelpunt gevonden - lactaat blijft onder threshold');
-        // Fallback: gebruik hoogste punt
-        anaerobePoint = lactaatData[lactaatData.length - 1][xField];
-        console.log(`⚠️ Fallback naar hoogste punt: ${anaerobePoint.toFixed(1)}`);
-    }
-    
-    // Aërobe drempel = 70% van anaërobe
-    const aerobePoint = anaerobePoint * 0.7;
-    
-    console.log(`📈 Anaërobe drempel (LT2): ${anaerobePoint.toFixed(1)}`);
-    console.log(`📈 Aërobe drempel (LT1): ${aerobePoint.toFixed(1)} (70% van LT2)`);
-    
-    const xValues = lactaatData.map(d => d[xField]);
-    const hartslagValues = lactaatData.map(d => d.hartslag);
-    
-    const anaerobeHartslag = interpolateLinear(xValues, hartslagValues, anaerobePoint);
-    const aerobeHartslag = interpolateLinear(xValues, hartslagValues, aerobePoint);
-    
-    console.log(`💓 Anaërobe hartslag: ${anaerobeHartslag ? anaerobeHartslag.toFixed(0) : 'N/A'} bpm`);
-    console.log(`💓 Aërobe hartslag: ${aerobeHartslag ? aerobeHartslag.toFixed(0) : 'N/A'} bpm`);
-    
-    return {
-        aerobe: {
-            vermogen: aerobePoint,
-            hartslag: aerobeHartslag,
-            lactaat: interpolateLinear(xValues, lactaatData.map(d => d.lactaat), aerobePoint)
-        },
-        anaerobe: {
-            vermogen: anaerobePoint,
-            hartslag: anaerobeHartslag,
-            lactaat: threshold
-        }
-    };
-}
-
-// Lactaat Steady State methode
-function calculateLactaatSteadyState(data) {
-    console.log('🔬 Lactaat Steady State berekening');
-    
-    const lactaatData = data.filter(d => d.lactaat !== null);
-    if (lactaatData.length < 3) return null;
-    
-    const xField = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen' ? 'snelheid' : 
-                   currentTableType === 'veldtest_zwemmen' ? 'snelheid' : 'vermogen';
-    
-    // Zoek punt waar lactaat rond 4 mmol/L ligt (anaërobe drempel)
-    let anaerobePoint = null;
-    
-    for (let i = 0; i < lactaatData.length - 1; i++) {
-        if (lactaatData[i].lactaat < 4.0 && lactaatData[i + 1].lactaat >= 4.0) {
-            const x1 = lactaatData[i][xField];
-            const x2 = lactaatData[i + 1][xField];
-            const y1 = lactaatData[i].lactaat;
-            const y2 = lactaatData[i + 1].lactaat;
-            
-            const ratio = (4.0 - y1) / (y2 - y1);
-            anaerobePoint = x1 + ratio * (x2 - x1);
-            break;
-        }
-    }
-    
-    if (!anaerobePoint) {
-        anaerobePoint = lactaatData[lactaatData.length - 1][xField];
-    }
-    
-    const aerobePoint = anaerobePoint * 0.75;
-    
-    const xValues = lactaatData.map(d => d[xField]);
-    
-    return {
-        aerobe: {
-            vermogen: aerobePoint,
-            hartslag: interpolateLinear(xValues, lactaatData.map(d => d.hartslag), aerobePoint),
-            lactaat: 2.0
-        },
-        anaerobe: {
-            vermogen: anaerobePoint,
-            hartslag: interpolateLinear(xValues, lactaatData.map(d => d.hartslag), anaerobePoint),
-            lactaat: 4.0
-        }
-    };
-}
-
-// Hartslagdeflectie methode
-function calculateHartslagDeflectie(data) {
-    console.log('🔬 Hartslagdeflectie berekening');
-    
-    const hartslagData = data.filter(d => d.hartslag !== null);
-    if (hartslagData.length < 3) return null;
-    
-    const xField = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen' ? 'snelheid' : 
-                   currentTableType === 'veldtest_zwemmen' ? 'snelheid' : 'vermogen';
-    
-    hartslagData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
-    
-    // Vind deflectiepunt in hartslag curve
-    let maxCurvature = 0;
-    let deflectionIndex = Math.floor(hartslagData.length / 2);
-    
-    for (let i = 1; i < hartslagData.length - 1; i++) {
-        const x1 = hartslagData[i - 1][xField];
-        const x2 = hartslagData[i][xField];
-        const x3 = hartslagData[i + 1][xField];
-        const y1 = hartslagData[i - 1].hartslag;
-        const y2 = hartslagData[i].hartslag;
-        const y3 = hartslagData[i + 1].hartslag;
-        
-        const slope1 = (y2 - y1) / (x2 - x1);
-        const slope2 = (y3 - y2) / (x3 - x2);
-        const curvature = Math.abs(slope2 - slope1);
-        
-        if (curvature > maxCurvature) {
-            maxCurvature = curvature;
-            deflectionIndex = i;
-        }
-    }
-    
-    const anaerobeVermogen = hartslagData[deflectionIndex][xField];
-    const aerobeVermogen = anaerobeVermogen * 0.75;
-    
-    const xValues = hartslagData.map(d => d[xField]);
-    
-    return {
-        aerobe: {
-            vermogen: aerobeVermogen,
-            hartslag: interpolateLinear(xValues, hartslagData.map(d => d.hartslag), aerobeVermogen)
-        },
-        anaerobe: {
-            vermogen: anaerobeVermogen,
-            hartslag: hartslagData[deflectionIndex].hartslag
-        }
-    };
-}
-
-// Lineaire interpolatie helper
-function interpolateLinear(xValues, yValues, xTarget) {
-    if (xValues.length !== yValues.length) return null;
-    
-    for (let i = 0; i < xValues.length - 1; i++) {
-        if (xTarget >= xValues[i] && xTarget <= xValues[i + 1]) {
-            const x1 = xValues[i];
-            const x2 = xValues[i + 1];
-            const y1 = yValues[i];
-            const y2 = yValues[i + 1];
-            
-            if (y1 === null || y2 === null) continue;
-            
-            const ratio = (xTarget - x1) / (x2 - x1);
-            return y1 + ratio * (y2 - y1);
         }
     }
     
     return null;
 }
 
-// Grafiek genereren
-function generateChart() {
-    console.log('📊 Generating chart...');
+// D-max methode - WISKUNDIGE BEREKENING
+function calculateDmax(validData, xField) {
+    console.log('🧮 === D-MAX WISKUNDIGE BEREKENING ===');
     
-    const canvas = document.getElementById('hartslagLactaatGrafiek');
-    if (!canvas) {
-        console.log('❌ Canvas element niet gevonden');
+    validData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
+    console.log('Data punten:', validData.map(d => `${d[xField]}W: ${d.lactaat.toFixed(2)}mmol/L`));
+    
+    // STAP 1: Aërobe drempel = laagste lactaat + 0.4 mmol/L
+    const minLactaat = Math.min(...validData.map(d => d.lactaat));
+    const aerobeThreshold = minLactaat + 0.4;
+    let aerobePoint = interpolatePointAtLactaat(validData, xField, aerobeThreshold);
+    
+    if (!aerobePoint) {
+        aerobePoint = {
+            [xField]: validData[0][xField],
+            lactaat: aerobeThreshold,
+            hartslag: validData[0].hartslag || 140
+        };
+    }
+    
+    console.log(`✅ Aërobe drempel: ${aerobePoint[xField].toFixed(1)}W bij ${aerobeThreshold.toFixed(2)}mmol/L`);
+    
+    // STAP 2: Bereken parabool coëfficiënten voor lactaatcurve
+    const xArray = validData.map(d => d[xField]);
+    const yArray = validData.map(d => d.lactaat);
+    const paraboolCoeff = fitParabola(xArray, yArray);
+    
+    console.log(`📐 Parabool: y = ${paraboolCoeff.a.toFixed(6)}x² + ${paraboolCoeff.b.toFixed(6)}x + ${paraboolCoeff.c.toFixed(6)}`);
+    
+    // STAP 3: Bereken hulplijn (eerste naar laatste punt)
+    const firstPoint = validData[0];
+    const lastPoint = validData[validData.length - 1];
+    const m = (lastPoint.lactaat - firstPoint.lactaat) / (lastPoint[xField] - firstPoint[xField]);
+    const bLine = firstPoint.lactaat - m * firstPoint[xField];
+    
+    console.log(`📏 Hulplijn: y = ${m.toFixed(6)}x + ${bLine.toFixed(6)}`);
+    console.log(`📏 Van punt: ${firstPoint[xField]}W, ${firstPoint.lactaat.toFixed(2)}mmol/L`);
+    console.log(`📏 Naar punt: ${lastPoint[xField]}W, ${lastPoint.lactaat.toFixed(2)}mmol/L`);
+    
+    // STAP 4: Bereken D-max punt (maximum afstand parabool tot hulplijn)
+    const dmaxX = computeDmax(xArray, yArray, paraboolCoeff.a, paraboolCoeff.b, paraboolCoeff.c, m, bLine);
+    const dmaxLactaat = paraboolCoeff.a * (dmaxX * dmaxX) + paraboolCoeff.b * dmaxX + paraboolCoeff.c;
+    const dmaxHartslag = interpolateLinear(validData, dmaxX, 'hartslag', xField) || 160;
+    
+    const anaerobePoint = {
+        [xField]: dmaxX,
+        lactaat: dmaxLactaat,
+        hartslag: dmaxHartslag
+    };
+    
+    console.log(`🎯 D-MAX punt: ${dmaxX.toFixed(1)}W, ${dmaxLactaat.toFixed(2)}mmol/L, ${dmaxHartslag.toFixed(0)}bpm`);
+    
+    const result = {
+        aerobe: aerobePoint,
+        anaerobe: anaerobePoint
+    };
+    
+    console.log('✅ D-MAX RESULTAAT:');
+    console.log('  Aërobe:', aerobePoint[xField].toFixed(1) + 'W,', aerobePoint.hartslag.toFixed(0) + 'bpm');
+    console.log('  Anaërobe:', anaerobePoint[xField].toFixed(1) + 'W,', anaerobePoint.hartslag.toFixed(0) + 'bpm');
+    
+    return result;
+}
+
+// D-max Modified methode - WISKUNDIGE BEREKENING
+function calculateDmaxModified(validData, xField) {
+    console.log('🔥 === D-MAX MODIFIED WISKUNDIGE BEREKENING ===');
+    
+    validData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
+    console.log('Data punten:', validData.map(d => `${d[xField]}W: ${d.lactaat.toFixed(2)}mmol/L`));
+    
+    // SPECIALE BEHANDELING VOOR ZWEMMEN
+    const isSwimming = currentTableType === 'veldtest_zwemmen';
+    
+    // STAP 1: Haal configureerbare drempelwaarde op
+    const thresholdInput = document.getElementById('dmax_modified_threshold');
+    const configurableThreshold = thresholdInput ? parseFloat(thresholdInput.value) || 0.4 : 0.4;
+    
+    console.log(`🔧 Configureerbare drempelwaarde: ${configurableThreshold.toFixed(1)} mmol/L`);
+    
+    // STAP 2: Aërobe drempel = laagste lactaat + configureerbare waarde
+    const minLactaat = Math.min(...validData.map(d => d.lactaat));
+    const aerobeThreshold = minLactaat + configurableThreshold;
+    let aerobePoint = interpolatePointAtLactaat(validData, xField, aerobeThreshold);
+    
+    if (!aerobePoint) {
+        aerobePoint = {
+            [xField]: validData[0][xField],
+            lactaat: aerobeThreshold,
+            hartslag: validData[0].hartslag || 140
+        };
+    }
+    
+    console.log(`✅ Modified Aërobe drempel: ${aerobePoint[xField].toFixed(1)}W bij ${aerobeThreshold.toFixed(2)}mmol/L (baseline +${configurableThreshold.toFixed(1)})`);
+    
+    // STAP 3: Voor zwemmen, gebruik de andere richting voor de hulplijn
+    let startPoint, endPoint;
+    if (isSwimming) {
+        // Voor zwemmen: van laatste punt (langzaamste = hoogste X) naar aërobe punt
+        startPoint = validData[validData.length - 1]; // Langzaamste tijd (hoogste lactaat verwacht)
+        endPoint = aerobePoint; // Aërobe punt
+        console.log(`🏊 ZWEM: Hulplijn van laatste punt naar aërobe punt`);
+    } else {
+        // Voor andere sporten: van aërobe punt naar laatste punt
+        startPoint = aerobePoint;
+        endPoint = validData[validData.length - 1];
+        console.log(`🚴 NORMAAL: Hulplijn van aërobe punt naar laatste punt`);
+    }
+    
+    // STAP 4: Bereken parabool coëfficiënten voor lactaatcurve
+    const xArray = validData.map(d => d[xField]);
+    const yArray = validData.map(d => d.lactaat);
+    const paraboolCoeff = fitParabola(xArray, yArray);
+    
+    console.log(`📐 Modified Parabool: y = ${paraboolCoeff.a.toFixed(6)}x² + ${paraboolCoeff.b.toFixed(6)}x + ${paraboolCoeff.c.toFixed(6)}`);
+    
+    // STAP 5: Bereken hulplijn tussen start en eind punt
+    const m = (endPoint.lactaat - startPoint.lactaat) / (endPoint[xField] - startPoint[xField]);
+    const bLine = startPoint.lactaat - m * startPoint[xField];
+    
+    console.log(`📏 Modified Hulplijn: y = ${m.toFixed(6)}x + ${bLine.toFixed(6)}`);
+    console.log(`📏 Van punt: ${startPoint[xField].toFixed(2)}W, ${startPoint.lactaat.toFixed(2)}mmol/L`);
+    console.log(`📏 Naar punt: ${endPoint[xField].toFixed(2)}W, ${endPoint.lactaat.toFixed(2)}mmol/L`);
+    
+    // STAP 6: Bereken D-max punt tussen de juiste grenzen
+    const searchStartX = Math.min(startPoint[xField], endPoint[xField]);
+    const searchEndX = Math.max(startPoint[xField], endPoint[xField]);
+    
+    const dmaxX = computeDmaxFromBaseline(xArray, yArray, paraboolCoeff.a, paraboolCoeff.b, paraboolCoeff.c, m, bLine, searchStartX, searchEndX);
+    const dmaxLactaat = paraboolCoeff.a * (dmaxX * dmaxX) + paraboolCoeff.b * dmaxX + paraboolCoeff.c;
+    const dmaxHartslag = interpolateLinear(validData, dmaxX, 'hartslag', xField) || 160;
+    
+    const anaerobePoint = {
+        [xField]: dmaxX,
+        lactaat: dmaxLactaat,
+        hartslag: dmaxHartslag
+    };
+    
+    console.log(`🎯 D-MAX Modified punt: ${dmaxX.toFixed(1)}W, ${dmaxLactaat.toFixed(2)}mmol/L, ${dmaxHartslag.toFixed(0)}bpm`);
+    
+    const result = {
+        aerobe: aerobePoint,
+        anaerobe: anaerobePoint
+    };
+    
+    console.log('✅ D-MAX MODIFIED RESULTAAT:');
+    console.log('  Aërobe:', aerobePoint[xField].toFixed(1) + 'W,', aerobePoint.hartslag.toFixed(0) + 'bpm');
+    console.log('  Anaërobe:', anaerobePoint[xField].toFixed(1) + 'W,', anaerobePoint.hartslag.toFixed(0) + 'bpm');
+    
+    return result;
+}
+
+// Lineaire interpolatie helper functie - GEFIXEERD VOOR VELDTESTEN
+function interpolateLinear(points, targetX, targetField, xField) {
+    // Voor veldtesten: zorg dat snelheid en hartslag beschikbaar zijn
+    const validPoints = points.filter(p => {
+        const hasXValue = p[xField] !== null && p[xField] !== undefined && !isNaN(p[xField]);
+        const hasTargetValue = p[targetField] !== null && p[targetField] !== undefined && !isNaN(p[targetField]);
+        return hasXValue && hasTargetValue;
+    });
+    
+    if (validPoints.length === 0) {
+        console.log('❌ interpolateLinear: Geen valide punten met', xField, 'en', targetField);
+        return targetField === 'hartslag' ? 140 : 0; // Fallback waarde
+    }
+    
+    if (validPoints.length === 1) {
+        console.log('⚠️ interpolateLinear: Slechts 1 punt, gebruik deze waarde');
+        return validPoints[0][targetField];
+    }
+    
+    validPoints.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
+    
+    console.log(`🔍 interpolateLinear: targetX=${targetX.toFixed(2)}, targetField=${targetField}, xField=${xField}`);
+    console.log(`📊 Valide punten (${validPoints.length}):`, validPoints.map(p => `${p[xField].toFixed(2)}${xField}: ${p[targetField]}`));
+    
+    for (let i = 0; i < validPoints.length - 1; i++) {
+        const p1 = validPoints[i];
+        const p2 = validPoints[i + 1];
+        
+        if (p1[xField] <= targetX && p2[xField] >= targetX) {
+            const ratio = (targetX - p1[xField]) / (p2[xField] - p1[xField]);
+            const interpolatedValue = p1[targetField] + ratio * (p2[targetField] - p1[targetField]);
+            console.log(`✅ Interpolatie tussen ${p1[xField].toFixed(2)} (${p1[targetField]}) en ${p2[xField].toFixed(2)} (${p2[targetField]}): ${interpolatedValue.toFixed(1)}`);
+            return interpolatedValue;
+        }
+    }
+    
+    // Extrapolatie: gebruik dichtstbijzijnde punt
+    if (targetX < validPoints[0][xField]) {
+        console.log(`⬅️ Extrapolatie links: gebruik eerste punt ${validPoints[0][targetField]}`);
+        return validPoints[0][targetField];
+    } else {
+        console.log(`➡️ Extrapolatie rechts: gebruik laatste punt ${validPoints[validPoints.length - 1][targetField]}`);
+        return validPoints[validPoints.length - 1][targetField];
+    }
+}
+
+// Lactaat Steady State methode met interpolatie
+function calculateLactaatSteadyState(validData, xField) {
+    // Aërobe drempel: 2 mmol/L lactaat (geïnterpoleerd)
+    let aerobePoint = interpolateValueOnCurve(validData, xField, 2.0, 'lactaat');
+    if (!aerobePoint) {
+        aerobePoint = validData.find(d => d.lactaat >= 2.0) || validData[0];
+    }
+    
+    // Anaërobe drempel: 4 mmol/L lactaat (geïnterpoleerd)
+    let anaerobePoint = interpolateValueOnCurve(validData, xField, 4.0, 'lactaat');
+    if (!anaerobePoint) {
+        anaerobePoint = validData.find(d => d.lactaat >= 4.0) || validData[Math.floor(validData.length / 2)];
+    }
+    
+    return {
+        aerobe: aerobePoint,
+        anaerobe: anaerobePoint
+    };
+}
+
+// Hartslagdeflectie methode met curve analyse
+function calculateHartslagDeflectie(validData, xField) {
+    // Filter data met geldige hartslag waarden
+    const hartslagData = validData.filter(d => d.hartslag && d.hartslag > 0);
+    if (hartslagData.length < 3) return null;
+    
+    hartslagData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
+    
+    // Genereer meer punten voor nauwkeurigere deflectie analyse
+    const minX = Math.min(...hartslagData.map(d => d[xField]));
+    const maxX = Math.max(...hartslagData.map(d => d[xField]));
+    const curvePoints = [];
+    
+    for (let i = 0; i <= 30; i++) {
+        const x = minX + (maxX - minX) * (i / 30);
+        const hartslag = interpolateLinear(hartslagData, x, 'hartslag', xField);
+        const lactaat = interpolateLinear(validData, x, 'lactaat', xField);
+        
+        curvePoints.push({
+            [xField]: x,
+            hartslag: hartslag,
+            lactaat: lactaat
+        });
+    }
+    
+    // Zoek deflectiepunten in de vloeiende curve
+    let maxDeflectie = 0;
+    let deflectiePoint = null;
+    let aerobeDeflectiePoint = null;
+    
+    for (let i = 2; i < curvePoints.length - 2; i++) {
+        const p1 = curvePoints[i - 2];
+        const p2 = curvePoints[i - 1];
+        const p3 = curvePoints[i];
+        const p4 = curvePoints[i + 1];
+        const p5 = curvePoints[i + 2];
+        
+        // Bereken tweede afgeleide (curvature) voor deflectie
+        const slope1 = (p2.hartslag - p1.hartslag) / (p2[xField] - p1[xField]);
+        const slope2 = (p3.hartslag - p2.hartslag) / (p3[xField] - p2[xField]);
+        const slope3 = (p4.hartslag - p3.hartslag) / (p4[xField] - p3[xField]);
+        const slope4 = (p5.hartslag - p4.hartslag) / (p5[xField] - p4[xField]);
+        
+        const curvature = Math.abs((slope3 - slope2) - (slope2 - slope1));
+        
+        // Eerste significante deflectie = aërobe drempel
+        if (!aerobeDeflectiePoint && curvature > 0.5) {
+            aerobeDeflectiePoint = p3;
+        }
+        
+        // Maximale deflectie = anaërobe drempel
+        if (curvature > maxDeflectie) {
+            maxDeflectie = curvature;
+            deflectiePoint = p3;
+        }
+    }
+    
+    return {
+        aerobe: aerobeDeflectiePoint || hartslagData[Math.floor(hartslagData.length / 3)],
+        anaerobe: deflectiePoint || hartslagData[Math.floor(hartslagData.length * 2 / 3)]
+    };
+}
+
+// === WISKUNDIGE HULPFUNCTIES ===
+
+// Functie om lijn tussen twee punten te berekenen
+function lineBetweenPoints(x1, y1, x2, y2, x) {
+    if (x2 === x1) return y1; // Verticale lijn
+    const m = (y2 - y1) / (x2 - x1);
+    const b = y1 - m * x1;
+    return m * x + b;
+}
+
+// Functie om parabool door punten te fitten (least squares)
+function fitParabola(xArray, yArray) {
+    const n = xArray.length;
+    if (n < 3) {
+        console.warn('Te weinig punten voor parabool fit, gebruik lineaire benadering');
+        return { a: 0, b: (yArray[yArray.length-1] - yArray[0]) / (xArray[xArray.length-1] - xArray[0]), c: yArray[0] };
+    }
+    
+    // Stel matrix systeem op voor ax² + bx + c
+    let sumX = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0;
+    let sumY = 0, sumXY = 0, sumX2Y = 0;
+    
+    for (let i = 0; i < n; i++) {
+        const x = xArray[i];
+        const y = yArray[i];
+        const x2 = x * x;
+        const x3 = x2 * x;
+        const x4 = x3 * x;
+        
+        sumX += x;
+        sumX2 += x2;
+        sumX3 += x3;
+        sumX4 += x4;
+        sumY += y;
+        sumXY += x * y;
+        sumX2Y += x2 * y;
+    }
+    
+    // Los matrix systeem op met Cramer's regel
+    const det = sumX4 * (sumX2 * n - sumX * sumX) - 
+                sumX3 * (sumX3 * n - sumX * sumX2) + 
+                sumX2 * (sumX3 * sumX - sumX2 * sumX2);
+                
+    if (Math.abs(det) < 1e-10) {
+        console.warn('Determinant te klein voor parabool fit');
+        return { a: 0.001, b: (yArray[yArray.length-1] - yArray[0]) / (xArray[xArray.length-1] - xArray[0]), c: yArray[0] };
+    }
+    
+    const detA = sumX2Y * (sumX2 * n - sumX * sumX) - 
+                 sumXY * (sumX3 * n - sumX * sumX2) + 
+                 sumY * (sumX3 * sumX - sumX2 * sumX2);
+                 
+    const detB = sumX4 * (sumXY * n - sumY * sumX) - 
+                 sumX3 * (sumX2Y * n - sumY * sumX2) + 
+                 sumX2 * (sumX2Y * sumX - sumXY * sumX2);
+                 
+    const detC = sumX4 * (sumX2 * sumY - sumX * sumXY) - 
+                 sumX3 * (sumX3 * sumY - sumX * sumX2Y) + 
+                 sumX2 * (sumX3 * sumXY - sumX2 * sumX2Y);
+    
+    return {
+        a: detA / det,
+        b: detB / det,
+        c: detC / det
+    };
+}
+
+// Functie om D-max punt te berekenen (maximum afstand parabool tot lijn)
+function computeDmax(xArray, yArray, a, b, c, m, bLine) {
+    const minX = Math.min(...xArray);
+    const maxX = Math.max(...xArray);
+    
+    // Zoek maximum afstand tussen parabool en lijn
+    let maxDistance = 0;
+    let dmaxX = minX + (maxX - minX) * 0.5; // Start in het midden
+    
+    const testPoints = 200; // Test 200 punten voor nauwkeurigheid
+    for (let i = 1; i < testPoints - 1; i++) { // Skip eerste en laatste punt
+        const x = minX + (maxX - minX) * (i / (testPoints - 1));
+        const parabolaY = a * x * x + b * x + c;
+        const lineY = m * x + bLine;
+        const distance = Math.abs(parabolaY - lineY);
+        
+        if (distance > maxDistance) {
+            maxDistance = distance;
+            dmaxX = x;
+        }
+    }
+    
+    console.log(`🎯 D-max berekend op ${dmaxX.toFixed(1)}W met afstand ${maxDistance.toFixed(4)}`);
+    return dmaxX;
+}
+
+// Functie om D-max Modified punt te berekenen (van baseline punt naar laatste punt)
+function computeDmaxFromBaseline(xArray, yArray, a, b, c, m, bLine, startX, endX) {
+    // Zoek maximum afstand tussen parabool en lijn van startX naar endX
+    let maxDistance = 0;
+    let dmaxX = startX + (endX - startX) * 0.6; // Start bij 60% van bereik
+    
+    const testPoints = 100; // Test 100 punten in dit bereik
+    for (let i = 1; i < testPoints - 1; i++) { // Skip eerste en laatste punt
+        const x = startX + (endX - startX) * (i / (testPoints - 1));
+        const parabolaY = a * x * x + b * x + c;
+        const lineY = m * x + bLine;
+        const distance = Math.abs(parabolaY - lineY);
+        
+        if (distance > maxDistance) {
+            maxDistance = distance;
+            dmaxX = x;
+        }
+    }
+    
+    console.log(`🎯 D-max Modified berekend op ${dmaxX.toFixed(1)}W met afstand ${maxDistance.toFixed(4)}`);
+    return dmaxX;
+}
+
+// Interpoleer punt op specifieke lactaat waarde
+function interpolatePointAtLactaat(validData, xField, targetLactaat) {
+    if (!validData || validData.length === 0) {
+        console.error('❌ interpolatePointAtLactaat: Geen valide data');
+        return null;
+    }
+    
+    if (validData.length === 1) {
+        return {
+            [xField]: validData[0][xField],
+            lactaat: targetLactaat,
+            hartslag: validData[0].hartslag || 140
+        };
+    }
+    
+    for (let i = 0; i < validData.length - 1; i++) {
+        const p1 = validData[i];
+        const p2 = validData[i + 1];
+        
+        if (p1.lactaat <= targetLactaat && p2.lactaat >= targetLactaat) {
+            const ratio = (targetLactaat - p1.lactaat) / (p2.lactaat - p1.lactaat);
+            const interpolatedPoint = {
+                [xField]: p1[xField] + ratio * (p2[xField] - p1[xField]),
+                lactaat: targetLactaat,
+                hartslag: (p1.hartslag || 140) + ratio * ((p2.hartslag || 160) - (p1.hartslag || 140))
+            };
+            console.log(`✅ Geïnterpoleerd punt op ${targetLactaat}mmol/L: ${interpolatedPoint[xField].toFixed(1)}W`);
+            return interpolatedPoint;
+        }
+    }
+    
+    // Fallback: dichtstbijzijnde punt
+    const closest = validData.reduce((closest, current) => 
+        Math.abs(current.lactaat - targetLactaat) < Math.abs(closest.lactaat - targetLactaat) 
+            ? current : closest
+    );
+    
+    console.log(`⚠️ Fallback naar dichtstbijzijnde punt voor ${targetLactaat}mmol/L: ${closest[xField]}W`);
+    return {
+        [xField]: closest[xField],
+        lactaat: targetLactaat, // Gebruik gewenste lactaat, niet originele
+        hartslag: closest.hartslag || 140
+    };
+}
+
+// Functie om afstand van punt tot lijn te berekenen (LEGACY FUNCTIE - blijft voor compatibiliteit)
+function calculatePointToLineDistance(px, py, x1, y1, x2, y2) {
+    const A = y2 - y1;
+    const B = x1 - x2;
+    const C = x2 * y1 - x1 * y2;
+    
+    return Math.abs(A * px + B * py + C) / Math.sqrt(A * A + B * B);
+}
+
+// Functie om exponentiële curve te genereren voor lactaat
+function generateSmoothLactaatCurve(lactaatData) {
+    console.log('🏊 === ZWEM DEBUG === generateSmoothLactaatCurve aangeroepen voor testtype:', currentTableType);
+    console.log('🏊 Raw lactaat data:', lactaatData);
+    
+    if (!lactaatData || lactaatData.length < 2) {
+        console.log('Niet genoeg lactaat data voor curve generatie');
+        return lactaatData || [];
+    }
+    
+    // ZWEM DEBUG: Check data voor en na sortering
+    console.log('🏊 Data VOOR sortering:', lactaatData.map(d => `${d.x.toFixed(2)} min/100m: ${d.y.toFixed(2)} mmol/L`));
+    
+    // Sorteer data op X-waarde
+    const sortedData = [...lactaatData].sort((a, b) => a.x - b.x);
+    console.log('🏊 Data NA sortering:', sortedData.map(d => `${d.x.toFixed(2)} min/100m: ${d.y.toFixed(2)} mmol/L`));
+    
+    const smoothData = [];
+    const minX = sortedData[0].x;
+    const maxX = sortedData[sortedData.length - 1].x;
+    const steps = 100; // 100 punten voor zeer vloeiende exponentiële curve
+    
+    console.log('Curve bereik:', minX, 'tot', maxX, 'met', steps, 'stappen');
+    
+    for (let i = 0; i <= steps; i++) {
+        const x = minX + (maxX - minX) * (i / steps);
+        
+        // SPECIALE BEHANDELING VOOR ZWEMMEN: gebruik aangepaste interpolatie
+        let y;
+        if (currentTableType === 'veldtest_zwemmen') {
+            y = interpolateExponentialForSwimming(sortedData, x);
+            console.log(`🏊 ZWEM curve punt ${i}: ${x.toFixed(2)} min/100m -> ${y.toFixed(2)} mmol/L`);
+        } else {
+            // Gebruik normale exponentiële interpolatie voor andere testen
+            y = interpolateExponentialForCurve(sortedData, x);
+        }
+        
+        // Debug eerste paar punten voor niet-zwem testen
+        if (i < 5 && currentTableType !== 'veldtest_zwemmen') {
+            console.log(`Curve punt ${i}: ${x.toFixed(1)}W -> ${y.toFixed(2)}mmol/L`);
+        }
+        
+        smoothData.push({ x: x, y: y });
+    }
+    
+    console.log('Smooth data gegenereerd:', smoothData.length, 'punten');
+    return smoothData;
+}
+
+// Exponentiële interpolatie voor fysiologisch realistische lactaatcurve
+function interpolateExponentialForCurve(points, targetX) {
+    if (points.length === 0) return 1.0;
+    if (points.length === 1) return points[0].y;
+    
+    // Sorteer punten op X-waarde
+    const sortedPoints = [...points].sort((a, b) => a.x - b.x);
+    
+    // Maak exponentiële curve door alle punten
+    // Lactaat volgt ongeveer: y = a * exp(b * (x - x0))
+    
+    const minX = sortedPoints[0].x;
+    const maxX = sortedPoints[sortedPoints.length - 1].x;
+    const minY = sortedPoints[0].y;
+    const maxY = sortedPoints[sortedPoints.length - 1].y;
+    
+    // Normaliseer X-waarde tussen 0 en 1
+    const normalizedX = (targetX - minX) / (maxX - minX);
+    
+    // Exponentiële functie: start vlak, wordt exponentieel steiler
+    // Voor lactaat: y = minY + (maxY - minY) * exp(k * x) / exp(k)
+    // waar k bepaalt hoe exponentieel de curve is
+    
+    let exponentialValue;
+    if (maxY > 6) {
+        // Hoge lactaatwaarden: sterke exponentiële groei
+        const k = 2.5; // Exponentiële factor
+        exponentialValue = minY + (maxY - minY) * (Math.exp(k * normalizedX) - 1) / (Math.exp(k) - 1);
+    } else if (maxY > 3) {
+        // Matige lactaatwaarden: matige exponentiële groei
+        const k = 1.8;
+        exponentialValue = minY + (maxY - minY) * (Math.exp(k * normalizedX) - 1) / (Math.exp(k) - 1);
+    } else {
+        // Lage lactaatwaarden: bijna lineair
+        const k = 1.2;
+        exponentialValue = minY + (maxY - minY) * (Math.exp(k * normalizedX) - 1) / (Math.exp(k) - 1);
+    }
+    
+    // Interpoleer tussen omliggende meetpunten voor lokalere precisie
+    let i = 0;
+    while (i < sortedPoints.length - 1 && sortedPoints[i + 1].x < targetX) {
+        i++;
+    }
+    
+    let localValue = exponentialValue;
+    if (i < sortedPoints.length - 1) {
+        const p1 = sortedPoints[i];
+        const p2 = sortedPoints[i + 1];
+        const t = (targetX - p1.x) / (p2.x - p1.x);
+        
+        // Mix tussen lokale lineaire interpolatie en globale exponentiële curve
+        const linearLocal = p1.y + t * (p2.y - p1.y);
+        localValue = 0.3 * linearLocal + 0.7 * exponentialValue; // 70% exponentieel, 30% lokaal
+    }
+    
+    return Math.max(localValue, 0.8); // Minimum lactaat
+}
+
+// NIEUWE FUNCTIE: Speciale exponentiële interpolatie voor zwemmen
+function interpolateExponentialForSwimming(points, targetX) {
+    console.log(`🏊 === ZWEM INTERPOLATIE === voor X=${targetX.toFixed(2)} min/100m`);
+    
+    if (points.length === 0) return 1.0;
+    if (points.length === 1) return points[0].y;
+    
+    // Sorteer punten op X-waarde (al gesorteerd maar zeker weten)
+    const sortedPoints = [...points].sort((a, b) => a.x - b.x);
+    console.log('🏊 Gesorteerde punten:', sortedPoints.map(p => `${p.x.toFixed(2)}min: ${p.y.toFixed(2)}mmol`));
+    
+    // ZWEMMEN: EENVOUDIGE LINEAIRE INTERPOLATIE die garanteerd door meetpunten gaat
+    
+    // Vind de twee omliggende punten
+    let i = 0;
+    while (i < sortedPoints.length - 1 && sortedPoints[i + 1].x < targetX) {
+        i++;
+    }
+    
+    // Als we exact op een meetpunt zitten
+    if (i < sortedPoints.length && Math.abs(sortedPoints[i].x - targetX) < 0.001) {
+        console.log(`🏊 Exact meetpunt gevonden: ${sortedPoints[i].y.toFixed(2)} mmol/L`);
+        return sortedPoints[i].y;
+    }
+    
+    // Extrapolatie aan de randen
+    if (targetX <= sortedPoints[0].x) {
+        console.log(`🏊 Extrapolatie links: ${sortedPoints[0].y.toFixed(2)} mmol/L`);
+        return sortedPoints[0].y;
+    }
+    
+    if (targetX >= sortedPoints[sortedPoints.length - 1].x) {
+        console.log(`🏊 Extrapolatie rechts: ${sortedPoints[sortedPoints.length - 1].y.toFixed(2)} mmol/L`);
+        return sortedPoints[sortedPoints.length - 1].y;
+    }
+    
+    // Lineaire interpolatie tussen twee punten
+    if (i < sortedPoints.length - 1) {
+        const p1 = sortedPoints[i];
+        const p2 = sortedPoints[i + 1];
+        const t = (targetX - p1.x) / (p2.x - p1.x);
+        const interpolatedValue = p1.y + t * (p2.y - p1.y);
+        
+        console.log(`🏊 Lineaire interpolatie tussen ${p1.x.toFixed(2)}min (${p1.y.toFixed(2)}mmol) en ${p2.x.toFixed(2)}min (${p2.y.toFixed(2)}mmol)`);
+        console.log(`🏊 t=${t.toFixed(3)}, resultaat=${interpolatedValue.toFixed(2)} mmol/L`);
+        
+        return Math.max(interpolatedValue, 0.8); // Minimum lactaat
+    }
+    
+    // Fallback
+    return sortedPoints[0].y;
+}
+
+// Functie om drag event listeners in te stellen
+function setupDragEventListeners(canvas) {
+    console.log('setupDragEventListeners aangeroepen voor canvas:', canvas);
+    
+    canvas.addEventListener('mousedown', function(event) {
+        console.log('mousedown event getriggerd');
+        console.log('currentThresholds:', currentThresholds);
+        console.log('currentXField:', currentXField);
+        
+        if (!currentThresholds || !currentXField) {
+            console.log('Geen thresholds of xField, geen drag mogelijk');
+            return;
+        }
+        
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        console.log('Klik positie:', x, y);
+        
+        // Controleer of we op een drempellijn klikken (verticale lijnen)
+        const chart = hartslagLactaatChart;
+        const chartArea = chart.chartArea;
+        
+        console.log('Chart area:', chartArea);
+        
+        if (currentThresholds.aerobe) {
+            const aerobeX = chart.scales.x.getPixelForValue(currentThresholds.aerobe[currentXField]);
+            console.log('Aërobe lijn X positie:', aerobeX, 'Afstand tot klik:', Math.abs(x - aerobeX));
+            
+            if (Math.abs(x - aerobeX) < 15 && y >= chartArea.top - 10 && y <= chartArea.bottom + 10) {
+                console.log('Aërobe drempel geselecteerd voor drag');
+                isDragging = true;
+                dragTarget = 'aerobe';
+                canvas.style.cursor = 'ew-resize';
+                event.preventDefault();
+                return;
+            }
+        }
+        
+        if (currentThresholds.anaerobe) {
+            const anaerobeX = chart.scales.x.getPixelForValue(currentThresholds.anaerobe[currentXField]);
+            console.log('Anaërobe lijn X positie:', anaerobeX, 'Afstand tot klik:', Math.abs(x - anaerobeX));
+            
+            if (Math.abs(x - anaerobeX) < 15 && y >= chartArea.top - 10 && y <= chartArea.bottom + 10) {
+                console.log('Anaërobe drempel geselecteerd voor drag');
+                isDragging = true;
+                dragTarget = 'anaerobe';
+                canvas.style.cursor = 'ew-resize';
+                event.preventDefault();
+                return;
+            }
+        }
+        
+        console.log('Geen drempel geselecteerd');
+    });
+    
+    canvas.addEventListener('mousemove', function(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        if (isDragging && dragTarget) {
+            // Update drempel positie
+            const chart = hartslagLactaatChart;
+            const newXValue = chart.scales.x.getValueForPixel(x);
+            
+            if (dragTarget === 'aerobe' && currentThresholds.aerobe) {
+                currentThresholds.aerobe[currentXField] = newXValue;
+                currentThresholds.aerobe.hartslag = interpolateLinear(getTableData(), newXValue, 'hartslag', currentXField);
+            } else if (dragTarget === 'anaerobe' && currentThresholds.anaerobe) {
+                currentThresholds.anaerobe[currentXField] = newXValue;
+                currentThresholds.anaerobe.hartslag = interpolateLinear(getTableData(), newXValue, 'hartslag', currentXField);
+            }
+            
+            // Update input velden
+            updateThresholdValues(currentThresholds, currentXField);
+            
+            // Herteken grafiek
+            chart.update('none');
+        } else {
+            // Verander cursor als we over een drempel hoveren
+            if (!currentThresholds || !currentXField) return;
+            
+            const chart = hartslagLactaatChart;
+            const chartArea = chart.chartArea;
+            let overThreshold = false;
+            
+            if (currentThresholds.aerobe) {
+                const aerobeX = chart.scales.x.getPixelForValue(currentThresholds.aerobe[currentXField]);
+                if (Math.abs(x - aerobeX) < 15 && y >= chartArea.top - 10 && y <= chartArea.bottom + 10) {
+                    overThreshold = true;
+                }
+            }
+            
+            if (currentThresholds.anaerobe) {
+                const anaerobeX = chart.scales.x.getPixelForValue(currentThresholds.anaerobe[currentXField]);
+                if (Math.abs(x - anaerobeX) < 15 && y >= chartArea.top - 10 && y <= chartArea.bottom + 10) {
+                    overThreshold = true;
+                }
+            }
+            
+            canvas.style.cursor = overThreshold ? 'ew-resize' : 'default';
+        }
+    });
+    
+    canvas.addEventListener('mouseup', function() {
+        isDragging = false;
+        dragTarget = null;
+        canvas.style.cursor = 'default';
+    });
+    
+    canvas.addEventListener('mouseleave', function() {
+        isDragging = false;
+        dragTarget = null;
+        canvas.style.cursor = 'default';
+    });
+}
+
+// Eenvoudige lineaire interpolatie voor debugging (behouden)
+function interpolateSimple(points, targetX) {
+    if (points.length === 0) return 0;
+    if (points.length === 1) return points[0].y;
+    
+    // Vind omliggende punten
+    for (let i = 0; i < points.length - 1; i++) {
+        if (targetX >= points[i].x && targetX <= points[i + 1].x) {
+            const ratio = (targetX - points[i].x) / (points[i + 1].x - points[i].x);
+            return points[i].y + ratio * (points[i + 1].y - points[i].y);
+        }
+    }
+    
+    // Extrapolatie
+    if (targetX < points[0].x) return points[0].y;
+    if (targetX > points[points.length - 1].x) return points[points.length - 1].y;
+    
+    return points[0].y;
+}
+
+// Exponentiële interpolatie voor lactaatdata
+function interpolateExponential(points, x) {
+    // Sorteer punten op X-waarde voor het vinden van omliggende punten
+    const sortedPoints = [...points].sort((a, b) => a[Object.keys(a).find(k => k !== 'lactaat' && k !== 'hartslag')] - b[Object.keys(b).find(k => k !== 'lactaat' && k !== 'hartslag')]);
+    
+    // Bepaal het X-veld (vermogen, snelheid, of tijd)
+    const xField = Object.keys(sortedPoints[0]).find(k => k !== 'lactaat' && k !== 'hartslag');
+    
+    // Vind de twee punten rondom x
+    let i = 0;
+    while (i < sortedPoints.length - 1 && sortedPoints[i + 1][xField] < x) {
+        i++;
+    }
+    
+    if (i === 0 && x < sortedPoints[0][xField]) return sortedPoints[0].lactaat;
+    if (i === sortedPoints.length - 1) return sortedPoints[sortedPoints.length - 1].lactaat;
+    
+    const p1 = sortedPoints[i];
+    const p2 = sortedPoints[i + 1];
+    
+    // Exponentiële interpolatie voor realistische lactaat curve
+    const t = (x - p1[xField]) / (p2[xField] - p1[xField]);
+    
+    // Pas exponentiële groei toe voor lactaat (lactaat stijgt exponentieel)
+    let exponentialT;
+    if (p2.lactaat > p1.lactaat && p2.lactaat > 4) {
+        // Bij hoge lactaatwaarden: sterke exponentiële groei
+        exponentialT = Math.pow(t, 0.7); // Minder steep voor meer realisme
+    } else {
+        // Bij lage lactaatwaarden: meer lineaire interpolatie
+        exponentialT = t;
+    }
+    
+    const interpolatedValue = p1.lactaat + exponentialT * (p2.lactaat - p1.lactaat);
+    
+    return Math.max(interpolatedValue, 0.5); // Minimum lactaat waarde
+}
+
+// Functie om grafiek te genereren
+function generateChart() {
+    console.log('generateChart() wordt uitgevoerd');
+    console.log('currentTableType:', currentTableType);
+    
+    const data = getTableData();
+    console.log('Gevonden data:', data);
+    
+    if (!data || data.length < 2) {
+        console.log('Niet genoeg data voor grafiek. Data length:', data ? data.length : 'null');
         return;
     }
     
-    const ctx = canvas.getContext('2d');
+    // Bepaal X-as veld op basis van testtype
+    const xField = currentTableType === 'fietstest' ? 'vermogen' : 
+                   currentTableType === 'looptest' ? 'snelheid' : 
+                   currentTableType === 'veldtest_lopen' ? 'snelheid' :
+                   currentTableType === 'veldtest_fietsen' ? 'vermogen' : 
+                   currentTableType === 'veldtest_zwemmen' ? 'snelheid' : 'tijd';
+    const xLabel = currentTableType === 'fietstest' ? 'Vermogen (Watt)' : 
+                   currentTableType === 'looptest' ? 'Snelheid (km/h)' : 
+                   currentTableType === 'veldtest_lopen' ? 'Snelheid (km/h)' :
+                   currentTableType === 'veldtest_fietsen' ? 'Vermogen (Watt)' : 
+                   currentTableType === 'veldtest_zwemmen' ? 'Snelheid (min/100m)' : 'Tijd (min)';
     
-    // Destroy oude grafiek
+    // Bereken drempels met geselecteerde methode
+    const selectedMethod = document.getElementById('analyse_methode').value;
+    const thresholds = calculateThresholds(data, selectedMethod);
+    
+    // Prepareer data voor grafiek
+    const hartslagData = data.filter(d => d.hartslag && d[xField]).map(d => ({
+        x: d[xField],
+        y: d.hartslag
+    }));
+    
+    const rawLactaatData = data.filter(d => d.lactaat && d[xField]).map(d => ({
+        x: d[xField],
+        y: d.lactaat
+    }));
+    
+    // Genereer vloeiende lactaatcurve
+    const lactaatData = generateSmoothLactaatCurve(rawLactaatData);
+    
+    console.log('Raw lactaat data:', rawLactaatData);
+    console.log('Smooth lactaat data (eerste 5):', lactaatData.slice(0, 5));
+    console.log('Smooth lactaat data length:', lactaatData.length);
+    
+    console.log('xField:', xField);
+    console.log('Hartslag data:', hartslagData);
+    console.log('Lactaat data:', lactaatData);
+    
+    const ctx = document.getElementById('hartslagLactaatGrafiek').getContext('2d');
+    
+    // Destroy existing chart
     if (hartslagLactaatChart) {
         hartslagLactaatChart.destroy();
     }
     
-    const tableData = getTableData();
-    console.log('Tabel data voor grafiek:', tableData);
+    // Bereken min en max waarden voor drempellijnen
+    const allXValues = [...hartslagData, ...lactaatData].map(d => d.x);
+    const minX = Math.min(...allXValues);
+    const maxX = Math.max(...allXValues);
     
-    if (tableData.length === 0) {
-        console.log('Geen data voor grafiek');
-        return;
-    }
+    // Bereken Y-as bereik voor verticale drempellijnen
+    const allHartslagValues = hartslagData.map(d => d.y);
+    const minHartslag = Math.min(...allHartslagValues);
+    const maxHartslag = Math.max(...allHartslagValues);
     
-    // Bereken drempels
-    const thresholds = calculateThresholds();
+    // Voeg datasets toe
+    const datasets = [{
+        label: 'Hartslag (bpm)',
+        data: hartslagData,
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        yAxisID: 'y',
+        pointRadius: 4,
+        tension: 0.3, // Lichte curve voor hartslag
+        fill: false,
+        cubicInterpolationMode: 'monotone' // Vloeiende curve door punten
+    }];
     
-    // Update drempelwaarden velden
-    if (thresholds) {
-        if (thresholds.aerobe) {
-            document.getElementById('aerobe_drempel_vermogen').value = thresholds.aerobe.vermogen?.toFixed(1) || '';
-            document.getElementById('aerobe_drempel_hartslag').value = thresholds.aerobe.hartslag?.toFixed(0) || '';
-        }
-        if (thresholds.anaerobe) {
-            document.getElementById('anaerobe_drempel_vermogen').value = thresholds.anaerobe.vermogen?.toFixed(1) || '';
-            document.getElementById('anaerobe_drempel_hartslag').value = thresholds.anaerobe.hartslag?.toFixed(0) || '';
-        }
-        
-        // 🎯 TRIGGER ZONES UPDATE na drempelwaarden berekening
-        setTimeout(() => {
-            console.log('🔄 Auto-update zones na drempelberekening');
-            updateTrainingszones();
-        }, 300);
-    }
-    
-    // Bepaal X-as veld
-    const xField = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen' ? 'snelheid' : 
-                   currentTableType === 'veldtest_zwemmen' ? 'snelheid' : 'vermogen';
-    
-    const xLabel = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen' ? 'Snelheid (km/h)' :
-                   currentTableType === 'veldtest_zwemmen' ? 'Snelheid (min/100m)' : 'Vermogen (Watt)';
-    
-    // Sorteer data
-    tableData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
-    
-    const xValues = tableData.map(d => d[xField]);
-    const hartslagValues = tableData.map(d => d.hartslag);
-    const lactaatValues = tableData.map(d => d.lactaat);
-    
-    const datasets = [];
-    
-    // Hartslag lijn
-    if (hartslagValues.some(v => v !== null)) {
+    // Voeg lactaat curve toe als er data is
+    if (lactaatData && lactaatData.length > 0) {
         datasets.push({
-            label: 'Hartslag (bpm)',
-            data: xValues.map((x, i) => ({x: x, y: hartslagValues[i]})),
-            borderColor: 'rgb(59, 130, 246)',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            yAxisID: 'y',
-            tension: 0.4
-        });
-    }
-    
-    // Lactaat lijn
-    if (lactaatValues.some(v => v !== null)) {
-        datasets.push({
-            label: 'Lactaat (mmol/L)',
-            data: xValues.map((x, i) => ({x: x, y: lactaatValues[i]})),
-            borderColor: 'rgb(34, 197, 94)',
-            backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            label: 'Lactaat Curve (mmol/L)',
+            data: lactaatData,
+            borderColor: 'rgb(16, 185, 129)',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
             yAxisID: 'y1',
-            tension: 0.4
-        });
-    }
-    
-    // Voeg verticale drempellijnen toe als er drempels zijn
-    if (thresholds && thresholds.aerobe && thresholds.aerobe.vermogen) {
-        const minY = Math.min(...hartslagValues.filter(v => v !== null));
-        const maxY = Math.max(...hartslagValues.filter(v => v !== null));
-        
-        // Aërobe drempel lijn (rood)
-        datasets.push({
-            label: 'Aërobe Drempel (LT1)',
-            data: [
-                {x: thresholds.aerobe.vermogen, y: minY},
-                {x: thresholds.aerobe.vermogen, y: maxY}
-            ],
-            borderColor: 'rgba(239, 68, 68, 0.8)',
+            pointRadius: 0,
+            tension: 0, // Geen extra tension, onze interpolatie is al exponentieel
+            fill: false,
             borderWidth: 3,
-            borderDash: [10, 5],
-            pointRadius: 6,
-            pointHoverRadius: 8,
-            pointBackgroundColor: 'rgba(239, 68, 68, 1)',
-            yAxisID: 'y',
-            showLine: true
+            showLine: true,
+            stepped: false
         });
+        console.log('Lactaat curve dataset toegevoegd met', lactaatData.length, 'punten');
     }
     
-    if (thresholds && thresholds.anaerobe && thresholds.anaerobe.vermogen) {
-        const minY = Math.min(...hartslagValues.filter(v => v !== null));
-        const maxY = Math.max(...hartslagValues.filter(v => v !== null));
-        
-        // Anaërobe drempel lijn (oranje)
+    // Voeg lactaat meetpunten toe als er data is
+    if (rawLactaatData && rawLactaatData.length > 0) {
         datasets.push({
-            label: 'Anaërobe Drempel (LT2)',
-            data: [
-                {x: thresholds.anaerobe.vermogen, y: minY},
-                {x: thresholds.anaerobe.vermogen, y: maxY}
-            ],
-            borderColor: 'rgba(251, 146, 60, 0.8)',
-            borderWidth: 3,
-            borderDash: [10, 5],
-            pointRadius: 6,
-            pointHoverRadius: 8,
-            pointBackgroundColor: 'rgba(251, 146, 60, 1)',
-            yAxisID: 'y',
-            showLine: true
+            label: 'Lactaat Meetpunten',
+            data: rawLactaatData,
+            borderColor: 'rgb(16, 185, 129)',
+            backgroundColor: 'rgb(16, 185, 129)',
+            yAxisID: 'y1',
+            pointRadius: 5,
+            showLine: false,
+            pointStyle: 'circle'
         });
+        console.log('Lactaat meetpunten dataset toegevoegd met', rawLactaatData.length, 'punten');
     }
     
-    // Maak grafiek met drag functionaliteit
+    console.log('Totaal datasets:', datasets.length);
+    
+    // Voor D-max methode: voeg hulplijn en D-max punt toe (eerste naar laatste punt van DATA)
+    if (selectedMethod === 'dmax' && rawLactaatData && rawLactaatData.length > 2 && thresholds && thresholds.anaerobe) {
+        const firstDataPoint = rawLactaatData[0];
+        const lastDataPoint = rawLactaatData[rawLactaatData.length - 1];
+        
+        // Hulplijn tussen eerste en laatste DATAPUNT (niet curve punt)
+        datasets.push({
+            label: 'D-max Hulplijn (Eerste → Laatste)',
+            data: [
+                {x: firstDataPoint.x, y: firstDataPoint.y},
+                {x: lastDataPoint.x, y: lastDataPoint.y}
+            ],
+            borderColor: 'rgba(107, 114, 128, 0.7)',
+            backgroundColor: 'rgba(107, 114, 128, 0.1)',
+            borderWidth: 2,
+            borderDash: [3, 3],
+            pointRadius: 3,
+            pointBackgroundColor: 'rgb(107, 114, 128)',
+            yAxisID: 'y1',
+            showLine: true,
+            fill: false
+        });
+        
+        // D-max punt markeren (anaërobe drempel)
+        const dmaxX = thresholds.anaerobe[xField];
+        const dmaxLactaat = thresholds.anaerobe.lactaat;
+        
+        datasets.push({
+            label: 'D-max Punt (Wiskundig Berekend)',
+            data: [{x: dmaxX, y: dmaxLactaat}],
+            borderColor: 'rgb(245, 158, 11)',
+            backgroundColor: 'rgb(245, 158, 11)',
+            pointRadius: 12,
+            pointHoverRadius: 14,
+            pointStyle: 'star',
+            yAxisID: 'y1',
+            showLine: false
+        });
+        
+        // LOODLIJN: Verticale lijn van D-max punt naar hulplijn
+        // Bereken hulplijn Y-waarde op dmaxX positie
+        const m = (lastDataPoint.y - firstDataPoint.y) / (lastDataPoint.x - firstDataPoint.x);
+        const b = firstDataPoint.y - m * firstDataPoint.x;
+        const hulplijnY = m * dmaxX + b;
+        
+        datasets.push({
+            label: 'D-max Loodlijn (Maximale Afstand)',
+            data: [
+                {x: dmaxX, y: dmaxLactaat},
+                {x: dmaxX, y: hulplijnY}
+            ],
+            borderColor: 'rgb(220, 38, 127)',
+            backgroundColor: 'rgb(220, 38, 127)',
+            borderWidth: 4,
+            pointRadius: 4,
+            pointBackgroundColor: 'rgb(220, 38, 127)',
+            yAxisID: 'y1',
+            showLine: true,
+            fill: false
+        });
+        
+        // Punt op hulplijn markeren
+        datasets.push({
+            label: 'Hulplijn Punt',
+            data: [{x: dmaxX, y: hulplijnY}],
+            borderColor: 'rgb(107, 114, 128)',
+            backgroundColor: 'rgb(107, 114, 128)',
+            pointRadius: 6,
+            yAxisID: 'y1',
+            showLine: false
+        });
+        
+        console.log('📏 D-max Loodlijn:', `${dmaxX.toFixed(1)}W: curve=${dmaxLactaat.toFixed(2)} → lijn=${hulplijnY.toFixed(2)} (afstand=${Math.abs(dmaxLactaat - hulplijnY).toFixed(4)})`);
+    }
+    
+    // Voor D-max Modified methode: voeg hulplijn en D-max punt toe (aërobe punt naar laatste datapunt)
+    if (selectedMethod === 'dmax_modified' && rawLactaatData && rawLactaatData.length > 2 && thresholds && thresholds.anaerobe) {
+        // SPECIALE BEHANDELING VOOR ZWEMMEN: gebruik correcte hulplijn richting
+        const isSwimming = currentTableType === 'veldtest_zwemmen';
+        
+        let startPoint, endPoint;
+        if (isSwimming) {
+            // Voor zwemmen: hulplijn van laatste punt (langzaamste) naar aërobe punt (snellere baseline)
+            startPoint = rawLactaatData[rawLactaatData.length - 1]; // Laatste = langzaamste
+            endPoint = thresholds.aerobe; // Aërobe = snellere baseline
+        } else {
+            // Voor andere sporten: normale richting
+            startPoint = thresholds.aerobe;
+            endPoint = rawLactaatData[rawLactaatData.length - 1];
+        }
+        
+        // Hulplijn tussen correcte punten
+        datasets.push({
+            label: isSwimming ? 'D-max Modified Hulplijn (Laatste → Aërobe)' : 'D-max Modified Hulplijn (Aërobe → Laatste)',
+            data: [
+                {x: startPoint.x || startPoint[xField], y: startPoint.y || startPoint.lactaat},
+                {x: endPoint.x || endPoint[xField], y: endPoint.y || endPoint.lactaat}
+            ],
+            borderColor: 'rgba(107, 114, 128, 0.7)',
+            backgroundColor: 'rgba(107, 114, 128, 0.1)',
+            borderWidth: 2,
+            borderDash: [3, 3],
+            pointRadius: 3,
+            pointBackgroundColor: 'rgb(107, 114, 128)',
+            yAxisID: 'y1',
+            showLine: true,
+            fill: false
+        });
+        
+        // D-max punt markeren (anaërobe drempel)
+        const dmaxX = thresholds.anaerobe[xField];
+        const dmaxLactaat = thresholds.anaerobe.lactaat;
+        
+        datasets.push({
+            label: 'D-max Modified Punt (Wiskundig)',
+            data: [{x: dmaxX, y: dmaxLactaat}],
+            borderColor: 'rgb(245, 158, 11)',
+            backgroundColor: 'rgb(245, 158, 11)',
+            pointRadius: 12,
+            pointHoverRadius: 14,
+            pointStyle: 'star',
+            yAxisID: 'y1',
+            showLine: false
+        });
+        
+        // LOODLIJN: Verticale lijn van D-max punt naar hulplijn
+        // Bereken hulplijn Y-waarde op dmaxX positie (lineaire interpolatie tussen start en eind punt)
+        const startX = startPoint.x || startPoint[xField];
+        const startY = startPoint.y || startPoint.lactaat;
+        const endX = endPoint.x || endPoint[xField];
+        const endY = endPoint.y || endPoint.lactaat;
+        
+        const m = (endY - startY) / (endX - startX);
+        const b = startY - m * startX;
+        const hulplijnY = m * dmaxX + b;
+        
+        datasets.push({
+            label: 'D-max Modified Loodlijn',
+            data: [
+                {x: dmaxX, y: dmaxLactaat},
+                {x: dmaxX, y: hulplijnY}
+            ],
+            borderColor: 'rgb(220, 38, 127)',
+            backgroundColor: 'rgb(220, 38, 127)',
+            borderWidth: 4,
+            pointRadius: 4,
+            pointBackgroundColor: 'rgb(220, 38, 127)',
+            yAxisID: 'y1',
+            showLine: true,
+            fill: false
+        });
+        
+        // Punt op hulplijn markeren
+        datasets.push({
+            label: 'Modified Hulplijn Punt',
+            data: [{x: dmaxX, y: hulplijnY}],
+            borderColor: 'rgb(107, 114, 128)',
+            backgroundColor: 'rgb(107, 114, 128)',
+            pointRadius: 6,
+            yAxisID: 'y1',
+            showLine: false
+        });
+        
+        console.log('📏 D-max Modified Loodlijn:', `${dmaxX.toFixed(1)}W: curve=${dmaxLactaat.toFixed(2)} → lijn=${hulplijnY.toFixed(2)} (afstand=${Math.abs(dmaxLactaat - hulplijnY).toFixed(4)})`);
+    }
+    
+    // Voeg drempellijnen toe als ze berekend zijn (verticale lijnen)
+    if (thresholds && thresholds.aerobe) {
+        const aerobeX = thresholds.aerobe[xField];
+        if (aerobeX) {
+            // VERBETERDE AËROBE DREMPELLIJN - ZEER ZICHTBAAR
+            datasets.push({
+                label: 'Aërobe Drempel (Rode Lijn)',
+                data: [{x: aerobeX, y: minHartslag - 20}, {x: aerobeX, y: maxHartslag + 20}],
+                borderColor: 'rgb(220, 38, 38)', // Helderrood
+                backgroundColor: 'rgba(220, 38, 38, 0.3)',
+                borderWidth: 5, // Veel dikker
+                borderDash: [8, 4], // Duidelijke streepjes
+                pointRadius: 8,
+                pointBackgroundColor: 'rgb(220, 38, 38)',
+                pointBorderColor: 'white',
+                pointBorderWidth: 2,
+                yAxisID: 'y',
+                showLine: true,
+                fill: false,
+                tension: 0
+            });
+            
+            console.log('✅ Aërobe drempellijn toegevoegd op X:', aerobeX.toFixed(1), 'W');
+        }
+    }
+    
+    if (thresholds && thresholds.anaerobe) {
+        const anaerobeX = thresholds.anaerobe[xField];
+        if (anaerobeX) {
+            // VERBETERDE ANAËROBE DREMPELLIJN - ZEER ZICHTBAAR
+            datasets.push({
+                label: 'Anaërobe Drempel (Oranje Lijn)',
+                data: [{x: anaerobeX, y: minHartslag - 20}, {x: anaerobeX, y: maxHartslag + 20}],
+                borderColor: 'rgb(245, 158, 11)', // Helder oranje
+                backgroundColor: 'rgba(245, 158, 11, 0.3)',
+                borderWidth: 5, // Veel dikker
+                borderDash: [12, 6], // Duidelijke streepjes
+                pointRadius: 8,
+                pointBackgroundColor: 'rgb(245, 158, 11)',
+                pointBorderColor: 'white',
+                pointBorderWidth: 2,
+                yAxisID: 'y',
+                showLine: true,
+                fill: false,
+                tension: 0
+            });
+            
+            console.log('✅ Anaërobe drempellijn toegevoegd op X:', anaerobeX.toFixed(1), 'W');
+        }
+    }
+    
     hartslagLactaatChart = new Chart(ctx, {
         type: 'line',
-        data: { datasets },
+        data: {
+            datasets: datasets
+        },
+        plugins: [{
+            id: 'draggableThresholds',
+            afterDatasetsDraw: function(chart) {
+                drawDraggableThresholds(chart);
+            }
+        }],
         options: {
             responsive: true,
             maintainAspectRatio: false,
             interaction: {
-                mode: 'nearest',
-                intersect: false
+                intersect: false,
+                mode: 'index'
             },
             plugins: {
+                title: {
+                    display: true,
+                    text: 'Hartslag en Lactaat Analyse',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                },
                 legend: {
                     display: true,
                     position: 'top'
                 },
                 tooltip: {
-                    enabled: true,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
                     callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
+                        title: function(context) {
+                            const value = context[0].parsed.x;
+                            // SPECIALE FORMATTING VOOR ZWEMMEN TOOLTIP
+                            if (currentTableType === 'veldtest_zwemmen') {
+                                const minuten = Math.floor(value);
+                                const seconden = Math.round((value - minuten) * 60);
+                                return `Snelheid: ${minuten}:${seconden.toString().padStart(2, '0')} min/100m`;
                             }
-                            if (context.parsed.y !== null) {
-                                label += Math.round(context.parsed.y * 100) / 100;
+                            return context[0].label;
+                        },
+                        afterBody: function(context) {
+                            if (selectedMethod === 'dmax') {
+                                const point = context[0];
+                                if (point.dataset.label === 'D-max Punt') {
+                                    return ['', 'Dit punt heeft de maximale', 'afstand tot de hulplijn', '(D-max methode: eerste → laatste)'];
+                                } else if (point.dataset.label === 'D-max Hulplijn (Eerste → Laatste)') {
+                                    return ['', 'Hulplijn voor D-max berekening', 'tussen eerste en laatste punt'];
+                                }
+                            } else if (selectedMethod === 'dmax_modified') {
+                                const point = context[0];
+                                if (point.dataset.label === 'D-max Modified Punt') {
+                                    return ['', 'Dit punt heeft de maximale', 'afstand tot de baseline hulplijn', '(D-max Modified: baseline +0.4 → laatste)'];
+                                } else if (point.dataset.label === 'D-max Modified Hulplijn (Baseline +0.4)') {
+                                    return ['', 'Hulplijn voor D-max Modified', 'van baseline +0.4 naar laatste punt'];
+                                }
                             }
-                            return label;
+                            return '';
                         }
                     }
+                }
+            },
+            elements: {
+                line: {
+                    tension: 0.4
+                },
+                point: {
+                    radius: 4,
+                    hoverRadius: 6,
+                    backgroundColor: 'white',
+                    borderWidth: 2
                 }
             },
             scales: {
                 x: {
                     type: 'linear',
+                    display: true,
                     title: {
                         display: true,
-                        text: xLabel
-                    }
+                        text: xLabel,
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        stepSize: currentTableType === 'fietstest' ? 20 : 
+                                 currentTableType === 'veldtest_fietsen' ? 20 :
+                                 currentTableType === 'veldtest_lopen' ? 1 : 1,
+                        callback: function(value) {
+                            // SPECIALE FORMATTING VOOR ZWEMMEN: mm:ss
+                            if (currentTableType === 'veldtest_zwemmen') {
+                                const minuten = Math.floor(value);
+                                const seconden = Math.round((value - minuten) * 60);
+                                return `${minuten}:${seconden.toString().padStart(2, '0')}`;
+                            }
+                            return Math.round(value);
+                        }
+                    },
+                    // OMKEREN X-AS VOOR ZWEMMEN (snel naar langzaam)
+                    reverse: currentTableType === 'veldtest_zwemmen',
+                    min: minX - (maxX - minX) * 0.05,
+                    max: maxX + (maxX - minX) * 0.05
                 },
                 y: {
                     type: 'linear',
+                    display: true,
                     position: 'left',
                     title: {
                         display: true,
@@ -2331,117 +3017,223 @@ function generateChart() {
                 },
                 y1: {
                     type: 'linear',
+                    display: true,
                     position: 'right',
                     title: {
                         display: true,
                         text: 'Lactaat (mmol/L)'
                     },
                     grid: {
-                        drawOnChartArea: false
-                    }
-                }
-            },
-            onHover: (event, activeElements) => {
-                if (activeElements.length > 0) {
-                    const element = activeElements[0];
-                    const dataset = hartslagLactaatChart.data.datasets[element.datasetIndex];
-                    if (dataset.label.includes('Drempel')) {
-                        event.native.target.style.cursor = 'grab';
-                    } else {
-                        event.native.target.style.cursor = 'default';
-                    }
-                } else {
-                    event.native.target.style.cursor = 'default';
+                        drawOnChartArea: false,
+                    },
                 }
             }
         }
     });
     
+    // Voeg drempellijnen toe en update input velden
+    if (thresholds) {
+        updateThresholdValues(thresholds, xField);
+        console.log('Drempels berekend:', thresholds);
+        console.log('xField:', xField);
+        console.log('Aërobe drempel X-waarde:', thresholds.aerobe ? thresholds.aerobe[xField] : 'geen');
+        console.log('Anaërobe drempel X-waarde:', thresholds.anaerobe ? thresholds.anaerobe[xField] : 'geen');
+    }
+    
+    console.log('Grafiek gegenereerd met', data.length, 'datapunten');
+    console.log('X-as bereik:', minX, 'tot', maxX);
+    console.log('Y-as bereik (hartslag):', minHartslag, 'tot', maxX);
+    
     // Voeg drag event listeners toe
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
-    canvas.addEventListener('mouseleave', handleMouseUp);
-    
-    console.log('✅ Chart gegenereerd met dragbare drempellijnen');
+    setupDragEventListeners(hartslagLactaatChart.canvas);
 }
 
-// Drag functionaliteit voor drempellijnen
-function handleMouseDown(event) {
-    const points = hartslagLactaatChart.getElementsAtEventForMode(event, 'nearest', {intersect: false}, false);
-    
-    if (points.length > 0) {
-        const point = points[0];
-        const dataset = hartslagLactaatChart.data.datasets[point.datasetIndex];
-        
-        if (dataset.label.includes('Aërobe Drempel')) {
-            isDragging = true;
-            draggedThreshold = 'aerobe';
-            event.target.style.cursor = 'grabbing';
-        } else if (dataset.label.includes('Anaërobe Drempel')) {
-            isDragging = true;
-            draggedThreshold = 'anaerobe';
-            event.target.style.cursor = 'grabbing';
-        }
-    }
-}
+// Globale variabelen voor versleepbare drempels
+let currentThresholds = null;
+let currentXField = null;
+let isDragging = false;
+let dragTarget = null;
 
-function handleMouseMove(event) {
-    if (!isDragging || !draggedThreshold) return;
+// Functie om drempelwaarden in de input velden te zetten
+function updateThresholdValues(thresholds, xField) {
+    console.log('updateThresholdValues aangeroepen met:', thresholds, xField);
     
-    const canvasPosition = Chart.helpers.getRelativePosition(event, hartslagLactaatChart);
-    const dataX = hartslagLactaatChart.scales.x.getValueForPixel(canvasPosition.x);
+    // Sla huidige drempels op voor drag functionaliteit
+    currentThresholds = thresholds;
+    currentXField = xField;
     
-    if (dataX) {
-        // Update de drempellijn positie
-        const thresholdDatasetIndex = draggedThreshold === 'aerobe' ? 
-            hartslagLactaatChart.data.datasets.findIndex(ds => ds.label.includes('Aërobe Drempel')) :
-            hartslagLactaatChart.data.datasets.findIndex(ds => ds.label.includes('Anaërobe Drempel'));
+    if (thresholds.aerobe) {
+        const aerobeVermogen = thresholds.aerobe[xField];
+        const aerobeHartslag = thresholds.aerobe.hartslag;
         
-        if (thresholdDatasetIndex !== -1) {
-            hartslagLactaatChart.data.datasets[thresholdDatasetIndex].data.forEach(point => {
-                point.x = dataX;
-            });
-            
-            // Update input veld
-            const inputId = draggedThreshold === 'aerobe' ? 'aerobe_drempel_vermogen' : 'anaerobe_drempel_vermogen';
-            document.getElementById(inputId).value = dataX.toFixed(1);
-            
-            // Interpoleer hartslag
-            const tableData = getTableData();
-            const xField = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen' ? 'snelheid' : 
-                           currentTableType === 'veldtest_zwemmen' ? 'snelheid' : 'vermogen';
-            const xValues = tableData.map(d => d[xField]);
-            const hartslagValues = tableData.map(d => d.hartslag);
-            
-            const interpolatedHartslag = interpolateLinear(xValues, hartslagValues, dataX);
-            if (interpolatedHartslag) {
-                const hartslagInputId = draggedThreshold === 'aerobe' ? 'aerobe_drempel_hartslag' : 'anaerobe_drempel_hartslag';
-                document.getElementById(hartslagInputId).value = Math.round(interpolatedHartslag);
+        console.log('Aërobe drempel:', aerobeVermogen, 'eenheid,', aerobeHartslag, 'bpm');
+        
+        if (aerobeVermogen) {
+            // 🏊 ZWEM DEBUG: Check of we een zwemtest hebben
+            if (currentTableType === 'veldtest_zwemmen') {
+                console.log('🏊 ZWEM: Aërobe waarde voor input:', aerobeVermogen.toFixed(3));
+                // Voor zwemmen: gebruik decimale waarde in input, maar toon later als mm:ss
+                document.getElementById('aerobe_drempel_vermogen').value = parseFloat(aerobeVermogen.toFixed(3));
+            } else {
+                // Voor andere testen: normale decimale waarde
+                document.getElementById('aerobe_drempel_vermogen').value = parseFloat(aerobeVermogen.toFixed(1));
             }
-            
-            hartslagLactaatChart.update('none');
         }
+        if (aerobeHartslag) document.getElementById('aerobe_drempel_hartslag').value = Math.round(aerobeHartslag);
+    }
+    
+    if (thresholds.anaerobe) {
+        const anaerobeVermogen = thresholds.anaerobe[xField];
+        const anaerobeHartslag = thresholds.anaerobe.hartslag;
+        
+        console.log('Anaërobe drempel:', anaerobeVermogen, 'eenheid,', anaerobeHartslag, 'bpm');
+        
+        if (anaerobeVermogen) {
+            // 🏊 ZWEM DEBUG: Check of we een zwemtest hebben
+            if (currentTableType === 'veldtest_zwemmen') {
+                console.log('🏊 ZWEM: Anaërobe waarde voor input:', anaerobeVermogen.toFixed(3));
+                // Voor zwemmen: gebruik decimale waarde in input, maar toon later als mm:ss
+                document.getElementById('anaerobe_drempel_vermogen').value = parseFloat(anaerobeVermogen.toFixed(3));
+            } else {
+                // Voor andere testen: normale decimale waarde
+                document.getElementById('anaerobe_drempel_vermogen').value = parseFloat(anaerobeVermogen.toFixed(1));
+            }
+        }
+        if (anaerobeHartslag) document.getElementById('anaerobe_drempel_hartslag').value = Math.round(anaerobeHartslag);
     }
 }
 
-function handleMouseUp(event) {
-    if (isDragging) {
-        isDragging = false;
-        event.target.style.cursor = 'default';
+// Functie om versleepbare drempellijnen te tekenen
+function drawDraggableThresholds(chart) {
+    if (!currentThresholds || !currentXField) return;
+    
+    const ctx = chart.ctx;
+    const chartArea = chart.chartArea;
+    
+    // Teken aërobe drempel
+    if (currentThresholds.aerobe) {
+        const xValue = currentThresholds.aerobe[currentXField];
+        const xPixel = chart.scales.x.getPixelForValue(xValue);
         
-        // Trigger zones update na drag
-        setTimeout(() => {
-            updateTrainingszones();
-        }, 100);
+        ctx.save();
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(xPixel, chartArea.top);
+        ctx.lineTo(xPixel, chartArea.bottom);
+        ctx.stroke();
+        
+        // Voeg draggable indicator toe
+        ctx.fillStyle = 'rgba(239, 68, 68, 1)';
+        ctx.fillRect(xPixel - 5, chartArea.top - 10, 10, 20);
+        ctx.restore();
     }
-    draggedThreshold = null;
+    
+    // Teken anaërobe drempel
+    if (currentThresholds.anaerobe) {
+        const xValue = currentThresholds.anaerobe[currentXField];
+        const xPixel = chart.scales.x.getPixelForValue(xValue);
+        
+        ctx.save();
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.8)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 5]);
+        ctx.beginPath();
+        ctx.moveTo(xPixel, chartArea.top);
+        ctx.lineTo(xPixel, chartArea.bottom);
+        ctx.stroke();
+        
+        // Voeg draggable indicator toe
+        ctx.fillStyle = 'rgba(245, 158, 11, 1)';
+        ctx.fillRect(xPixel - 5, chartArea.top - 10, 10, 20);
+        ctx.restore();
+    }
+}
+
+// === TEST FUNCTIE VOOR DEBUGGING ===
+function testJavaScript() {
+    console.log('🔧 JavaScript test gestart...');
+    
+    // Test basisselectors
+    const aerobeBtn = document.getElementById('ai-aerobe-btn');
+    const anaerobeBtn = document.getElementById('ai-anaerobe-btn');
+    const aerobeTextarea = document.getElementById('advies_aerobe_drempel');
+    const anaerobeTextarea = document.getElementById('advies_anaerobe_drempel');
+    
+    console.log('Elements gevonden:');
+    console.log('- Aërobe knop:', !!aerobeBtn, aerobeBtn);
+    console.log('- Anaërobe knop:', !!anaerobeBtn, anaerobeBtn);
+    console.log('- Aërobe textarea:', !!aerobeTextarea, aerobeTextarea);
+    console.log('- Anaërobe textarea:', !!anaerobeTextarea, anaerobeTextarea);
+    
+    // Test CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    console.log('- CSRF token:', !!csrfToken, csrfToken ? csrfToken.substring(0, 10) + '...' : 'GEEN');
+    
+    // Test fetch functionaliteit
+    console.log('🌐 Test fetch functionaliteit...');
+    
+    fetch('/api/ai-advice', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken || '',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            type: 'test',
+            testtype: 'fietstest'
+        })
+    })
+    .then(response => {
+        console.log('📡 Test response:', response.status, response.statusText);
+        return response.text();
+    })
+    .then(text => {
+        console.log('📄 Response body:', text);
+        alert('JavaScript test voltooid! Check console voor details.');
+    })
+    .catch(error => {
+        console.error('❌ Test fetch error:', error);
+        alert('Fetch test gefaald: ' + error.message);
+    });
+    
+    alert('JavaScript functionaliteit test gestart! Check console (F12) voor details.');
+}
+
+// Debug functie
+function debugForm() {
+    const debugInfo = document.getElementById('debug-info');
+    const datum = document.getElementById('datum').value;
+    const testtype = document.getElementById('testtype').value;
+    
+    document.getElementById('debug-datum').textContent = datum || 'LEEG';
+    document.getElementById('debug-testtype').textContent = testtype || 'LEEG';
+    
+    debugInfo.style.display = 'block';
+    
+    console.log('Form Debug:');
+    console.log('Datum:', datum);
+    console.log('Testtype:', testtype);
+    console.log('Form element:', document.querySelector('#inspanningstest-form'));
+    
+    // Check all form elements
+    const formData = new FormData(document.querySelector('#inspanningstest-form'));
+    for (let [key, value] of formData.entries()) {
+        console.log(key + ':', value);
+    }
 }
 
 // === AI ADVIES FUNCTIONALITEIT ===
 
+// === COMPLETE AI ANALYSE FUNCTIONALITEIT ===
+
+/**
+ * Genereer complete AI analyse van alle testparameters
+ */
 function generateCompleteAIAnalysis() {
-    console.log('🧠 Genereren complete AI analyse...');
+    console.log('� Genereren complete AI analyse...');
     
     const button = document.getElementById('ai-complete-btn');
     const textarea = document.getElementById('complete_ai_analyse');
@@ -2451,12 +3243,17 @@ function generateCompleteAIAnalysis() {
         return;
     }
     
+    // Update knop status
     const originalText = button.innerHTML;
     button.innerHTML = '🔄 Analyseren...';
     button.disabled = true;
     
+    // Verzamel ALLE beschikbare testdata
     const completeTestData = collectCompleteTestData();
     
+    console.log('📊 Complete testdata verzameld:', completeTestData);
+    
+    // Verstuur naar complete AI analyse endpoint
     fetch('/api/ai-advice', {
         method: 'POST',
         headers: {
@@ -2466,72 +3263,402 @@ function generateCompleteAIAnalysis() {
         },
         body: JSON.stringify(completeTestData)
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('📡 Response ontvangen:', response.status);
+        
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Response body:', text);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            });
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('✅ Complete analyse ontvangen:', data);
+        
         if (data.success) {
+            // Update textarea met complete analyse
             textarea.value = data.analysis;
+            
+            // Success feedback
             button.innerHTML = '✅ Analyse Compleet';
             button.style.backgroundColor = '#dcfce7';
+            button.style.borderColor = '#16a34a';
+            button.style.color = '#16a34a';
             
+            console.log('✅ Complete AI analyse succesvol gegenereerd');
+            
+            // Reset knop na 5 seconden
             setTimeout(() => {
                 button.innerHTML = originalText;
                 button.style.backgroundColor = '';
+                button.style.borderColor = '';
+                button.style.color = '';
                 button.disabled = false;
             }, 5000);
+            
+        } else {
+            throw new Error(data.message || 'Onbekende fout');
         }
     })
     .catch(error => {
-        console.error('❌ AI analyse fout:', error);
+        console.error('❌ Fout bij complete AI analyse:', error);
+        
+        // Error feedback
         button.innerHTML = '❌ Fout';
+        button.style.backgroundColor = '#fef2f2';
+        button.style.borderColor = '#dc2626';
+        button.style.color = '#dc2626';
+        
+        // Toon fallback analyse
         textarea.value = getCompleteAnalysisFallback(completeTestData);
         
+        // Reset knop na 5 seconden
         setTimeout(() => {
             button.innerHTML = originalText;
+            button.style.backgroundColor = '';
+            button.style.borderColor = '';
+            button.style.color = '';
             button.disabled = false;
         }, 5000);
+        
+        alert(`Er ging iets mis bij het genereren van de AI analyse: ${error.message}\n\nEr is een standaard analyse ingevuld.`);
     });
 }
 
+/**
+ * Verzamel ALLE beschikbare testdata voor complete analyse
+ */
 function collectCompleteTestData() {
+    // Bepaal leeftijd (fallback van 35 jaar indien niet beschikbaar)
+    let leeftijd = 35;
+    
     return {
+        // Testtype en protocol
         testtype: document.getElementById('testtype')?.value || 'fietstest',
         analyse_methode: document.getElementById('analyse_methode')?.value || '',
-        specifieke_doelstellingen: document.getElementById('specifieke_doelstellingen')?.value || '',
+        testlocatie: document.getElementById('testlocatie')?.value || '',
+        
+        // Doelstellingen - ZEER BELANGRIJK voor AI
+        specifieke_doelstellingen: document.getElementById('specifieke_doelstellingen')?.value || 'Algemene fitheid verbetering',
+        
+        // Persoonlijke gegevens
+        leeftijd: leeftijd,
         lichaamsgewicht_kg: parseFloat(document.getElementById('lichaamsgewicht_kg')?.value) || null,
+        lichaamslengte_cm: parseFloat(document.getElementById('lichaamslengte_cm')?.value) || null,
+        bmi: parseFloat(document.getElementById('bmi')?.value) || null,
+        vetpercentage: parseFloat(document.getElementById('vetpercentage')?.value) || null,
+        buikomtrek_cm: parseFloat(document.getElementById('buikomtrek_cm')?.value) || null,
+        
+        // Drempelwaarden - KERN van de analyse
         aerobe_drempel_vermogen: parseFloat(document.getElementById('aerobe_drempel_vermogen')?.value) || null,
         aerobe_drempel_hartslag: parseFloat(document.getElementById('aerobe_drempel_hartslag')?.value) || null,
         anaerobe_drempel_vermogen: parseFloat(document.getElementById('anaerobe_drempel_vermogen')?.value) || null,
         anaerobe_drempel_hartslag: parseFloat(document.getElementById('anaerobe_drempel_hartslag')?.value) || null,
+        
+        // Hartslaggegevens
+        maximale_hartslag_bpm: parseFloat(document.getElementById('maximale_hartslag_bpm')?.value) || null,
+        hartslag_rust_bpm: parseFloat(document.getElementById('hartslag_rust_bpm')?.value) || null,
+        
+        // Trainingstatus velden - BELANGRIJK voor herstel en belastbaarheid analyse
         slaapkwaliteit: parseInt(document.getElementById('slaapkwaliteit')?.value) || null,
-        eetlust: parseInt(document.getElementById('eetlust')?.value) || null
+        eetlust: parseInt(document.getElementById('eetlust')?.value) || null,
+        gevoel_op_training: parseInt(document.getElementById('gevoel_op_training')?.value) || null,
+        stressniveau: parseInt(document.getElementById('stressniveau')?.value) || null,
+        gemiddelde_trainingstatus: parseFloat(document.getElementById('gemiddelde_trainingstatus')?.value) || null,
+        training_dag_voor_test: document.getElementById('training_dag_voor_test')?.value || '',
+        training_2d_voor_test: document.getElementById('training_2d_voor_test')?.value || '',
+        
+        // Besluit velden (indien ingevuld)
+        besluit_lichaamssamenstelling: document.getElementById('besluit_lichaamssamenstelling')?.value || ''
     };
 }
 
+/**
+ * Fallback complete analyse bij fouten
+ */
 function getCompleteAnalysisFallback(testData) {
+    const testtype = testData.testtype || 'fietstest';
+    const doelstellingen = testData.specifieke_doelstellingen || 'algemene fitheid';
+    const lt1 = testData.aerobe_drempel_vermogen || 'niet gemeten';
+    const lt2 = testData.anaerobe_drempel_vermogen || 'niet gemeten';
+    const trainingstatus = testData.gemiddelde_trainingstatus || 'niet ingevuld';
+    
+    // Bepaal trainingstatus interpretatie
+    let statusInterpretatie = '';
+    if (trainingstatus !== 'niet ingevuld') {
+        if (trainingstatus >= 8) {
+            statusInterpretatie = '✅ Uitstekend - Optimaal voor intensieve training';
+        } else if (trainingstatus >= 6) {
+            statusInterpretatie = '👍 Goed - Geschikt voor normale training';
+        } else if (trainingstatus >= 4) {
+            statusInterpretatie = '⚠️ Matig - Focus op herstel en lichte training';
+        } else {
+            statusInterpretatie = '🚨 Laag - Herstel prioriteit, geen intensieve training';
+        }
+    }
+    
     return `COMPLETE INSPANNINGSTEST ANALYSE
 
-🎯 DOELSTELLINGEN: ${testData.specifieke_doelstellingen}
+🎯 DOELSTELLINGEN: ${doelstellingen}
 
 📊 GEMETEN DREMPELS:
-• Aërobe drempel (LT1): ${testData.aerobe_drempel_vermogen || 'niet gemeten'} Watt
-• Anaërobe drempel (LT2): ${testData.anaerobe_drempel_vermogen || 'niet gemeten'} Watt
+• Aërobe drempel (LT1): ${lt1} Watt
+• Anaërobe drempel (LT2): ${lt2} Watt
 
-💪 TRAININGSAANBEVELINGEN:
+💤 TRAININGSTATUS:
+• Gemiddelde score: ${trainingstatus}/10
+${statusInterpretatie ? '• Status: ' + statusInterpretatie : ''}
+${testData.slaapkwaliteit ? '• Slaapkwaliteit: ' + testData.slaapkwaliteit + '/10' : ''}
+${testData.eetlust ? '• Eetlust: ' + testData.eetlust + '/10' : ''}
+${testData.gevoel_op_training ? '• Gevoel op training: ' + testData.gevoel_op_training + '/10' : ''}
+${testData.stressniveau ? '• Stressniveau: ' + testData.stressniveau + '/10 (10 = geen stress)' : ''}
+
+🏆 PRESTATIECLASSIFICATIE:
+Uw drempelwaardes worden geanalyseerd in de context van uw specifieke doelstellingen voor ${testtype}.
+
+💪 BELANGRIJKE BEVINDINGEN:
+• Uw aërobe basis vormt de foundation voor langdurige prestaties
+• De anaërobe drempel bepaalt uw tempo-capaciteit
+• Training moet afgestemd worden op uw gestelde doelen
+${trainingstatus < 6 ? '• LET OP: Trainingstatus is matig/laag - prioriteer herstel' : ''}
+
+🎯 TRAININGSAANBEVELINGEN:
 1. Focus op 80% training onder LT1 voor aerobe ontwikkeling
 2. Voeg specifieke intervaltraining toe rond LT2
-3. Monitor progressie met regelmatige hertesten`;
+3. Periodiseer training naar uw doelstellingen toe
+4. Monitor progressie met regelmatige hertesten
+${trainingstatus < 6 ? '5. BELANGRIJK: Verbeter herstel (slaap, voeding, stress management)' : ''}
+
+Voor een uitgebreidere AI-analyse probeer het opnieuw wanneer de verbinding hersteld is.`;
 }
 
-// === TRAININGSZONES EXPORT FUNCTIE ===
+/**
+ * Verzamel alle relevante testdata voor AI analyse
+ */
+function collectTestDataForAI(type) {
+    // Probeer leeftijd uit geboortedatum te berekenen (uit klant context indien beschikbaar)
+    const today = new Date();
+    let leeftijd = 45; // Default fallback
+    
+    // Probeer uit pagina context te halen (bijv. uit hidden fields of klant info)
+    const klantLeeftijdElement = document.querySelector('[data-klant-leeftijd]');
+    if (klantLeeftijdElement) {
+        leeftijd = parseInt(klantLeeftijdElement.getAttribute('data-klant-leeftijd')) || 45;
+    }
+    
+    // Verzamel alle beschikbare data
+    const testData = {
+        type: type,
+        testtype: document.getElementById('testtype')?.value || 'fietstest',
+        
+        // Drempelwaarden
+        aerobe_drempel_vermogen: parseFloat(document.getElementById('aerobe_drempel_vermogen')?.value) || null,
+        aerobe_drempel_hartslag: parseFloat(document.getElementById('aerobe_drempel_hartslag')?.value) || null,
+        anaerobe_drempel_vermogen: parseFloat(document.getElementById('anaerobe_drempel_vermogen')?.value) || null,
+        anaerobe_drempel_hartslag: parseFloat(document.getElementById('anaerobe_drempel_hartslag')?.value) || null,
+        
+        // Persoonlijke gegevens
+        specifieke_doelstellingen: document.getElementById('specifieke_doelstellingen')?.value || 'Algemene fitheid verbetering',
+        lichaamsgewicht_kg: parseFloat(document.getElementById('lichaamsgewicht_kg')?.value) || null,
+        lichaamslengte_cm: parseFloat(document.getElementById('lichaamslengte_cm')?.value) || null,
+        leeftijd: leeftijd,
+        
+        // Extra context
+        maximale_hartslag_bpm: parseFloat(document.getElementById('maximale_hartslag_bpm')?.value) || null,
+        hartslag_rust_bpm: parseFloat(document.getElementById('hartslag_rust_bpm')?.value) || null,
+        bmi: parseFloat(document.getElementById('bmi')?.value) || null
+    };
+    
+    console.log('🔍 Verzamelde testdata voor AI:', testData);
+    
+    return testData;
+}
+
+/**
+ * Fallback advies bij AI fouten
+ */
+function getFallbackAdvice(type, testData) {
+    const testtype = testData.testtype || 'fietstest';
+    
+    if (type === 'aerobe') {
+        const vermogen = testData.aerobe_drempel_vermogen;
+        
+        if (testtype.includes('loop')) {
+            return `Uw aërobe drempel ligt op ${vermogen || 'uw gemeten'} km/h. Train voornamelijk onder deze intensiteit voor optimale vetverbranding en basisuithoudingsvermogen. Bouw geleidelijk op in volume en frequentie.`;
+        }
+        
+        if (testtype.includes('zwem')) {
+            return `Uw aërobe drempel is bepaald op ${vermogen || 'uw gemeten'} min/100m. Focus op lange, gestage zwemsessies net onder dit tempo voor aerobe ontwikkeling.`;
+        }
+        
+        return `Uw aërobe drempel bedraagt ${vermogen || 'uw gemeten'} Watt. Train 80% van de tijd onder deze intensiteit voor optimale vetverbranding en basisfitheid.`;
+    }
+    
+    if (type === 'anaerobe') {
+        const vermogen = testData.anaerobe_drempel_vermogen;
+        
+        if (testtype.includes('loop')) {
+            return `Uw anaërobe drempel is ${vermogen || 'uw gemeten'} km/h. Gebruik dit als basis voor intervaltraining en tempowerk. Limiteer hoogintensieve training tot 20% van totale trainingstijd.`;
+        }
+        
+        if (testtype.includes('zwem')) {
+            return `Uw anaërobe drempel ligt op ${vermogen || 'uw gemeten'} min/100m. Train intervallen rond dit tempo voor snelheidsverbetering.`;
+        }
+        
+        return `Uw anaërobe drempel is ${vermogen || 'uw gemeten'} Watt. Gebruik dit vermogen voor intervaltraining en tempowerk ter voorbereiding op wedstrijden.`;
+    }
+    
+    return 'Advies kon niet worden gegenereerd. Consulteer uw trainer voor specifieke aanbevelingen.';
+}
+
+// Toon alle form data zonder te submitten
+function showFormData() {
+    const form = document.querySelector('#inspanningstest-form');
+    
+    let output = '<div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded"><h4 class="font-bold text-blue-800 mb-2">DIAGNOSE RESULTAAT:</h4>';
+    
+    // Check of form gevonden wordt
+    output += `<p><strong>Form element gevonden:</strong> ${!!form}</p>`;
+    
+    if (!form) {
+        output += '<p class="text-red-600">FORM NIET GEVONDEN! Check HTML structuur.</p>';
+        const debugInfo = document.getElementById('debug-info');
+        debugInfo.innerHTML = output + '</div>';
+        debugInfo.style.display = 'block';
+        return;
+    }
+    
+    // Check of input velden IN de form zitten
+    const datumInput = document.getElementById('datum');
+    const testtypeInput = document.getElementById('testtype');
+    
+    output += `<p><strong>Datum input bestaat:</strong> ${!!datumInput}</p>`;
+    if (datumInput) {
+        output += `<p><strong>Datum zit IN form:</strong> ${form.contains(datumInput)}</p>`;
+        output += `<p><strong>Datum waarde:</strong> ${datumInput.value}</p>`;
+    }
+    
+    output += `<p><strong>Testtype select bestaat:</strong> ${!!testtypeInput}</p>`;
+    if (testtypeInput) {
+        output += `<p><strong>Testtype zit IN form:</strong> ${form.contains(testtypeInput)}</p>`;
+        output += `<p><strong>Testtype waarde:</strong> ${testtypeInput.value}</p>`;
+    }
+    
+    // Tel alle inputs op de pagina vs in de form
+    const allPageInputs = document.querySelectorAll('input, select, textarea');
+    const allFormInputs = form.querySelectorAll('input, select, textarea');
+    
+    output += `<hr class="my-2">`;
+    output += `<p><strong>Totaal inputs op pagina:</strong> ${allPageInputs.length}</p>`;
+    output += `<p><strong>Inputs IN de form:</strong> ${allFormInputs.length}</p>`;
+    
+    if (allFormInputs.length < 10) {
+        output += '<p class="text-red-600">TE WEINIG INPUTS IN FORM! HTML structuur probleem.</p>';
+    }
+    
+    // Toon FormData
+    const formData = new FormData(form);
+    output += `<hr class="my-2"><p class="text-sm text-gray-600"><strong>FormData entries:</strong></p>`;
+    
+    let entryCount = 0;
+    for (let [key, value] of formData.entries()) {
+        output += `<p class="text-sm">${key}: ${value || 'LEEG'}</p>`;
+        entryCount++;
+    }
+    
+    output += `<p><strong>Totaal FormData entries:</strong> ${entryCount}</p>`;
+    
+    if (entryCount < 5) {
+        output += '<p class="text-red-600">TE WEINIG FORM DATA! Inputs niet gekoppeld aan form.</p>';
+        output += '<p class="text-blue-600"><strong>OPLOSSING:</strong> Check of alle inputs binnen de form tags staan!</p>';
+    }
+    
+    output += '</div>';
+    
+    // Voeg output toe na de debug info
+    const debugInfo = document.getElementById('debug-info');
+    debugInfo.innerHTML = output;
+    debugInfo.style.display = 'block';
+    
+    console.log('DIAGNOSE: Form gevonden:', !!form);
+    console.log('DIAGNOSE: Inputs op pagina:', allPageInputs.length);
+    console.log('DIAGNOSE: Inputs in form:', allFormInputs.length);
+    console.log('DIAGNOSE: FormData entries:', entryCount);
+}
+
+// === TRAININGSZONES EXPORT FUNCTIE (VEILIG) ===
 function exportZonesData() {
     console.log('📊 exportZonesData() aangeroepen');
     alert('Export functionaliteit komt in de volgende stap!');
 }
 
-// === TRAININGSZONES BEREKENING FUNCTIONALITEIT - EXACT KOPIE VAN EDIT.BLADE.PHP ===
+// 🔧 NIEUWE FUNCTIE: Update handmatige zone waarden
+function updateHandmatigeZone(zoneIndex, field, value) {
+    console.log(`🔧 updateHandmatigeZone: Zone ${zoneIndex}, veld ${field} = ${value}`);
+    
+    if (!huidigeZonesData || !huidigeZonesData[zoneIndex]) {
+        console.log('❌ Geen zones data beschikbaar voor update');
+        return;
+    }
+    
+    // Update de waarde in de zones data
+    huidigeZonesData[zoneIndex][field] = parseFloat(value) || 0;
+    
+    console.log(`✅ Zone ${zoneIndex} bijgewerkt:`, huidigeZonesData[zoneIndex]);
+    
+    // Update de hidden input met de nieuwe data
+    document.getElementById('trainingszones_data').value = JSON.stringify(huidigeZonesData);
+    
+    // Herbereken min/km voor looptesten als vermogen wijzigt
+    if (currentTableType === 'looptest' && (field === 'minVermogen' || field === 'maxVermogen')) {
+        console.log('🏃 Herbereken min/km voor looptest na vermogen wijziging');
+        updateMinKmDisplay(zoneIndex);
+    }
+}
 
+// 🏃 HULPFUNCTIE: Update min/km display voor looptesten
+function updateMinKmDisplay(zoneIndex) {
+    if (currentTableType !== 'looptest' || !huidigeZonesData[zoneIndex]) return;
+    
+    const zone = huidigeZonesData[zoneIndex];
+    const minMinPerKmDecimal = zone.maxVermogen > 0 ? (60 / zone.maxVermogen) : 999;
+    const maxMinPerKmDecimal = zone.minVermogen > 0 ? (60 / zone.minVermogen) : 999;
+    
+    // Converteer naar mm:ss formaat
+    const minMinPerKm = formatMinPerKm(minMinPerKmDecimal);
+    const maxMinPerKm = formatMinPerKm(maxMinPerKmDecimal);
+    
+    // Update de min/km cellen in de tabel (als ze bestaan)
+    const rows = document.getElementById('zones-body').getElementsByTagName('tr');
+    if (rows[zoneIndex]) {
+        const cells = rows[zoneIndex].getElementsByTagName('td');
+        if (cells.length >= 7) { // Controleer of min/km kolommen bestaan
+            cells[5].textContent = minMinPerKm; // min min/km
+            cells[6].textContent = maxMinPerKm; // max min/km
+        }
+    }
+    
+    console.log(`🔄 Min/km bijgewerkt voor zone ${zoneIndex}: ${minMinPerKm} - ${maxMinPerKm}`);
+}
+
+// === TRAININGSZONES BEREKENING FUNCTIONALITEIT ===
+
+// Globale variabele voor huidige zones data
 let huidigeZonesData = null;
 
+// 🏃 HULPFUNCTIE: Converteer decimale minuten naar mm:ss formaat
+function formatMinPerKm(decimalMinutes) {
+    if (decimalMinutes >= 999 || isNaN(decimalMinutes)) return '∞';
+    
+    const minutes = Math.floor(decimalMinutes);
+    const seconds = Math.round((decimalMinutes - minutes) * 60);
+    
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+// Hoofdfunctie om trainingszones bij te werken
 function updateTrainingszones() {
     console.log('🎯 updateTrainingszones() gestart');
     
@@ -2544,387 +3671,666 @@ function updateTrainingszones() {
         return;
     }
     
+    // 🏃 AUTOMATISCHE EENHEID AANPASSING voor looptesten
+    const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
+    if (isLooptest && eenheidSelektor.value !== 'snelheid') {
+        console.log('🏃 Automatisch snelheid selecteren voor looptest');
+        eenheidSelektor.value = 'snelheid';
+    } else if (!isLooptest && eenheidSelektor.value === 'snelheid') {
+        console.log('🚴 Automatisch hartslag selecteren voor fietstest');
+        eenheidSelektor.value = 'hartslag';
+    }
+    
     const methode = methodeSelektor.value;
-    const aantal = parseInt(aantalSelektor.value) || 6; // Default 6 voor Bonami
+    const aantal = parseInt(aantalSelektor.value) || 5;
     const eenheid = eenheidSelektor.value;
     
-    console.log('⚙️ Zones configuratie:', { methode, aantal, eenheid });
+    console.log('🔧 Zone configuratie:', { methode, aantal, eenheid, isLooptest, testType: currentTableType });
     
+    // Toon/verberg container
     const container = document.getElementById('trainingszones-container');
-    const methodeLabel = document.getElementById('zones-methode-label');
-    
     if (!methode) {
-        console.log('⚠️ Geen methode geselecteerd');
         container.style.display = 'none';
         return;
     }
     
     container.style.display = 'block';
     
+    // Update methode label
+    const methodeLabel = document.getElementById('zones-methode-label');
+    methodeLabel.textContent = `(${methode.charAt(0).toUpperCase() + methode.slice(1)})`;
+    
+    // Bereken zones op basis van methode
     let zonesData = null;
-    let methodeLabelText = '';
     
     if (methode === 'bonami') {
         zonesData = berekenBonamiZones(aantal, eenheid);
-        methodeLabelText = '(Bonami Drempel Methode)';
     } else if (methode === 'karvonen') {
         zonesData = berekenKarvonenZones(aantal, eenheid);
-        methodeLabelText = '(Karvonen Hartslagreserve)';
     } else if (methode === 'handmatig') {
         zonesData = createHandmatigeZones(aantal, eenheid);
-        methodeLabelText = '(Handmatig aanpasbaar)';
-    }
-    
-    if (methodeLabel) {
-        methodeLabel.textContent = methodeLabelText;
     }
     
     if (zonesData) {
         genereerZonesTabel(zonesData, eenheid);
         huidigeZonesData = zonesData;
         
-        // Save naar hidden input voor form submit
-        const hiddenInput = document.getElementById('trainingszones_data');
-        if (hiddenInput) {
-            hiddenInput.value = JSON.stringify(zonesData);
-            console.log('💾 Zones data opgeslagen in hidden input');
-        }
+        // Sla zones data op in hidden input
+        document.getElementById('trainingszones_data').value = JSON.stringify(zonesData);
         
-        console.log('✅ Trainingszones succesvol berekend:', zonesData.length, 'zones');
+        console.log('✅ Trainingszones succesvol berekend en weergegeven');
     } else {
-        console.log('⚠️ Geen zones data gegenereerd');
+        console.log('❌ Kan geen zones berekenen - ontbrekende drempel data');
+        toonZonesError('Geen drempel data beschikbaar. Voer eerst testresultaten in en bereken drempels.');
     }
 }
 
-// 🏆 BONAMI ZONES METHODE - EXACT ZOALS EDIT.BLADE.PHP
+// Bonami specifieke zones berekening - VOLLEDIG DYNAMISCH HERBEREKEND
 function berekenBonamiZones(aantal, eenheid) {
-    console.log('🎯 Bonami zones berekenen:', { aantal, eenheid });
+    console.log('🚀 berekenBonamiZones() - aantal:', aantal, 'eenheid:', eenheid);
+    console.log('🔄 DYNAMISCHE HERBEREKENING voor', aantal, 'zones');
+    console.log('🏃 Huidige testtype voor zones:', currentTableType);
     
-    // Haal drempelwaarden op
-    const aerobeVermogen = parseFloat(document.getElementById('aerobe_drempel_vermogen')?.value);
-    const aerobeHartslag = parseFloat(document.getElementById('aerobe_drempel_hartslag')?.value);
-    const anaerobeVermogen = parseFloat(document.getElementById('anaerobe_drempel_vermogen')?.value);
-    const anaerobeHartslag = parseFloat(document.getElementById('anaerobe_drempel_hartslag')?.value);
-    const maxHartslag = parseFloat(document.getElementById('maximale_hartslag_bpm')?.value);
-    const rustHartslag = parseFloat(document.getElementById('hartslag_rust_bpm')?.value) || 60;
+    // Controleer of er drempel data beschikbaar is
+    const LT1 = parseFloat(document.getElementById('aerobe_drempel_vermogen').value) || 0;
+    const LT2 = parseFloat(document.getElementById('anaerobe_drempel_vermogen').value) || 0;
+    const LT1_HR = parseFloat(document.getElementById('aerobe_drempel_hartslag').value) || 0;
+    const LT2_HR = parseFloat(document.getElementById('anaerobe_drempel_hartslag').value) || 0;
+    const HRmax = parseFloat(document.getElementById('maximale_hartslag_bpm').value) || 190;
+    const HRrust = parseFloat(document.getElementById('hartslag_rust_bpm').value) || 60;
     
-    console.log('📊 Drempelwaarden:', { 
-        aerobeVermogen, 
-        aerobeHartslag, 
-        anaerobeVermogen, 
-        anaerobeHartslag, 
-        maxHartslag,
-        rustHartslag 
-    });
+    console.log('📊 Drempel waarden:', { LT1, LT2, LT1_HR, LT2_HR, HRmax, HRrust });
     
-    if (!aerobeVermogen || !anaerobeVermogen) {
-        console.log('⚠️ Geen drempelwaarden beschikbaar - kan zones niet berekenen');
-        alert('⚠️ Bereken eerst de drempelwaarden (LT1 en LT2) via grafiek analyse voordat je trainingszones kunt genereren.');
-        return null;
+    // 🏃 SPECIALE BEHANDELING VOOR LOOPTESTEN: Gebruik snelheden in plaats van wattages
+    const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
+    const isZwemtest = currentTableType === 'veldtest_zwemmen';
+    
+    // SKIP voorbeeldzones - bereken ALTIJD dynamisch met de beschikbare data
+    if (LT1 === 0 || LT2 === 0) {
+        console.log('⚠️ Geen drempel data - gebruik fallback waarden voor berekening');
+        // Gebruik realistische fallback waarden in plaats van voorbeeldzones
+        // Deze worden alsnog dynamisch berekend
     }
     
-    // Bonami 6-zones systeem (gebaseerd op LT1 en LT2) - EXACT zoals edit.blade.php
-    const bonamiZones = [
-        {
-            zone: 'Zone 1',
-            naam: 'Herstel',
-            doel: 'Actief herstel, zeer lage intensiteit',
-            percentage_lt1: '< 75%',
-            percentage_lt2: '< 55%',
-            multiplier_lt1_min: 0,
-            multiplier_lt1_max: 0.75,
-            multiplier_lt2_min: 0,
-            multiplier_lt2_max: 0.55
-        },
-        {
-            zone: 'Zone 2',
-            naam: 'Duurtraining',
-            doel: 'Aerobe basis, vetverbranding',
-            percentage_lt1: '75-95%',
-            percentage_lt2: '55-75%',
-            multiplier_lt1_min: 0.75,
-            multiplier_lt1_max: 0.95,
-            multiplier_lt2_min: 0.55,
-            multiplier_lt2_max: 0.75
-        },
-        {
-            zone: 'Zone 3',
-            naam: 'Tempo',
-            doel: 'Aerobe ontwikkeling, net onder LT1',
-            percentage_lt1: '95-105%',
-            percentage_lt2: '75-85%',
-            multiplier_lt1_min: 0.95,
-            multiplier_lt1_max: 1.05,
-            multiplier_lt2_min: 0.75,
-            multiplier_lt2_max: 0.85
-        },
-        {
-            zone: 'Zone 4',
-            naam: 'Drempel',
-            doel: 'Lactaatdrempel training, tussen LT1 en LT2',
-            percentage_lt1: '105-125%',
-            percentage_lt2: '85-100%',
-            multiplier_lt1_min: 1.05,
-            multiplier_lt1_max: 1.25,
-            multiplier_lt2_min: 0.85,
-            multiplier_lt2_max: 1.00
-        },
-        {
-            zone: 'Zone 5',
-            naam: 'VO2max',
-            doel: 'Maximale aerobe capaciteit, boven LT2',
-            percentage_lt1: '125-150%',
-            percentage_lt2: '100-120%',
-            multiplier_lt1_min: 1.25,
-            multiplier_lt1_max: 1.50,
-            multiplier_lt2_min: 1.00,
-            multiplier_lt2_max: 1.20
-        },
-        {
-            zone: 'Zone 6',
-            naam: 'Anaeroob',
-            doel: 'Maximale inspanning, sprint power',
-            percentage_lt1: '> 150%',
-            percentage_lt2: '> 120%',
-            multiplier_lt1_min: 1.50,
-            multiplier_lt1_max: 2.00,
-            multiplier_lt2_min: 1.20,
-            multiplier_lt2_max: 1.50
-        }
-    ];
+    // 🎯 BONAMI 6-ZONE METHODE (CORRECTE FORMULE)
+    console.log('🎯 Bonami zones berekenen volgens officiële formule');
     
-    // Bereken concrete waarden per zone - EXACT zoals edit.blade.php
-    const zonesMetWaarden = bonamiZones.slice(0, aantal).map((zone, index) => {
-        let vermogenMin, vermogenMax, hartslagMin, hartslagMax;
+    const zones = [];
+    const zoneNamen = ['HERSTEL', 'LANGE DUUR', 'EXTENSIEF', 'INTENSIEF', 'TEMPO', 'MAXIMAAL', 'ULTIEM', 'EXTREEM'];
+    const zoneKleuren = ['#E3F2FD', '#E8F5E8', '#F1F8E9', '#FFF3E0', '#FFEBEE', '#FFCDD2', '#FFE0E0', '#FFD0D0'];
+    
+    // === SPECIALE BEHANDELING VOOR 6 BONAMI ZONES ===
+    if (aantal === 6 && !isZwemtest) {
+        console.log('📊 6-ZONE BONAMI BEREKENING (Officieel)');
         
-        // Gebruik LT1 (aërobe drempel) als primaire basis
-        vermogenMin = Math.round(aerobeVermogen * zone.multiplier_lt1_min);
-        vermogenMax = Math.round(aerobeVermogen * zone.multiplier_lt1_max);
+        // Schat maximaal vermogen als HRmax niet ingevuld is
+        const maxVermogen = LT2 * 1.20; // 120% van LT2 als schatting voor max
         
-        // Hartslag berekening
-        if (aerobeHartslag) {
-            hartslagMin = Math.round(rustHartslag + ((aerobeHartslag - rustHartslag) * zone.multiplier_lt1_min));
-            hartslagMax = Math.round(rustHartslag + ((aerobeHartslag - rustHartslag) * zone.multiplier_lt1_max));
-            
-            // Voor hogere zones: gebruik anaërobe hartslag als referentie
-            if (index >= 4 && anaerobeHartslag) {
-                hartslagMin = Math.round(anaerobeHartslag * zone.multiplier_lt2_min);
-                hartslagMax = Math.round(anaerobeHartslag * zone.multiplier_lt2_max);
-            }
-            
-            // Cap op max hartslag indien beschikbaar
-            if (maxHartslag) {
-                hartslagMax = Math.min(hartslagMax, maxHartslag);
-            }
+        // ZONE 1: HERSTEL (60-80% LT1)
+        zones.push({
+            naam: 'HERSTEL',
+            minVermogen: isLooptest ? parseFloat((LT1 * 0.60).toFixed(1)) : Math.round(LT1 * 0.60),
+            maxVermogen: isLooptest ? parseFloat((LT1 * 0.80).toFixed(1)) : Math.round(LT1 * 0.80),
+            minHartslag: Math.round(LT1_HR * 0.60),
+            maxHartslag: Math.round(LT1_HR * 0.80),
+            beschrijving: 'Actief herstel, zeer lage intensiteit',
+            kleur: '#E3F2FD',
+            borgMin: 6,
+            borgMax: 9
+        });
+        
+        // ZONE 2: LANGE DUUR (80-90% LT1)
+        zones.push({
+            naam: 'LANGE DUUR',
+            minVermogen: isLooptest ? parseFloat((LT1 * 0.80).toFixed(1)) : Math.round(LT1 * 0.80),
+            maxVermogen: isLooptest ? parseFloat((LT1 * 0.90).toFixed(1)) : Math.round(LT1 * 0.90),
+            minHartslag: Math.round(LT1_HR * 0.80),
+            maxHartslag: Math.round(LT1_HR * 0.90),
+            beschrijving: 'Steady-state duur, vetverbranding',
+            kleur: '#E8F5E8',
+            borgMin: 10,
+            borgMax: 11
+        });
+        
+        // ZONE 3: EXTENSIEF (90% LT1 → LT1)
+        zones.push({
+            naam: 'EXTENSIEF',
+            minVermogen: isLooptest ? parseFloat((LT1 * 0.90).toFixed(1)) : Math.round(LT1 * 0.90),
+            maxVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+            minHartslag: Math.round(LT1_HR * 0.90),
+            maxHartslag: LT1_HR,
+            beschrijving: 'Hoge aerobe zone, net onder LT1',
+            kleur: '#F1F8E9',
+            borgMin: 12,
+            borgMax: 13
+        });
+        
+        // ZONE 4: INTENSIEF (LT1 → LT2)
+        zones.push({
+            naam: 'INTENSIEF',
+            minVermogen: isLooptest ? parseFloat(LT1.toFixed(1)) : Math.round(LT1),
+            maxVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+            minHartslag: LT1_HR,
+            maxHartslag: LT2_HR,
+            beschrijving: 'Tempo net onder/aan anaerobe drempel',
+            kleur: '#FFF3E0',
+            borgMin: 14,
+            borgMax: 15
+        });
+        
+        // ZONE 5: TEMPO (LT2 → 95% max)
+        const zone5Max = isLooptest ? parseFloat((maxVermogen * 0.95).toFixed(1)) : Math.round(maxVermogen * 0.95);
+        zones.push({
+            naam: 'TEMPO',
+            minVermogen: isLooptest ? parseFloat(LT2.toFixed(1)) : Math.round(LT2),
+            maxVermogen: zone5Max,
+            minHartslag: LT2_HR,
+            maxHartslag: Math.round(HRmax * 0.95),
+            beschrijving: 'Anaëroob, korte inspanningen',
+            kleur: '#FFEBEE',
+            borgMin: 16,
+            borgMax: 17
+        });
+        
+        // ZONE 6: MAXIMAAL (95% max → max)
+        zones.push({
+            naam: 'MAXIMAAL',
+            minVermogen: zone5Max,
+            maxVermogen: isLooptest ? parseFloat(maxVermogen.toFixed(1)) : Math.round(maxVermogen),
+            minHartslag: Math.round(HRmax * 0.95),
+            maxHartslag: HRmax,
+            beschrijving: 'Zeer hoge intensiteit, sprintniveau',
+            kleur: '#FFCDD2',
+            borgMin: 18,
+            borgMax: 20
+        });
+        
+        console.log('✅ 6 Bonami zones volgens officiële formule:');
+        zones.forEach((z, idx) => {
+            console.log(`  Z${idx+1} ${z.naam}: ${z.minVermogen}-${z.maxVermogen} ${isLooptest ? 'km/h' : 'W'}, ${z.minHartslag}-${z.maxHartslag} bpm`);
+        });
+        
+    } else {
+        // === FALLBACK: LINEAIRE VERDELING VOOR ANDERE AANTALLEN ===
+        console.log(`⚠️ Lineaire verdeling voor ${aantal} zones (geen officiële Bonami methode)`);
+        
+        let minVermogen, maxVermogen;
+        
+        if (isZwemtest) {
+            minVermogen = LT1 * 1.30;
+            maxVermogen = LT2 * 0.70;
         } else {
-            hartslagMin = null;
-            hartslagMax = null;
+            minVermogen = LT1 * 0.60;
+            maxVermogen = LT2 * 1.20;
         }
         
-        console.log(`📊 Zone ${zone.zone}: Vermogen ${vermogenMin}-${vermogenMax}W, Hartslag ${hartslagMin}-${hartslagMax} bpm`);
+        const stapVermogen = (maxVermogen - minVermogen) / aantal;
+        const minHR = Math.max(HRrust + 20, LT1_HR * 0.70);
+        const stapHR = (HRmax - minHR) / aantal;
         
-        return {
-            ...zone,
-            vermogen_min: vermogenMin,
-            vermogen_max: vermogenMax,
-            hartslag_min: hartslagMin,
-            hartslag_max: hartslagMax
-        };
-    });
-    
-    console.log('✅ Bonami zones berekend:', zonesMetWaarden);
-    return zonesMetWaarden;
-}
-
-// 🧮 KARVONEN METHODE - EXACT zoals edit.blade.php
-function berekenKarvonenZones(aantal, eenheid) {
-    console.log('🎯 Karvonen zones berekenen:', { aantal, eenheid });
-    
-    const rustHartslag = parseFloat(document.getElementById('hartslag_rust_bpm')?.value);
-    const maxHartslag = parseFloat(document.getElementById('maximale_hartslag_bpm')?.value);
-    
-    if (!rustHartslag || !maxHartslag) {
-        console.log('⚠️ Rust of max hartslag ontbreekt');
-        alert('⚠️ Voor Karvonen methode zijn zowel rust hartslag als maximale hartslag nodig.');
-        return null;
+        for (let i = 0; i < aantal; i++) {
+            let zoneMinVermogen, zoneMaxVermogen;
+            
+            if (isZwemtest) {
+                zoneMinVermogen = minVermogen - (i * stapVermogen);
+                zoneMaxVermogen = minVermogen - ((i + 1) * stapVermogen);
+            } else {
+                zoneMinVermogen = minVermogen + (i * stapVermogen);
+                zoneMaxVermogen = minVermogen + ((i + 1) * stapVermogen);
+            }
+            
+            zones.push({
+                naam: zoneNamen[i] || `Zone ${i + 1}`,
+                minVermogen: isLooptest ? parseFloat(zoneMinVermogen.toFixed(1)) : Math.round(zoneMinVermogen),
+                maxVermogen: isLooptest ? parseFloat(zoneMaxVermogen.toFixed(1)) : Math.round(zoneMaxVermogen),
+                minHartslag: Math.round(minHR + (i * stapHR)),
+                maxHartslag: Math.round(minHR + ((i + 1) * stapHR)),
+                beschrijving: `${zoneNamen[i] || 'Zone ' + (i + 1)} training`,
+                kleur: zoneKleuren[i] || '#F5F5F5',
+                borgMin: 6 + Math.floor(i * (14 / aantal)),
+                borgMax: 8 + Math.floor((i + 1) * (14 / aantal))
+            });
+        }
     }
     
-    const reserve = maxHartslag - rustHartslag;
-    console.log('📊 Hartslagreserve:', reserve, '(', maxHartslag, '-', rustHartslag, ')');
+    console.log(`✅ ${zones.length} Bonami zones dynamisch berekend voor:`, isZwemtest ? 'ZWEM' : isLooptest ? 'LOOP' : 'FIETS');
+    console.log('✅ Alle zones:', zones.map((z, idx) => `${idx+1}. ${z.naam}`));
+    console.log(`✅ RETURN: ${zones.length} zones worden teruggestuurd`);
     
-    // Karvonen zones op basis van % hartslagreserve - EXACT zoals edit.blade.php
-    const percentageSchema = {
-        3: [[50, 70], [70, 85], [85, 100]],
-        5: [[50, 60], [60, 70], [70, 80], [80, 90], [90, 100]],
-        6: [[50, 60], [60, 70], [70, 80], [80, 85], [85, 95], [95, 100]],
-        7: [[50, 60], [60, 70], [70, 76], [76, 82], [82, 89], [89, 94], [94, 100]],
-        8: [[50, 60], [60, 65], [65, 70], [70, 76], [76, 82], [82, 89], [89, 94], [94, 100]]
-    };
-    
-    const percentages = percentageSchema[aantal] || percentageSchema[5];
-    
-    const zoneNamen = ['Herstel', 'Duurtraining', 'Tempo', 'Drempel', 'VO2max', 'Anaeroob', 'Maximaal', 'Sprint'];
-    
-    const zones = percentages.map((range, index) => {
-        const minHR = Math.round(rustHartslag + (reserve * range[0] / 100));
-        const maxHR = Math.round(rustHartslag + (reserve * range[1] / 100));
-        
-        return {
-            zone: `Zone ${index + 1}`,
-            naam: zoneNamen[index] || `Intensiteit ${index + 1}`,
-            doel: `${range[0]}-${range[1]}% van hartslagreserve`,
-            hartslag_min: minHR,
-            hartslag_max: maxHR,
-            vermogen_min: null,
-            vermogen_max: null,
-            percentage_lt1: '-',
-            percentage_lt2: '-'
-        };
+    // DEBUG: Print alle zone waarden
+    zones.forEach((zone, idx) => {
+        console.log(`🔢 Zone ${idx+1}: ${zone.naam} - Vermogen: ${zone.minVermogen}-${zone.maxVermogen}, HR: ${zone.minHartslag}-${zone.maxHartslag}`);
     });
     
-    console.log('✅ Karvonen zones berekend:', zones);
     return zones;
 }
 
-// ✋ HANDMATIGE ZONES - EXACT zoals edit.blade.php
-function createHandmatigeZones(aantal, eenheid) {
-    console.log('🎯 Handmatige zones template maken:', { aantal, eenheid });
+// Hulpfunctie om voorbeeldzones DYNAMISCH te maken - OOK HERBEREKEND op basis van aantal!
+function createVoorbeeldBonamiZones(aantal, isLooptest = false, isZwemtest = false) {
+    console.log('🎯 DYNAMISCHE voorbeeldzones voor', aantal, 'zones:', isZwemtest ? 'ZWEMTEST' : isLooptest ? 'LOOPTEST' : 'FIETSTEST');
     
-    const zoneNamen = ['Herstel', 'Duurtraining', 'Tempo', 'Drempel', 'VO2max', 'Anaeroob', 'Maximaal', 'Sprint'];
+    const zoneNamen = ['HERSTEL', 'LANGE DUUR', 'EXTENSIEF', 'INTENSIEF', 'TEMPO', 'MAXIMAAL', 'ULTIEM', 'EXTREEM'];
+    const zoneKleuren = ['#E3F2FD', '#E8F5E8', '#F1F8E9', '#FFF3E0', '#FFEBEE', '#FFCDD2', '#FFE0E0', '#FFD0D0'];
     const zones = [];
     
-    for (let i = 1; i <= aantal; i++) {
+    // Bepaal bereiken op basis van testtype
+    let minVermogen, maxVermogen, minHR, maxHR;
+    
+    if (isZwemtest) {
+        minVermogen = 2.50;
+        maxVermogen = 1.30;
+        minHR = 110;
+        maxHR = 200;
+    } else if (isLooptest) {
+        minVermogen = 8.0;
+        maxVermogen = 20.0;
+        minHR = 110;
+        maxHR = 200;
+    } else {
+        minVermogen = 120;
+        maxVermogen = 350;
+        minHR = 110;
+        maxHR = 200;
+    }
+    
+    const stapVermogen = (maxVermogen - minVermogen) / aantal;
+    const stapHR = (maxHR - minHR) / aantal;
+    
+    console.log('📊 Voorbeeld bereik:', { minVermogen, maxVermogen, stapVermogen: stapVermogen.toFixed(1), minHR, maxHR, stapHR: stapHR.toFixed(1) });
+    
+    for (let i = 0; i < aantal; i++) {
+        let zoneMinVermogen, zoneMaxVermogen;
+        
+        if (isZwemtest) {
+            // Zwemmen: van langzaam naar snel (dalende getallen)
+            zoneMinVermogen = minVermogen - (i * stapVermogen);
+            zoneMaxVermogen = minVermogen - ((i + 1) * stapVermogen);
+        } else {
+            // Fietsen/Lopen: van laag naar hoog
+            zoneMinVermogen = minVermogen + (i * stapVermogen);
+            zoneMaxVermogen = minVermogen + ((i + 1) * stapVermogen);
+        }
+        
         zones.push({
-            zone: `Zone ${i}`,
-            naam: zoneNamen[i - 1] || `Zone ${i}`,
-            doel: 'Handmatig in te vullen',
-            vermogen_min: null,
-            vermogen_max: null,
-            hartslag_min: null,
-            hartslag_max: null,
-            percentage_lt1: '-',
-            percentage_lt2: '-',
-            editable: true
+            naam: zoneNamen[i] || `Zone ${i + 1}`,
+            minVermogen: isLooptest ? parseFloat(zoneMinVermogen.toFixed(1)) : Math.round(zoneMinVermogen),
+            maxVermogen: isLooptest ? parseFloat(zoneMaxVermogen.toFixed(1)) : Math.round(zoneMaxVermogen),
+            minHartslag: Math.round(minHR + (i * stapHR)),
+            maxHartslag: Math.round(minHR + ((i + 1) * stapHR)),
+            beschrijving: `${zoneNamen[i] || 'Zone ' + (i + 1)} (voorbeeld)`,
+            kleur: zoneKleuren[i] || '#F5F5F5',
+            borgMin: 6 + Math.floor(i * (14 / aantal)),
+            borgMax: 8 + Math.floor((i + 1) * (14 / aantal))
         });
     }
     
-    console.log('✅ Handmatige zones template gemaakt');
+    console.log('✅ DYNAMISCH', aantal, 'voorbeeldzones gemaakt voor:', isZwemtest ? 'ZWEM' : isLooptest ? 'LOOP' : 'FIETS');
+    console.log('✅ Zones:', zones.map(z => `${z.naam}: ${z.minVermogen}-${z.maxVermogen}`));
     return zones;
 }
 
-// 📊 GENEREER ZONES TABEL - EXACT zoals edit.blade.php
+// Hulpfunctie om Bonami zones aan te passen naar gewenst aantal
+function pasBonamiZonesAan(zones, aantal) {
+    if (aantal >= zones.length) return zones;
+    
+    // Voor nu: simpel de eerste X zones teruggeven
+    return zones.slice(0, aantal);
+}
+
+// Karvonen zones - VOLLEDIG HERBEREKEND OP BASIS VAN AANTAL
+function berekenKarvonenZones(aantal, eenheid) {
+    console.log('🔄 KARVONEN HERBEREKENING voor', aantal, 'zones');
+    
+    const HRmax = parseFloat(document.getElementById('maximale_hartslag_bpm').value) || 190;
+    const HRrust = parseFloat(document.getElementById('hartslag_rust_bpm').value) || 60;
+    const HRR = HRmax - HRrust; // Hartslagreserve
+    
+    console.log('📊 Karvonen basis:', { HRmax, HRrust, HRR });
+    
+    // Bepaal testtype voor vermogen berekening
+    const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
+    const isZwemtest = currentTableType === 'veldtest_zwemmen';
+    
+    // Haal drempelwaarden op voor vermogen schatting
+    const LT1 = parseFloat(document.getElementById('aerobe_drempel_vermogen').value) || (isLooptest ? 10 : 150);
+    const LT2 = parseFloat(document.getElementById('anaerobe_drempel_vermogen').value) || (isLooptest ? 14 : 250);
+    
+    const zones = [];
+    const zoneNamen = ['HERSTEL', 'LANGE DUUR', 'EXTENSIEF', 'INTENSIEF', 'TEMPO', 'MAXIMAAL', 'ULTIEM'];
+    const zoneKleuren = ['#E3F2FD', '#E8F5E8', '#F1F8E9', '#FFF3E0', '#FFEBEE', '#FFCDD2', '#FFE0E0'];
+    
+    // Bereken zones met Karvonen formule
+    for (let i = 0; i < aantal; i++) {
+        // Verdeel intensiteit gelijkmatig over zones (50% tot 100%)
+        const minIntensiteit = 0.50 + (i / aantal) * 0.50;
+        const maxIntensiteit = 0.50 + ((i + 1) / aantal) * 0.50;
+        
+        // Karvonen formule: Target HR = ((HRmax - HRrust) × Intensiteit%) + HRrust
+        const minHR = Math.round((HRR * minIntensiteit) + HRrust);
+        const maxHR = Math.round((HRR * maxIntensiteit) + HRrust);
+        
+        // Schat vermogen op basis van intensiteit en drempels
+        let minVermogen, maxVermogen;
+        
+        if (isZwemtest) {
+            // Zwemmen: van langzaam naar snel
+            const bereik = LT1 * 1.30 - LT2 * 0.70;
+            minVermogen = (LT1 * 1.30) - (minIntensiteit * bereik);
+            maxVermogen = (LT1 * 1.30) - (maxIntensiteit * bereik);
+        } else {
+            // Fiets/Loop: van laag naar hoog
+            const bereik = (LT2 * 1.40) - (LT1 * 0.60);
+            minVermogen = (LT1 * 0.60) + (minIntensiteit * bereik);
+            maxVermogen = (LT1 * 0.60) + (maxIntensiteit * bereik);
+        }
+        
+        zones.push({
+            naam: zoneNamen[i] || `Zone ${i + 1}`,
+            minVermogen: minVermogen,
+            maxVermogen: maxVermogen,
+            minHartslag: minHR,
+            maxHartslag: maxHR,
+            beschrijving: `Karvonen ${zoneNamen[i] || 'zone ' + (i + 1)} (${Math.round(minIntensiteit * 100)}-${Math.round(maxIntensiteit * 100)}% HRR)`,
+            kleur: zoneKleuren[i] || '#F5F5F5',
+            borgMin: 6 + Math.floor(i * (14 / aantal)),
+            borgMax: 8 + Math.floor(i * (14 / aantal))
+        });
+    }
+    
+    console.log(`✅ ${aantal} Karvonen zones berekend voor:`, isZwemtest ? 'ZWEM' : isLooptest ? 'LOOP' : 'FIETS');
+    return zones;
+}
+
+function createHandmatigeZones(aantal, eenheid) {
+    console.log('🔧 Handmatige zones - gebruik Bonami als basis en maak bewerkbaar');
+    console.log('🏃 Testtype voor handmatige zones:', currentTableType);
+    
+    // Bepaal of het een looptest of zwemtest is
+    const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
+    const isZwemtest = currentTableType === 'veldtest_zwemmen';
+    
+    // Gebruik Bonami zones als basis voor handmatige aanpassing
+    let baseZones = berekenBonamiZones(6, eenheid); // Altijd start met 6 Bonami zones
+    
+    // Als er minder zones gewenst zijn, neem de eerste X
+    if (aantal < baseZones.length) {
+        baseZones = baseZones.slice(0, aantal);
+    }
+    
+    // Maak zones bewerkbaar door naam aan te passen
+    const handmatigeZones = baseZones.map((zone, index) => ({
+        ...zone,
+        naam: zone.naam, // Behoud originele Bonami namen
+        beschrijving: `${zone.beschrijving} (aanpasbaar)`,
+        bewerkbaar: true // Flag voor bewerkbare zones
+    }));
+    
+    // Als er meer zones gewenst zijn dan Bonami basis, voeg extra zones toe
+    if (aantal > baseZones.length) {
+        for (let i = baseZones.length; i < aantal; i++) {
+            let extraZone;
+            
+            if (isZwemtest) {
+                // 🏊 Zwemtest: gebruik zwemtijden (min/100m)
+                extraZone = {
+                    naam: `Zone ${i + 1}`,
+                    minVermogen: 2.5 - (i * 0.2), // Langzaam naar snel
+                    maxVermogen: 2.3 - (i * 0.2),
+                    minHartslag: 120 + (i * 15),
+                    maxHartslag: 135 + (i * 15),
+                    beschrijving: `Handmatige zone ${i + 1} (aanpasbaar)`,
+                    kleur: '#F8F9FA',
+                    borgMin: 6 + i,
+                    borgMax: 8 + i,
+                    bewerkbaar: true
+                };
+            } else if (isLooptest) {
+                // 🏃 Looptest: gebruik snelheden
+                extraZone = {
+                    naam: `Zone ${i + 1}`,
+                    minVermogen: 8.0 + (i * 2.0),
+                    maxVermogen: 10.0 + (i * 2.0),
+                    minHartslag: 120 + (i * 15),
+                    maxHartslag: 135 + (i * 15),
+                    beschrijving: `Handmatige zone ${i + 1} (aanpasbaar)`,
+                    kleur: '#F8F9FA',
+                    borgMin: 6 + i,
+                    borgMax: 8 + i,
+                    bewerkbaar: true
+                };
+            } else {
+                // 🚴 Fietstest: gebruik wattages
+                extraZone = {
+                    naam: `Zone ${i + 1}`,
+                    minVermogen: 100 + (i * 50),
+                    maxVermogen: 150 + (i * 50),
+                    minHartslag: 120 + (i * 15),
+                    maxHartslag: 135 + (i * 15),
+                    beschrijving: `Handmatige zone ${i + 1} (aanpasbaar)`,
+                    kleur: '#F8F9FA',
+                    borgMin: 6 + i,
+                    borgMax: 8 + i,
+                    bewerkbaar: true
+                };
+            }
+            
+            handmatigeZones.push(extraZone);
+        }
+    }
+    
+    console.log('✅ Handmatige zones voorbereid met Bonami kleuren voor:', isZwemtest ? 'ZWEM' : isLooptest ? 'LOOP' : 'FIETS', handmatigeZones);
+    return handmatigeZones;
+}
+
+// Functie om zones tabel te genereren
 function genereerZonesTabel(zonesData, eenheid) {
-    console.log('📊 Zones tabel genereren voor eenheid:', eenheid);
-    console.log('📊 Zones data:', zonesData);
+    console.log('📊 genereerZonesTabel() met', zonesData.length, 'zones');
+    console.log('🏃 Huidige testtype:', currentTableType);
     
-    const zonesHeader = document.getElementById('zones-header');
-    const zonesBody = document.getElementById('zones-body');
+    const tabel = document.getElementById('trainingszones-tabel');
+    const header = document.getElementById('zones-header');
+    const body = document.getElementById('zones-body');
     
-    if (!zonesHeader || !zonesBody) {
-        console.error('❌ Zones tabel elementen niet gevonden');
+    if (!tabel || !header || !body) {
+        console.log('❌ Zones tabel elementen niet gevonden');
         return;
     }
     
-    // Clear bestaande content
-    zonesHeader.innerHTML = '';
-    zonesBody.innerHTML = '';
+    // 🏃 DYNAMISCHE EENHEID DETECTIE op basis van testtype
+    const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
+    const isZwemtest = currentTableType === 'veldtest_zwemmen';
     
-    // Bouw header op basis van eenheid - EXACT zoals edit.blade.php
-    let headerHTML = `
-        <tr class="bg-gradient-to-r from-blue-100 via-indigo-100 to-purple-100">
-            <th class="px-4 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">Zone</th>
-            <th class="px-4 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">Naam</th>
-            <th class="px-4 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">Trainingsdoel</th>
-    `;
-    
-    if (eenheid === 'hartslag' || eenheid === 'combinatie') {
-        headerHTML += `<th class="px-4 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">💓 Hartslag (bpm)</th>`;
+    let eenheidLabel = 'Watt';
+    if (isLooptest) {
+        eenheidLabel = 'km/h';
+    } else if (isZwemtest) {
+        eenheidLabel = 'min/100m';
     }
     
-    if (eenheid === 'vermogen' || eenheid === 'combinatie') {
-        headerHTML += `<th class="px-4 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">⚡ Vermogen (W)</th>`;
+    const isHandmatig = document.getElementById('zones_methode').value === 'handmatig';
+    
+    console.log('🔍 Eenheid bepaling:', { isLooptest, isZwemtest, eenheidLabel, testType: currentTableType });
+    
+    // 🏊 Hulpfunctie om minuten naar mm:ss formaat te converteren voor zwemmen
+    function formatZwemTijdVoorZones(minuten) {
+        if (!isZwemtest) return minuten;
+        
+        const totalSecondenPer100m = minuten * 60;
+        const min = Math.floor(totalSecondenPer100m / 60);
+        const sec = Math.round(totalSecondenPer100m % 60);
+        return `${min}:${sec.toString().padStart(2, '0')}`;
     }
     
-    if (eenheid === 'snelheid' || eenheid === 'combinatie') {
-        const snelheidLabel = currentTableType === 'veldtest_zwemmen' ? '🏊 Snelheid (min/100m)' : '🏃 Snelheid (km/h)';
-        headerHTML += `<th class="px-4 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">${snelheidLabel}</th>`;
-    }
+    // Voor looptesten: voeg extra kolom toe voor min/km
+    const extraKolomHeaders = isLooptest ? '<th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" colspan="2">min/km</th>' : '';
+    const extraKolomSubHeaders = isLooptest ? '<th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">min</th><th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">max</th>' : '';
     
-    headerHTML += `
-            <th class="px-4 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider border-r border-gray-300">% LT1</th>
-            <th class="px-4 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider">% LT2</th>
+    header.innerHTML = `
+        <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">Zone</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" colspan="2">Hartslag (bpm)</th>
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200" colspan="2">${eenheidLabel}</th>
+            ${extraKolomHeaders}
+            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Borg</th>
+        </tr>
+        <tr class="bg-gray-50">
+            <th class="px-4 py-2 border-r border-gray-200"></th>
+            <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">min</th>
+            <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">max</th>
+            <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">min</th>
+            <th class="px-2 py-2 text-xs text-gray-600 border-r border-gray-200">max</th>
+            ${extraKolomSubHeaders}
+            <th class="px-2 py-2 text-xs text-gray-600">schaal</th>
         </tr>
     `;
     
-    zonesHeader.innerHTML = headerHTML;
+    console.log('✅ Header gegenereerd met eenheid:', eenheidLabel);
     
-    // Kleurenschema per zone - EXACT zoals edit.blade.php
-    const zoneKleuren = [
-        { bg: 'bg-blue-50', text: 'text-blue-900', border: 'border-blue-200', icon: '😌' },        // Zone 1: Herstel
-        { bg: 'bg-green-50', text: 'text-green-900', border: 'border-green-200', icon: '🚴' },     // Zone 2: Duurtraining
-        { bg: 'bg-yellow-50', text: 'text-yellow-900', border: 'border-yellow-200', icon: '⚡' },  // Zone 3: Tempo
-        { bg: 'bg-orange-50', text: 'text-orange-900', border: 'border-orange-200', icon: '🔥' },  // Zone 4: Drempel
-        { bg: 'bg-red-50', text: 'text-red-900', border: 'border-red-200', icon: '💪' },          // Zone 5: VO2max
-        { bg: 'bg-purple-50', text: 'text-purple-900', border: 'border-purple-200', icon: '🚀' }, // Zone 6: Anaeroob
-        { bg: 'bg-pink-50', text: 'text-pink-900', border: 'border-pink-200', icon: '⚡' },       // Zone 7: Maximaal
-        { bg: 'bg-red-100', text: 'text-red-900', border: 'border-red-300', icon: '💥' }         // Zone 8: Sprint
-    ];
+    body.innerHTML = '';
     
-    // Bouw body rows - EXACT zoals edit.blade.php
-    let bodyHTML = '';
     zonesData.forEach((zone, index) => {
-        const kleuren = zoneKleuren[index] || zoneKleuren[0];
+        const row = document.createElement('tr');
+        row.style.backgroundColor = zone.kleur || '#FFFFFF';
+        row.className = 'border-b border-gray-200 hover:bg-opacity-80';
         
-        bodyHTML += `
-            <tr class="${kleuren.bg} hover:shadow-md hover:scale-[1.01] transition-all duration-200 border-b ${kleuren.border}">
-                <td class="px-4 py-3 text-sm font-extrabold ${kleuren.text} border-r border-gray-200">
-                    ${kleuren.icon} ${zone.zone}
-                </td>
-                <td class="px-4 py-3 text-sm font-bold ${kleuren.text} border-r border-gray-200">${zone.naam}</td>
-                <td class="px-4 py-3 text-xs text-gray-700 border-r border-gray-200">${zone.doel}</td>
+        let borgText = '';
+        if (zone.borgMin === null) {
+            borgText = `> ${zone.borgMax}`;
+        } else if (zone.borgMax === null) {
+            borgText = `${zone.borgMin} <`;
+        } else {
+            borgText = `${zone.borgMin} - ${zone.borgMax}`;
+        }
+        
+        // Bereken min/km voor looptesten (60 / snelheid_kmh = min_per_km)
+        let extraKolomCellen = '';
+        if (isLooptest) {
+            // Bereken min/km en converteer naar mm:ss formaat
+            const minPerKmMin = zone.maxVermogen > 0 ? (60 / zone.maxVermogen) : 999;
+            const maxPerKmMin = zone.minVermogen > 0 ? (60 / zone.minVermogen) : 999;
+            
+            // Converteer naar mm:ss formaat
+            const minMinKmFormatted = formatMinPerKm(minPerKmMin);
+            const maxMinKmFormatted = formatMinPerKm(maxPerKmMin);
+            
+            extraKolomCellen = `
+                <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${minMinKmFormatted}</td>
+                <td class="px-2 py-3 text-center text-sm border-r border-gray-200">${maxMinKmFormatted}</td>
+            `;
+        }
+        
+        // 🔧 HANDMATIGE ZONES: Maak velden bewerkbaar
+        let hartslagMinCel, hartslagMaxCel, vermogenMinCel, vermogenMaxCel;
+        
+        if (isHandmatig) {
+            // Bewerkbare inputvelden voor handmatige aanpassing
+            hartslagMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                <input type="number" value="${zone.minHartslag}" 
+                       class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                       onchange="updateHandmatigeZone(${index}, 'minHartslag', this.value)"
+                       min="50" max="220">
+            </td>`;
+            
+            hartslagMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                <input type="number" value="${zone.maxHartslag}" 
+                       class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                       onchange="updateHandmatigeZone(${index}, 'maxHartslag', this.value)"
+                       min="50" max="220">
+            </td>`;
+            
+            if (isZwemtest) {
+                // Voor zwemtesten: toon mm:ss formaat maar bewaar decimale waarden intern
+                vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                    <input type="text" value="${formatZwemTijdVoorZones(zone.minVermogen)}" 
+                           class="w-20 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                           onchange="updateHandmatigeZone(${index}, 'minVermogen', this.value)"
+                           placeholder="mm:ss">
+                </td>`;
+                
+                vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                    <input type="text" value="${formatZwemTijdVoorZones(zone.maxVermogen)}" 
+                           class="w-20 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                           onchange="updateHandmatigeZone(${index}, 'maxVermogen', this.value)"
+                           placeholder="mm:ss">
+                </td>`;
+            } else {
+                vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                    <input type="number" value="${isLooptest ? zone.minVermogen.toFixed(1) : Math.round(zone.minVermogen)}" 
+                           class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                           onchange="updateHandmatigeZone(${index}, 'minVermogen', this.value)"
+                           min="0" step="${isLooptest ? '0.1' : '1'}">
+                </td>`;
+                
+                vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
+                    <input type="number" value="${isLooptest ? zone.maxVermogen.toFixed(1) : Math.round(zone.maxVermogen)}" 
+                           class="w-16 text-center text-sm border border-gray-300 rounded px-1 py-1"
+                           onchange="updateHandmatigeZone(${index}, 'maxVermogen', this.value)"
+                           min="0" step="${isLooptest ? '0.1' : '1'}">
+                </td>`;
+            }
+        } else {
+            // Normale statische cellen voor andere methodes
+            hartslagMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.minHartslag}</td>`;
+            hartslagMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.maxHartslag}</td>`;
+            
+            if (isZwemtest) {
+                // Voor zwemtesten: toon mm:ss formaat
+                vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${formatZwemTijdVoorZones(zone.minVermogen)}</td>`;
+                vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${formatZwemTijdVoorZones(zone.maxVermogen)}</td>`;
+            } else {
+                vermogenMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.minVermogen.toFixed(1) : Math.round(zone.minVermogen)}</td>`;
+                vermogenMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${isLooptest ? zone.maxVermogen.toFixed(1) : Math.round(zone.maxVermogen)}</td>`;
+            }
+        }
+        
+        row.innerHTML = `
+            <td class="px-4 py-3 border-r border-gray-200">
+                <div class="font-bold text-sm text-gray-900">${zone.naam}</div>
+                <div class="text-xs text-gray-600 mt-1">${zone.beschrijving}</div>
+            </td>
+            ${hartslagMinCel}
+            ${hartslagMaxCel}
+            ${vermogenMinCel}
+            ${vermogenMaxCel}
+            ${extraKolomCellen}
+            <td class="px-2 py-3 text-center text-sm">${borgText}</td>
         `;
         
-        if (eenheid === 'hartslag' || eenheid === 'combinatie') {
-            const hsMin = zone.hartslag_min || '-';
-            const hsMax = zone.hartslag_max || '-';
-            bodyHTML += `<td class="px-4 py-3 text-sm text-center font-bold border-r border-gray-200" style="color: #dc2626;">💓 ${hsMin} - ${hsMax}</td>`;
-        }
-        
-        if (eenheid === 'vermogen' || eenheid === 'combinatie') {
-            const vmMin = zone.vermogen_min || '-';
-            const vmMax = zone.vermogen_max || '-';
-            bodyHTML += `<td class="px-4 py-3 text-sm text-center font-bold border-r border-gray-200" style="color: #059669;">⚡ ${vmMin} - ${vmMax}</td>`;
-        }
-        
-        if (eenheid === 'snelheid' || eenheid === 'combinatie') {
-            const snelheidIcon = currentTableType === 'veldtest_zwemmen' ? '🏊' : '🏃';
-            const snMin = zone.snelheid_min || '-';
-            const snMax = zone.snelheid_max || '-';
-            bodyHTML += `<td class="px-4 py-3 text-sm text-center font-bold border-r border-gray-200" style="color: #7c3aed;">${snelheidIcon} ${snMin} - ${snMax}</td>`;
-        }
-        
-        bodyHTML += `
-                <td class="px-4 py-3 text-xs text-center text-gray-600 font-semibold border-r border-gray-200">${zone.percentage_lt1}</td>
-                <td class="px-4 py-3 text-xs text-center text-gray-600 font-semibold">${zone.percentage_lt2}</td>
-            </tr>
-        `;
+        body.appendChild(row);
     });
     
-    zonesBody.innerHTML = bodyHTML;
+    // 💡 Update tip tekst op basis van methode
+    const tipElement = document.getElementById('zones-tip-text');
+    if (tipElement) {
+        if (isHandmatig) {
+            tipElement.innerHTML = '🔧 <strong>Handmatig:</strong> Klik in de velden om waarden aan te passen. Wijzigingen worden automatisch opgeslagen.';
+        } else {
+            tipElement.innerHTML = '💡 <strong>Tip:</strong> Deze zones zijn automatisch berekend. Bij \'Handmatig\' kun je waarden aanpassen.';
+        }
+    }
     
-    console.log('✅ Zones tabel gegenereerd met', zonesData.length, 'zones en visuele styling');
+    console.log('✅ Zones tabel succesvol gegenereerd' + (isHandmatig ? ' (BEWERKBAAR)' : '') + (isZwemtest ? ' (ZWEM mm:ss FORMAAT)' : ''));
 }
 
-// === HERBEREKEN ZONES KNOP ===
-document.addEventListener('DOMContentLoaded', function() {
-    const herberekeBtn = document.getElementById('herbereken-zones-btn');
-    if (herberekeBtn) {
-        herberekeBtn.addEventListener('click', function() {
-            console.log('🔄 Herbereken zones knop geklikt');
-            herberekeTrainingszones();
-        });
-    }
-});
+// Error functie
+function toonZonesError(bericht) {
+    const container = document.getElementById('trainingszones-container');
+    container.style.display = 'block';
+    container.innerHTML = `
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex">
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-red-800">
+                        Kan trainingszones niet berekenen
+                    </h3>
+                    <div class="mt-2 text-sm text-red-700">
+                        <p>${bericht}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
 </script>
 @endsection
 
@@ -3037,6 +4443,30 @@ class InspanningstestAutoSave {
                 this.scheduleAutoSave();
             });
         });
+        
+        // 🔥 NIEUW: Event Delegation voor dynamische tabel inputs
+        // Luister op FORM niveau voor changes in testresultaten tabel
+        this.form.addEventListener('input', (event) => {
+            const target = event.target;
+            
+            // Check of het een input in de testresultaten tabel is
+            if (target.tagName === 'INPUT' && target.name && target.name.includes('testresultaten[')) {
+                console.log(`📊 Tabel input changed: ${target.name} = ${target.value}`);
+                this.scheduleAutoSave();
+            }
+        });
+        
+        this.form.addEventListener('change', (event) => {
+            const target = event.target;
+            
+            // Check of het een input in de testresultaten tabel is
+            if (target.tagName === 'INPUT' && target.name && target.name.includes('testresultaten[')) {
+                console.log(`📊 Tabel change event: ${target.name} = ${target.value}`);
+                this.scheduleAutoSave();
+            }
+        });
+        
+        console.log('✅ Event delegation toegevoegd voor dynamische tabel inputs');
     }
     
     scheduleAutoSave() {
@@ -3108,27 +4538,23 @@ class InspanningstestAutoSave {
                 }
             });
             
-            // 🔥 BELANGRIJKE FIX: Voeg testresultaten data expliciet toe
-            const tbody = document.getElementById('testresultaten-body');
-            if (tbody) {
-                const rows = tbody.getElementsByTagName('tr');
-                console.log(`📊 Testresultaten rijen gevonden: ${rows.length}`);
-                
-                for (let i = 0; i < rows.length; i++) {
-                    const rowInputs = rows[i].getElementsByTagName('input');
-                    console.log(`  Rij ${i}: ${rowInputs.length} inputs`);
-                    
-                    for (let j = 0; j < rowInputs.length; j++) {
-                        const input = rowInputs[j];
-                        if (input.name && input.value) {
-                            formData.append(input.name, input.value);
-                            console.log(`    ✅ ${input.name}: ${input.value}`);
-                        }
-                    }
-                }
-            } else {
-                console.warn('⚠️ Testresultaten tbody niet gevonden');
+            // 📊 KRITIEK: Verzamel testresultaten uit dynamische tabel
+            const testresultatenData = this.collectTestresultaten();
+            if (testresultatenData && testresultatenData.length > 0) {
+                formData.append('testresultaten_json', JSON.stringify(testresultatenData));
+                console.log('📊 Testresultaten toegevoegd:', testresultatenData.length, 'rijen');
             }
+            
+            // 🎯 KRITIEK: Verzamel drempelwaarden (altijd meesturen, ook als leeg)
+            const drempelwaarden = {
+                aerobe_drempel_vermogen: document.getElementById('aerobe_drempel_vermogen')?.value || '',
+                aerobe_drempel_hartslag: document.getElementById('aerobe_drempel_hartslag')?.value || '',
+                anaerobe_drempel_vermogen: document.getElementById('anaerobe_drempel_vermogen')?.value || '',
+                anaerobe_drempel_hartslag: document.getElementById('anaerobe_drempel_hartslag')?.value || '',
+                analyse_methode: document.getElementById('analyse_methode')?.value || ''
+            };
+            formData.append('drempelwaarden_json', JSON.stringify(drempelwaarden));
+            console.log('🎯 Drempelwaarden toegevoegd:', drempelwaarden);
             
             // Voeg extra debug info toe
             console.log('📦 FormData contents:');
@@ -3213,6 +4639,53 @@ class InspanningstestAutoSave {
         if (!this.statusElement) return;
         this.statusElement.style.opacity = '0';
     }
+    
+    collectTestresultaten() {
+        console.log('📊 Collecting testresultaten from dynamic table...');
+        
+        const tbody = document.getElementById('testresultaten-body');
+        if (!tbody) {
+            console.log('❌ Testresultaten tbody not found');
+            return [];
+        }
+        
+        const rows = tbody.getElementsByTagName('tr');
+        const testresultaten = [];
+        
+        console.log(`📊 Found ${rows.length} testresultaten rows`);
+        
+        for (let i = 0; i < rows.length; i++) {
+            const inputs = rows[i].getElementsByTagName('input');
+            const rowData = {};
+            let hasData = false;
+            
+            for (let j = 0; j < inputs.length; j++) {
+                const input = inputs[j];
+                const name = input.name;
+                const value = input.value;
+                
+                // Parse field name: testresultaten[0][tijd] -> 'tijd'
+                const fieldMatch = name.match(/\[(\w+)\]$/);
+                if (fieldMatch) {
+                    const fieldName = fieldMatch[1];
+                    rowData[fieldName] = value;
+                    
+                    if (value.trim() !== '') {
+                        hasData = true;
+                    }
+                }
+            }
+            
+            // Voeg alleen rijen toe met data
+            if (hasData) {
+                testresultaten.push(rowData);
+                console.log(`✅ Row ${i}:`, rowData);
+            }
+        }
+        
+        console.log(`📊 Collected ${testresultaten.length} testresultaten rows with data`);
+        return testresultaten;
+    }
 }
 
 // Start auto-save
@@ -3220,4 +4693,3 @@ console.log('🎯 Starting inspanningstest auto-save initialization...');
 new InspanningstestAutoSave();
 </script>
 @endsection
-        // Bereid datasets voor    const datasets = [];        // Hartslag lijn    if (hartslagValues.length > 0) {        datasets.push({            label: 'Hartslag (bpm)',
