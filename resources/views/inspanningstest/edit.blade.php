@@ -1567,6 +1567,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // 🎯 AUTOMATISCH BONAMI ZONES TONEN bij laden pagina
     setTimeout(() => {
         console.log('🚀 Automatisch Bonami zones laden...');
+        console.log('📊 DEBUG: Bestaande zones data uit database:', document.getElementById('trainingszones_data')?.value);
+        console.log('📊 DEBUG: Testtype op moment van laden:', document.getElementById('testtype')?.value);
+        console.log('📊 DEBUG: CurrentTableType:', currentTableType);
+        console.log('📊 DEBUG: Drempelwaarden:', {
+            LT1: document.getElementById('aerobe_drempel_vermogen')?.value,
+            LT2: document.getElementById('anaerobe_drempel_vermogen')?.value
+        });
         updateTrainingszones();
     }, 500); // Kleine delay om ervoor te zorgen dat alles geladen is
     
@@ -1579,6 +1586,14 @@ document.addEventListener('DOMContentLoaded', function() {
     if (zonesMethodeSelect) {
         zonesMethodeSelect.addEventListener('change', function() {
             console.log('🎯 Zones methode gewijzigd naar:', this.value);
+            
+            // 🔥 BELANGRIJK: Wis oude zones data bij methode wijziging
+            const existingZonesDataInput = document.getElementById('trainingszones_data');
+            if (existingZonesDataInput) {
+                existingZonesDataInput.value = ''; // Leegmaken voor nieuwe berekening
+                console.log('🗑️ Oude zones data gewist - nieuwe methode gekozen');
+            }
+            
             // Volledige herberekening bij methode wijziging
             updateTrainingszones();
         });
@@ -1588,7 +1603,17 @@ document.addEventListener('DOMContentLoaded', function() {
         zonesAantalSelect.addEventListener('change', function() {
             console.log('🔢 Zones aantal gewijzigd naar:', this.value);
             console.log('🔄 HERBEREKENING: Aantal zones gewijzigd, zones worden opnieuw berekend...');
-            // BELANGRIJK: Volledig herberekenen, niet alleen toevoegen/verwijderen
+            
+            // 🔥 BELANGRIJK: Wis oude zones data zodat nieuwe zones berekend kunnen worden
+            const existingZonesDataInput = document.getElementById('trainingszones_data');
+            if (existingZonesDataInput) {
+                const oldValue = existingZonesDataInput.value;
+                existingZonesDataInput.value = ''; // Tijdelijk leegmaken
+                console.log('🗑️ Oude zones data tijdelijk gewist voor herberekening');
+                console.log('📊 Oude zones data was:', oldValue.substring(0, 100) + '...');
+            }
+            
+            // Volledig herberekenen met nieuwe aantal
             updateTrainingszones();
         });
     }
@@ -3672,6 +3697,33 @@ function updateTrainingszones() {
         return;
     }
     
+    // 🔍 CHECK: Is er al opgeslagen zones data in de database?
+    const existingZonesDataInput = document.getElementById('trainingszones_data');
+    if (existingZonesDataInput && existingZonesDataInput.value) {
+        try {
+            const savedZonesData = JSON.parse(existingZonesDataInput.value);
+            if (savedZonesData && savedZonesData.length > 0) {
+                console.log('✅ GEVONDEN: Opgeslagen zones data uit database:', savedZonesData.length, 'zones');
+                console.log('📊 Zones data:', savedZonesData);
+                
+                // Toon deze zones in plaats van herberekenen
+                genereerZonesTabel(savedZonesData, eenheidSelektor.value);
+                huidigeZonesData = savedZonesData;
+                
+                // Toon container
+                const container = document.getElementById('trainingszones-container');
+                container.style.display = 'block';
+                
+                console.log('✅ Opgeslagen zones succesvol geladen en weergegeven');
+                return; // Stop hier, gebruik de opgeslagen data
+            }
+        } catch (e) {
+            console.log('⚠️ Fout bij parsen opgeslagen zones data:', e);
+        }
+    }
+    
+    console.log('🔄 Geen opgeslagen zones gevonden, berekenen nieuwe zones...');
+    
     // 🏃 AUTOMATISCHE EENHEID AANPASSING voor looptesten
     const isLooptest = currentTableType === 'looptest' || currentTableType === 'veldtest_lopen';
     if (isLooptest && eenheidSelektor.value !== 'snelheid') {
@@ -3760,9 +3812,9 @@ function berekenBonamiZones(aantal, eenheid) {
     const zoneNamen = ['HERSTEL', 'LANGE DUUR', 'EXTENSIEF', 'INTENSIEF', 'TEMPO', 'MAXIMAAL', 'ULTIEM', 'EXTREEM'];
     const zoneKleuren = ['#E3F2FD', '#E8F5E8', '#F1F8E9', '#FFF3E0', '#FFEBEE', '#FFCDD2', '#FFE0E0', '#FFD0D0'];
     
-    // === SPECIALE BEHANDELING VOOR 6 BONAMI ZONES ===
-    if (aantal === 6 && !isZwemtest) {
-        console.log('📊 6-ZONE BONAMI BEREKENING (Officieel)');
+    // === BONAMI ZONES VOOR ALLE AANTALLEN ===
+    if (!isZwemtest) {
+        console.log(`📊 ${aantal}-ZONE BONAMI BEREKENING (Officieel)`);
         
         // Schat maximaal vermogen als HRmax niet ingevuld is
         const maxVermogen = LT2 * 1.20; // 120% van LT2 als schatting voor max
