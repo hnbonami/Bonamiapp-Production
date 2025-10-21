@@ -1203,7 +1203,7 @@ const fs = require('fs');
     public function upload(Request $request, Klant $klant, Bikefit $bikefit)
     {
         $request->validate([
-            'file' => 'required|file|mimes:pdf,png,jpg,jpeg|max:10240', // 10MB max
+            'file' => 'required|file|mimes:pdf,png,jpg,jpeg|max:51200', // 50MB max
         ]);
 
         if ($request->hasFile('file')) {
@@ -1245,7 +1245,7 @@ const fs = require('fs');
     public function importBikefits(Request $request)
     {
         $request->validate([
-            'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
+            'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:51200', // 50MB max
         ]);
 
         try {
@@ -1823,7 +1823,7 @@ const fs = require('fs');
             $fieldName = $request->hasFile('file') ? 'file' : 'excel_file';
             
             $request->validate([
-                $fieldName => 'required|file|mimes:xlsx,xls,csv|max:10240'
+                $fieldName => 'required|file|mimes:xlsx,xls,csv|max:51200'
             ]);
             
             $file = $request->file($fieldName);

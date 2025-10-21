@@ -17,7 +17,7 @@ class KlantDocumentController extends Controller
     {
         try {
             $validated = $request->validate([
-                'document' => 'required|file|max:10240', // Max 10MB
+                'document' => 'required|file|max:51200', // Max 50MB
                 'naam' => 'nullable|string|max:255',
                 'beschrijving' => 'nullable|string',
             ]);

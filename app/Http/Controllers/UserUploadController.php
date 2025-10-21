@@ -16,7 +16,7 @@ class UserUploadController extends Controller
     {
         try {
             $request->validate([
-                'file' => 'required|file|max:102400', // max 100MB; adjust php.ini if needed
+                'file' => 'required|file|max:102400', // max 100MB (blijft hoger voor user uploads)
                 'compress' => 'sometimes|boolean',
                 // Optional bikefit attachment
                 'bikefit_id' => 'nullable|exists:bikefits,id',
