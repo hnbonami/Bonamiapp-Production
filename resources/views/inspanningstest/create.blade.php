@@ -4520,10 +4520,22 @@ function genereerZonesTabel(zonesData, eenheid) {
             `;
         }
         
-        // 🔧 HANDMATIGE ZONES: Maak velden bewerkbaar
-        let hartslagMinCel, hartslagMaxCel, vermogenMinCel, vermogenMaxCel;
+        // 🔧 // 🔧 HANDMATIGE ZONES: Maak velden bewerkbaar
+        let zoneNaamCel, hartslagMinCel, hartslagMaxCel, vermogenMinCel, vermogenMaxCel;
         
         if (isHandmatig) {
+            // Bewerkbare zonenaam en beschrijving
+            zoneNaamCel = `<td class="px-4 py-3 border-r border-gray-200">
+                <input type="text" value="${zone.naam}" 
+                       class="w-full font-bold text-sm border border-gray-300 rounded px-2 py-1 mb-1"
+                       onchange="updateHandmatigeZone(${index}, 'naam', this.value)"
+                       placeholder="Zone naam">
+                <input type="text" value="${zone.beschrijving}" 
+                       class="w-full text-xs text-gray-600 border border-gray-300 rounded px-2 py-1"
+                       onchange="updateHandmatigeZone(${index}, 'beschrijving', this.value)"
+                       placeholder="Beschrijving">
+            </td>`;
+            
             // Bewerkbare inputvelden voor handmatige aanpassing
             hartslagMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">
                 <input type="number" value="${zone.minHartslag}" 
@@ -4571,6 +4583,11 @@ function genereerZonesTabel(zonesData, eenheid) {
             }
         } else {
             // Normale statische cellen voor andere methodes
+            zoneNaamCel = `<td class="px-4 py-3 border-r border-gray-200">
+                <div class="font-bold text-sm text-gray-900">${zone.naam}</div>
+                <div class="text-xs text-gray-600 mt-1">${zone.beschrijving}</div>
+            </td>`;
+            
             hartslagMinCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.minHartslag}</td>`;
             hartslagMaxCel = `<td class="px-2 py-3 text-center text-sm border-r border-gray-200">${zone.maxHartslag}</td>`;
             
@@ -4585,10 +4602,7 @@ function genereerZonesTabel(zonesData, eenheid) {
         }
         
         row.innerHTML = `
-            <td class="px-4 py-3 border-r border-gray-200">
-                <div class="font-bold text-sm text-gray-900">${zone.naam}</div>
-                <div class="text-xs text-gray-600 mt-1">${zone.beschrijving}</div>
-            </td>
+            ${zoneNaamCel}
             ${hartslagMinCel}
             ${hartslagMaxCel}
             ${vermogenMinCel}
