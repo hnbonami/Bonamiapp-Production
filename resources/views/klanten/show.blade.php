@@ -18,9 +18,9 @@
     <h2 class="text-2xl font-semibold mb-4 text-left">Profiel van {{ $klant->voornaam }} {{ $klant->naam }}</h2>
 
     <!-- Compacte Header met avatar en kerngegevens -->
-    <div class="flex items-start gap-6 mb-6">
-        <!-- Avatar met overlay -->
-        <div class="relative" style="width:120px;height:120px;">
+    <div class="flex flex-col md:flex-row items-start gap-6 mb-6">
+        <!-- Avatar met overlay - links uitgelijnd op alle devices -->
+        <div class="relative flex-shrink-0" style="width:120px;height:120px;">
             <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form" style="margin: 0;">
                 @csrf
                 <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
@@ -61,33 +61,32 @@
             </form>
         </div>
 
-        <!-- Klantgegevens in 2 rijen van 3 -->
-        <div class="flex-1 grid grid-cols-3 gap-x-6 gap-y-4">
-            <div>
-                <p class="text-sm font-medium text-gray-500">Klantnummer</p>
-                <p class="mt-1 text-base text-gray-900 font-semibold">{{ $klant->id }}</p>
+        <!-- Gegevens container - responsive: onder elkaar op mobile, naast elkaar op desktop -->
+        <div class="flex-1 w-full flex flex-col md:flex-row md:items-start gap-6">
+            <!-- Kolom 1: Geslacht + E-mailadres -->
+            <div class="flex-1 space-y-3">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Geslacht</p>
+                    <p class="mt-1 text-base text-gray-900">{{ $klant->geslacht ?? 'Niet opgegeven' }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">E-mailadres</p>
+                    <p class="mt-1 text-base text-gray-900 break-all">{{ $klant->email }}</p>
+                </div>
             </div>
-            <div>
-                <p class="text-sm font-medium text-gray-500">Status</p>
-                <p class="mt-1">
-                    <span class="px-2.5 py-1 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
-                </p>
-            </div>
-            <div>
-                <p class="text-sm font-medium text-gray-500">Geslacht</p>
-                <p class="mt-1 text-base text-gray-900">{{ $klant->geslacht ?? 'Niet opgegeven' }}</p>
-            </div>
-            <div>
-                <p class="text-sm font-medium text-gray-500">E-mailadres</p>
-                <p class="mt-1 text-base text-gray-900">{{ $klant->email }}</p>
-            </div>
-            <div>
-                <p class="text-sm font-medium text-gray-500">Geboortedatum</p>
-                <p class="mt-1 text-base text-gray-900">{{ $klant->geboortedatum ? \Carbon\Carbon::parse($klant->geboortedatum)->format('d-m-Y') : 'Niet opgegeven' }}</p>
-            </div>
-            <div>
-                <p class="text-sm font-medium text-gray-500">Hoe gevonden</p>
-                <p class="mt-1 text-base text-gray-900">{{ $klant->herkomst ?? 'Niet opgegeven' }}</p>
+
+            <!-- Kolom 2: Geboortedatum + Status -->
+            <div class="flex-1 space-y-3">
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Geboortedatum</p>
+                    <p class="mt-1 text-base text-gray-900">{{ $klant->geboortedatum ? \Carbon\Carbon::parse($klant->geboortedatum)->format('d-m-Y') : 'Niet opgegeven' }}</p>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-gray-500">Status</p>
+                    <p class="mt-1">
+                        <span class="px-2.5 py-1 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
