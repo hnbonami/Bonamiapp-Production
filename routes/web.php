@@ -71,6 +71,7 @@ use App\Http\Controllers\BikefitController;
 use App\Http\Controllers\InspanningstestController;
 use App\Http\Controllers\KlantController;
 use App\Http\Controllers\MedewerkerController;
+use App\Http\Controllers\OrganisatieController;
 use App\Exports\MedewerkersExport;
 use App\Exports\KlantenExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -153,6 +154,13 @@ Route::middleware('auth')->group(function () {
     Route::delete('medewerkers/{medewerker}', [MedewerkerController::class, 'destroy'])->name('medewerkers.destroy');
     // Alleen profielfoto wijzigen (medewerker)
     Route::post('medewerkers/{medewerker}/avatar', [MedewerkerController::class, 'updateAvatar'])->name('medewerkers.avatar');
+
+    // SuperAdmin routes - alleen toegankelijk voor superadmins
+    Route::middleware(['superadmin'])->group(function () {
+        Route::resource('organisaties', OrganisatieController::class)->parameters([
+            'organisaties' => 'organisatie'
+        ]);
+    });
 
     // Bikefit routes
     Route::group(['prefix' => 'klanten/{klant}'], function () {
@@ -584,7 +592,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 Route::middleware('auth')->group(function () {
     // Import routes moeten VOOR resource routes staan
     Route::get('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
-    Route::post('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+    Route::post('/klanten/import', [\AppHttp\Controllers\KlantenController::class, 'import'])->name('klanten.import');
     Route::get('/klanten/template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
     
     // Resource routes

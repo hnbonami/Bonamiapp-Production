@@ -4,14 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Traits\BelongsToOrganisatie;
 
 class Klant extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes, BelongsToOrganisatie;
 
     protected $table = 'klanten';
 
     protected $fillable = [
+        'organisatie_id',
         'voornaam',
         'naam', 
         'email',

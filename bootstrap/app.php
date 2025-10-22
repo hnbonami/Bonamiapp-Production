@@ -11,8 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->web(append: [
-            \App\Http\Middleware\LogLoginMiddleware::class,
+        $middleware->alias([
+            'superadmin' => \App\Http\Middleware\CheckSuperAdmin::class,
+            'organisatie_admin' => \App\Http\Middleware\CheckOrganisatieAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

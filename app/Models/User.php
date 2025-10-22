@@ -6,6 +6,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Organisatie;
 
 class User extends Authenticatable
 {
@@ -45,6 +47,7 @@ class User extends Authenticatable
         // Notities
         'notities',
         'email_verified_at',
+        'organisatie_id',
     ];
 
     /**
@@ -108,6 +111,14 @@ class User extends Authenticatable
     public function medewerker()
     {
         return $this->hasOne(Medewerker::class);
+    }
+
+    /**
+     * Relatie: user behoort tot een organisatie
+     */
+    public function organisatie(): BelongsTo
+    {
+        return $this->belongsTo(Organisatie::class, 'organisatie_id');
     }
 
     /**
@@ -257,6 +268,30 @@ class User extends Authenticatable
     public function isMedewerker()
     {
         return $this->role === 'medewerker';
+    }
+
+    /**
+     * Check of user een superadmin is
+     */
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'superadmin';
+    }
+
+    /**
+     * Check of user een organisatie admin is (backwards compatible met 'admin')
+     */
+    public function isOrganisatieAdmin(): bool
+    {
+        return in_array($this->role, ['organisatie_admin', 'admin']);
+    }
+
+    /**
+     * Check of user beheerder rechten heeft (superadmin, org admin, of oude admin)
+     */
+    public function isBeheerder(): bool
+    {
+        return in_array($this->role, ['superadmin', 'organisatie_admin', 'admin']);
     }
 
     /**

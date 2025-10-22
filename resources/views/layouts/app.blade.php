@@ -346,7 +346,7 @@
                     Mijn Profiel
                 </a>
                 @endif
-            @endif            @if(Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']))
+            @endif            @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
                 <a href="/staff-notes" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('staff-notes*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Notities
                     @php $unreadNotes = \App\Models\StaffNote::where('is_new', true)->count(); @endphp
@@ -356,21 +356,21 @@
                 </a>
             @endif
             
-            @if(Auth::user() && Auth::user()->role !== 'klant')
+            @if(Auth::user() && !Auth::user()->isKlant())
                 <a href="/klanten" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ str_starts_with($routeName, 'klanten') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Klanten 
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Klant::count() }}</span>
                 </a>
             @endif
             
-            @if(Auth::user() && Auth::user()->role === 'admin')
+            @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/medewerkers" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ str_starts_with($routeName, 'medewerkers') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Medewerkers 
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Medewerker::count() }}</span>
                 </a>
             @endif
             
-            @if(Auth::user() && Auth::user()->role === 'admin')
+            @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/instagram" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('instagram*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Instagram
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\InstagramPost::count() }}</span>
@@ -387,7 +387,7 @@
                 </a>
             @endif
             
-            @if(Auth::user() && Auth::user()->role === 'admin')
+            @if(Auth::user() && Auth::user()->isBeheerder())
                 <div class="border-t border-gray-200 mt-2 pt-2">
                     <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Beheer</div>
                     <a href="/users" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('users*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
@@ -438,10 +438,10 @@
                 </a>
                 @endif
                 @endif
-                @if(Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']))
+                @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
                     @include('components.sidebar-notes-tab')
                 @endif
-                @if(Auth::user() && Auth::user()->role !== 'klant')
+                @if(Auth::user() && !Auth::user()->isKlant())
                 <a href="/klanten" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('klanten*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('klanten*') ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('klanten*'))
                         <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
@@ -451,7 +451,7 @@
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Klant::count() }}</span>
                 </a>
                 @endif
-                @if(Auth::user() && Auth::user()->role === 'admin')
+                @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/medewerkers" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('medewerkers*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('medewerkers*') ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('medewerkers*'))
                         <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
@@ -461,10 +461,7 @@
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Medewerker::count() }}</span>
                 </a>
                 @endif
-            <!-- Beheer-tabblad helemaal onderaan -->
-            @if(Auth::user() && Auth::user()->role === 'admin')
-            @endif
-                @if(Auth::user() && Auth::user()->role === 'admin')
+                @if(Auth::user() && Auth::user()->isBeheerder())
                 <!-- Instagram -->
                 <a href="/instagram" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('instagram*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('instagram*') ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('instagram*'))
@@ -494,9 +491,23 @@
                 </a>
                 @endif
             <!-- Beheer-tabblad echt helemaal onderaan -->
-            @if(Auth::user() && Auth::user()->role === 'admin')
+            @if(Auth::user() && Auth::user()->isBeheerder())
                 <div class="mt-8">
                     @include('components.sidebar-admin-tab')
+                </div>
+            @endif
+            
+            <!-- SuperAdmin Organisaties link -->
+            @if(Auth::user() && Auth::user()->isSuperAdmin())
+                <div class="mt-4 pt-4 border-t border-gray-200">
+                    <a href="/organisaties" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('organisaties*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('organisaties*') ? 'background:#f6fbfe' : '' }}">
+                        @if(request()->is('organisaties*'))
+                            <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
+                        @endif
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9bb3bd" stroke-width="1.5"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                        <span class="font-medium text-[17px]">Organisaties</span>
+                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">{{ \App\Models\Organisatie::count() }}</span>
+                    </a>
                 </div>
             @endif
             </nav>
