@@ -127,19 +127,17 @@
         }
         
         /* Avatar specifieke sizing */
-            /* Avatar specifieke sizing - GEEN CHANGE OP INSTELLINGEN PAGINA */
+            /* Avatar specifieke sizing - TOPBAR ALTIJD KLEIN */
             #topbar-avatar, #topbar-avatar-placeholder {
                 width: 36px !important;
                 height: 36px !important;
-                border-radius: 50%;
+                min-width: 36px !important;
+                min-height: 36px !important;
+                max-width: 36px !important;
+                max-height: 36px !important;
+                border-radius: 50% !important;
                 margin-right: 8px;
                 flex-shrink: 0;
-            }
-            
-            /* Avatar op instellingen pagina blijft normaal */
-            .profile-settings-page .user-avatar {
-                width: auto;
-                height: auto;
             }        /* Remove the problematic profile click icon on mobile */
         #profile-click-icon {
             display: none;
