@@ -111,32 +111,49 @@ class KlantController extends Controller
 
     public function store(Request $request)
     {
-        // Validatie en opslaan
+        // Check of email uniek is binnen de organisatie voor klanten
+        $existingKlantInOrg = User::where('email', $request->email)
+            ->where('organisatie_id', auth()->user()->organisatie_id)
+            ->where('role', 'klant')
+            ->first();
+        
+        if ($existingKlantInOrg) {
+            return back()->withErrors([
+                'email' => 'Dit emailadres wordt al gebruikt door een klant binnen je organisatie.'
+            ])->withInput();
+        }
+
         $validated = $request->validate([
-            'voornaam' => 'required',
-            'naam' => 'required',
-            'email' => [
-                'nullable',
-                'email',
-                'unique:users,email',
-            ],
+            'voornaam' => 'required|string|max:255',
+            'naam' => 'required|string|max:255',
+            'email' => 'required|email', // Geen |unique:users,email meer!
+            'telefoon' => 'nullable|string|max:20',
             'geboortedatum' => 'nullable|date',
-            'geslacht' => 'nullable|string',
-            'sport' => 'nullable|string',
-            'niveau' => 'nullable|string',
-            'club' => 'nullable|string',
-            'herkomst' => 'nullable|string',
-            'status' => 'required',
-            'avatar' => 'nullable|image|max:5120',
-        ], [
-            'email.unique' => 'Dit e-mailadres is al in gebruik. Kies een ander e-mailadres.'
+            'geslacht' => 'nullable|in:Man,Vrouw,Anders',
+            'straat' => 'nullable|string|max:255',
+            'huisnummer' => 'nullable|string|max:10',
+            'postcode' => 'nullable|string|max:10',
+            'stad' => 'nullable|string|max:100',
+            'land' => 'nullable|string|max:100',
+            'status' => 'nullable|in:Actief,Inactief',
+            'notities' => 'nullable|string',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        // Voeg organisatie_id en klant-specifieke velden toe
+        $validated['organisatie_id'] = auth()->user()->organisatie_id;
+        $validated['name'] = $validated['voornaam'] . ' ' . $validated['naam'];
+        $validated['role'] = 'klant';
+        $validated['password'] = \Hash::make(\Illuminate\Support\Str::random(12)); // Genereer random wachtwoord
+        $validated['status'] = $validated['status'] ?? 'Actief';
+
         if ($request->hasFile('avatar')) {
             $path = $request->file('avatar')->store('avatars/klanten', 'public');
             $validated['avatar_path'] = $path;
         }
 
-        $klant = Klant::create($validated);
+        // Maak klant aan
+        $klant = User::create($validated);
 
         // User aanmaken
         if (!empty($validated['email'])) {

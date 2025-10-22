@@ -366,7 +366,9 @@
             @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/medewerkers" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ str_starts_with($routeName, 'medewerkers') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Medewerkers 
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Medewerker::count() }}</span>
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\User::where('role', '!=', 'klant')->when(!auth()->user()->isSuperAdmin(), function($q) {
+                                $q->where('organisatie_id', auth()->user()->organisatie_id);
+                            })->count() }}</span>
                 </a>
             @endif
             
@@ -458,7 +460,9 @@
                     @endif
                     <svg width="22" height="22" fill="none" viewBox="0 0 20 20"><rect x="4" y="8" width="12" height="7" rx="2" stroke="#9bb3bd" stroke-width="1.5"/><path d="M8 8V6.5A2.5 2.5 0 0 1 10.5 4h-1A2.5 2.5 0 0 1 12 6.5V8" stroke="#9bb3bd" stroke-width="1.5"/></svg>
                     <span class="font-medium text-[17px]">Medewerkers</span>
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Medewerker::count() }}</span>
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\User::where('role', '!=', 'klant')->when(!auth()->user()->isSuperAdmin(), function($q) {
+                                $q->where('organisatie_id', auth()->user()->organisatie_id);
+                            })->count() }}</span>
                 </a>
                 @endif
                 @if(Auth::user() && Auth::user()->isBeheerder())

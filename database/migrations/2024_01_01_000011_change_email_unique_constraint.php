@@ -1,0 +1,27 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            // Verwijder de unique constraint op email
+            $table->dropUnique('users_email_unique');
+            
+            // Voeg een composite unique constraint toe voor email + organisatie_id
+            $table->unique(['email', 'organisatie_id'], 'users_email_organisatie_unique');
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropUnique('users_email_organisatie_unique');
+            $table->unique('email', 'users_email_unique');
+        });
+    }
+};

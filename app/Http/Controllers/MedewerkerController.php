@@ -63,153 +63,53 @@ class MedewerkerController extends Controller
     public function store(Request $request)
     {
         \Log::info('🚨 MedewerkerController@store CALLED', [
-            'request_method' => $request->method(),
-            'all_input' => $request->all(),
-            'url' => $request->url(),
-            'route_name' => $request->route() ? $request->route()->getName() : 'NO_ROUTE'
+            'all_input' => $request->all()
         ]);
 
+        // Check of email uniek is binnen de organisatie
+        $existingUserInOrg = User::where('email', $request->email)
+            ->where('organisatie_id', auth()->user()->organisatie_id)
+            ->where('role', '!=', 'klant')
+            ->first();
+        
+        if ($existingUserInOrg) {
+            return back()->withErrors(['email' => 'Dit emailadres wordt al gebruikt binnen je organisatie.'])->withInput();
+        }
+
+        // BELANGRIJK: form stuurt achternaam, niet naam!
         $validated = $request->validate([
             'voornaam' => 'required|string|max:255',
             'achternaam' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'required|email',
             'telefoonnummer' => 'nullable|string|max:20',
             'geboortedatum' => 'nullable|date',
             'geslacht' => 'nullable|in:Man,Vrouw,Anders',
-            'straatnaam' => 'nullable|string|max:255',
-            'huisnummer' => 'nullable|string|max:20',
-            'postcode' => 'nullable|string|max:10',
-            'stad' => 'nullable|string|max:255',
-            'functie' => 'nullable|string|max:255',
-            'rol' => 'nullable|in:admin,manager,medewerker,stagiair',
-            'startdatum' => 'nullable|date',
-            'contract_type' => 'nullable|in:Vast,Tijdelijk,Freelance,Stage',
-            'status' => 'required|in:Actief,Inactief,Verlof,Ziek',
-            'bikefit' => 'nullable|boolean',
-            'inspanningstest' => 'nullable|boolean',
-            'upload_documenten' => 'nullable|boolean',
-            'notities' => 'nullable|string',
-            'avatar' => 'nullable|image|max:2048'
+            'rol' => 'nullable|string',
+            'status' => 'nullable|string',
         ]);
 
-        // Voeg organisatie_id automatisch toe
-        $validated['organisatie_id'] = auth()->user()->organisatie_id;
-
         try {
-            \Log::info('🔄 Creating new employee (medewerker)', [
-                'email' => $validated['email'],
-                'role' => $validated['rol'] ?? 'medewerker',
-                'name' => $validated['voornaam'] . ' ' . $validated['achternaam']
-            ]);
-
-            // Generate a temporary password
-            $temporaryPassword = Str::random(12);
-            
-            // Handle avatar upload
-            $avatarPath = null;
-            if ($request->hasFile('avatar')) {
-                $avatarPath = $request->file('avatar')->store('avatars', 'public');
-                \Log::info('✅ Avatar uploaded', ['path' => $avatarPath]);
-            }
-            
-            // Create user record met ALLE velden
-            $user = User::create([
+            $medewerker = User::create([
                 'name' => $validated['voornaam'] . ' ' . $validated['achternaam'],
                 'voornaam' => $validated['voornaam'],
                 'achternaam' => $validated['achternaam'],
                 'email' => $validated['email'],
-                'password' => Hash::make($temporaryPassword),
-                'role' => $validated['rol'] ?? 'medewerker',
                 'telefoonnummer' => $validated['telefoonnummer'] ?? null,
                 'geboortedatum' => $validated['geboortedatum'] ?? null,
                 'geslacht' => $validated['geslacht'] ?? null,
-                'straatnaam' => $validated['straatnaam'] ?? null,
-                'huisnummer' => $validated['huisnummer'] ?? null,
-                'postcode' => $validated['postcode'] ?? null,
-                'stad' => $validated['stad'] ?? null,
-                'functie' => $validated['functie'] ?? null,
-                'startdatum' => $validated['startdatum'] ?? null,
-                'contract_type' => $validated['contract_type'] ?? null,
+                'role' => $validated['rol'] ?? 'medewerker',
                 'status' => $validated['status'] ?? 'Actief',
-                'bikefit' => $request->has('bikefit') ? 1 : 0,
-                'inspanningstest' => $request->has('inspanningstest') ? 1 : 0,
-                'upload_documenten' => $request->has('upload_documenten') ? 1 : 0,
-                'notities' => $validated['notities'] ?? null,
-                'avatar_path' => $avatarPath,
-                'email_verified_at' => now(), // Auto-verify employee emails
+                'organisatie_id' => auth()->user()->organisatie_id,
+                'password' => \Hash::make(\Str::random(12)),
+                'email_verified_at' => now(),
             ]);
 
-            \Log::info('✅ User record created successfully with ALL fields', [
-                'user_id' => $user->id,
-                'email' => $user->email,
-                'role' => $user->role,
-                'voornaam' => $user->voornaam,
-                'achternaam' => $user->achternaam,
-                'telefoonnummer' => $user->telefoonnummer,
-                'geboortedatum' => $user->geboortedatum,
-                'functie' => $user->functie,
-                'bikefit' => $user->bikefit,
-                'inspanningstest' => $user->inspanningstest,
-                'upload_documenten' => $user->upload_documenten,
-                'created_at' => $user->created_at,
-            ]);
-
-            // IMMEDIATE CHECK: Verify user exists in database right after creation
-            $immediateCheck = User::find($user->id);
-            \Log::info('🔍 IMMEDIATE DATABASE CHECK after User::create()', [
-                'user_found' => $immediateCheck ? 'YES' : 'NO',
-                'user_id' => $user->id,
-                'email' => $validated['email']
-            ]);
-
-            // Create invitation token for password setup
-            $token = Str::random(60);
-            
-            InvitationToken::create([
-                'email' => $validated['email'],
-                'token' => $token,
-                'temporary_password' => $temporaryPassword,
-                'type' => 'medewerker',
-                'expires_at' => now()->addDays(7),
-                'created_by' => auth()->id()
-            ]);
-
-            \Log::info('✅ Invitation token created', [
-                'email' => $validated['email'],
-                'token_length' => strlen($token),
-                'expires_at' => now()->addDays(7)->format('Y-m-d H:i:s')
-            ]);
-
-            // Send welcome email using EmailIntegrationService
-            try {
-                $emailService = app(EmailIntegrationService::class);
-                $emailSent = $emailService->sendEmployeeWelcomeEmail($user);
+            \Log::info('✅ Medewerker aangemaakt', ['medewerker_id' => $medewerker->id]);
+            return redirect()->route('medewerkers.index')->with('success', 'Medewerker succesvol toegevoegd!');
                 
-                if ($emailSent) {
-                    \Log::info('✅ Welcome email sent to new employee', ['email' => $user->email]);
-                } else {
-                    \Log::warning('⚠️ Welcome email failed to send', ['email' => $user->email]);
-                }
-            } catch (\Exception $emailError) {
-                \Log::error('❌ Welcome email system error: ' . $emailError->getMessage(), [
-                    'email' => $user->email,
-                    'trace' => $emailError->getTraceAsString()
-                ]);
-            }
-
-            return redirect()->route('medewerkers.index')
-                           ->with('success', 'Medewerker succesvol aangemaakt en uitnodiging verstuurd naar ' . $validated['email']);
-
         } catch (\Exception $e) {
-            \Log::error('❌ Failed to create employee: ' . $e->getMessage(), [
-                'email' => $validated['email'] ?? 'unknown',
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return redirect()->back()
-                           ->withInput()
-                           ->with('error', 'Er is een fout opgetreden bij het aanmaken van de medewerker: ' . $e->getMessage());
+            \Log::error('❌ Fout bij aanmaken medewerker', ['error' => $e->getMessage()]);
+            return back()->withInput()->with('error', 'Fout: ' . $e->getMessage());
         }
     }
 
