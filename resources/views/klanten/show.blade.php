@@ -149,13 +149,13 @@
 
     <!-- Snelle Acties sectie -->
     @php $user = auth()->user(); @endphp
-    @if($user && ($user->role === 'admin' || $user->role === 'medewerker'))
+    @if($user && ($user->isBeheerder() || $user->isMedewerker()))
     <div style="margin-top:1.5em;">
         <h3 style="font-size:1.2em;margin-bottom:0.75em;">Snelle Acties</h3>
         
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             
-            @if($user->role === 'admin' || ($user->role === 'medewerker' && $user->bikefit))
+            @if($user->isBeheerder() || ($user->isMedewerker() && $user->bikefit))
             <!-- Bikefit Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
@@ -173,7 +173,7 @@
             </div>
             @endif
             
-            @if($user->role === 'admin' || ($user->role === 'medewerker' && $user->inspanningstest))
+            @if($user->isBeheerder() || ($user->isMedewerker() && $user->inspanningstest))
             <!-- Inspanningstest Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
@@ -191,7 +191,7 @@
             </div>
             @endif
             
-            @if($user->role === 'admin' || ($user->role === 'medewerker' && $user->upload_documenten))
+            @if($user->isBeheerder() || ($user->isMedewerker() && $user->upload_documenten))
             <!-- Document Upload Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
@@ -211,7 +211,7 @@
             </div>
             @endif
             
-            @if($user->role === 'admin' || $user->role === 'medewerker')
+            @if($user->isBeheerder() || $user->isMedewerker())
             <!-- Uitnodiging Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
