@@ -181,15 +181,28 @@ class KlantController extends Controller
             'avatar' => 'required|image|max:5120',
         ]);
 
-        // Verwijder oude avatar indien aanwezig
+        // Upload nieuwe avatar
+        $path = $request->file('avatar')->store('avatars/klanten', 'public');
+        
+        // Verwijder oude avatar indien aanwezig (van klant EN user)
         if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
             \Storage::disk('public')->delete($klant->avatar_path);
         }
-
-        $path = $request->file('avatar')->store('avatars/klanten', 'public');
+        if ($klant->user && $klant->user->avatar_path && \Storage::disk('public')->exists($klant->user->avatar_path)) {
+            \Storage::disk('public')->delete($klant->user->avatar_path);
+        }
+        
+        // Update BEIDE: klant én gekoppelde user
         $klant->update(['avatar_path' => $path]);
-
-        $klant->save();
+        
+        if ($klant->user) {
+            $klant->user->update(['avatar_path' => $path]);
+            \Log::info('🖼️ Avatar bijgewerkt voor klant EN user', [
+                'klant_id' => $klant->id,
+                'user_id' => $klant->user->id,
+                'avatar_path' => $path
+            ]);
+        }
     
         // Redirect met success message
         return redirect()->back()->with('success', 'Profielfoto succesvol bijgewerkt');

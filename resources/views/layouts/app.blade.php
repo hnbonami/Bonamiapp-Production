@@ -304,14 +304,8 @@
 
                         <!-- Dropdown menu -->
                         <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                            @if(Auth::user()->role === 'klant')
-                                @php
-                                    $menuKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
-                                @endphp
-                                <a href="{{ $menuKlant ? route('klanten.show', $menuKlant->id) : route('dashboard') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Mijn profiel</a>
-                            @else
-                                <a href="/instellingen" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Mijn profiel</a>
-                            @endif
+                            {{-- Alle gebruikers (klanten, medewerkers, admin) gaan naar /instellingen --}}
+                            <a href="/instellingen" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Mijn profiel</a>
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="block w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50">Uitloggen</button>
@@ -329,12 +323,15 @@
             </a>
             
             @if(Auth::user() && Auth::user()->role === 'klant')
+                {{-- Klanten gaan naar hun klant show pagina (profiel overzicht) --}}
                 @php
-                    $mobileKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
+                    $mobileIngelogdeKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
                 @endphp
-                <a href="{{ $mobileKlant ? route('klanten.show', $mobileKlant->id) : route('dashboard') }}" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('klanten/*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
-                    Profiel
+                @if($mobileIngelogdeKlant)
+                <a href="{{ route('klanten.show', $mobileIngelogdeKlant->id) }}" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('klanten/' . $mobileIngelogdeKlant->id) ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                    Mijn Profiel
                 </a>
+                @endif
             @endif            @if(Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']))
                 <a href="/staff-notes" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('staff-notes*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Notities
@@ -413,16 +410,19 @@
                     <span class="font-medium text-[17px]">Dashboard</span>
                 </a>
                                 @if(Auth::user() && Auth::user()->role === 'klant')
+                {{-- Klanten gaan naar hun klant show pagina (profiel overzicht) --}}
                 @php
-                    $sidebarKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
+                    $ingelogdeKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
                 @endphp
-                <a href="{{ $sidebarKlant ? route('klanten.show', $sidebarKlant->id) : route('dashboard') }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('klanten/*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('klanten/*') ? 'background:#f6fbfe' : '' }}">
-                    @if(request()->is('klanten/*'))
+                @if($ingelogdeKlant)
+                <a href="{{ route('klanten.show', $ingelogdeKlant->id) }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('klanten/' . $ingelogdeKlant->id) ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('klanten/' . $ingelogdeKlant->id) ? 'background:#f6fbfe' : '' }}">
+                    @if(request()->is('klanten/' . $ingelogdeKlant->id))
                         <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
                     @endif
                     <svg width="22" height="22" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#9bb3bd" stroke-width="1.5"/><path d="M3 17c0-2.5 3-4 7-4s7 1.5 7 4" stroke="#9bb3bd" stroke-width="1.5"/></svg>
-                    <span class="font-medium text-[17px]">Profiel</span>
+                    <span class="font-medium text-[17px]">Mijn Profiel</span>
                 </a>
+                @endif
                 @endif
                 @if(Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']))
                     @include('components.sidebar-notes-tab')

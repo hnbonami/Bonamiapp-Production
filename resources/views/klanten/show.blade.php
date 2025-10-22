@@ -24,10 +24,26 @@
             <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form" style="margin: 0;">
                 @csrf
                 <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
-                    @if($klant->avatar_path)
-                        <img src="{{ Storage::disk('public')->url($klant->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
-                    @elseif($klant->user && $klant->user->avatar_path)
-                        <img src="{{ Storage::disk('public')->url($klant->user->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                    @php
+                        // EXACT dezelfde logica als topbar in app.blade.php
+                        // Voor ingelogde klant: gebruik auth()->user()->avatar_path
+                        // Voor andere klanten: gebruik klant->user->avatar_path of klant->avatar_path
+                        $avatarPath = null;
+                        
+                        if (Auth::check() && Auth::user()->email === $klant->email) {
+                            // Ingelogde klant bekijkt eigen profiel
+                            $avatarPath = Auth::user()->avatar_path;
+                        } elseif ($klant->user && $klant->user->avatar_path) {
+                            // Andere klant met gekoppelde user
+                            $avatarPath = $klant->user->avatar_path;
+                        } elseif ($klant->avatar_path) {
+                            // Fallback naar klant avatar
+                            $avatarPath = $klant->avatar_path;
+                        }
+                    @endphp
+                    
+                    @if($avatarPath)
+                        <img src="{{ asset('storage/' . $avatarPath) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
                     @else
                         <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:120px;height:120px;font-size:48px;">
                             {{ strtoupper(substr($klant->voornaam,0,1)) }}

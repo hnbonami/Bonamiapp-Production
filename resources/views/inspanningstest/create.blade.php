@@ -509,6 +509,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                    value="{{ old('aerobe_drempel_vermogen') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                    placeholder="Automatisch berekend">
+                            <!-- Hidden input voor zwemtijd in mm:ss formaat -->
+                            <input type="hidden" 
+                                   id="aerobe_drempel_vermogen_display" 
+                                   value="">
+                            <!-- Display veld voor zwemmen -->
+                            <div id="aerobe_drempel_vermogen_swim_display" 
+                                 style="display: none;" 
+                                 class="mt-2 text-sm text-gray-600">
+                                Weergave: <span id="aerobe_drempel_vermogen_swim_text"></span>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -531,6 +541,16 @@ document.addEventListener('DOMContentLoaded', function() {
                                    value="{{ old('anaerobe_drempel_vermogen') }}"
                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                    placeholder="Automatisch berekend">
+                            <!-- Hidden input voor zwemtijd in mm:ss formaat -->
+                            <input type="hidden" 
+                                   id="anaerobe_drempel_vermogen_display" 
+                                   value="">
+                            <!-- Display veld voor zwemmen -->
+                            <div id="anaerobe_drempel_vermogen_swim_display" 
+                                 style="display: none;" 
+                                 class="mt-2 text-sm text-gray-600">
+                                Weergave: <span id="anaerobe_drempel_vermogen_swim_text"></span>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -2218,66 +2238,66 @@ function interpolatePointAtLactaat(validData, xField, targetLactaat) {
     };
 }
 
-// Functie om afstand van punt tot lijn te berekenen (LEGACY FUNCTIE - blijft voor compatibiliteit)
-function calculatePointToLineDistance(px, py, x1, y1, x2, y2) {
-    const A = y2 - y1;
-    const B = x1 - x2;
-    const C = x2 * y1 - x1 * y2;
+// Functie om drag event listeners in te stellen
+function setupDragEventListeners(canvas) {
+    console.log('setupDragEventListeners aangeroepen voor canvas:', canvas);
     
-    return Math.abs(A * px + B * py + C) / Math.sqrt(A * A + B * B);
-}
-
-// Functie om exponentiële curve te genereren voor lactaat
-function generateSmoothLactaatCurve(lactaatData) {
-    console.log('🏊 === ZWEM DEBUG === generateSmoothLactaatCurve aangeroepen voor testtype:', currentTableType);
-    console.log('🏊 Raw lactaat data:', lactaatData);
-    
-    if (!lactaatData || lactaatData.length < 2) {
-        console.log('Niet genoeg lactaat data voor curve generatie');
-        return lactaatData || [];
-    }
-    
-    // ZWEM DEBUG: Check data voor en na sortering
-    console.log('🏊 Data VOOR sortering:', lactaatData.map(d => `${d.x.toFixed(2)} min/100m: ${d.y.toFixed(2)} mmol/L`));
-    
-    // Sorteer data op X-waarde
-    const sortedData = [...lactaatData].sort((a, b) => a.x - b.x);
-    console.log('🏊 Data NA sortering:', sortedData.map(d => `${d.x.toFixed(2)} min/100m: ${d.y.toFixed(2)} mmol/L`));
-    
-    const smoothData = [];
-    const minX = sortedData[0].x;
-    const maxX = sortedData[sortedData.length - 1].x;
-    const steps = 100; // 100 punten voor zeer vloeiende exponentiële curve
-    
-    console.log('Curve bereik:', minX, 'tot', maxX, 'met', steps, 'stappen');
-    
-    for (let i = 0; i <= steps; i++) {
-        const x = minX + (maxX - minX) * (i / steps);
+    canvas.addEventListener('mousedown', function(event) {
+        console.log('mousedown event getriggerd');
+        console.log('currentThresholds:', currentThresholds);
+        console.log('currentXField:', currentXField);
         
-        // SPECIALE BEHANDELING VOOR ZWEMMEN: gebruik aangepaste interpolatie
-        let y;
-        if (currentTableType === 'veldtest_zwemmen') {
-            y = interpolateExponentialForSwimming(sortedData, x);
-            console.log(`🏊 ZWEM curve punt ${i}: ${x.toFixed(2)} min/100m -> ${y.toFixed(2)} mmol/L`);
-        } else {
-            // Gebruik normale exponentiële interpolatie voor andere testen
-            y = interpolateExponentialForCurve(sortedData, x);
+        if (!currentThresholds || !currentXField) {
+            console.log('Geen thresholds of xField, geen drag mogelijk');
+            return;
         }
         
-        // Debug eerste paar punten voor niet-zwem testen
-        if (i < 5 && currentTableType !== 'veldtest_zwemmen') {
-            console.log(`Curve punt ${i}: ${x.toFixed(1)}W -> ${y.toFixed(2)}mmol/L`);
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        
+        console.log('Klik positie:', x, y);
+        
+        // Controleer of we op een drempellijn klikken (verticale lijnen)
+        const chart = hartslagLactaatChart;
+        const chartArea = chart.chartArea;
+        
+        console.log('Chart area:', chartArea);
+        
+        if (currentThresholds.aerobe) {
+            const aerobeX = chart.scales.x.getPixelForValue(currentThresholds.aerobe[currentXField]);
+            console.log('Aërobe lijn X positie:', aerobeX, 'Afstand tot klik:', Math.abs(x - aerobeX));
+            
+            if (Math.abs(x - aerobeX) < 15 && y >= chartArea.top - 10 && y <= chartArea.bottom + 10) {
+                console.log('Aërobe drempel geselecteerd voor drag');
+                isDragging = true;
+                dragTarget = 'aerobe';
+                canvas.style.cursor = 'ew-resize';
+                event.preventDefault();
+                return;
+            }
         }
         
-        smoothData.push({ x: x, y: y });
-    }
+        if (currentThresholds.anaerobe) {
+            const anaerobeX = chart.scales.x.getPixelForValue(currentThresholds.anaerobe[currentXField]);
+            console.log('Anaërobe lijn X positie:', anaerobeX, 'Afstand tot klik:', Math.abs(x - anaerobeX));
+            
+            if (Math.abs(x - anaerobeX) < 15 && y >= chartArea.top - 10 && y <= chartArea.bottom + 10) {
+                console.log('Anaërobe drempel geselecteerd voor drag');
+                isDragging = true;
+                dragTarget = 'anaerobe';
+                canvas.style.cursor = 'ew-resize';
+                event.preventDefault();
+                return;
+            }
+        }
+        
+        console.log('Geen drempel geselecteerd');
+    });
     
-    console.log('Smooth data gegenereerd:', smoothData.length, 'punten');
-    return smoothData;
-}
-
-// Exponentiële interpolatie voor fysiologisch realistische lactaatcurve
-function interpolateExponentialForCurve(points, targetX) {
+    canvas.addEventListener('mousemove', function(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
     if (points.length === 0) return 1.0;
     if (points.length === 1) return points[0].y;
     
@@ -3071,14 +3091,27 @@ function updateThresholdValues(thresholds, xField) {
         console.log('Aërobe drempel:', aerobeVermogen, 'eenheid,', aerobeHartslag, 'bpm');
         
         if (aerobeVermogen) {
-            // 🏊 ZWEM DEBUG: Check of we een zwemtest hebben
+            // 🏊 ZWEMTEST: Toon mm:ss formaat in display veld
             if (currentTableType === 'veldtest_zwemmen') {
                 console.log('🏊 ZWEM: Aërobe waarde voor input:', aerobeVermogen.toFixed(3));
-                // Voor zwemmen: gebruik decimale waarde in input, maar toon later als mm:ss
+                // Voor zwemmen: decimale waarde in hidden input
                 document.getElementById('aerobe_drempel_vermogen').value = parseFloat(aerobeVermogen.toFixed(3));
+                
+                // Bereken mm:ss formaat voor display
+                const totalSecondenPer100m = aerobeVermogen * 60;
+                const min = Math.floor(totalSecondenPer100m / 60);
+                const sec = Math.round(totalSecondenPer100m % 60);
+                const displayText = `${min}:${sec.toString().padStart(2, '0')} min/100m`;
+                
+                // Toon in display veld
+                document.getElementById('aerobe_drempel_vermogen_swim_text').textContent = displayText;
+                document.getElementById('aerobe_drempel_vermogen_swim_display').style.display = 'block';
+                
+                console.log('✅ Aërobe zwemsnelheid weergave:', displayText);
             } else {
                 // Voor andere testen: normale decimale waarde
                 document.getElementById('aerobe_drempel_vermogen').value = parseFloat(aerobeVermogen.toFixed(1));
+                document.getElementById('aerobe_drempel_vermogen_swim_display').style.display = 'none';
             }
         }
         if (aerobeHartslag) document.getElementById('aerobe_drempel_hartslag').value = Math.round(aerobeHartslag);
@@ -3091,14 +3124,27 @@ function updateThresholdValues(thresholds, xField) {
         console.log('Anaërobe drempel:', anaerobeVermogen, 'eenheid,', anaerobeHartslag, 'bpm');
         
         if (anaerobeVermogen) {
-            // 🏊 ZWEM DEBUG: Check of we een zwemtest hebben
+            // 🏊 ZWEMTEST: Toon mm:ss formaat in display veld
             if (currentTableType === 'veldtest_zwemmen') {
                 console.log('🏊 ZWEM: Anaërobe waarde voor input:', anaerobeVermogen.toFixed(3));
-                // Voor zwemmen: gebruik decimale waarde in input, maar toon later als mm:ss
+                // Voor zwemmen: decimale waarde in hidden input
                 document.getElementById('anaerobe_drempel_vermogen').value = parseFloat(anaerobeVermogen.toFixed(3));
+                
+                // Bereken mm:ss formaat voor display
+                const totalSecondenPer100m = anaerobeVermogen * 60;
+                const min = Math.floor(totalSecondenPer100m / 60);
+                const sec = Math.round(totalSecondenPer100m % 60);
+                const displayText = `${min}:${sec.toString().padStart(2, '0')} min/100m`;
+                
+                // Toon in display veld
+                document.getElementById('anaerobe_drempel_vermogen_swim_text').textContent = displayText;
+                document.getElementById('anaerobe_drempel_vermogen_swim_display').style.display = 'block';
+                
+                console.log('✅ Anaërobe zwemsnelheid weergave:', displayText);
             } else {
                 // Voor andere testen: normale decimale waarde
                 document.getElementById('anaerobe_drempel_vermogen').value = parseFloat(anaerobeVermogen.toFixed(1));
+                document.getElementById('anaerobe_drempel_vermogen_swim_display').style.display = 'none';
             }
         }
         if (anaerobeHartslag) document.getElementById('anaerobe_drempel_hartslag').value = Math.round(anaerobeHartslag);
