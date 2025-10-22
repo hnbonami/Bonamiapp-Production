@@ -1674,339 +1674,63 @@ const fs = require('fs');
     }
 
     /**
-     * Auto-save bikefit data via AJAX
+     * Auto-save bikefit data (AJAX endpoint voor create en edit)
      */
-    public function autoSave(Request $request, $klantId, $bikefitId = null)
+    public function autoSave(Request $request, Klant $klant, $bikefitId = null)
     {
         try {
+            // Haal alle data op zonder strikte validatie
+            $data = $request->except(['_token', '_method']);
+            
+            // Verwijder lege waarden
+            $data = array_filter($data, function($value) {
+                return $value !== null && $value !== '';
+            });
+            
             if ($bikefitId) {
-                // Update existing bikefit
-                $bikefit = Bikefit::where('klant_id', $klantId)->findOrFail($bikefitId);
-                $bikefit->fill($request->all());
-                $bikefit->save();
+                // UPDATE: bestaande bikefit
+                $bikefit = Bikefit::where('id', $bikefitId)
+                    ->where('klant_id', $klant->id)
+                    ->first();
+                
+                if (!$bikefit) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Bikefit niet gevonden'
+                    ], 404);
+                }
+                
+                $bikefit->update($data);
+                
+                return response()->json([
+                    'success' => true,
+                    'bikefit_id' => $bikefit->id,
+                    'message' => 'Auto-saved at ' . now()->format('H:i:s')
+                ]);
             } else {
-                // Create new bikefit
-                $bikefit = new Bikefit();
-                $bikefit->klant_id = $klantId;
-                $bikefit->fill($request->all());
-                $bikefit->save();
+                // CREATE: nieuwe bikefit
+                $data['klant_id'] = $klant->id;
+                $data['user_id'] = auth()->id();
+                
+                $bikefit = Bikefit::create($data);
+                
+                return response()->json([
+                    'success' => true,
+                    'bikefit_id' => $bikefit->id,
+                    'message' => 'Auto-saved at ' . now()->format('H:i:s')
+                ]);
             }
-
-            return response()->json([
-                'success' => true,
-                'bikefit_id' => $bikefit->id,
-                'message' => 'Auto-saved at ' . now()->format('H:i:s')
-            ]);
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Auto-save failed: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Save custom results for a bikefit context
-     */
-    public function saveCustomResults(Request $request, $klantId, $bikefitId)
-    {
-        try {
-            $bikefit = Bikefit::where('klant_id', $klantId)->findOrFail($bikefitId);
-            
-            \Log::info('Save Custom Results called', [
-                'klant_id' => $klantId,
+        } catch (\Exception $e) {
+            \Log::error('Auto-save failed: ' . $e->getMessage(), [
+                'klant_id' => $klant->id,
                 'bikefit_id' => $bikefitId,
-                'request_data' => $request->all()
-            ]);
-
-            $context = $request->input('context'); // 'prognose', 'voor', 'na'
-            $customValues = $request->input('values', []);
-            
-            \Log::info('Processing save with context system', [
-                'context' => $context,
-                'values' => $customValues
-            ]);
-
-            // Use the BikefitCalculator service to save custom results
-            $calculator = app(\App\Services\BikefitCalculator::class);
-            $result = $calculator->saveCustomResults($bikefit, $context, $customValues);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Aangepaste waarden opgeslagen voor ' . $context,
-                'saved_count' => count($customValues)
-            ]);
-            
-        } catch (Exception $e) {
-            \Log::error('Save Custom Results error', [
-                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             
             return response()->json([
                 'success' => false,
-                'message' => 'Fout bij opslaan: ' . $e->getMessage()
+                'message' => 'Save failed: ' . $e->getMessage()
             ], 500);
         }
-    }
-
-    /**
-     * Reset to calculated values for a bikefit context
-     */
-    public function resetToCalculated(Request $request, $klantId, $bikefitId)
-    {
-        try {
-            $bikefit = Bikefit::where('klant_id', $klantId)->findOrFail($bikefitId);
-            
-            $context = $request->input('context'); // 'prognose', 'voor', 'na'
-            $fieldNames = $request->input('fields', null); // optioneel: specifieke velden
-            
-            $calculator = app(\App\Services\BikefitCalculator::class);
-            $calculator->resetToCalculated($bikefit, $context, $fieldNames);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Waarden hersteld naar berekende waarden voor ' . $context
-            ]);
-            
-        } catch (Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Fout bij herstellen: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Handle uitleensysteem fields by creating/updating testzadel records
-     */
-    private function handleUitleensysteemFields(Request $request, $klant, $bikefit)
-    {
-        // Only create testzadel if required fields are filled
-        if ($request->filled('onderdeel_type') && $request->filled('uitgeleend_op') && $request->filled('verwachte_terugbring_datum')) {
-            
-            // Check if testzadel already exists for this bikefit
-            $existingTestzadel = \App\Models\Testzadel::where('bikefit_id', $bikefit->id)->first();
-            
-            $testzadelData = [
-                'klant_id' => $klant->id,
-                'bikefit_id' => $bikefit->id,
-                'onderdeel_type' => $request->onderdeel_type,
-                'zadel_merk' => $request->zadel_merk,
-                'zadel_model' => $request->zadel_model,
-                'zadel_type' => $request->zadel_type ?: $request->input('zadel_type'), 
-                'zadel_breedte' => $request->input('zadel_breedte') ?: $request->input('zadelbreedte') ?: $request->input('breedte'), // Probeer verschillende veldnamen
-                'uitleen_datum' => $request->uitgeleend_op,
-                'verwachte_retour_datum' => $request->verwachte_terugbring_datum,
-                'opmerkingen' => $request->onderdeel_opmerkingen ?: $request->input('onderdeel_opmerkingen') ?: $request->input('opmerkingen') ?: $request->input('testzadel_opmerkingen') ?: $request->input('uitleen_opmerkingen'),
-                'automatisch_mailtje' => $request->has('automatisch_mailtje') ? true : false,
-                'status' => 'uitgeleend', // ALTIJD uitgeleend bij aanmaak vanuit bikefit
-            ];
-            
-            if ($existingTestzadel) {
-                // Update existing testzadel
-                $existingTestzadel->update($testzadelData);
-            } else {
-                // Create new testzadel
-                \App\Models\Testzadel::create($testzadelData);
-            }
-        }
-    }
-
-    /**
-     * Handle the bikefit Excel import
-     */
-    public function import(Request $request)
-    {
-        try {
-            // Check voor verschillende mogelijke veldnamen
-            $fieldName = $request->hasFile('file') ? 'file' : 'excel_file';
-            
-            $request->validate([
-                $fieldName => 'required|file|mimes:xlsx,xls,csv|max:51200'
-            ]);
-            
-            $file = $request->file($fieldName);
-            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getPathname());
-            $sheet = $spreadsheet->getActiveSheet();
-            $rows = $sheet->toArray();
-            
-            if (empty($rows)) {
-                return back()->with('error', 'Het Excel bestand is leeg');
-            }
-            
-            // Eerste rij bevat headers
-            $headers = array_map('strtolower', array_map('trim', $rows[0]));
-            $importedCount = 0;
-            $skippedCount = 0;
-            $errors = [];
-            
-            // Loop door alle data rijen (skip header)
-            for ($i = 1; $i < count($rows); $i++) {
-                $row = $rows[$i];
-                
-                // Skip lege rijen
-                if (empty(array_filter($row))) {
-                    continue;
-                }
-                
-                try {
-                    // Map kolommen naar data
-                    $data = [];
-                    foreach ($headers as $index => $header) {
-                        if (isset($row[$index])) {
-                            $data[$header] = $row[$index];
-                        }
-                    }
-                    
-                    // Debug logging voor testtype
-                    \Log::info("Import rij $i - testtype waarde:", [
-                        'testtype_raw' => $data['testtype'] ?? 'NIET GEVONDEN',
-                        'all_data_keys' => array_keys($data)
-                    ]);
-                    
-                    // Zoek klant op basis van email OF naam
-                    $klant = null;
-                    if (!empty($data['klant_email'])) {
-                        $klant = Klant::where('email', $data['klant_email'])->first();
-                    }
-                    
-                    if (!$klant && !empty($data['klant_naam'])) {
-                        $klant = Klant::where(\DB::raw('CONCAT(voornaam, " ", naam)'), 'LIKE', '%' . $data['klant_naam'] . '%')->first();
-                    }
-                    
-                    if (!$klant) {
-                        $skippedCount++;
-                        $errors[] = "Rij " . ($i + 1) . ": Klant niet gevonden";
-                        continue;
-                    }
-                    
-                    // Bereid bikefit data voor
-                    $bikefitData = [
-                        'klant_id' => $klant->id,
-                        'user_id' => auth()->id(),
-                        'datum' => !empty($data['datum']) ? $this->convertDateToMysql($data['datum']) : now()->format('Y-m-d'),
-                        'testtype' => !empty($data['testtype']) ? $data['testtype'] : 'standaard bikefit',
-                        'lengte_cm' => $data['lengte_cm'] ?? null,
-                        'binnenbeenlengte_cm' => $data['binnenbeenlengte_cm'] ?? null,
-                        'armlengte_cm' => $data['armlenge_cm'] ?? null,
-                        'romplengte_cm' => $data['romplengte_cm'] ?? null,
-                        'schouderbreedte_cm' => $data['schouderbreedte_cm'] ?? null,
-                        'fietsmerk' => $data['fietsmerk'] ?? null,
-                        'kadermaat' => $data['kadermaat'] ?? null,
-                        'bouwjaar' => $data['bouwjaar'] ?? null,
-                        'frametype' => $data['frametype'] ?? null,
-                        'type_fiets' => $data['type_fiets'] ?? null,
-                        'type_fitting' => $data['type_fitting'] ?? null,
-                        'zadel_trapas_hoek' => $data['zadel_trapas_hoek'] ?? null,
-                        'zadel_trapas_afstand' => $data['zadel_trapas_afstand'] ?? null,
-                        'stuur_trapas_hoek' => $data['stuur_trapas_hoek'] ?? null,
-                        'stuur_trapas_afstand' => $data['stuur_trapas_afstand'] ?? null,
-                        'zadel_lengte_center_top' => $data['zadel_lengte_center_top'] ?? null,
-                        'aanpassingen_zadel' => $data['aanpassingen_zadel'] ?? null,
-                        'aanpassingen_setback' => $data['aanpassingen_setback'] ?? null,
-                        'aanpassingen_reach' => $data['aanpassingen_reach'] ?? null,
-                        'aanpassingen_drop' => $data['aanpassingen_drop'] ?? null,
-                        'aanpassingen_stuurpen_aan' => isset($data['aanpassingen_stuurpen_aan']) && strtolower($data['aanpassingen_stuurpen_aan']) === 'ja' ? 1 : 0,
-                        'aanpassingen_stuurpen_pre' => $data['aanpassingen_stuurpen_pre'] ?? null,
-                        'aanpassingen_stuurpen_post' => $data['aanpassingen_stuurpen_post'] ?? null,
-                        'type_zadel' => $data['type_zadel'] ?? null,
-                        'zadeltil' => $data['zadeltil'] ?? null,
-                        'zadelbreedte' => $data['zadelbreedte'] ?? null,
-                        'nieuw_testzadel' => $data['nieuw_testzadel'] ?? null,
-                        'rotatie_aanpassingen' => $data['rotatie_aanpassingen'] ?? null,
-                        'inclinatie_aanpassingen' => $data['inclinatie_aanpassingen'] ?? null,
-                        'ophoging_li' => $data['ophoging_li'] ?? null,
-                        'ophoging_re' => $data['ophoging_re'] ?? null,
-                        'algemene_klachten' => $data['algemene_klachten'] ?? null,
-                        'beenlengteverschil' => isset($data['beenlengteverschil']) && strtolower($data['beenlengteverschil']) === 'ja' ? 1 : 0,
-                        'beenlengteverschil_cm' => $data['beenlengteverschil_cm'] ?? null,
-                        'lenigheid_hamstrings' => $data['lenigheid_hamstrings'] ?? null,
-                        'steunzolen' => isset($data['steunzolen']) && strtolower($data['steunzolen']) === 'ja' ? 1 : 0,
-                        'steunzolen_reden' => $data['steunzolen_reden'] ?? null,
-                        'schoenmaat' => $data['schoenmaat'] ?? null,
-                        'voetbreedte' => $data['voetbreedte'] ?? null,
-                        'voetpositie' => $data['voetpositie'] ?? null,
-                        'straight_leg_raise_links' => $data['straight_leg_raise_links'] ?? null,
-                        'straight_leg_raise_rechts' => $data['straight_leg_raise_rechts'] ?? null,
-                        'knieflexie_links' => $data['knieflexie_links'] ?? null,
-                        'knieflexie_rechts' => $data['knieflexie_rechts'] ?? null,
-                        'heup_endorotatie_links' => $data['heup_endorotatie_links'] ?? null,
-                        'heup_endorotatie_rechts' => $data['heup_endorotatie_rechts'] ?? null,
-                        'heup_exorotatie_links' => $data['heup_exorotatie_links'] ?? null,
-                        'heup_exorotatie_rechts' => $data['heup_exorotatie_rechts'] ?? null,
-                        'enkeldorsiflexie_links' => $data['enkeldorsiflexie_links'] ?? null,
-                        'enkeldorsiflexie_rechts' => $data['enkeldorsiflexie_rechts'] ?? null,
-                        'one_leg_squat_links' => $data['one_leg_squat_links'] ?? null,
-                        'one_leg_squat_rechts' => $data['one_leg_squat_rechts'] ?? null,
-                        'opmerkingen' => $data['opmerkingen'] ?? null,
-                        'interne_opmerkingen' => $data['interne_opmerkingen'] ?? null,
-                    ];
-                    
-                    Bikefit::create($bikefitData);
-                    $importedCount++;
-                    
-                } catch (\Exception $e) {
-                    $skippedCount++;
-                    $errors[] = "Rij " . ($i + 1) . ": " . $e->getMessage();
-                    \Log::error("Bikefit import error rij $i: " . $e->getMessage());
-                }
-            }
-            
-            $message = "Import voltooid! $importedCount bikefits geïmporteerd";
-            if ($skippedCount > 0) {
-                $message .= ", $skippedCount rijen overgeslagen";
-            }
-            
-            if (!empty($errors)) {
-                $message .= ". Fouten: " . implode('; ', array_slice($errors, 0, 5));
-            }
-            
-            \Log::info("Bikefit import: $importedCount succesvol, $skippedCount overgeslagen");
-            
-            return redirect()->route('bikefit.import.form')->with('success', $message);
-            
-        } catch (\Exception $e) {
-            \Log::error('Bikefit import failed: ' . $e->getMessage());
-            return back()->with('error', 'Import mislukt: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Helper functie om datum te converteren naar MySQL formaat
-     */
-    private function convertDateToMysql($date)
-    {
-        if (empty($date)) {
-            return null;
-        }
-        
-        // Als het een Excel numerieke datum is
-        if (is_numeric($date)) {
-            try {
-                $excelDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($date);
-                return $excelDate->format('Y-m-d');
-            } catch (\Exception $e) {
-                return null;
-            }
-        }
-        
-        // Probeer verschillende datum formaten
-        $formats = ['Y-m-d', 'd/m/Y', 'm/d/Y', 'd-m-Y', 'm-d-Y', 'Y/m/d'];
-        
-        foreach ($formats as $format) {
-            $dateObj = \DateTime::createFromFormat($format, $date);
-            if ($dateObj && $dateObj->format($format) === $date) {
-                return $dateObj->format('Y-m-d');
-            }
-        }
-        
-        // Laatste poging met strtotime
-        $timestamp = strtotime($date);
-        if ($timestamp !== false) {
-            return date('Y-m-d', $timestamp);
-        }
-        
-        return null;
     }
 }

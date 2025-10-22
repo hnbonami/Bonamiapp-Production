@@ -1273,3 +1273,8 @@ Route::get('/export/inspanningstesten', [\App\Http\Controllers\Inspanningstesten
 // AI Analyse endpoints
 Route::post('/klanten/{klant}/inspanningstest/{test}/ai-analyse', [\App\Http\Controllers\InspanningstestController::class, 'generateCompleteAIAnalysis'])->name('inspanningstest.ai.analyse');
 Route::post('/klanten/{klant}/inspanningstest/{test}/update-zones', [\App\Http\Controllers\InspanningstestController::class, 'updateTrainingszones'])->name('inspanningstest.update.zones');
+
+
+// Auto-save routes
+Route::post('/klanten/{klant}/bikefit/auto-save', [App\Http\Controllers\BikefitController::class, 'autoSave']);
+Route::post('/klanten/{klant}/bikefit/{bikefit}/auto-save', [App\Http\Controllers\BikefitController::class, 'autoSave']);

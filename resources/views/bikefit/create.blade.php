@@ -567,21 +567,35 @@ class BikefitAutoSave {
     }
     
     attachEventListeners() {
-        // Luister naar alle form inputs
-        const inputs = this.form.querySelectorAll('input, select, textarea');
+        var self = this;
         
-        console.log(`📝 Found ${inputs.length} form inputs to monitor`);
-        
-        inputs.forEach((input, index) => {
-            input.addEventListener('input', () => {
-                console.log(`📝 Input changed: ${input.name || input.id || 'unnamed'}`);
-                this.scheduleAutoSave();
-            });
-            input.addEventListener('change', () => {
-                console.log(`🔄 Change event: ${input.name || input.id || 'unnamed'}`);
-                this.scheduleAutoSave();
-            });
-        });
+        // Wacht 1 seconde zodat ALLE includes geladen zijn
+        setTimeout(function() {
+            var allInputs = document.querySelectorAll('input, select, textarea');
+            var formInputs = [];
+            
+            for (var i = 0; i < allInputs.length; i++) {
+                var input = allInputs[i];
+                if (input.form && (input.form.id === 'bikefit-form' || (input.form.action && input.form.action.indexOf('bikefit') > -1))) {
+                    formInputs.push(input);
+                }
+            }
+            
+            console.log('📝 Found ' + formInputs.length + ' form inputs (after 1000ms)');
+            
+            for (var j = 0; j < formInputs.length; j++) {
+                (function(inp) {
+                    inp.addEventListener('input', function() {
+                        console.log('📝 Input: ' + inp.name);
+                        self.scheduleAutoSave();
+                    });
+                    inp.addEventListener('change', function() {
+                        console.log('🔄 Change: ' + inp.name);
+                        self.scheduleAutoSave();
+                    });
+                })(formInputs[j]);
+            }
+        }, 1000);
     }
     
     scheduleAutoSave() {

@@ -25,9 +25,9 @@
                 @csrf
                 <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
                     @if($klant->avatar_path)
-                        <img src="{{ asset('storage/'.$klant->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                        <img src="{{ Storage::disk('public')->url($klant->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
                     @elseif($klant->user && $klant->user->avatar_path)
-                        <img src="{{ asset('storage/'.$klant->user->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                        <img src="{{ Storage::disk('public')->url($klant->user->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
                     @else
                         <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:120px;height:120px;font-size:48px;">
                             {{ strtoupper(substr($klant->voornaam,0,1)) }}

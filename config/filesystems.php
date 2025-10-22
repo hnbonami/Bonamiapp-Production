@@ -36,10 +36,12 @@ return [
             'report' => false,
         ],
 
-                'public' => [
+                        'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',  // Storage bestanden direct in root
+            'root' => env('APP_ENV') === 'production' 
+                ? base_path('../httpd.www/storage') 
+                : storage_path('app/public'),
+            'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
