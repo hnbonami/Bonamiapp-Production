@@ -169,11 +169,15 @@ class KlantController extends Controller
         }
         return redirect()->route('klanten.index')->with('success', 'Klant toegevoegd en loginmail verzonden!');
     }
-    public function show($id)
+    public function show(Klant $klant)
     {
-        $klant = Klant::with('documenten')->findOrFail($id);
-        
-        return view('klanten.show', compact('klant'));
+        // Laad gerelateerde data
+        $klant->load(['bikefits', 'inspanningstests']);
+
+        // Maak user beschikbaar voor de view
+        $user = auth()->user();
+
+        return view('klanten.show', compact('klant', 'user'));
     }
     public function sendInvitation(Request $request, Klant $klant)
     {
