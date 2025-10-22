@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\BelongsToOrganisatie;
 
-class Medewerker extends Authenticatable
+class Medewerker extends Model
 {
-    use HasFactory, Notifiable;
+    use HasFactory, BelongsToOrganisatie;
 
     protected $table = 'medewerkers';
 
@@ -103,6 +103,7 @@ class Medewerker extends Authenticatable
         'user_id',
         'aangemaakt_door',
         'laatste_login',
+        'organisatie_id', // BELANGRIJK: Dit moet in fillable staan!
     ];
 
     protected $hidden = [

@@ -3,10 +3,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\BelongsToOrganisatie;
 
 class Inspanningstest extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToOrganisatie;
     protected $fillable = [
         'klant_id',
         'user_id',

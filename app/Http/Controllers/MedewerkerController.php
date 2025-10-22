@@ -35,9 +35,15 @@ class MedewerkerController extends Controller
             
             \Log::info('✅ Zoekresultaten gevonden', ['aantal' => $medewerkers->count()]);
         } else {
-            $medewerkers = User::where('role', '!=', 'klant')
-                ->orderBy('created_at', 'desc')
-                ->get();
+            // Haal alle staff users op (geen klanten) gefilterd per organisatie
+            $query = User::where('role', '!=', 'klant');
+            
+            // Filter op organisatie (tenzij superadmin)
+            if (!auth()->user()->isSuperAdmin()) {
+                $query->where('organisatie_id', auth()->user()->organisatie_id);
+            }
+            
+            $medewerkers = $query->orderBy('created_at', 'desc')->get();
         }
         
         return view('medewerkers.index', compact('medewerkers'));
@@ -85,6 +91,9 @@ class MedewerkerController extends Controller
             'notities' => 'nullable|string',
             'avatar' => 'nullable|image|max:2048'
         ]);
+
+        // Voeg organisatie_id automatisch toe
+        $validated['organisatie_id'] = auth()->user()->organisatie_id;
 
         try {
             \Log::info('🔄 Creating new employee (medewerker)', [

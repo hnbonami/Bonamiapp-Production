@@ -10,21 +10,24 @@ use App\Models\Organisatie;
 trait BelongsToOrganisatie
 {
     /**
-     * Boot de trait en registreer global scopes
+     * Boot de trait - voeg global scope toe voor automatische filtering
      */
-    protected static function bootBelongsToOrganisatie(): void
+    protected static function bootBelongsToOrganisatie()
     {
-        // Automatisch filteren op organisatie_id voor niet-superadmins
-        static::addGlobalScope('organisatie', function (Builder $builder) {
-            if (auth()->check() && auth()->user()->organisatie_id && !auth()->user()->isSuperAdmin()) {
-                $builder->where('organisatie_id', auth()->user()->organisatie_id);
+        // Voeg global scope toe die automatisch filtert op organisatie
+        static::addGlobalScope('organisatie', function ($query) {
+            $user = auth()->user();
+            
+            // Superadmin ziet alles
+            if ($user && $user->isSuperAdmin()) {
+                return;
             }
-        });
-
-        // Automatisch organisatie_id toewijzen bij het aanmaken van nieuwe records
-        static::creating(function (Model $model) {
-            if (auth()->check() && !$model->organisatie_id) {
-                $model->organisatie_id = auth()->user()->organisatie_id;
+            
+            // Andere users zien alleen eigen organisatie data
+            if ($user && $user->organisatie_id) {
+                // Gebruik $query->getModel()->getTable() om de tabelnaam te krijgen
+                $tableName = $query->getModel()->getTable();
+                $query->where($tableName . '.organisatie_id', $user->organisatie_id);
             }
         });
     }

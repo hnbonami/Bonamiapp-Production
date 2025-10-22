@@ -160,6 +160,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('organisaties', OrganisatieController::class)->parameters([
             'organisaties' => 'organisatie'
         ]);
+        Route::post('organisaties/{organisatie}/uitnodiging', [OrganisatieController::class, 'sendInvitation'])->name('organisaties.sendInvitation');
     });
 
     // Bikefit routes
@@ -278,6 +279,12 @@ Route::get('/mailtest', function () {
 });
 
 require __DIR__.'/auth.php';
+
+// Public organisatie uitnodiging accepteren (GEEN auth middleware!)
+Route::get('/organisatie/uitnodiging/{token}', [OrganisatieController::class, 'acceptInvitation'])
+    ->name('organisatie.accept-invitation');
+Route::post('/organisatie/uitnodiging/{token}', [OrganisatieController::class, 'processInvitation'])
+    ->name('organisatie.process-invitation');
 
 // Sjablonen routes
 Route::middleware(['auth'])->group(function () {

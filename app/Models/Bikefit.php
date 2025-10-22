@@ -1,12 +1,13 @@
 <?php
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Traits\BelongsToOrganisatie;
 
 class Bikefit extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToOrganisatie;
 
     protected $casts = [
         'datum' => 'date',

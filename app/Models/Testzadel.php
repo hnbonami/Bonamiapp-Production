@@ -4,12 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Traits\BelongsToOrganisatie;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
 
 class Testzadel extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToOrganisatie;
 
     protected $table = 'testzadels';
 
