@@ -148,10 +148,15 @@ class ProfileSettingsController extends Controller
         // Update user avatar
         $user->update(['avatar_path' => $path]);
 
-    // Update gekoppelde klant record indien aanwezig
-    if ($user->role === 'klant' && $user->klant) {
-        $user->klant->update(['avatar_path' => $path]);
-    }        // Log de actie
+        // Update gekoppelde klant record indien aanwezig
+        if ($user->role === 'klant') {
+            $klant = \App\Models\Klant::where('email', $user->email)->first();
+            if ($klant) {
+                $klant->update(['avatar_path' => $path]);
+            }
+        }
+        
+        // Log de actie
         \Log::info('🖼️ Avatar bijgewerkt', [
             'user_id' => $user->id,
             'user_email' => $user->email,
@@ -159,11 +164,8 @@ class ProfileSettingsController extends Controller
             'avatar_path' => $path
         ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Profielfoto succesvol bijgewerkt',
-            'avatar_url' => asset('storage/' . $path)
-        ]);
+        // Redirect terug naar instellingen pagina met success message
+        return redirect()->route('profile.settings')->with('success', 'Profielfoto succesvol bijgewerkt!');
     }
     
     public function updatePassword(Request $request)

@@ -127,15 +127,20 @@
         }
         
         /* Avatar specifieke sizing */
-        #topbar-avatar, #topbar-avatar-placeholder {
-            width: 36px !important;
-            height: 36px !important;
-            border-radius: 50%;
-            margin-right: 8px;
-            flex-shrink: 0;
-        }
-        
-        /* Remove the problematic profile click icon on mobile */
+            /* Avatar specifieke sizing - GEEN CHANGE OP INSTELLINGEN PAGINA */
+            #topbar-avatar, #topbar-avatar-placeholder {
+                width: 36px !important;
+                height: 36px !important;
+                border-radius: 50%;
+                margin-right: 8px;
+                flex-shrink: 0;
+            }
+            
+            /* Avatar op instellingen pagina blijft normaal */
+            .profile-settings-page .user-avatar {
+                width: auto;
+                height: auto;
+            }        /* Remove the problematic profile click icon on mobile */
         #profile-click-icon {
             display: none;
         }

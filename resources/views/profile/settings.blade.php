@@ -77,48 +77,7 @@
     </div>
 </div>
 
-<style>
-/* NUCLEAR OVERRIDE voor profielfoto op instellingen pagina */
-html body .profile-settings-page img,
-html body [class*="profile"] img,
-html body img[src*="storage"] {
-    width: 150px !important;
-    height: 150px !important;
-    border-radius: 50% !important;
-    object-fit: cover !important;
-    max-width: 150px !important;
-    max-height: 150px !important;
-    min-width: 150px !important;
-    min-height: 150px !important;
-}
 
-/* Specifieke selectors voor profielfoto */
-.profile-settings-page img[alt*="profielfoto"],
-.profile-settings-page img[alt*="Huidige"],
-.profile-settings-page img[alt*="Avatar"],
-.avatar-preview img,
-.profile-photo img,
-.user-avatar img {
-    width: 150px !important;
-    height: 150px !important;
-    border-radius: 50% !important;
-    object-fit: cover !important;
-    max-width: 150px !important;
-    max-height: 150px !important;
-}
-
-/* Container styling */
-.avatar-container,
-.profile-photo-container {
-    width: 150px !important;
-    height: 150px !important;
-    border-radius: 50% !important;
-    overflow: hidden !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
-</style>
 
 @push('scripts')
 <script>

@@ -4,9 +4,22 @@
 <div class="mb-8">
     <div class="flex items-center space-x-6">
         <div class="relative">
-            <img class="user-avatar h-24 w-24 rounded-full object-cover border-4 border-gray-200" 
-                 src="{{ $user->avatar_path ? Storage::disk('public')->url($user->avatar_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&color=7F9CF5&background=EBF4FF' }}" 
-                 alt="Avatar">
+            @php
+                // EXACT dezelfde avatar logica als topbar en show pagina
+                $avatarPath = Auth::user()->avatar_path ?? null;
+                $firstInitial = strtoupper(substr(Auth::user()->name ?? 'U', 0, 1));
+            @endphp
+            
+            @if($avatarPath)
+                <img class="user-avatar h-24 w-24 rounded-full object-cover border-4 border-gray-200" 
+                     src="{{ asset('storage/' . $avatarPath) }}" 
+                     alt="Avatar">
+            @else
+                <div class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-200">
+                    <span class="text-3xl font-semibold text-gray-600">{{ $firstInitial }}</span>
+                </div>
+            @endif
+            
             <div class="absolute bottom-0 right-0 bg-blue-600 rounded-full p-2 cursor-pointer hover:bg-blue-700 transition-colors"
                  onclick="document.getElementById('avatar-upload').click()">
                 <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
