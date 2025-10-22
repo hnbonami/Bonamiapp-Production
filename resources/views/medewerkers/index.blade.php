@@ -187,24 +187,29 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 21c0-4 4-7 10-7s10 3 10 7"/></svg>
                                     </a>
 
-                                    <!-- Uitnodigen -->
-                                    <form method="POST" action="{{ route('medewerkers.invite', $medewerker) }}" class="inline" onsubmit="return confirm('Uitnodiging versturen naar {{ $medewerker->email }}?')">
+                                    <!-- Email -->
+                                    <a href="mailto:{{ $medewerker->email }}" 
+                                       aria-label="Email" 
+                                       class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800" 
+                                       title="Email sturen">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l9 6 9-6"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 6v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6"/></svg>
+                                    </a>
+
+                                    <!-- Verwijderen -->
+                                    <form action="{{ route('medewerkers.destroy', $medewerker->id) }}" 
+                                          method="POST" 
+                                          class="inline"
+                                          onsubmit="return confirm('Weet je zeker dat je {{ $medewerker->name }} wilt verwijderen?');">
                                         @csrf
-                                        <button type="submit" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800" aria-label="Uitnodigen" title="Uitnodigen">
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l9 6 9-6"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 6v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6"/></svg>
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                aria-label="Verwijderen" 
+                                                class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-rose-100 text-rose-700" 
+                                                style="margin-right:2px;"
+                                                title="Verwijderen">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001 1h8a1 1 0 001-1m-10 0V6a2 2 0 012-2h4a2 2 0 012 2v1"/></svg>
                                         </button>
                                     </form>
-
-                                    <!-- Verwijderen (alleen voor admins, niet jezelf) -->
-                                    @if(auth()->user()->role === 'admin' && $medewerker->id !== auth()->id())
-                                        <form method="POST" action="{{ route('medewerkers.destroy', $medewerker) }}" class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" onclick="return confirm('Weet je zeker dat je deze medewerker wilt verwijderen?')" aria-label="Verwijderen" class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-rose-100 text-rose-700" style="margin-right:2px;">
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001 1h8a1 1 0 001-1m-10 0V6a2 2 0 012-2h4a2 2 0 012 2v1"/></svg>
-                                            </button>
-                                        </form>
-                                    @endif
                                 </div>
                             </td>
                         </tr>
