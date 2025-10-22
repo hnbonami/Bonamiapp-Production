@@ -18,53 +18,53 @@
     <h2 class="text-2xl font-semibold mb-4 text-left">Profiel van {{ $klant->voornaam }} {{ $klant->naam }}</h2>
 
     <!-- Compacte Header met avatar en kerngegevens -->
-    <div class="flex flex-col md:flex-row items-start gap-4 md:gap-6 mb-6">
-        <!-- Avatar met overlay - links uitgelijnd op alle devices -->
-        <div class="relative flex-shrink-0" style="width:120px;height:120px;">
-            <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form" style="margin: 0;">
-                @csrf
-                <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
-                    @php
-                        // EXACT dezelfde logica als topbar in app.blade.php
-                        // Voor ingelogde klant: gebruik auth()->user()->avatar_path
-                        // Voor andere klanten: gebruik klant->user->avatar_path of klant->avatar_path
-                        $avatarPath = null;
+    <div class="mb-6">
+        <!-- Mobile: Avatar links, Geslacht + Email rechts ernaast -->
+        <div class="flex items-start gap-4 mb-4 md:hidden">
+            <!-- Avatar met overlay - links uitgelijnd op alle devices -->
+            <div class="relative flex-shrink-0" style="width:120px;height:120px;">
+                <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form" style="margin: 0;">
+                    @csrf
+                    <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
+                        @php
+                            // EXACT dezelfde logica als topbar in app.blade.php
+                            // Voor ingelogde klant: gebruik auth()->user()->avatar_path
+                            // Voor andere klanten: gebruik klant->user->avatar_path of klant->avatar_path
+                            $avatarPath = null;
+                            
+                            if (Auth::check() && Auth::user()->email === $klant->email) {
+                                // Ingelogde klant bekijkt eigen profiel
+                                $avatarPath = Auth::user()->avatar_path;
+                            } elseif ($klant->user && $klant->user->avatar_path) {
+                                // Andere klant met gekoppelde user
+                                $avatarPath = $klant->user->avatar_path;
+                            } elseif ($klant->avatar_path) {
+                                // Fallback naar klant avatar
+                                $avatarPath = $klant->avatar_path;
+                            }
+                        @endphp
                         
-                        if (Auth::check() && Auth::user()->email === $klant->email) {
-                            // Ingelogde klant bekijkt eigen profiel
-                            $avatarPath = Auth::user()->avatar_path;
-                        } elseif ($klant->user && $klant->user->avatar_path) {
-                            // Andere klant met gekoppelde user
-                            $avatarPath = $klant->user->avatar_path;
-                        } elseif ($klant->avatar_path) {
-                            // Fallback naar klant avatar
-                            $avatarPath = $klant->avatar_path;
-                        }
-                    @endphp
-                    
-                    @if($avatarPath)
-                        <img src="{{ asset('storage/' . $avatarPath) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
-                    @else
-                        <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:120px;height:120px;font-size:48px;">
-                            {{ strtoupper(substr($klant->voornaam,0,1)) }}
+                        @if($avatarPath)
+                            <img src="{{ asset('storage/' . $avatarPath) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                        @else
+                            <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:120px;height:120px;font-size:48px;">
+                                {{ strtoupper(substr($klant->voornaam,0,1)) }}
+                            </div>
+                        @endif
+                        <!-- Camera overlay icon -->
+                        <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(200, 225, 235, 0.95); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
                         </div>
-                    @endif
-                    <!-- Camera overlay icon -->
-                    <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(200, 225, 235, 0.95); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2">
-                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                            <circle cx="12" cy="13" r="4"></circle>
-                        </svg>
-                    </div>
-                </label>
-                <input type="file" id="avatar-upload" name="avatar" accept="image/*" style="display: none;" onchange="this.form.submit()">
-            </form>
-        </div>
-
-        <!-- Gegevens container: mobile = avatar naast geslacht+email, dan eronder geboorte+status; desktop = alle 4 naast elkaar -->
-        <div class="flex-1 w-full flex flex-col gap-4">
-            <!-- Mobile: Geslacht + Email naast avatar -->
-            <div class="md:hidden space-y-3">
+                    </label>
+                    <input type="file" id="avatar-upload" name="avatar" accept="image/*" style="display: none;" onchange="this.form.submit()">
+                </form>
+            </div>
+            
+            <!-- Mobile: Geslacht + Email rechts van avatar -->
+            <div class="flex-1 space-y-3">
                 <div>
                     <p class="text-sm font-medium text-gray-500">Geslacht</p>
                     <p class="mt-1 text-base text-gray-900">{{ $klant->geslacht ?? 'Niet opgegeven' }}</p>
@@ -74,10 +74,52 @@
                     <p class="mt-1 text-base text-gray-900 break-all">{{ $klant->email }}</p>
                 </div>
             </div>
+        </div>
+        
+        <!-- Mobile only: Geboortedatum + Status onder avatar -->
+        <div class="grid grid-cols-2 gap-4 md:hidden">
+            <div>
+                <p class="text-sm font-medium text-gray-500">Geboortedatum</p>
+                <p class="mt-1 text-base text-gray-900">{{ $klant->geboortedatum ? \Carbon\Carbon::parse($klant->geboortedatum)->format('d-m-Y') : 'Niet opgegeven' }}</p>
+            </div>
+            <div>
+                <p class="text-sm font-medium text-gray-500">Status</p>
+                <p class="mt-1">
+                    <span class="px-2.5 py-1 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Desktop: Alle 3 kolommen naast elkaar -->
+        <div class="hidden md:flex md:items-start" style="gap: 2rem;">
+            <!-- Avatar -->
+            <div class="relative flex-shrink-0" style="width:120px;height:120px;">
+                <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form-desktop" style="margin: 0;">
+                    @csrf
+                    <label for="avatar-upload-desktop" style="cursor: pointer; display: block; position: relative;">
+                        @if($avatarPath)
+                            <img src="{{ asset('storage/' . $avatarPath) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                        @else
+                            <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:120px;height:120px;font-size:48px;">
+                                {{ strtoupper(substr($klant->voornaam,0,1)) }}
+                            </div>
+                        @endif
+                        <!-- Camera overlay icon -->
+                        <div style="position: absolute; bottom: 4px; right: 4px; background: rgba(200, 225, 235, 0.95); border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2">
+                                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                <circle cx="12" cy="13" r="4"></circle>
+                            </svg>
+                        </div>
+                    </label>
+                    <input type="file" id="avatar-upload-desktop" name="avatar" accept="image/*" style="display: none;" onchange="this.form.submit()">
+                </form>
+            </div>
             
-            <!-- Desktop: Alle 4 velden in 2 kolommen naast elkaar -->
-            <div class="hidden md:flex md:flex-row md:gap-6">
-                <div class="flex-1 space-y-3">
+            <!-- Desktop: Info grid - 2 kolommen met gelijke breedte -->
+            <div class="flex-1 grid grid-cols-2 gap-6">
+                <!-- Kolom 1 - Geslacht + Email -->
+                <div class="space-y-3">
                     <div>
                         <p class="text-sm font-medium text-gray-500">Geslacht</p>
                         <p class="mt-1 text-base text-gray-900">{{ $klant->geslacht ?? 'Niet opgegeven' }}</p>
@@ -87,7 +129,9 @@
                         <p class="mt-1 text-base text-gray-900 break-all">{{ $klant->email }}</p>
                     </div>
                 </div>
-                <div class="flex-1 space-y-3">
+                
+                <!-- Kolom 2 - Geboortedatum + Status -->
+                <div class="space-y-3">
                     <div>
                         <p class="text-sm font-medium text-gray-500">Geboortedatum</p>
                         <p class="mt-1 text-base text-gray-900">{{ $klant->geboortedatum ? \Carbon\Carbon::parse($klant->geboortedatum)->format('d-m-Y') : 'Niet opgegeven' }}</p>
@@ -98,20 +142,6 @@
                             <span class="px-2.5 py-1 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
                         </p>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Mobile only: Geboortedatum + Status onder geslacht/email -->
-            <div class="grid grid-cols-2 gap-4 md:hidden">
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Geboortedatum</p>
-                    <p class="mt-1 text-base text-gray-900">{{ $klant->geboortedatum ? \Carbon\Carbon::parse($klant->geboortedatum)->format('d-m-Y') : 'Niet opgegeven' }}</p>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-gray-500">Status</p>
-                    <p class="mt-1">
-                        <span class="px-2.5 py-1 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
-                    </p>
                 </div>
             </div>
         </div>

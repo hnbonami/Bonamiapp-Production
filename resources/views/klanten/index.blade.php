@@ -40,27 +40,105 @@
     <a href="{{ route('klanten.export') }}" aria-label="Export Excel" title="Export Excel" class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-800" style="margin-right:0.2rem;text-decoration:none;">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10l5 5 5-5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15V3"/></svg>
     </a>
+    <select 
+        id="sorteerKlanten" 
+        style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;background:#fff;cursor:pointer;margin-left:auto;"
+    >
+        <option value="naam-asc">Naam (A-Z)</option>
+        <option value="naam-desc">Naam (Z-A)</option>
+        <option value="voornaam-asc">Voornaam (A-Z)</option>
+        <option value="voornaam-desc">Voornaam (Z-A)</option>
+        <option value="datum-nieuw">Nieuwste eerst</option>
+        <option value="datum-oud">Oudste eerst</option>
+        <option value="status-actief">Status: Actief eerst</option>
+        <option value="status-inactief">Status: Inactief eerst</option>
+    </select>
     <input 
         type="text" 
         id="searchKlanten" 
         placeholder="Zoek klant..." 
         value="{{ request('zoek') }}"
-        style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:180px;box-shadow:0 1px 3px #f3f4f6;margin-left:auto;" 
+        style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:180px;box-shadow:0 1px 3px #f3f4f6;" 
         autocomplete="off"
     />
 </div>
 
 <script>
-// Simple search - gewoon client-side filtering
+// Zoekfunctie
 document.getElementById('searchKlanten').addEventListener('input', function(e) {
     const zoekterm = e.target.value.toLowerCase();
-    const rijen = document.querySelectorAll('tbody tr');
+    const rijen = Array.from(document.querySelectorAll('tbody tr'));
     
     rijen.forEach(rij => {
         const tekst = rij.textContent.toLowerCase();
         rij.style.display = tekst.includes(zoekterm) ? '' : 'none';
     });
 });
+
+// Sorteerfunctie
+document.getElementById('sorteerKlanten').addEventListener('change', function(e) {
+    const sorteerType = e.target.value;
+    const tbody = document.querySelector('tbody');
+    const rijen = Array.from(tbody.querySelectorAll('tr'));
+    
+    rijen.sort((a, b) => {
+        let veldA, veldB;
+        
+        switch(sorteerType) {
+            case 'naam-asc':
+                veldA = a.cells[0].textContent.trim().toLowerCase();
+                veldB = b.cells[0].textContent.trim().toLowerCase();
+                return veldA.localeCompare(veldB);
+            
+            case 'naam-desc':
+                veldA = a.cells[0].textContent.trim().toLowerCase();
+                veldB = b.cells[0].textContent.trim().toLowerCase();
+                return veldB.localeCompare(veldA);
+            
+            case 'voornaam-asc':
+                veldA = a.cells[1].textContent.trim().toLowerCase();
+                veldB = b.cells[1].textContent.trim().toLowerCase();
+                return veldA.localeCompare(veldB);
+            
+            case 'voornaam-desc':
+                veldA = a.cells[1].textContent.trim().toLowerCase();
+                veldB = b.cells[1].textContent.trim().toLowerCase();
+                return veldB.localeCompare(veldA);
+            
+            case 'datum-nieuw':
+                veldA = a.cells[3].textContent.trim();
+                veldB = b.cells[3].textContent.trim();
+                return parseDatum(veldB) - parseDatum(veldA);
+            
+            case 'datum-oud':
+                veldA = a.cells[3].textContent.trim();
+                veldB = b.cells[3].textContent.trim();
+                return parseDatum(veldA) - parseDatum(veldB);
+            
+            case 'status-actief':
+                veldA = a.cells[4].textContent.trim();
+                veldB = b.cells[4].textContent.trim();
+                return veldA === 'Actief' ? -1 : 1;
+            
+            case 'status-inactief':
+                veldA = a.cells[4].textContent.trim();
+                veldB = b.cells[4].textContent.trim();
+                return veldA === 'Actief' ? 1 : -1;
+        }
+    });
+    
+    // Verwijder alle rijen
+    rijen.forEach(rij => tbody.removeChild(rij));
+    
+    // Voeg gesorteerde rijen toe
+    rijen.forEach(rij => tbody.appendChild(rij));
+});
+
+// Helper functie voor datum parsing (dd/mm/yyyy)
+function parseDatum(datumString) {
+    const delen = datumString.split('/');
+    return new Date(delen[2], delen[1] - 1, delen[0]);
+}
 </script>
 <div class="overflow-x-auto bg-white/80 rounded-xl shadow border border-gray-100">
     <table class="min-w-full divide-y divide-gray-200">
