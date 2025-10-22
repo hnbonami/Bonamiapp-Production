@@ -63,7 +63,7 @@
         </div>
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6 text-gray-900">
-                <form method="POST" action="{{ route('inspanningstest.store', $klant->id) }}" id="inspanningstest-form">
+                <form method="POST" action="{{ route('org.inspanningstest.store', [$org, $klant->id]) }}" id="inspanningstest-form">
                     @csrf
                     
                     <!-- Basis informatie -->
@@ -1800,6 +1800,11 @@ function interpolateValueOnCurve(validData, xField, targetValue, targetField) {
 function calculateDmax(validData, xField) {
     console.log('🧮 === D-MAX WISKUNDIGE BEREKENING ===');
     
+    if (!validData || validData.length < 3) {
+        console.log('❌ Onvoldoende data voor D-max berekening');
+        return null;
+    }
+    
     validData.sort((a, b) => (a[xField] || 0) - (b[xField] || 0));
     console.log('Data punten:', validData.map(d => `${d[xField]}W: ${d.lactaat.toFixed(2)}mmol/L`));
     
@@ -3301,8 +3306,9 @@ function generateCompleteAIAnalysis() {
     
     console.log('📊 Complete testdata verzameld:', completeTestData);
     
-    // Verstuur naar complete AI analyse endpoint
-    fetch('/api/ai-advice', {
+    // Verstuur naar complete AI analyse endpoint (ORG-aware)
+    const orgSlug = '{{ $org->slug ?? "default" }}';
+    fetch(`/org/${orgSlug}/api/ai-advice`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
