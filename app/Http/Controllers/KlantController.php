@@ -189,7 +189,10 @@ class KlantController extends Controller
         $path = $request->file('avatar')->store('avatars/klanten', 'public');
         $klant->update(['avatar_path' => $path]);
 
-        return back()->with('success', 'Profielfoto bijgewerkt.');
+        $klant->save();
+    
+        // Redirect met success message
+        return redirect()->back()->with('success', 'Profielfoto succesvol bijgewerkt');
     }
 
     /**

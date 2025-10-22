@@ -5,7 +5,7 @@
     <div class="flex items-center space-x-6">
         <div class="relative">
             <img class="user-avatar h-24 w-24 rounded-full object-cover border-4 border-gray-200" 
-                 src="{{ $user->avatar_path ? asset('storage/' . $user->avatar_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&color=7F9CF5&background=EBF4FF' }}" 
+                 src="{{ $user->avatar_path ? Storage::disk('public')->url($user->avatar_path) : 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&color=7F9CF5&background=EBF4FF' }}" 
                  alt="Avatar">
             <div class="absolute bottom-0 right-0 bg-blue-600 rounded-full p-2 cursor-pointer hover:bg-blue-700 transition-colors"
                  onclick="document.getElementById('avatar-upload').click()">

@@ -70,12 +70,8 @@ class ProfileController extends Controller
 
         $user->save();
 
-        // If AJAX request (modal), return the partial HTML so client can update the modal content
-        if ($request->ajax()) {
-            return view('profile.modal', ['user' => $user]);
-        }
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        // Redirect met success message in plaats van JSON
+        return redirect()->back()->with('success', 'Profielfoto succesvol bijgewerkt');
     }
 
     /**

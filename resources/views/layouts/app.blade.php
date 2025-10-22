@@ -304,7 +304,14 @@
 
                         <!-- Dropdown menu -->
                         <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                            <a href="/instellingen" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Mijn profiel</a>
+                            @if(Auth::user()->role === 'klant')
+                                @php
+                                    $menuKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
+                                @endphp
+                                <a href="{{ $menuKlant ? route('klanten.show', $menuKlant->id) : route('dashboard') }}" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Mijn profiel</a>
+                            @else
+                                <a href="/instellingen" class="block px-4 py-2 text-gray-700 hover:bg-gray-50">Mijn profiel</a>
+                            @endif
                             <form method="POST" action="{{ route('logout') }}">
                                 @csrf
                                 <button type="submit" class="block w-full text-left px-4 py-2 text-rose-600 hover:bg-rose-50">Uitloggen</button>
@@ -323,14 +330,12 @@
             
             @if(Auth::user() && Auth::user()->role === 'klant')
                 @php
-                    $sidebarKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
+                    $mobileKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
                 @endphp
-                <a href="{{ $sidebarKlant ? route('klanten.show', ['klanten' => $sidebarKlant->id]) : route('dashboard') }}" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('klanten/*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                <a href="{{ $mobileKlant ? route('klanten.show', $mobileKlant->id) : route('dashboard') }}" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('klanten/*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Profiel
                 </a>
-            @endif
-            
-            @if(Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']))
+            @endif            @if(Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']))
                 <a href="/staff-notes" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('staff-notes*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Notities
                     @php $unreadNotes = \App\Models\StaffNote::where('is_new', true)->count(); @endphp
@@ -407,11 +412,11 @@
                     <svg width="22" height="22" fill="none" viewBox="0 0 20 20"><path d="M3 9.5L10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5a.5.5 0 0 1-.5-.5V13a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v3.5a.5.5 0 0 1-.5.5H4a1 1 0 0 1-1-1V9.5z" stroke="#9bb3bd" stroke-width="1.5"/></svg>
                     <span class="font-medium text-[17px]">Dashboard</span>
                 </a>
-                @if(Auth::user() && Auth::user()->role === 'klant')
+                                @if(Auth::user() && Auth::user()->role === 'klant')
                 @php
                     $sidebarKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
                 @endphp
-                <a href="{{ $sidebarKlant ? route('klanten.show', ['klanten' => $sidebarKlant->id]) : route('dashboard') }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('klanten/*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('klanten/*') ? 'background:#f6fbfe' : '' }}">
+                <a href="{{ $sidebarKlant ? route('klanten.show', $sidebarKlant->id) : route('dashboard') }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('klanten/*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('klanten/*') ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('klanten/*'))
                         <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
                     @endif
