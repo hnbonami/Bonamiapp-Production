@@ -18,7 +18,7 @@
     <h2 class="text-2xl font-semibold mb-4 text-left">Profiel van {{ $klant->voornaam }} {{ $klant->naam }}</h2>
 
     <!-- Compacte Header met avatar en kerngegevens -->
-    <div class="flex flex-col md:flex-row items-start gap-6 mb-6">
+    <div class="flex flex-col md:flex-row items-start gap-4 md:gap-6 mb-6">
         <!-- Avatar met overlay - links uitgelijnd op alle devices -->
         <div class="relative flex-shrink-0" style="width:120px;height:120px;">
             <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form" style="margin: 0;">
@@ -61,10 +61,10 @@
             </form>
         </div>
 
-        <!-- Gegevens container - responsive: onder elkaar op mobile, naast elkaar op desktop -->
-        <div class="flex-1 w-full flex flex-col md:flex-row md:items-start gap-6">
-            <!-- Kolom 1: Geslacht + E-mailadres -->
-            <div class="flex-1 space-y-3">
+        <!-- Gegevens container: mobile = avatar naast geslacht+email, dan eronder geboorte+status; desktop = alle 4 naast elkaar -->
+        <div class="flex-1 w-full flex flex-col gap-4">
+            <!-- Mobile: Geslacht + Email naast avatar -->
+            <div class="md:hidden space-y-3">
                 <div>
                     <p class="text-sm font-medium text-gray-500">Geslacht</p>
                     <p class="mt-1 text-base text-gray-900">{{ $klant->geslacht ?? 'Niet opgegeven' }}</p>
@@ -74,9 +74,35 @@
                     <p class="mt-1 text-base text-gray-900 break-all">{{ $klant->email }}</p>
                 </div>
             </div>
-
-            <!-- Kolom 2: Geboortedatum + Status -->
-            <div class="flex-1 space-y-3">
+            
+            <!-- Desktop: Alle 4 velden in 2 kolommen naast elkaar -->
+            <div class="hidden md:flex md:flex-row md:gap-6">
+                <div class="flex-1 space-y-3">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Geslacht</p>
+                        <p class="mt-1 text-base text-gray-900">{{ $klant->geslacht ?? 'Niet opgegeven' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">E-mailadres</p>
+                        <p class="mt-1 text-base text-gray-900 break-all">{{ $klant->email }}</p>
+                    </div>
+                </div>
+                <div class="flex-1 space-y-3">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Geboortedatum</p>
+                        <p class="mt-1 text-base text-gray-900">{{ $klant->geboortedatum ? \Carbon\Carbon::parse($klant->geboortedatum)->format('d-m-Y') : 'Niet opgegeven' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Status</p>
+                        <p class="mt-1">
+                            <span class="px-2.5 py-1 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Mobile only: Geboortedatum + Status onder geslacht/email -->
+            <div class="grid grid-cols-2 gap-4 md:hidden">
                 <div>
                     <p class="text-sm font-medium text-gray-500">Geboortedatum</p>
                     <p class="mt-1 text-base text-gray-900">{{ $klant->geboortedatum ? \Carbon\Carbon::parse($klant->geboortedatum)->format('d-m-Y') : 'Niet opgegeven' }}</p>
