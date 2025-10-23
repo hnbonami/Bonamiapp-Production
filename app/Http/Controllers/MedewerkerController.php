@@ -376,29 +376,35 @@ class MedewerkerController extends Controller
                 'name' => $medewerker->name
             ]);
 
-            // Genereer nieuw tijdelijk wachtwoord en update de gebruiker
+            // BELANGRIJK: Genereer NIEUW uniek wachtwoord met timestamp
             $temporaryPassword = Str::random(12);
+            $hashedPassword = Hash::make($temporaryPassword);
+            
+            // Update medewerker wachtwoord in database
             $medewerker->update([
-                'password' => Hash::make($temporaryPassword)
+                'password' => $hashedPassword
             ]);
 
-            \Log::info('🔑 Nieuw tijdelijk wachtwoord gegenereerd', [
-                'medewerker_id' => $medewerker->id
+            \Log::info('🔑 Nieuw UNIEK wachtwoord gegenereerd', [
+                'medewerker_id' => $medewerker->id,
+                'password_first_4' => substr($temporaryPassword, 0, 4),
+                'timestamp' => now()->toDateTimeString()
             ]);
 
-            // Update of maak nieuw InvitationToken aan met NIEUW wachtwoord
-            InvitationToken::updateOrCreate(
-                [
-                    'email' => $medewerker->email,
-                    'type' => 'medewerker'
-                ],
-                [
-                    'token' => Str::random(60),
-                    'temporary_password' => $temporaryPassword,
-                    'expires_at' => now()->addDays(7),
-                    'created_by' => auth()->id()
-                ]
-            );
+            // VERWIJDER oude token eerst
+            InvitationToken::where('email', $medewerker->email)
+                ->where('type', 'medewerker')
+                ->delete();
+
+            // Maak NIEUWE token aan
+            $invitationToken = InvitationToken::create([
+                'email' => $medewerker->email,
+                'type' => 'medewerker',
+                'token' => Str::random(60),
+                'temporary_password' => $temporaryPassword,
+                'expires_at' => now()->addDays(7),
+                'created_by' => auth()->id()
+            ]);
 
             \Log::info('✅ InvitationToken bijgewerkt met nieuw wachtwoord', [
                 'email' => $medewerker->email
