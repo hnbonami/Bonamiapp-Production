@@ -23,6 +23,13 @@ class DashboardContentController extends Controller
         // Check if nieuwe velden bestaan (na migratie)
         $hasNewFields = \Schema::hasColumn('staff_notes', 'type');
         
+        // 🔍 DEBUG: Check of organisatie_id kolom bestaat
+        $hasOrganisatieIdColumn = \Schema::hasColumn('staff_notes', 'organisatie_id');
+        \Log::info('🔍 Database schema check', [
+            'has_new_fields' => $hasNewFields,
+            'has_organisatie_id_column' => $hasOrganisatieIdColumn
+        ]);
+        
         if ($hasNewFields) {
             $query = StaffNote::with('user')
                 ->where('is_archived', false)
@@ -46,27 +53,35 @@ class DashboardContentController extends Controller
                             ->orWhereNull('organisatie_id');
                       });
                       
-                \Log::info('✅ Filtering for klant - including global content', [
+                \Log::info('✅ Filtering for klant', [
                     'visibility' => 'all',
-                    'organisatie_id' => $user->organisatie_id,
+                    'user_organisatie_id' => $user->organisatie_id,
                     'also_showing' => 'global content (organisatie_id = null)'
                 ]);
             } elseif (in_array($user->role, ['medewerker', 'admin', 'organisatie_admin'])) {
-                // Medewerkers/admins zien:
-                // 1. Alle content (staff + all visibility) van hun organisatie
-                // 2. Globale content (organisatie_id = NULL)
-                $query->where(function($q) use ($user) {
-                    $q->where('organisatie_id', $user->organisatie_id)
-                      ->orWhereNull('organisatie_id');
-                });
-                
-                \Log::info('✅ Filtering for medewerker/admin - including global content', [
-                    'user_role' => $user->role,
-                    'organisatie_id' => $user->organisatie_id,
-                    'showing' => 'organisation content + global content'
-                ]);
+                // KRITIEK: Medewerkers/admins zien ALLEEN hun eigen organisatie content
+                // GEEN globale content (NULL) om verwarring tussen organisaties te voorkomen
+                if ($user->organisatie_id) {
+                    // ALLEEN content van eigen organisatie - GEEN NULL
+                    $query->where('organisatie_id', $user->organisatie_id);
+                    
+                    \Log::info('✅ Filtering for medewerker/admin with organisatie', [
+                        'user_role' => $user->role,
+                        'user_organisatie_id' => $user->organisatie_id,
+                        'showing' => 'ONLY own organisation content (NO global)',
+                        'sql_query' => $query->toSql(),
+                        'bindings' => $query->getBindings()
+                    ]);
+                } else {
+                    // Geen organisatie? Alleen globale content
+                    $query->whereNull('organisatie_id');
+                    
+                    \Log::info('⚠️ Medewerker without organisatie - showing only global content', [
+                        'user_role' => $user->role
+                    ]);
+                }
             } elseif ($user->role === 'superadmin') {
-                // Superadmin ziet ALLES
+                // Superadmin ziet ALLES (geen filter)
                 \Log::info('✅ Superadmin - showing ALL content');
             } else {
                 // Fallback: alleen globale content
@@ -84,7 +99,15 @@ class DashboardContentController extends Controller
                 
             \Log::info('✅ Content found', [
                 'count' => $content->count(),
-                'titles' => $content->pluck('title')->toArray()
+                'titles' => $content->pluck('title')->toArray(),
+                'content_details' => $content->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'title' => $item->title,
+                        'organisatie_id' => $item->organisatie_id ?? 'NULL',
+                        'visibility' => $item->visibility ?? 'unknown'
+                    ];
+                })->toArray()
             ]);
         } else {
             // Fallback voor oude structuur
