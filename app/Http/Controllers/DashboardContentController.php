@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DashboardContent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 
 class DashboardContentController extends Controller
@@ -13,39 +14,27 @@ class DashboardContentController extends Controller
      */
     public function index()
     {
-        // Haal alleen actieve, niet-gearchiveerde content op voor de huidige organisatie
-        $user = auth()->user();
-        $organisatieId = $user->organisatie_id ?? optional($user->medewerker)->organisatie_id ?? null;
+        \Log::info('📊 Dashboard laden - TEGELS VIEW');
+        
+        // Haal alle actieve (niet gearchiveerde) dashboard content op
+        $content = DashboardContent::where('is_archived', false)
+            ->where('is_actief', true)
+            ->orderBy('volgorde')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-        // Check of de tabel bestaat
-        if (!Schema::hasTable('dashboard_contents')) {
-            // Fallback: probeer oude staff_notes tabel
-            if (Schema::hasTable('staff_notes')) {
-                \Log::info('⚠️ dashboard_contents tabel niet gevonden, gebruik staff_notes als fallback');
-                $content = \DB::table('staff_notes')
-                    ->where('is_actief', true)
-                    ->where('is_archived', false)
-                    ->orderBy('volgorde')
-                    ->get();
-            } else {
-                $content = collect();
-            }
-        } else {
-            $content = DashboardContent::where('is_actief', true)
-                ->where('is_archived', false)
-                ->when($organisatieId, function($query, $organisatieId) {
-                    return $query->where('organisatie_id', $organisatieId);
-                })
-                ->orderBy('volgorde')
-                ->get();
-        }
+        \Log::info('✅ Dashboard content geladen', [
+            'count' => $content->count(),
+            'items' => $content->pluck('titel')->toArray()
+        ]);
 
-        // Check of user admin rechten heeft (niet klant)
-        $canManage = $this->canManageContent();
+        // Check of gebruiker content kan beheren
+        $canManage = auth()->user()->role === 'admin' || auth()->user()->role === 'medewerker';
+        
+        // Check of nieuwe velden bestaan (voor backwards compatibility)
+        $hasNewFields = Schema::hasColumn('dashboard_contents', 'tile_size');
 
-        // Check of nieuwe velden bestaan in de tabel (voor backward compatibility)
-        $hasNewFields = Schema::hasColumn('dashboard_contents', 'type_icon');
-
+        // GEBRUIK dashboard-content.index view met TEGELS!
         return view('dashboard-content.index', compact('content', 'canManage', 'hasNewFields'));
     }
 
@@ -63,35 +52,69 @@ class DashboardContentController extends Controller
     }
 
     /**
-     * Sla nieuwe content op
+     * Store nieuwe dashboard content
      */
     public function store(Request $request)
     {
-        // Alleen admins, medewerkers en eigenaren mogen content aanmaken
-        if (!$this->canManageContent()) {
-            abort(403, 'Je hebt geen rechten om dashboard content aan te maken.');
-        }
-
-        $validated = $request->validate([
-            'titel' => 'required|string|max:255',
-            'inhoud' => 'required|string',
-            'type' => 'required|in:info,waarschuwing,succes,belangrijk',
-            'kleur' => 'nullable|string|max:50',
-            'icoon' => 'nullable|string|max:50',
-            'link_url' => 'nullable|url|max:500',
-            'link_tekst' => 'nullable|string|max:100',
-            'is_actief' => 'boolean',
+        // Log alle input voor debugging
+        \Log::info('📝 Dashboard content store request', [
+            'all_input' => $request->all(),
+            'has_titel' => $request->has('titel'),
+            'has_inhoud' => $request->has('inhoud'),
+            'has_content' => $request->has('content'),
         ]);
 
-        // Voeg organisatie_id en user_id toe
-        $user = auth()->user();
-        $validated['organisatie_id'] = $user->organisatie_id ?? optional($user->medewerker)->organisatie_id ?? null;
-        $validated['user_id'] = $user->id;
-        $validated['volgorde'] = DashboardContent::where('organisatie_id', $validated['organisatie_id'])->max('volgorde') + 1;
+        // Validatie - BELANGRIJK: 'inhoud' is NIET required als 'content' bestaat
+        $validated = $request->validate([
+            'titel' => 'required|string|max:255',
+            'inhoud' => 'nullable|string', // Niet required!
+            'content' => 'nullable|string', // Alternatieve veldnaam
+            'type' => 'nullable|string',
+            'kleur' => 'nullable|string',
+            'icoon' => 'nullable|string',
+            'link_url' => 'nullable|url',
+            'link_tekst' => 'nullable|string',
+            'is_actief' => 'nullable|boolean',
+        ]);
 
-        DashboardContent::create($validated);
+        // Map 'content' naar 'inhoud' als het bestaat
+        if (isset($validated['content']) && !isset($validated['inhoud'])) {
+            $validated['inhoud'] = $validated['content'];
+            unset($validated['content']);
+        }
 
-        return redirect()->route('dashboard')->with('success', 'Dashboard content succesvol aangemaakt!');
+        // Als BEIDE niet bestaan, zet lege string
+        if (!isset($validated['inhoud'])) {
+            $validated['inhoud'] = '';
+        }
+
+        // Zet defaults
+        $validated['user_id'] = auth()->id();
+        $validated['organisatie_id'] = auth()->user()->organisatie_id ?? null;
+        $validated['is_actief'] = $request->has('is_actief') ? true : false;
+        $validated['is_archived'] = false;
+        
+        // Bepaal volgorde (laatste positie)
+        $maxOrder = DashboardContent::max('volgorde') ?? 0;
+        $validated['volgorde'] = $maxOrder + 1;
+
+        try {
+            $content = DashboardContent::create($validated);
+
+            \Log::info('✅ Dashboard content aangemaakt', ['id' => $content->id]);
+
+            return redirect()->route('dashboard')
+                ->with('success', 'Dashboard content succesvol aangemaakt!');
+        } catch (\Exception $e) {
+            \Log::error('❌ Dashboard content aanmaken mislukt', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'validated' => $validated
+            ]);
+
+            return back()->withInput()
+                ->withErrors(['error' => 'Er ging iets mis bij het opslaan: ' . $e->getMessage()]);
+        }
     }
 
     /**

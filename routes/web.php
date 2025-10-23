@@ -87,7 +87,9 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/dashboard', [App\Http\Controllers\DashboardContentController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', [App\Http\Controllers\DashboardContentController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 // (debug route verwijderd)
 
 // Nieuwsbrief pagina (placeholder)
