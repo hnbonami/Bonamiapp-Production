@@ -43,7 +43,7 @@ class StaffNote extends Model
 
     public function scopeVisibleFor($query, $userRole)
     {
-        if (in_array($userRole, ['admin', 'medewerker'])) {
+        if (in_array($userRole, ['superadmin', 'admin', 'medewerker'])) {
             return $query; // Staff ziet alles
         }
         
@@ -53,7 +53,7 @@ class StaffNote extends Model
     // Nieuwe methods voor dashboard content systeem
     public function canDrag($user)
     {
-        return in_array($user->role, ['admin', 'medewerker']);
+        return in_array($user->role, ['superadmin', 'admin', 'medewerker']);
     }
 
     public function getTileClassAttribute()
