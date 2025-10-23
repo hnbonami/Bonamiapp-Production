@@ -607,7 +607,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                     if (typeof updateTrainingszones === 'function') {
                                         console.log('✅ updateTrainingszones functie gevonden, uitvoeren...');
                                         
-                                        // Voer bestaande functie uit
+                                        // 🔥 BELANGRIJK: Wis opgeslagen zones data zodat er een herberekening plaatsvindt
+                                        const zonesDataInput = document.getElementById('trainingszones_data');
+                                        if (zonesDataInput) {
+                                            console.log('🗑️ Opgeslagen zones data gewist voor herberekening');
+                                            zonesDataInput.value = ''; // Leegmaken voor herberekening
+                                        }
+                                        
+                                        // Voer herberekening uit
                                         updateTrainingszones();
                                         
                                         // Toon feedback
@@ -3705,13 +3712,21 @@ function updateTrainingszones() {
         return;
     }
     
-    // 🔍 CHECK: Is er al opgeslagen zones data in de database?
+    // 🔍 CHECK: Is er al opgeslagen zones data in de database met geldige waarden?
     const existingZonesDataInput = document.getElementById('trainingszones_data');
     if (existingZonesDataInput && existingZonesDataInput.value) {
         try {
             const savedZonesData = JSON.parse(existingZonesDataInput.value);
-            if (savedZonesData && savedZonesData.length > 0) {
-                console.log('✅ GEVONDEN: Opgeslagen zones data uit database:', savedZonesData.length, 'zones');
+            
+            // 🔥 BELANGRIJK: Check of zones GELDIGE waarden bevatten (niet allemaal 0)
+            const hasValidData = savedZonesData && savedZonesData.length > 0 && 
+                                 savedZonesData.some(zone => 
+                                     (zone.minVermogen > 0 || zone.maxVermogen > 0 || 
+                                      zone.minHartslag > 0 || zone.maxHartslag > 0)
+                                 );
+            
+            if (hasValidData) {
+                console.log('✅ GEVONDEN: Opgeslagen zones data uit database met geldige waarden:', savedZonesData.length, 'zones');
                 console.log('📊 Zones data:', savedZonesData);
                 
                 // Toon deze zones in plaats van herberekenen
@@ -3724,6 +3739,8 @@ function updateTrainingszones() {
                 
                 console.log('✅ Opgeslagen zones succesvol geladen en weergegeven');
                 return; // Stop hier, gebruik de opgeslagen data
+            } else {
+                console.log('⚠️ Opgeslagen zones data bevat alleen 0-waarden, opnieuw berekenen...');
             }
         } catch (e) {
             console.log('⚠️ Fout bij parsen opgeslagen zones data:', e);
