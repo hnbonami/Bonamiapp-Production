@@ -15,16 +15,48 @@ class OrganisatieController extends Controller
      */
     public function index()
     {
-        // Extra check: alleen superadmin heeft toegang
-        if (!auth()->user()->isSuperAdmin()) {
-            abort(403, 'Toegang geweigerd. Alleen superadmins hebben toegang.');
-        }
-
-        $organisaties = Organisatie::withCount(['users', 'klanten'])
+        // Debug logging
+        \Log::info('=== ORGANISATIES INDEX DEBUG ===');
+        
+        // Laad organisaties met ALLE mogelijke relaties
+        $organisaties = Organisatie::with(['users', 'klanten'])
             ->orderBy('created_at', 'desc')
             ->get();
+        
+    // Voeg handmatig counts toe aan elk organisatie object
+    $organisaties->each(function ($org) {
+        // Tel alle users
+        $org->users_count = $org->users->count();
+        $org->klanten_count = $org->klanten->count();
+        
+        // Debug: Toon ALLE user informatie
+        \Log::info("=== ORG: {$org->naam} (ID: {$org->id}) ===");
+        \Log::info("Users in relatie: " . $org->users->count());
+        
+        foreach ($org->users as $user) {
+            \Log::info("  - User {$user->id}: {$user->name} | Role: '{$user->role}' | Type: " . gettype($user->role));
+        }
+        
+        // Tel ook via directe DB query om case sensitivity te omzeilen
+        $dbMedewerkers = \DB::table('users')
+            ->where('organisatie_id', $org->id)
+            ->whereIn(\DB::raw('LOWER(role)'), ['medewerker', 'employee', 'staff'])
+            ->count();
+            
+        $dbAdmins = \DB::table('users')
+            ->where('organisatie_id', $org->id)
+            ->whereIn(\DB::raw('LOWER(role)'), ['admin', 'administrator', 'beheerder', 'organisatie_admin', 'superadmin'])
+            ->count();
+        
+        \Log::info("DB Query (case-insensitive) - Medewerkers: {$dbMedewerkers}, Admins: {$dbAdmins}");
+        
+        $org->medewerkers_count = $dbMedewerkers;
+        $org->admin_count = $dbAdmins;
+        
+        \Log::info("FINAL - Users: {$org->users_count}, Klanten: {$org->klanten_count}, Medewerkers: {$org->medewerkers_count}, Admins: {$org->admin_count}");
+    });
 
-        return view('organisaties.index', compact('organisaties'));
+    return view('organisaties.index', compact('organisaties'));
     }
 
     /**
