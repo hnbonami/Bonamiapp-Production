@@ -2303,7 +2303,68 @@ function setupDragEventListeners(canvas) {
     canvas.addEventListener('mousemove', function(event) {
         const rect = canvas.getBoundingClientRect();
         const x = event.clientX - rect.left;
-    if (points.length === 0) return 1.0;
+        const y = event.clientY - rect.top;
+        
+        if (isDragging && dragTarget) {
+            // Update drempel positie
+            const chart = hartslagLactaatChart;
+            const newXValue = chart.scales.x.getValueForPixel(x);
+            
+            if (dragTarget === 'aerobe' && currentThresholds.aerobe) {
+                currentThresholds.aerobe[currentXField] = newXValue;
+                currentThresholds.aerobe.hartslag = interpolateLinear(getTableData(), newXValue, 'hartslag', currentXField);
+            } else if (dragTarget === 'anaerobe' && currentThresholds.anaerobe) {
+                currentThresholds.anaerobe[currentXField] = newXValue;
+                currentThresholds.anaerobe.hartslag = interpolateLinear(getTableData(), newXValue, 'hartslag', currentXField);
+            }
+            
+            // Update input velden
+            updateThresholdValues(currentThresholds, currentXField);
+            
+            // Herteken grafiek
+            chart.update('none');
+        } else {
+            // Verander cursor als we over een drempel hoveren
+            if (!currentThresholds || !currentXField) return;
+            
+            const chart = hartslagLactaatChart;
+            const chartArea = chart.chartArea;
+            let overThreshold = false;
+            
+            if (currentThresholds.aerobe) {
+                const aerobeX = chart.scales.x.getPixelForValue(currentThresholds.aerobe[currentXField]);
+                if (Math.abs(x - aerobeX) < 15 && y >= chartArea.top - 10 && y <= chartArea.bottom + 10) {
+                    overThreshold = true;
+                }
+            }
+            
+            if (currentThresholds.anaerobe) {
+                const anaerobeX = chart.scales.x.getPixelForValue(currentThresholds.anaerobe[currentXField]);
+                if (Math.abs(x - anaerobeX) < 15 && y >= chartArea.top - 10 && y <= chartArea.bottom + 10) {
+                    overThreshold = true;
+                }
+            }
+            
+            canvas.style.cursor = overThreshold ? 'ew-resize' : 'default';
+        }
+    });
+    
+    canvas.addEventListener('mouseup', function() {
+        isDragging = false;
+        dragTarget = null;
+        canvas.style.cursor = 'default';
+    });
+    
+    canvas.addEventListener('mouseleave', function() {
+        isDragging = false;
+        dragTarget = null;
+        canvas.style.cursor = 'default';
+    });
+}
+
+// Eenvoudige lineaire interpolatie voor debugging (behouden)
+function interpolateSimple(points, targetX) {
+    if (points.length === 0) return 0;
     if (points.length === 1) return points[0].y;
     
     // Sorteer punten op X-waarde
