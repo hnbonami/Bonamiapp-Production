@@ -1664,47 +1664,6 @@ function handleAnalyseMethodeChange() {
     }
 }
 
-// Functie om vloeiende lactaatcurve te genereren met exponentiële interpolatie
-function generateSmoothLactaatCurve(rawLactaatData) {
-    console.log('🔄 generateSmoothLactaatCurve aangeroepen met', rawLactaatData.length, 'punten');
-    
-    if (!rawLactaatData || rawLactaatData.length < 2) {
-        console.log('❌ Onvoldoende lactaat data voor curve generatie');
-        return rawLactaatData;
-    }
-    
-    // SPECIALE BEHANDELING voor zwemmen
-    const isSwimming = currentTableType === 'veldtest_zwemmen';
-    
-    // Sorteer data
-    const sortedData = [...rawLactaatData].sort((a, b) => a.x - b.x);
-    
-    console.log('📊 Gesorteerde lactaat data:', sortedData);
-    
-    // Genereer vloeiende curve met meer punten (exponentiële interpolatie)
-    const smoothData = [];
-    const minX = sortedData[0].x;
-    const maxX = sortedData[sortedData.length - 1].x;
-    const steps = 50; // 50 punten voor vloeiende curve
-    
-    for (let i = 0; i <= steps; i++) {
-        const x = minX + (maxX - minX) * (i / steps);
-        
-        // Gebruik speciale interpolatie voor zwemmen
-        let y;
-        if (isSwimming) {
-            y = interpolateExponentialForSwimming(sortedData, x);
-        } else {
-            y = interpolateExponential(sortedData, x);
-        }
-        
-        smoothData.push({ x: x, y: y });
-    }
-    
-    console.log('✅ Gegenereerd', smoothData.length, 'punten voor vloeiende lactaatcurve');
-    return smoothData;
-}
-
 // Functie om data uit de tabel te lezen
 function getTableData() {
     const tbody = document.getElementById('testresultaten-body');
@@ -2689,6 +2648,101 @@ function interpolateExponential(points, x) {
     const interpolatedValue = p1.lactaat + exponentialT * (p2.lactaat - p1.lactaat);
     
     return Math.max(interpolatedValue, 0.5); // Minimum lactaat waarde
+}
+
+// Exponentiële interpolatie voor fysiologisch realistische lactaatcurve
+function interpolateExponentialForCurve(points, targetX) {
+    if (points.length === 0) return 1.0;
+    if (points.length === 1) return points[0].y;
+    
+    // Sorteer punten op X-waarde
+    const sortedPoints = [...points].sort((a, b) => a.x - b.x);
+    
+    const minX = sortedPoints[0].x;
+    const maxX = sortedPoints[sortedPoints.length - 1].x;
+    const minY = sortedPoints[0].y;
+    const maxY = sortedPoints[sortedPoints.length - 1].y;
+    
+    // Normaliseer X-waarde tussen 0 en 1
+    const normalizedX = (targetX - minX) / (maxX - minX);
+    
+    // Exponentiële functie voor lactaat groei
+    let exponentialValue;
+    if (maxY > 6) {
+        // Hoge lactaatwaarden: sterke exponentiële groei
+        const k = 2.5;
+        exponentialValue = minY + (maxY - minY) * (Math.exp(k * normalizedX) - 1) / (Math.exp(k) - 1);
+    } else if (maxY > 3) {
+        // Matige lactaatwaarden: matige exponentiële groei
+        const k = 1.8;
+        exponentialValue = minY + (maxY - minY) * (Math.exp(k * normalizedX) - 1) / (Math.exp(k) - 1);
+    } else {
+        // Lage lactaatwaarden: bijna lineair
+        const k = 1.2;
+        exponentialValue = minY + (maxY - minY) * (Math.exp(k * normalizedX) - 1) / (Math.exp(k) - 1);
+    }
+    
+    // Interpoleer tussen omliggende meetpunten voor lokalere precisie
+    let i = 0;
+    while (i < sortedPoints.length - 1 && sortedPoints[i + 1].x < targetX) {
+        i++;
+    }
+    
+    let localValue = exponentialValue;
+    if (i < sortedPoints.length - 1) {
+        const p1 = sortedPoints[i];
+        const p2 = sortedPoints[i + 1];
+        const t = (targetX - p1.x) / (p2.x - p1.x);
+        
+        // Mix tussen lokale lineaire interpolatie en globale exponentiële curve
+        const linearLocal = p1.y + t * (p2.y - p1.y);
+        localValue = 0.3 * linearLocal + 0.7 * exponentialValue; // 70% exponentieel, 30% lokaal
+    }
+    
+    return Math.max(localValue, 0.8); // Minimum lactaat
+}
+
+// Functie om vloeiende lactaatcurve te genereren met exponentiële interpolatie
+function generateSmoothLactaatCurve(rawLactaatData) {
+    console.log('🔄 generateSmoothLactaatCurve aangeroepen met', rawLactaatData.length, 'punten');
+    
+    if (!rawLactaatData || rawLactaatData.length < 2) {
+        console.log('❌ Onvoldoende lactaat data voor curve generatie');
+        return rawLactaatData;
+    }
+    
+    // SPECIALE BEHANDELING voor zwemmen
+    const isSwimming = currentTableType === 'veldtest_zwemmen';
+    
+    // Sorteer data
+    const sortedData = [...rawLactaatData].sort((a, b) => a.x - b.x);
+    
+    console.log('📊 Gesorteerde lactaat data:', sortedData);
+    
+    // Genereer vloeiende curve met meer punten (exponentiële interpolatie)
+    const smoothData = [];
+    const minX = sortedData[0].x;
+    const maxX = sortedData[sortedData.length - 1].x;
+    const steps = 50; // 50 punten voor vloeiende curve
+    
+    for (let i = 0; i <= steps; i++) {
+        const x = minX + (maxX - minX) * (i / steps);
+        
+        // Gebruik EENVOUDIGE INTERPOLATIE die altijd werkt
+        let y;
+        if (isSwimming) {
+            y = interpolateExponentialForSwimming(sortedData, x);
+        } else {
+            // Gebruik eenvoudige exponentiële interpolatie voor curve
+            y = interpolateExponentialForCurve(sortedData, x);
+        }
+        
+        smoothData.push({ x: x, y: y });
+    }
+    
+    console.log('✅ Gegenereerd', smoothData.length, 'punten voor vloeiende lactaatcurve');
+    console.log('🔍 Eerste curve punt:', smoothData[0], 'Laatste:', smoothData[smoothData.length - 1]);
+    return smoothData;
 }
 
 // Functie om grafiek te genereren
