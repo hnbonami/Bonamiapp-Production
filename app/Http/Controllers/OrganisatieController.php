@@ -123,13 +123,10 @@ class OrganisatieController extends Controller
      */
     public function show(Organisatie $organisatie)
     {
-        if (!auth()->user()->isSuperAdmin()) {
-            abort(403);
-        }
-
-        $organisatie->load(['users', 'klanten']);
-
-        // Statistieken ophalen
+        // Eager load relaties voor optimale performance
+        $organisatie->load(['users', 'klanten', 'features']);
+        
+        // Bereken statistieken
         $stats = [
             'totaal_users' => $organisatie->users()->count(),
             'totaal_klanten' => $organisatie->klanten()->count(),
@@ -137,8 +134,11 @@ class OrganisatieController extends Controller
             'admins' => $organisatie->users()->where('role', 'organisatie_admin')->count(),
             'medewerkers' => $organisatie->users()->where('role', 'medewerker')->count(),
         ];
-
-        return view('organisaties.show', compact('organisatie', 'stats'));
+        
+        // Tel totaal aantal beschikbare features
+        $totalFeatures = \App\Models\Feature::count();
+        
+        return view('organisaties.show', compact('organisatie', 'stats', 'totalFeatures'));
     }
 
     /**
@@ -401,44 +401,71 @@ class OrganisatieController extends Controller
     /**
      * Toggle een feature voor een organisatie aan/uit
      */
-    public function toggleFeature(Organisatie $organisatie, Feature $feature)
+    public function toggleFeature(Request $request, Organisatie $organisatie, $featureId)
     {
-        if (!auth()->user()->isSuperAdmin()) {
-            abort(403);
-        }
-
         try {
-            if ($organisatie->hasFeature($feature->key)) {
-                // Feature uitschakelen
-                $organisatie->disableFeature($feature);
-                $message = "Feature '{$feature->naam}' uitgeschakeld voor {$organisatie->naam}";
-                $type = 'warning';
-            } else {
-                // Feature inschakelen
-                $organisatie->enableFeature($feature);
-                $message = "Feature '{$feature->naam}' ingeschakeld voor {$organisatie->naam}";
-                $type = 'success';
+            \Log::info('🔄 Feature toggle aangeroepen', [
+                'organisatie_id' => $organisatie->id,
+                'feature_id' => $featureId,
+                'current_user' => auth()->id(),
+                'request_data' => $request->all()
+            ]);
+
+            // Valideer de request
+            $validated = $request->validate([
+                'is_active' => 'required|boolean'
+            ]);
+
+            // Check of feature bestaat
+            $feature = Feature::find($featureId);
+            if (!$feature) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Feature niet gevonden'
+                ], 404);
             }
 
-            Log::info('Feature toggled voor organisatie', [
-                'organisatie_id' => $organisatie->id,
-                'feature_id' => $feature->id,
-                'feature_key' => $feature->key,
-                'enabled' => $organisatie->hasFeature($feature->key),
-                'toggled_by' => auth()->id()
+            // Check of organisatie al deze feature heeft
+            $existingPivot = $organisatie->features()->where('feature_id', $featureId)->first();
+
+            if ($existingPivot) {
+                // Update bestaande relatie - LET OP: kolom heet 'is_actief' niet 'is_active'
+                $organisatie->features()->updateExistingPivot($featureId, [
+                    'is_actief' => $validated['is_active']
+                ]);
+                
+                \Log::info('✅ Feature status bijgewerkt', [
+                    'feature_id' => $featureId,
+                    'new_status' => $validated['is_active']
+                ]);
+            } else {
+                // Voeg feature toe aan organisatie
+                $organisatie->features()->attach($featureId, [
+                    'is_actief' => $validated['is_active']
+                ]);
+                
+                \Log::info('✅ Feature toegevoegd aan organisatie', [
+                    'feature_id' => $featureId,
+                    'status' => $validated['is_active']
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'is_active' => $validated['is_active'],
+                'message' => $validated['is_active'] ? 'Feature geactiveerd' : 'Feature gedeactiveerd'
             ]);
 
-            return redirect()->back()->with($type, $message);
-            
         } catch (\Exception $e) {
-            Log::error('Fout bij togglen feature', [
-                'organisatie_id' => $organisatie->id,
-                'feature_id' => $feature->id,
-                'error' => $e->getMessage()
+            \Log::error('❌ Feature toggle error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
-            return redirect()->back()
-                ->with('error', 'Er is een fout opgetreden bij het wijzigen van de feature.');
+            return response()->json([
+                'success' => false,
+                'message' => 'Er is een fout opgetreden: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

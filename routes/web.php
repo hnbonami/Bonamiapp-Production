@@ -163,10 +163,12 @@ Route::middleware('auth')->group(function () {
             'organisaties' => 'organisatie'
         ]);
         Route::post('organisaties/{organisatie}/uitnodiging', [OrganisatieController::class, 'sendInvitation'])->name('organisaties.sendInvitation');
-        
-        // Feature toggle route
-        Route::post('organisaties/{organisatie}/features/{feature}/toggle', [OrganisatieController::class, 'toggleFeature'])->name('organisaties.features.toggle');
     });
+    
+    // Feature toggle route - BUITEN superadmin middleware zodat auth users het kunnen gebruiken
+    Route::post('organisaties/{organisatie}/features/{feature}/toggle', [OrganisatieController::class, 'toggleFeature'])
+        ->name('organisaties.features.toggle')
+        ->middleware(['auth', 'verified']);
 
     // Bikefit routes
     Route::group(['prefix' => 'klanten/{klant}'], function () {
@@ -181,7 +183,7 @@ Route::middleware('auth')->group(function () {
     // Alternatieve print route via BikefitResultsController
     Route::get('bikefit/{bikefit}/print-direct', [\App\Http\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
     // Direct PDF download route voor bikefit rapport
-    Route::get('bikefit/{bikefit}/download-pdf', [\AppHttp\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
+    Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
     // Bikefit berekende resultaten en verslag generatie
     Route::get('bikefit/{bikefit}/results', [\App\Http\Controllers\BikefitResultsController::class, 'show'])->name('bikefit.results')->scopeBindings();
     Route::post('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
@@ -747,7 +749,7 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard-content')->name('dash
     Route::get('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'show'])->name('show');
     Route::get('/{dashboardContent}/edit', [App\Http\Controllers\DashboardContentController::class, 'edit'])->name('edit');
     Route::put('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'update'])->name('update');
-    Route::delete('/{dashboardContent}', [AppHttp\Controllers\DashboardContentController::class, 'destroy'])->name('destroy');
+    Route::delete('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'destroy'])->name('destroy');
     Route::patch('/{dashboardContent}/archive', [App\Http\Controllers\DashboardContentController::class, 'archive'])->name('archive');
     Route::patch('/{dashboardContent}/restore', [App\Http\Controllers\DashboardContentController::class, 'restore'])->name('restore');
     
