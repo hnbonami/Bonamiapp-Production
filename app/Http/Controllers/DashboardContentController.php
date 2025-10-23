@@ -2,215 +2,251 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StaffNote;
+use App\Models\DashboardContent;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardContentController extends Controller
 {
+    /**
+     * Haal dashboard content op voor de homepage
+     */
     public function index()
     {
-        $user = Auth::user();
-        
-        // Check if nieuwe velden bestaan (na migratie)
-        $hasNewFields = \Schema::hasColumn('staff_notes', 'type');
-        
-        if ($hasNewFields) {
-            $content = StaffNote::with('user')
-                ->visibleFor($user->role)
-                ->where('is_archived', false)
-                ->where(function($q) {
-                    $q->whereNull('expires_at')
-                      ->orWhere('expires_at', '>', now());
-                })
-                ->where(function($q) {
-                    $q->whereNull('published_at')
-                      ->orWhere('published_at', '<=', now());
-                })
-                ->orderBy('is_pinned', 'desc')
-                ->orderBy('sort_order', 'asc')
-                ->orderBy('created_at', 'desc')
-                ->get();
+        // Haal alleen actieve, niet-gearchiveerde content op voor de huidige organisatie
+        $user = auth()->user();
+        $organisatieId = $user->organisatie_id ?? optional($user->medewerker)->organisatie_id ?? null;
+
+        // Check of de tabel bestaat
+        if (!Schema::hasTable('dashboard_contents')) {
+            // Fallback: probeer oude staff_notes tabel
+            if (Schema::hasTable('staff_notes')) {
+                \Log::info('⚠️ dashboard_contents tabel niet gevonden, gebruik staff_notes als fallback');
+                $content = \DB::table('staff_notes')
+                    ->where('is_actief', true)
+                    ->where('is_archived', false)
+                    ->orderBy('volgorde')
+                    ->get();
+            } else {
+                $content = collect();
+            }
         } else {
-            // Fallback voor oude structuur
-            $content = StaffNote::with('user')
-                ->visibleFor($user->role)
-                ->orderBy('created_at', 'desc')
+            $content = DashboardContent::where('is_actief', true)
+                ->where('is_archived', false)
+                ->when($organisatieId, function($query, $organisatieId) {
+                    return $query->where('organisatie_id', $organisatieId);
+                })
+                ->orderBy('volgorde')
                 ->get();
         }
 
-        $canManage = in_array($user->role, ['admin', 'medewerker']);
+        // Check of user admin rechten heeft (niet klant)
+        $canManage = $this->canManageContent();
+
+        // Check of nieuwe velden bestaan in de tabel (voor backward compatibility)
+        $hasNewFields = Schema::hasColumn('dashboard_contents', 'type_icon');
 
         return view('dashboard-content.index', compact('content', 'canManage', 'hasNewFields'));
     }
 
+    /**
+     * Toon formulier voor nieuwe content
+     */
     public function create()
     {
-        $templates = $this->getTemplates();
-        
-        return view('dashboard-content.create', compact('templates'));
+        // Alleen admins, medewerkers en eigenaren mogen content aanmaken
+        if (!$this->canManageContent()) {
+            abort(403, 'Je hebt geen rechten om dashboard content aan te maken.');
+        }
+
+        return view('dashboard-content.create');
     }
 
+    /**
+     * Sla nieuwe content op
+     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'type' => 'required|in:note,task,announcement,image,mixed',
-            'tile_size' => 'required|in:mini,small,medium,large,banner',
-            'visibility' => 'required|in:staff,all',
-            'priority' => 'required|in:low,medium,high,urgent',
-            'background_color' => 'required|string|max:7',
-            'text_color' => 'required|string|max:7',
-            'expires_at' => 'nullable|date|after:now',
-            'published_at' => 'nullable|date',
-            'is_pinned' => 'boolean',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-            'link_url' => 'nullable|url|max:500',
-            'open_in_new_tab' => 'boolean'
-        ]);
-
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('dashboard-content', 'public');
-            $validated['image_path'] = $imagePath;
+        // Alleen admins, medewerkers en eigenaren mogen content aanmaken
+        if (!$this->canManageContent()) {
+            abort(403, 'Je hebt geen rechten om dashboard content aan te maken.');
         }
 
-        // Set defaults
-        $validated['user_id'] = Auth::id();
-        $validated['sort_order'] = StaffNote::max('sort_order') + 1;
-        $validated['published_at'] = $validated['published_at'] ?? now();
+        $validated = $request->validate([
+            'titel' => 'required|string|max:255',
+            'inhoud' => 'required|string',
+            'type' => 'required|in:info,waarschuwing,succes,belangrijk',
+            'kleur' => 'nullable|string|max:50',
+            'icoon' => 'nullable|string|max:50',
+            'link_url' => 'nullable|url|max:500',
+            'link_tekst' => 'nullable|string|max:100',
+            'is_actief' => 'boolean',
+        ]);
 
-        $content = StaffNote::create($validated);
+        // Voeg organisatie_id en user_id toe
+        $user = auth()->user();
+        $validated['organisatie_id'] = $user->organisatie_id ?? optional($user->medewerker)->organisatie_id ?? null;
+        $validated['user_id'] = $user->id;
+        $validated['volgorde'] = DashboardContent::where('organisatie_id', $validated['organisatie_id'])->max('volgorde') + 1;
 
-        return redirect()->route('dashboard-content.index')
-            ->with('success', 'Content succesvol aangemaakt!');
+        DashboardContent::create($validated);
+
+        return redirect()->route('dashboard')->with('success', 'Dashboard content succesvol aangemaakt!');
     }
 
-    public function edit(StaffNote $dashboardContent)
+    /**
+     * Toon gearchiveerde content
+     */
+    public function archived()
     {
-        $templates = $this->getTemplates();
+        // Alleen admins, medewerkers en eigenaren mogen archief zien
+        if (!$this->canManageContent()) {
+            abort(403, 'Je hebt geen rechten om het archief te bekijken.');
+        }
+
+        $user = auth()->user();
+        $organisatieId = $user->organisatie_id ?? optional($user->medewerker)->organisatie_id ?? null;
+
+        $archivedContent = DashboardContent::where('is_archived', true)
+            ->when($organisatieId, function($query, $organisatieId) {
+                return $query->where('organisatie_id', $organisatieId);
+            })
+            ->orderBy('archived_at', 'desc')
+            ->get();
         
-        return view('dashboard-content.edit', compact('dashboardContent', 'templates'));
+        return view('dashboard-content.archived', compact('archivedContent'));
     }
 
-    public function update(Request $request, StaffNote $dashboardContent)
+    /**
+     * Helper method: Check of user content mag beheren
+     */
+    private function canManageContent(): bool
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'type' => 'required|in:note,task,announcement,image,mixed',
-            'tile_size' => 'required|in:mini,small,medium,large,banner',
-            'visibility' => 'required|in:staff,all',
-            'priority' => 'required|in:low,medium,high,urgent',
-            'background_color' => 'required|string|max:7',
-            'text_color' => 'required|string|max:7',
-            'expires_at' => 'nullable|date',
-            'published_at' => 'nullable|date',
-            'is_pinned' => 'boolean',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
-            'link_url' => 'nullable|url|max:500',
-            'open_in_new_tab' => 'boolean'
-        ]);
-
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            // Delete old image if exists
-            if ($dashboardContent->image_path) {
-                Storage::disk('public')->delete($dashboardContent->image_path);
-            }
-            
-            $imagePath = $request->file('image')->store('dashboard-content', 'public');
-            $validated['image_path'] = $imagePath;
+        $user = auth()->user();
+        
+        // Als user geen speciale role heeft, geef true (default allow)
+        // Dit voorkomt dat normale users geblokkeerd worden
+        if (!isset($user->role)) {
+            return true;
         }
+        
+        // Klanten mogen GEEN content beheren (expliciet geblokkeerd)
+        if ($user->role === 'klant') {
+            return false;
+        }
+
+        // Alle andere users (admin, medewerker, eigenaar) mogen WEL
+        return true;
+    }
+
+    /**
+     * Toon specifieke content
+     */
+    public function show(DashboardContent $dashboardContent)
+    {
+        return view('dashboard-content.show', compact('dashboardContent'));
+    }
+
+    /**
+     * Toon edit formulier
+     */
+    public function edit(DashboardContent $dashboardContent)
+    {
+        if (!$this->canManageContent()) {
+            abort(403, 'Je hebt geen rechten om dashboard content te bewerken.');
+        }
+
+        return view('dashboard-content.edit', compact('dashboardContent'));
+    }
+
+    /**
+     * Update content
+     */
+    public function update(Request $request, DashboardContent $dashboardContent)
+    {
+        if (!$this->canManageContent()) {
+            abort(403, 'Je hebt geen rechten om dashboard content te bewerken.');
+        }
+
+        $validated = $request->validate([
+            'titel' => 'required|string|max:255',
+            'inhoud' => 'required|string',
+            'type' => 'required|in:info,waarschuwing,succes,belangrijk',
+            'kleur' => 'nullable|string|max:50',
+            'icoon' => 'nullable|string|max:50',
+            'link_url' => 'nullable|url|max:500',
+            'link_tekst' => 'nullable|string|max:100',
+            'is_actief' => 'boolean',
+        ]);
 
         $dashboardContent->update($validated);
 
-        return redirect()->route('dashboard-content.index')
-            ->with('success', 'Content succesvol bijgewerkt!');
+        return redirect()->route('dashboard')->with('success', 'Dashboard content succesvol bijgewerkt!');
     }
 
-    public function destroy(StaffNote $dashboardContent)
+    /**
+     * Verwijder content
+     */
+    public function destroy(DashboardContent $dashboardContent)
     {
-        // Delete image if exists
-        if ($dashboardContent->image_path) {
-            Storage::disk('public')->delete($dashboardContent->image_path);
+        if (!$this->canManageContent()) {
+            abort(403, 'Je hebt geen rechten om dashboard content te verwijderen.');
         }
 
         $dashboardContent->delete();
 
-        return redirect()->route('dashboard-content.index')
-            ->with('success', 'Content verwijderd!');
+        return redirect()->route('dashboard')->with('success', 'Dashboard content succesvol verwijderd!');
     }
 
-    public function archive(StaffNote $dashboardContent)
+    /**
+     * Archiveer content
+     */
+    public function archive(DashboardContent $dashboardContent)
     {
-        $dashboardContent->update(['is_archived' => true]);
+        if (!$this->canManageContent()) {
+            abort(403, 'Je hebt geen rechten om dashboard content te archiveren.');
+        }
 
-        return back()->with('success', 'Content gearchiveerd!');
-    }
-
-    public function updateOrder(Request $request)
-    {
-        $items = $request->validate([
-            'items' => 'required|array',
-            'items.*.id' => 'required|exists:staff_notes,id',
-            'items.*.sort_order' => 'required|integer'
+        $dashboardContent->update([
+            'is_archived' => true,
+            'archived_at' => now(),
         ]);
 
-        foreach ($items['items'] as $item) {
-            StaffNote::where('id', $item['id'])
-                ->update(['sort_order' => $item['sort_order']]);
+        return redirect()->route('dashboard')->with('success', 'Dashboard content gearchiveerd!');
+    }
+
+    /**
+     * Herstel gearchiveerde content
+     */
+    public function restore(DashboardContent $dashboardContent)
+    {
+        if (!$this->canManageContent()) {
+            abort(403, 'Je hebt geen rechten om dashboard content te herstellen.');
+        }
+
+        $dashboardContent->update([
+            'is_archived' => false,
+            'archived_at' => null,
+        ]);
+
+        return redirect()->route('dashboard-content.archived')->with('success', 'Dashboard content hersteld!');
+    }
+
+    /**
+     * Update de volgorde van content items
+     */
+    public function updateOrder(Request $request)
+    {
+        if (!$this->canManageContent()) {
+            abort(403, 'Je hebt geen rechten om de volgorde te wijzigen.');
+        }
+
+        $order = $request->input('order', []);
+
+        foreach ($order as $index => $id) {
+            DashboardContent::where('id', $id)->update(['volgorde' => $index]);
         }
 
         return response()->json(['success' => true]);
-    }
-
-    public function archived()
-    {
-        $archivedContent = StaffNote::with('user')
-            ->where('is_archived', true)
-            ->orderBy('updated_at', 'desc')
-            ->get();
-
-        return view('dashboard-content.archived', compact('archivedContent'));
-    }
-
-    public function restore(StaffNote $dashboardContent)
-    {
-        $dashboardContent->update(['is_archived' => false]);
-
-        return back()->with('success', 'Content hersteld!');
-    }
-
-    private function getTemplates()
-    {
-        return [
-            'announcement' => [
-                'title' => 'Belangrijke Mededeling',
-                'type' => 'announcement',
-                'tile_size' => 'banner',
-                'background_color' => '#fef2f2',
-                'text_color' => '#991b1b',
-                'priority' => 'high'
-            ],
-            'task' => [
-                'title' => 'Takenlijst',
-                'type' => 'task', 
-                'tile_size' => 'medium',
-                'background_color' => '#f0f9ff',
-                'text_color' => '#0c4a6e',
-                'priority' => 'medium'
-            ],
-            'promotion' => [
-                'title' => 'Promotie',
-                'type' => 'image',
-                'tile_size' => 'large',
-                'background_color' => '#ffffff',
-                'text_color' => '#111827',
-                'priority' => 'medium'
-            ]
-        ];
     }
 }
