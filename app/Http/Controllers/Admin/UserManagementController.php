@@ -177,8 +177,9 @@ public function roles()
         ]
     ];
 
-    // Haal gebruikers op per rol voor statistieken
-    $users = \App\Models\User::all();
+    // Haal gebruikers op per rol voor statistieken - alleen voor huidige organisatie
+    $organisatieId = auth()->user()->organisatie_id;
+    $users = \App\Models\User::where('organisatie_id', $organisatieId)->get();
     $roleStats = [
         'admin' => $users->where('role', 'admin')->count(),
         'medewerker' => $users->where('role', 'medewerker')->count(),
@@ -192,14 +193,37 @@ public function roles()
      */
     public function activity()
     {
-        // Haal alle gebruikers op voor de filter dropdown
-        $users = \App\Models\User::orderBy('name')->get();
+        // Filter op huidige organisatie
+        $organisatieId = auth()->user()->organisatie_id;
         
-        // Haal login activiteiten op - gebruik een lege collectie als model niet bestaat
+        // Haal alleen gebruikers van deze organisatie op voor de filter dropdown
+        $users = \App\Models\User::where('organisatie_id', $organisatieId)
+            ->orderBy('name')
+            ->get();
+        
+        // Haal login activiteiten op - alleen voor users van deze organisatie
         try {
             $loginActivities = \App\Models\LoginActivity::with('user')
+                ->whereHas('user', function($q) use ($organisatieId) {
+                    $q->where('organisatie_id', $organisatieId);
+                })
                 ->orderBy('logged_in_at', 'desc')
                 ->paginate(50);
+                
+            // Bereken statistieken - alleen voor deze organisatie
+            $todayStart = now()->startOfDay();
+            $weekStart = now()->subDays(7);
+            
+            $allOrgActivities = \App\Models\LoginActivity::whereHas('user', function($q) use ($organisatieId) {
+                $q->where('organisatie_id', $organisatieId);
+            })->get();
+            
+            $stats = [
+                'total_logins_today' => $allOrgActivities->where('logged_in_at', '>=', $todayStart)->count(),
+                'total_logins_week' => $allOrgActivities->where('logged_in_at', '>=', $weekStart)->count(),
+                'unique_users_today' => $allOrgActivities->where('logged_in_at', '>=', $todayStart)->pluck('user_id')->unique()->count(),
+                'average_session_time' => $allOrgActivities->avg('session_duration') ?? 0
+            ];
         } catch (\Exception $e) {
             // Als LoginActivity model niet bestaat, maak lege collectie
             $loginActivities = new \Illuminate\Pagination\LengthAwarePaginator(
@@ -209,15 +233,14 @@ public function roles()
                 1, // currentPage
                 ['path' => request()->url()]
             );
+            
+            $stats = [
+                'total_logins_today' => 0,
+                'total_logins_week' => 0,
+                'unique_users_today' => 0,
+                'average_session_time' => 0
+            ];
         }
-        
-        // Bereken statistieken
-        $stats = [
-            'total_logins_today' => 2,
-            'total_logins_week' => 15,
-            'unique_users_today' => 1,
-            'average_session_time' => 4980 // 1:23 in seconden
-        ];
 
         return view('admin.users.activity-clean', compact('users', 'loginActivities', 'stats'));
     }
@@ -227,18 +250,23 @@ public function roles()
      */
     public function activityClean()
     {
-        // Haal alle gebruikers op voor de filter dropdown
-        $users = \App\Models\User::orderBy('name')->get();
+        // Filter op huidige organisatie
+        $organisatieId = auth()->user()->organisatie_id;
         
-        // Haal login activiteiten op - aanpassen aan je echte database structuur
+        // Haal alleen gebruikers van deze organisatie op voor de filter dropdown
+        $users = \App\Models\User::where('organisatie_id', $organisatieId)
+            ->orderBy('name')
+            ->get();
+        
+        // Haal login activiteiten op - alleen voor deze organisatie
         $loginActivities = collect(); // Placeholder voor nu
         
         // Demo statistieken
         $stats = [
-            'total_logins_today' => 2,
-            'total_logins_week' => 15, 
-            'unique_users_today' => 1,
-            'average_session_time' => 4980 // 1:23 in seconden
+            'total_logins_today' => 0,
+            'total_logins_week' => 0, 
+            'unique_users_today' => 0,
+            'average_session_time' => 0
         ];
 
         return view('admin.users.activity-clean', compact('users', 'loginActivities', 'stats'));
