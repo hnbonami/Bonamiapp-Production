@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Klant;
+use App\Models\Bikefit;
+use App\Models\Inspanningstest;
 use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
@@ -11,6 +13,7 @@ class DashboardController extends Controller
     public function index()
     {
         $klant = null;
+        $organisatieId = auth()->user()->organisatie_id;
         
         try {
             // Log voor debugging
@@ -52,6 +55,17 @@ class DashboardController extends Controller
                 
                 return view('dashboard', compact('klant'));
             }
+            
+            $stats = [
+                'totaal_klanten' => Klant::where('organisatie_id', $organisatieId)->count(),
+                'totaal_bikefits' => Bikefit::whereHas('klant', function($q) use ($organisatieId) {
+                    $q->where('organisatie_id', $organisatieId);
+                })->count(),
+                'totaal_inspanningstests' => Inspanningstest::whereHas('klant', function($q) use ($organisatieId) {
+                    $q->where('organisatie_id', $organisatieId);
+                })->count(),
+                // ...bestaande statistieken...
+            ];
             
         } catch (\Exception $e) {
             Log::error('Dashboard error: ' . $e->getMessage());

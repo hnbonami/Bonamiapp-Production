@@ -16,11 +16,18 @@ class UserManagementController extends Controller
         // Log debug info om te zien wat er gebeurt
         \Log::info('🔍 UserManagementController index called', [
             'request_params' => $request->all(),
-            'user_role' => auth()->user()->role ?? 'not_authenticated'
+            'user_role' => auth()->user()->role ?? 'not_authenticated',
+            'user_org_id' => auth()->user()->organisatie_id ?? 'not_authenticated'
         ]);
 
-        // EERST: Bereken alle statistieken met alle users - FRESH query zonder cache
-        $allUsers = User::withoutGlobalScopes()->get();
+        // Filter op huidige organisatie
+        $organisatieId = auth()->user()->organisatie_id;
+
+                // Calculate statistics - FILTER OP ORGANISATIE
+        $organisatieId = auth()->user()->organisatie_id;
+        $allUsers = User::where('organisatie_id', $organisatieId)->get();
+        
+        $totalUsers = $allUsers->count();
         $adminCount = $allUsers->where('role', 'admin')->count();
         $medewerkerCount = $allUsers->where('role', 'medewerker')->count();
         $klantCount = $allUsers->where('role', 'klant')->count();
@@ -35,23 +42,23 @@ class UserManagementController extends Controller
         $medewerkersCount = $adminCount + $medewerkerCount;
         $klantenCount = $klantCount;
 
-        // DAARNA: Query voor gepagineerde resultaten - FRESH query
-        $query = User::withoutGlobalScopes();
+        // DAARNA: Query voor gepagineerde resultaten - FILTER OP ORGANISATIE
+        $paginatedQuery = User::where('organisatie_id', $organisatieId);
 
         // Filter op rol als opgegeven
         if ($request->filled('role') && $request->role !== 'all') {
-            $query->where('role', $request->role);
+            $paginatedQuery->where('role', $request->role);
         }
 
         // Filter op status als opgegeven
         if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+            $paginatedQuery->where('status', $request->status);
         }
 
         // Search functionaliteit
         if ($request->filled('search')) {
             $searchTerm = $request->search;
-            $query->where(function ($q) use ($searchTerm) {
+            $paginatedQuery->where(function ($q) use ($searchTerm) {
                 $q->where('name', 'like', "%{$searchTerm}%")
                   ->orWhere('email', 'like', "%{$searchTerm}%")
                   ->orWhere('voornaam', 'like', "%{$searchTerm}%")  
@@ -60,7 +67,7 @@ class UserManagementController extends Controller
         }
 
         // Haal users op met paginatie
-        $users = $query->orderBy('created_at', 'desc')->paginate(15);
+        $users = $paginatedQuery->orderBy('created_at', 'desc')->paginate(15);
 
         // Maak uitgebreide stats array met alle mogelijke keys
         $stats = [

@@ -1723,4 +1723,14 @@ const fs = require('fs');
             ], 500);
         }
     }
+
+    public function index(Request $request, Klant $klant)
+    {
+        // Controleer of klant bij huidige organisatie hoort
+        if ($klant->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze klant');
+        }
+        
+        // ...existing code...
+    }
 }

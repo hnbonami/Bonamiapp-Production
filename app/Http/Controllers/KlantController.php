@@ -82,7 +82,24 @@ class KlantController extends Controller
      */
     public function index(Request $request)
     {
-        $user = auth()->user();
+        \Log::info('🔍 Klanten Index START', [
+            'auth_user_id' => auth()->id(),
+            'auth_user_org_id' => auth()->user()->organisatie_id,
+            'auth_user_role' => auth()->user()->role
+        ]);
+
+        $query = Klant::query();
+
+        // Filter op huidige organisatie
+        $orgId = auth()->user()->organisatie_id;
+        $query->where('organisatie_id', '=', $orgId);
+
+        \Log::info('📊 Klanten Query', [
+            'filtering_on_org_id' => $orgId,
+            'sql' => $query->toSql(),
+            'bindings' => $query->getBindings()
+        ]);
+
         $zoekterm = $request->input('zoek');
         
         // 🔥 DEBUG: Log user info
@@ -94,7 +111,6 @@ class KlantController extends Controller
         ]);
         
         // Start query
-        $query = Klant::query();
         
         // Filter op organisatie (behalve superadmin)
         if ($user->role !== 'superadmin' && $user->organisatie_id) {
@@ -113,9 +129,16 @@ class KlantController extends Controller
             });
         }
         
-        $klanten = $query->orderBy('created_at', 'desc')->get();
+        $klanten = $query->orderBy('created_at', 'desc')->paginate(15);
         
-        \Log::info('📊 Klanten opgehaald: ' . $klanten->count());
+        \Log::info('✅ Klanten gevonden', [
+            'total' => $klanten->total(),
+            'eerste_3' => $klanten->take(3)->map(fn($k) => [
+                'id' => $k->id,
+                'naam' => $k->naam,
+                'organisatie_id' => $k->organisatie_id
+            ])
+        ]);
         
         return view('klanten.index', compact('klanten'));
     }

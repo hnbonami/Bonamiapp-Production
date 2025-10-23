@@ -864,5 +864,21 @@ class InspanningstestController extends Controller {
         }
     }
     
-    // ...existing methods...
+    /**
+     * Organisatie gefilterde index voor inspanningstesten
+     */
+    public function index(Request $request, Klant $klant)
+    {
+        // Controleer of klant bij huidige organisatie hoort
+        if ($klant->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze klant');
+        }
+        
+        // Haal alle inspanningstesten voor deze klant op, gesorteerd op datum
+        $tests = Inspanningstest::where('klant_id', $klant->id)
+            ->orderBy('datum', 'desc')
+            ->get();
+        
+        return view('inspanningstest.index', compact('klant', 'tests'));
+    }
 }
