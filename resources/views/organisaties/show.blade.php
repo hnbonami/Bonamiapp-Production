@@ -148,5 +148,72 @@
             </div>
         </div>
     </div>
+
+    {{-- NIEUWE SECTIE: Features Beheer --}}
+    <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-semibold text-gray-900">Beschikbare Features</h3>
+            <span class="text-sm text-gray-500">{{ $organisatie->features()->count() }} van {{ \App\Models\Feature::count() }} features actief</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @foreach(\App\Models\Feature::orderBy('categorie')->orderBy('sorteer_volgorde')->get() as $feature)
+                @php
+                    $isEnabled = $organisatie->hasFeature($feature->key);
+                @endphp
+                
+                <div class="border rounded-lg p-4 {{ $isEnabled ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200' }}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                <svg class="w-5 h-5 {{ $isEnabled ? 'text-blue-600' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <h4 class="font-medium {{ $isEnabled ? 'text-blue-900' : 'text-gray-700' }}">
+                                    {{ $feature->naam }}
+                                </h4>
+                                @if($feature->is_premium)
+                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                        Premium
+                                    </span>
+                                @endif
+                            </div>
+                            
+                            <p class="text-sm {{ $isEnabled ? 'text-blue-700' : 'text-gray-500' }} mb-2">
+                                {{ $feature->beschrijving }}
+                            </p>
+                            
+                            <div class="flex items-center gap-3 text-xs">
+                                <span class="text-gray-500">
+                                    <span class="font-medium">Categorie:</span> {{ ucfirst($feature->categorie) }}
+                                </span>
+                                @if($feature->is_premium && $feature->prijs_per_maand)
+                                    <span class="text-gray-500">
+                                        <span class="font-medium">Prijs:</span> €{{ number_format($feature->prijs_per_maand, 2) }}/mnd
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Toggle Switch --}}
+                        <div class="ml-4">
+                            <form action="{{ route('organisaties.features.toggle', [$organisatie, $feature]) }}" 
+                                  method="POST" 
+                                  class="feature-toggle-form">
+                                @csrf
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" 
+                                           class="sr-only peer feature-toggle"
+                                           {{ $isEnabled ? 'checked' : '' }}
+                                           onchange="this.form.submit()">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </label>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
 </div>
 @endsection

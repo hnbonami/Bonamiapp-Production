@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Organisatie;
 use App\Models\User;
 use App\Models\Klant;
+use App\Models\Feature;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -394,6 +395,50 @@ class OrganisatieController extends Controller
             return redirect()->back()
                 ->withInput()
                 ->with('error', 'Er is een fout opgetreden: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Toggle een feature voor een organisatie aan/uit
+     */
+    public function toggleFeature(Organisatie $organisatie, Feature $feature)
+    {
+        if (!auth()->user()->isSuperAdmin()) {
+            abort(403);
+        }
+
+        try {
+            if ($organisatie->hasFeature($feature->key)) {
+                // Feature uitschakelen
+                $organisatie->disableFeature($feature);
+                $message = "Feature '{$feature->naam}' uitgeschakeld voor {$organisatie->naam}";
+                $type = 'warning';
+            } else {
+                // Feature inschakelen
+                $organisatie->enableFeature($feature);
+                $message = "Feature '{$feature->naam}' ingeschakeld voor {$organisatie->naam}";
+                $type = 'success';
+            }
+
+            Log::info('Feature toggled voor organisatie', [
+                'organisatie_id' => $organisatie->id,
+                'feature_id' => $feature->id,
+                'feature_key' => $feature->key,
+                'enabled' => $organisatie->hasFeature($feature->key),
+                'toggled_by' => auth()->id()
+            ]);
+
+            return redirect()->back()->with($type, $message);
+            
+        } catch (\Exception $e) {
+            Log::error('Fout bij togglen feature', [
+                'organisatie_id' => $organisatie->id,
+                'feature_id' => $feature->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Er is een fout opgetreden bij het wijzigen van de feature.');
         }
     }
 }
