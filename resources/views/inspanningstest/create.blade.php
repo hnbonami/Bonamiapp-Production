@@ -1664,6 +1664,47 @@ function handleAnalyseMethodeChange() {
     }
 }
 
+// Functie om vloeiende lactaatcurve te genereren met exponentiële interpolatie
+function generateSmoothLactaatCurve(rawLactaatData) {
+    console.log('🔄 generateSmoothLactaatCurve aangeroepen met', rawLactaatData.length, 'punten');
+    
+    if (!rawLactaatData || rawLactaatData.length < 2) {
+        console.log('❌ Onvoldoende lactaat data voor curve generatie');
+        return rawLactaatData;
+    }
+    
+    // SPECIALE BEHANDELING voor zwemmen
+    const isSwimming = currentTableType === 'veldtest_zwemmen';
+    
+    // Sorteer data
+    const sortedData = [...rawLactaatData].sort((a, b) => a.x - b.x);
+    
+    console.log('📊 Gesorteerde lactaat data:', sortedData);
+    
+    // Genereer vloeiende curve met meer punten (exponentiële interpolatie)
+    const smoothData = [];
+    const minX = sortedData[0].x;
+    const maxX = sortedData[sortedData.length - 1].x;
+    const steps = 50; // 50 punten voor vloeiende curve
+    
+    for (let i = 0; i <= steps; i++) {
+        const x = minX + (maxX - minX) * (i / steps);
+        
+        // Gebruik speciale interpolatie voor zwemmen
+        let y;
+        if (isSwimming) {
+            y = interpolateExponentialForSwimming(sortedData, x);
+        } else {
+            y = interpolateExponential(sortedData, x);
+        }
+        
+        smoothData.push({ x: x, y: y });
+    }
+    
+    console.log('✅ Gegenereerd', smoothData.length, 'punten voor vloeiende lactaatcurve');
+    return smoothData;
+}
+
 // Functie om data uit de tabel te lezen
 function getTableData() {
     const tbody = document.getElementById('testresultaten-body');
