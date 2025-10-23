@@ -64,8 +64,7 @@
                     </label>
                     <textarea name="content" id="content" rows="6" 
                               class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Voer de inhoud in...">{{ old('content') }}</textarea>
-                    <input type="hidden" id="content-required" required>
+                              placeholder="Voer de inhoud in..." required>{{ old('content') }}</textarea>
                     @error('content')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -254,10 +253,10 @@ ClassicEditor.create(document.querySelector('#content'))
         // Update preview when content changes
         editor.model.document.on('change:data', () => {
             updatePreview();
-            // Update hidden field for validation
-            const content = editor.getData();
-            document.getElementById('content-required').value = content.trim() ? 'has-content' : '';
         });
+    })
+    .catch(error => {
+        console.error('CKEditor initialization failed:', error);
     });
 
 // Type selection handling
@@ -351,25 +350,17 @@ function updatePreview() {
 document.querySelector('form').addEventListener('submit', function(e) {
     if (editor) {
         const content = editor.getData();
+        
+        // Zet de CKEditor inhoud in het textarea veld
         document.getElementById('content').value = content;
         
-        // Custom validation check
+        // Validatie check
         if (!content.trim()) {
             e.preventDefault();
-            // Show custom error message
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'mt-1 text-sm text-red-600';
-            errorDiv.textContent = 'Inhoud is verplicht!';
+            alert('Inhoud is verplicht! Vul alsjeblieft de inhoud in.');
             
-            // Remove existing error message
-            const existingError = document.querySelector('#content').parentNode.querySelector('.text-red-600');
-            if (existingError) existingError.remove();
-            
-            // Add new error message
-            document.querySelector('#content').parentNode.appendChild(errorDiv);
-            
-            // Scroll to CKEditor
-            document.querySelector('.ck-editor').scrollIntoView({ behavior: 'smooth' });
+            // Scroll naar CKEditor
+            document.querySelector('.ck-editor').scrollIntoView({ behavior: 'smooth', block: 'center' });
             return false;
         }
     }

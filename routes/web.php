@@ -729,13 +729,25 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tinymce/upload', [App\Http\Controllers\TinyMCEController::class, 'upload'])->name('tinymce.upload');
 });
 
-// Dashboard Content routes (nieuwe systeem)
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::resource('dashboard-content', App\Http\Controllers\DashboardContentController::class);
-    Route::patch('/dashboard-content/{dashboardContent}/archive', [App\Http\Controllers\DashboardContentController::class, 'archive'])->name('dashboard-content.archive');
-    Route::patch('/dashboard-content/{dashboardContent}/restore', [App\Http\Controllers\DashboardContentController::class, 'restore'])->name('dashboard-content.restore');
-    Route::get('/dashboard-content-archived', [App\Http\Controllers\DashboardContentController::class, 'archived'])->name('dashboard-content.archived');
-    Route::post('/dashboard-content/update-order', [App\Http\Controllers\DashboardContentController::class, 'updateOrder'])->name('dashboard-content.update-order');
+// Dashboard Content routes (nieuwe systeem) - CORRECTE VOLGORDE!
+Route::middleware(['auth', 'verified'])->prefix('dashboard-content')->name('dashboard-content.')->group(function () {
+    Route::get('/', [App\Http\Controllers\DashboardContentController::class, 'index'])->name('index');
+    
+    // SPECIFIEKE ROUTES EERST (voor wildcard routes)
+    Route::get('/create', [App\Http\Controllers\DashboardContentController::class, 'create'])->name('create');
+    Route::get('/archived', [App\Http\Controllers\DashboardContentController::class, 'archived'])->name('archived');
+    Route::post('/update-order', [App\Http\Controllers\DashboardContentController::class, 'updateOrder'])->name('update-order');
+    
+    // WILDCARD ROUTES LAATST
+    Route::get('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'show'])->name('show');
+    Route::get('/{dashboardContent}/edit', [App\Http\Controllers\DashboardContentController::class, 'edit'])->name('edit');
+    Route::put('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'update'])->name('update');
+    Route::delete('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'destroy'])->name('destroy');
+    Route::patch('/{dashboardContent}/archive', [App\Http\Controllers\DashboardContentController::class, 'archive'])->name('archive');
+    Route::patch('/{dashboardContent}/restore', [App\Http\Controllers\DashboardContentController::class, 'restore'])->name('restore');
+    
+    // POST route voor store
+    Route::post('/', [App\Http\Controllers\DashboardContentController::class, 'store'])->name('store');
 });
 
 // Profile Settings Routes

@@ -47,12 +47,6 @@ class DashboardContentController extends Controller
 
     public function create()
     {
-        // Check if user is staff
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'medewerker'])) {
-            abort(403, 'Geen toegang');
-        }
-        
         $templates = $this->getTemplates();
         
         return view('dashboard-content.create', compact('templates'));
@@ -60,12 +54,6 @@ class DashboardContentController extends Controller
 
     public function store(Request $request)
     {
-        // Check if user is staff
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'medewerker'])) {
-            abort(403, 'Geen toegang');
-        }
-
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -102,12 +90,6 @@ class DashboardContentController extends Controller
 
     public function edit(StaffNote $dashboardContent)
     {
-        // Check if user is staff
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'medewerker'])) {
-            abort(403, 'Geen toegang');
-        }
-        
         $templates = $this->getTemplates();
         
         return view('dashboard-content.edit', compact('dashboardContent', 'templates'));
@@ -115,12 +97,6 @@ class DashboardContentController extends Controller
 
     public function update(Request $request, StaffNote $dashboardContent)
     {
-        // Check if user is staff
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'medewerker'])) {
-            abort(403, 'Geen toegang');
-        }
-
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'content' => 'required|string',
@@ -157,12 +133,6 @@ class DashboardContentController extends Controller
 
     public function destroy(StaffNote $dashboardContent)
     {
-        // Check if user is staff
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'medewerker'])) {
-            abort(403, 'Geen toegang');
-        }
-
         // Delete image if exists
         if ($dashboardContent->image_path) {
             Storage::disk('public')->delete($dashboardContent->image_path);
@@ -176,12 +146,6 @@ class DashboardContentController extends Controller
 
     public function archive(StaffNote $dashboardContent)
     {
-        // Check if user is staff
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'medewerker'])) {
-            abort(403, 'Geen toegang');
-        }
-
         $dashboardContent->update(['is_archived' => true]);
 
         return back()->with('success', 'Content gearchiveerd!');
@@ -189,12 +153,6 @@ class DashboardContentController extends Controller
 
     public function updateOrder(Request $request)
     {
-        // Check if user is staff
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'medewerker'])) {
-            abort(403, 'Geen toegang');
-        }
-
         $items = $request->validate([
             'items' => 'required|array',
             'items.*.id' => 'required|exists:staff_notes,id',
@@ -211,11 +169,6 @@ class DashboardContentController extends Controller
 
     public function archived()
     {
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'medewerker'])) {
-            abort(403, 'Geen toegang');
-        }
-
         $archivedContent = StaffNote::with('user')
             ->where('is_archived', true)
             ->orderBy('updated_at', 'desc')
@@ -226,12 +179,6 @@ class DashboardContentController extends Controller
 
     public function restore(StaffNote $dashboardContent)
     {
-        // Check if user is staff
-        $user = Auth::user();
-        if (!in_array($user->role, ['admin', 'medewerker'])) {
-            abort(403, 'Geen toegang');
-        }
-
         $dashboardContent->update(['is_archived' => false]);
 
         return back()->with('success', 'Content hersteld!');
