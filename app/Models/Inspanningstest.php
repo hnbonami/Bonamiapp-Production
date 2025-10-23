@@ -8,6 +8,22 @@ use App\Models\Traits\BelongsToOrganisatie;
 class Inspanningstest extends Model
 {
     use HasFactory, BelongsToOrganisatie;
+
+    protected $table = 'inspanningstests'; // Correcte tabelnaam zonder 'en'
+
+    /**
+     * Boot het model - zet automatisch organisatie_id bij nieuwe records
+     */
+    protected static function booted()
+    {
+        static::creating(function ($test) {
+            // Zet automatisch organisatie_id als deze nog niet is gezet
+            if (empty($test->organisatie_id) && auth()->check() && auth()->user()->organisatie_id) {
+                $test->organisatie_id = auth()->user()->organisatie_id;
+            }
+        });
+    }
+
     protected $fillable = [
         'klant_id',
         'user_id',

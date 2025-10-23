@@ -127,5 +127,12 @@ class Bikefit extends Model
                 }
             }
         });
+
+        static::creating(function ($bikefit) {
+            // Zet automatisch organisatie_id als deze nog niet is gezet
+            if (empty($bikefit->organisatie_id) && auth()->check() && auth()->user()->organisatie_id) {
+                $bikefit->organisatie_id = auth()->user()->organisatie_id;
+            }
+        });
     }
 }

@@ -188,7 +188,7 @@ class Klant extends Model
     }
 
     /**
-     * Relatie met inspanningstesten
+     * Relatie met inspanningstests (let op: correcte tabelnaam zonder 'en')
      */
     public function tests()
     {
@@ -199,6 +199,14 @@ class Klant extends Model
      * Alias voor tests() relatie (voor backwards compatibility en eager loading)
      */
     public function inspanningstesten()
+    {
+        return $this->hasMany(Inspanningstest::class, 'klant_id');
+    }
+    
+    /**
+     * Alias: inspanningstests (correcte tabelnaam)
+     */
+    public function inspanningstests()
     {
         return $this->hasMany(Inspanningstest::class, 'klant_id');
     }

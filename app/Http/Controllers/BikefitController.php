@@ -116,6 +116,8 @@ class BikefitController extends Controller
         if (empty($validated['datum'])) {
             $validated['datum'] = now();
         }
+        // Zet organisatie_id expliciet
+        $validated['organisatie_id'] = auth()->user()->organisatie_id;
         $validated['klant_id'] = $klant->id;
         // Add the current user's ID to track who performed the test
         $validated['user_id'] = auth()->id();
@@ -133,7 +135,9 @@ class BikefitController extends Controller
         // Refresh zodat alle relaties up-to-date zijn
         $bikefit->refresh();
 
-        return redirect()->route('bikefit.show', [
+        \Log::info('✅ BIKEFIT CREATED - ID: ' . $bikefit->id . ', Org ID: ' . $bikefit->organisatie_id);
+
+        return redirect()->route('bikefit.results', [
             'klant' => $klant->id, 
             'bikefit' => $bikefit->id
         ])->with('success', 'Bikefit succesvol aangemaakt.');

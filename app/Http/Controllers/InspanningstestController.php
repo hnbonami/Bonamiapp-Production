@@ -198,11 +198,11 @@ class InspanningstestController extends Controller {
             // Maak inspanningstest aan
             $inspanningstest = Inspanningstest::create($dataVoorDatabase);
 
-            // 🔥 BYPASS SCOPE VOOR REDIRECT NA CREATE
-            session()->put('_bypass_org_scope_once', true);
+            \Log::info('✅ INSPANNINGSTEST CREATED - ID: ' . $inspanningstest->id . ', Org ID: ' . $inspanningstest->organisatie_id);
 
-            return redirect()->route('inspanningstest.show', [
-                'klant' => $klant->id,
+            // BELANGRIJK: Correcte parameter naam moet 'test' zijn (niet 'inspanningstest')!
+            return redirect()->route('inspanningstest.results', [
+                'klant' => $klant->id, 
                 'test' => $inspanningstest->id
             ])->with('success', 'Inspanningstest succesvol aangemaakt!');
             
