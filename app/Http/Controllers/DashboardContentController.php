@@ -13,12 +13,18 @@ class DashboardContentController extends Controller
     {
         $user = Auth::user();
         
+        // Log voor debugging
+        \Log::info('Dashboard Content Index', [
+            'user_id' => $user->id,
+            'user_role' => $user->role,
+            'organisatie_id' => $user->organisatie_id
+        ]);
+        
         // Check if nieuwe velden bestaan (na migratie)
         $hasNewFields = \Schema::hasColumn('staff_notes', 'type');
         
         if ($hasNewFields) {
-            $content = StaffNote::with('user')
-                ->visibleFor($user->role, $user->organisatie_id)
+            $query = StaffNote::with('user')
                 ->where('is_archived', false)
                 ->where(function($q) {
                     $q->whereNull('expires_at')
@@ -27,11 +33,38 @@ class DashboardContentController extends Controller
                 ->where(function($q) {
                     $q->whereNull('published_at')
                       ->orWhere('published_at', '<=', now());
-                })
-                ->orderBy('is_pinned', 'desc')
+                });
+            
+            // Filter op basis van role en organisatie
+            if ($user->role === 'klant') {
+                // Klanten zien:
+                // 1. Content met visibility 'all' EN hun eigen organisatie_id
+                // 2. Content met visibility 'all' EN organisatie_id = NULL (globale content)
+                $query->where('visibility', 'all')
+                      ->where(function($q) use ($user) {
+                          $q->where('organisatie_id', $user->organisatie_id)
+                            ->orWhereNull('organisatie_id');
+                      });
+                      
+                \Log::info('✅ Filtering for klant - including global content', [
+                    'visibility' => 'all',
+                    'organisatie_id' => $user->organisatie_id,
+                    'also_showing' => 'global content (organisatie_id = null)'
+                ]);
+            } else {
+                // Staff ziet alles van hun organisatie (of alles als superadmin)
+                $query->visibleFor($user->role, $user->organisatie_id);
+            }
+            
+            $content = $query->orderBy('is_pinned', 'desc')
                 ->orderBy('sort_order', 'asc')
                 ->orderBy('created_at', 'desc')
                 ->get();
+                
+            \Log::info('✅ Content found', [
+                'count' => $content->count(),
+                'titles' => $content->pluck('title')->toArray()
+            ]);
         } else {
             // Fallback voor oude structuur
             $content = StaffNote::with('user')
