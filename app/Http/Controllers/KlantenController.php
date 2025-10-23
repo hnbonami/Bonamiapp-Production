@@ -513,22 +513,16 @@ class KlantenController extends Controller
                 }
             }
             
-            $message = "Import voltooid! $importedCount klanten geïmporteerd/bijgewerkt";
-            if ($skippedCount > 0) {
-                $message .= ", $skippedCount rijen overgeslagen";
-            }
+            \Log::info("Klanten import: {$importedCount} succesvol, {$skippedCount} overgeslagen");
             
-            if (!empty($errors)) {
-                $message .= ". Fouten: " . implode('; ', array_slice($errors, 0, 5));
-            }
-            
-            \Log::info("Klanten import: $importedCount succesvol, $skippedCount overgeslagen");
-            
-            return redirect()->route('klanten.import.form')->with('success', $message);
+            return redirect('/import/klanten')
+                ->with('success', "Import voltooid! {$importedCount} klanten geïmporteerd, {$skippedCount} overgeslagen.");
             
         } catch (\Exception $e) {
-            \Log::error('Klanten import failed: ' . $e->getMessage());
-            return back()->with('error', 'Import mislukt: ' . $e->getMessage());
+            \Log::error('Import gefaald: ' . $e->getMessage());
+            
+            return redirect('/import/klanten')
+                ->with('error', 'Import mislukt: ' . $e->getMessage());
         }
     }
 
