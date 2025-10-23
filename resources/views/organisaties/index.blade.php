@@ -150,6 +150,12 @@
                             <a href="{{ route('organisaties.show', $org->id) }}" aria-label="Profiel" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" title="Profiel">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                             </a>
+                            <form action="{{ route('organisaties.sendInvitation', $org) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit" onclick="return confirm('Uitnodiging versturen naar {{ $org->email }}?')" aria-label="Uitnodigen" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-800" title="Uitnodiging sturen">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                </button>
+                            </form>
                             <form action="{{ route('organisaties.destroy', $org->id) }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
