@@ -238,7 +238,6 @@
 </div>
 
 <!-- Upload Modal -->
-@if($user && ($user->role === 'admin' || ($user->role === 'medewerker' && $user->upload_documenten)))
 <div id="uploadModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
     <div class="bg-white rounded-lg shadow-xl" style="width:90%;max-width:600px;padding:2rem;position:relative;">
         <button onclick="closeUploadModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#6b7280;">&times;</button>
@@ -273,23 +272,31 @@
         </form>
     </div>
 </div>
-@endif
 
 <script>
 function openUploadModal() {
-    document.getElementById('uploadModal').style.display = 'flex';
+    const modal = document.getElementById('uploadModal');
+    if (modal) {
+        modal.style.display = 'flex';
+    }
 }
 
 function closeUploadModal() {
-    document.getElementById('uploadModal').style.display = 'none';
+    const modal = document.getElementById('uploadModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
 }
 
-// Sluit modal bij klik buiten de modal
-document.getElementById('uploadModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeUploadModal();
-    }
-});
+// Sluit modal bij klik buiten de modal - alleen als modal bestaat
+const uploadModal = document.getElementById('uploadModal');
+if (uploadModal) {
+    uploadModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeUploadModal();
+        }
+    });
+}
 </script>
 
 <div style="margin-top:2em;">
