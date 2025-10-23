@@ -51,9 +51,30 @@ class DashboardContentController extends Controller
                     'organisatie_id' => $user->organisatie_id,
                     'also_showing' => 'global content (organisatie_id = null)'
                 ]);
+            } elseif (in_array($user->role, ['medewerker', 'admin', 'organisatie_admin'])) {
+                // Medewerkers/admins zien:
+                // 1. Alle content (staff + all visibility) van hun organisatie
+                // 2. Globale content (organisatie_id = NULL)
+                $query->where(function($q) use ($user) {
+                    $q->where('organisatie_id', $user->organisatie_id)
+                      ->orWhereNull('organisatie_id');
+                });
+                
+                \Log::info('✅ Filtering for medewerker/admin - including global content', [
+                    'user_role' => $user->role,
+                    'organisatie_id' => $user->organisatie_id,
+                    'showing' => 'organisation content + global content'
+                ]);
+            } elseif ($user->role === 'superadmin') {
+                // Superadmin ziet ALLES
+                \Log::info('✅ Superadmin - showing ALL content');
             } else {
-                // Staff ziet alles van hun organisatie (of alles als superadmin)
-                $query->visibleFor($user->role, $user->organisatie_id);
+                // Fallback: alleen globale content
+                $query->whereNull('organisatie_id');
+                
+                \Log::info('⚠️ Unknown role - showing only global content', [
+                    'user_role' => $user->role
+                ]);
             }
             
             $content = $query->orderBy('is_pinned', 'desc')
