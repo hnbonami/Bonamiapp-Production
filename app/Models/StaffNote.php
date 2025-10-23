@@ -13,6 +13,7 @@ class StaffNote extends Model
         'content', 
         'visibility',
         'user_id',
+        'organisatie_id',
         'type',
         'tile_size', 
         'image_path',
@@ -41,19 +42,49 @@ class StaffNote extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function scopeVisibleFor($query, $userRole)
+    public function organisatie()
     {
-        if (in_array($userRole, ['superadmin', 'admin', 'medewerker'])) {
-            return $query; // Staff ziet alles
+        return $this->belongsTo(Organisatie::class);
+    }
+
+    public function scopeVisibleFor($query, $userRole, $organisatieId = null)
+    {
+        // Superadmin ziet alles
+        if ($userRole === 'superadmin') {
+            return $query;
         }
         
-        return $query->where('visibility', 'all'); // Klanten zien alleen 'all'
+        // Admin en medewerkers zien alleen content van eigen organisatie
+        if (in_array($userRole, ['admin', 'medewerker', 'organisatie_admin'])) {
+            if ($organisatieId) {
+                return $query->where('organisatie_id', $organisatieId);
+            }
+            return $query;
+        }
+        
+        // Klanten zien alleen 'all' content van hun organisatie
+        $query->where('visibility', 'all');
+        if ($organisatieId) {
+            $query->where('organisatie_id', $organisatieId);
+        }
+        
+        return $query;
     }
 
     // Nieuwe methods voor dashboard content systeem
     public function canDrag($user)
     {
-        return in_array($user->role, ['superadmin', 'admin', 'medewerker']);
+        // Superadmin kan alles slepen
+        if ($user->role === 'superadmin') {
+            return true;
+        }
+        
+        // Admin en medewerkers kunnen alleen content van eigen organisatie slepen
+        if (in_array($user->role, ['admin', 'medewerker', 'organisatie_admin'])) {
+            return $this->organisatie_id === $user->organisatie_id;
+        }
+        
+        return false;
     }
 
     public function getTileClassAttribute()

@@ -11,9 +11,17 @@ class SjablonenController extends Controller
 {
     public function index()
     {
-        $sjablonen = Sjabloon::where('is_actief', true)
-                            ->orderBy('naam')
-                            ->get();
+        $user = auth()->user();
+        
+        // Superadmin ziet alle sjablonen van alle organisaties
+        $query = Sjabloon::where('is_actief', true);
+        
+        // Andere gebruikers zien alleen sjablonen van eigen organisatie
+        if ($user->role !== 'superadmin') {
+            $query->where('organisatie_id', $user->organisatie_id);
+        }
+        
+        $sjablonen = $query->orderBy('naam')->get();
         
         return view('sjablonen.index', compact('sjablonen'));
     }
@@ -37,7 +45,9 @@ class SjablonenController extends Controller
             'categorie' => $request->categorie,
             'testtype' => $request->testtype,
             'beschrijving' => $request->beschrijving,
-            'is_actief' => true
+            'is_actief' => true,
+            'user_id' => auth()->id(),
+            'organisatie_id' => auth()->user()->organisatie_id,
         ]);
 
         return redirect()->route('sjablonen.edit', $sjabloon)
@@ -46,8 +56,16 @@ class SjablonenController extends Controller
 
     public function show($id)
     {
+        $user = auth()->user();
+        
         // Find sjabloon manually to ensure consistency
         $sjabloon = Sjabloon::findOrFail($id);
+        
+        // Check organisatie toegang (behalve voor superadmin)
+        if ($user->role !== 'superadmin' && $sjabloon->organisatie_id !== $user->organisatie_id) {
+            abort(403, 'Geen toegang tot sjablonen van andere organisatie');
+        }
+        
         $sjabloon->load('pages');
         
         return view('sjablonen.show', compact('sjabloon'));
@@ -55,8 +73,15 @@ class SjablonenController extends Controller
 
     public function edit($id)
     {
+        $user = auth()->user();
+        
         // Find sjabloon manually
         $sjabloon = Sjabloon::findOrFail($id);
+        
+        // Check organisatie toegang (behalve voor superadmin)
+        if ($user->role !== 'superadmin' && $sjabloon->organisatie_id !== $user->organisatie_id) {
+            abort(403, 'Geen toegang tot sjablonen van andere organisatie');
+        }
         
         // Load pages from database
         $sjabloon->load('pages');
@@ -179,7 +204,14 @@ class SjablonenController extends Controller
      */
     public function editBasic($id)
     {
+        $user = auth()->user();
         $sjabloon = Sjabloon::findOrFail($id);
+        
+        // Check organisatie toegang (behalve voor superadmin)
+        if ($user->role !== 'superadmin' && $sjabloon->organisatie_id !== $user->organisatie_id) {
+            abort(403, 'Geen toegang tot sjablonen van andere organisatie');
+        }
+        
         return view('sjablonen.edit-basic', compact('sjabloon'));
     }
 
@@ -224,8 +256,15 @@ class SjablonenController extends Controller
     public function destroy($id)
     {
         try {
+            $user = auth()->user();
+            
             // Find the sjabloon by ID
             $sjabloon = Sjabloon::findOrFail($id);
+            
+            // Check organisatie toegang (behalve voor superadmin)
+            if ($user->role !== 'superadmin' && $sjabloon->organisatie_id !== $user->organisatie_id) {
+                abort(403, 'Geen toegang tot sjablonen van andere organisatie');
+            }
             
             // Debug log met ID
             \Log::info('Deleting sjabloon: ' . $sjabloon->id . ' (naam: ' . $sjabloon->naam . ')');
@@ -254,14 +293,23 @@ class SjablonenController extends Controller
     public function duplicate($id)
     {
         try {
+            $user = auth()->user();
+            
             // Find the sjabloon by ID
             $sjabloon = Sjabloon::findOrFail($id);
+            
+            // Check organisatie toegang (behalve voor superadmin)
+            if ($user->role !== 'superadmin' && $sjabloon->organisatie_id !== $user->organisatie_id) {
+                abort(403, 'Geen toegang tot sjablonen van andere organisatie');
+            }
             
             \Log::info('Duplicating sjabloon: ' . $sjabloon->id . ' (naam: ' . $sjabloon->naam . ')');
             
             // Maak een kopie van het sjabloon
             $newSjabloon = $sjabloon->replicate();
             $newSjabloon->naam = $sjabloon->naam . ' (Kopie)';
+            $newSjabloon->user_id = auth()->id();
+            $newSjabloon->organisatie_id = auth()->user()->organisatie_id;
             $newSjabloon->save();
 
             // Kopieer alle pagina's

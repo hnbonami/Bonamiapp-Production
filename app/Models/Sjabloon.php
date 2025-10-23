@@ -24,6 +24,7 @@ class Sjabloon extends Model
         'testtype',
         'beschrijving',
         'user_id',
+        'organisatie_id',
         'content',
         'is_actief'
     ];

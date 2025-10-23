@@ -24,22 +24,35 @@ class SjabloonHelper
             'categorie' => $categorie
         ]);
         
+        // Haal gebruiker op voor organisatie filtering
+        $user = auth()->user();
+        
+        // Base query met organisatie filtering
+        $baseQuery = Sjabloon::where('categorie', $categorie)->where('is_actief', true);
+        
+        // Filter op organisatie (behalve voor superadmin)
+        if ($user && $user->role !== 'superadmin') {
+            $baseQuery->where('organisatie_id', $user->organisatie_id);
+        }
+        
         // DEBUG: Log alle beschikbare sjablonen voor deze categorie
-        $allSjablonen = Sjabloon::where('categorie', $categorie)->get();
-        \Log::info('📋 Alle sjablonen in categorie', [
+        $allSjablonen = (clone $baseQuery)->get();
+        \Log::info('📋 Alle sjablonen in categorie voor gebruiker', [
             'categorie' => $categorie,
+            'organisatie_id' => $user ? $user->organisatie_id : 'geen',
             'count' => $allSjablonen->count(),
             'sjablonen' => $allSjablonen->map(function($s) {
                 return [
                     'id' => $s->id,
                     'naam' => $s->naam,
-                    'testtype' => $s->testtype ?? 'NULL'
+                    'testtype' => $s->testtype ?? 'NULL',
+                    'organisatie_id' => $s->organisatie_id
                 ];
             })->toArray()
         ]);
         
         // Eerst: exacte match proberen
-        $sjabloon = Sjabloon::where('categorie', $categorie)
+        $sjabloon = (clone $baseQuery)
             ->where('testtype', $testtype)
             ->first();
             
@@ -70,7 +83,7 @@ class SjabloonHelper
             foreach ($searchTerms as $term) {
                 \Log::info('  🔎 Searching for term', ['term' => $term]);
                 
-                $sjabloon = Sjabloon::where('categorie', $categorie)
+                $sjabloon = (clone $baseQuery)
                     ->where('naam', 'LIKE', '%' . $term . '%')
                     ->first();
                     
@@ -99,10 +112,16 @@ class SjabloonHelper
      */
     public static function getAvailableTesttypes()
     {
-        return Sjabloon::where('is_actief', true)
-                      ->whereNotNull('testtype')
-                      ->pluck('testtype')
-                      ->unique()
-                      ->values();
+        $user = auth()->user();
+        $query = Sjabloon::where('is_actief', true)->whereNotNull('testtype');
+        
+        // Filter op organisatie (behalve voor superadmin)
+        if ($user && $user->role !== 'superadmin') {
+            $query->where('organisatie_id', $user->organisatie_id);
+        }
+        
+        return $query->pluck('testtype')
+                     ->unique()
+                     ->values();
     }
 }

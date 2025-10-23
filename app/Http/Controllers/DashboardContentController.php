@@ -18,7 +18,7 @@ class DashboardContentController extends Controller
         
         if ($hasNewFields) {
             $content = StaffNote::with('user')
-                ->visibleFor($user->role)
+                ->visibleFor($user->role, $user->organisatie_id)
                 ->where('is_archived', false)
                 ->where(function($q) {
                     $q->whereNull('expires_at')
@@ -35,12 +35,12 @@ class DashboardContentController extends Controller
         } else {
             // Fallback voor oude structuur
             $content = StaffNote::with('user')
-                ->visibleFor($user->role)
+                ->visibleFor($user->role, $user->organisatie_id)
                 ->orderBy('created_at', 'desc')
                 ->get();
         }
 
-        $canManage = in_array($user->role, ['superadmin', 'admin', 'medewerker']);
+        $canManage = in_array($user->role, ['superadmin', 'admin', 'medewerker', 'organisatie_admin']);
 
         return view('dashboard-content.index', compact('content', 'canManage', 'hasNewFields'));
     }
@@ -49,7 +49,7 @@ class DashboardContentController extends Controller
     {
         // Check if user is staff
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+        if (!in_array($user->role, ['superadmin', 'admin', 'organisatie_admin', 'medewerker'])) {
             abort(403, 'Geen toegang');
         }
         
@@ -62,7 +62,7 @@ class DashboardContentController extends Controller
     {
         // Check if user is staff
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+        if (!in_array($user->role, ['superadmin', 'admin', 'organisatie_admin', 'medewerker'])) {
             abort(403, 'Geen toegang');
         }
 
@@ -91,6 +91,7 @@ class DashboardContentController extends Controller
 
         // Set defaults
         $validated['user_id'] = Auth::id();
+        $validated['organisatie_id'] = Auth::user()->organisatie_id;
         $validated['sort_order'] = StaffNote::max('sort_order') + 1;
         $validated['published_at'] = $validated['published_at'] ?? now();
 
@@ -104,8 +105,13 @@ class DashboardContentController extends Controller
     {
         // Check if user is staff
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker', 'organisatie_admin'])) {
             abort(403, 'Geen toegang');
+        }
+        
+        // Check organisatie toegang (behalve voor superadmin)
+        if ($user->role !== 'superadmin' && $dashboardContent->organisatie_id !== $user->organisatie_id) {
+            abort(403, 'Geen toegang tot content van andere organisatie');
         }
         
         $templates = $this->getTemplates();
@@ -117,8 +123,13 @@ class DashboardContentController extends Controller
     {
         // Check if user is staff
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker', 'organisatie_admin'])) {
             abort(403, 'Geen toegang');
+        }
+        
+        // Check organisatie toegang (behalve voor superadmin)
+        if ($user->role !== 'superadmin' && $dashboardContent->organisatie_id !== $user->organisatie_id) {
+            abort(403, 'Geen toegang tot content van andere organisatie');
         }
 
         $validated = $request->validate([
@@ -159,8 +170,13 @@ class DashboardContentController extends Controller
     {
         // Check if user is staff
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker', 'organisatie_admin'])) {
             abort(403, 'Geen toegang');
+        }
+        
+        // Check organisatie toegang (behalve voor superadmin)
+        if ($user->role !== 'superadmin' && $dashboardContent->organisatie_id !== $user->organisatie_id) {
+            abort(403, 'Geen toegang tot content van andere organisatie');
         }
 
         // Delete image if exists
@@ -178,7 +194,7 @@ class DashboardContentController extends Controller
     {
         // Check if user is staff
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+        if (!in_array($user->role, ['superadmin', 'admin', 'organisatie_admin', 'medewerker'])) {
             abort(403, 'Geen toegang');
         }
 
@@ -191,7 +207,7 @@ class DashboardContentController extends Controller
     {
         // Check if user is staff
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+        if (!in_array($user->role, ['superadmin', 'admin', 'organisatie_admin', 'medewerker'])) {
             abort(403, 'Geen toegang');
         }
 
@@ -212,14 +228,18 @@ class DashboardContentController extends Controller
     public function archived()
     {
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker', 'organisatie_admin'])) {
             abort(403, 'Geen toegang');
         }
 
-        $archivedContent = StaffNote::with('user')
-            ->where('is_archived', true)
-            ->orderBy('updated_at', 'desc')
-            ->get();
+        $query = StaffNote::with('user')->where('is_archived', true);
+        
+        // Filter op organisatie (behalve voor superadmin)
+        if ($user->role !== 'superadmin') {
+            $query->where('organisatie_id', $user->organisatie_id);
+        }
+        
+        $archivedContent = $query->orderBy('updated_at', 'desc')->get();
 
         return view('dashboard-content.archived', compact('archivedContent'));
     }
@@ -228,7 +248,7 @@ class DashboardContentController extends Controller
     {
         // Check if user is staff
         $user = Auth::user();
-        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+        if (!in_array($user->role, ['superadmin', 'admin', 'organisatie_admin', 'medewerker'])) {
             abort(403, 'Geen toegang');
         }
 
