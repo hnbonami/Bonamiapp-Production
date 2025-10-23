@@ -38,6 +38,9 @@ class KlantenController extends Controller
 
     public function store(Request $request)
     {
+        // DEBUG: Check welke organisatie_id de gebruiker heeft
+        \Log::info('🔍 KLANT STORE - User organisatie_id: ' . auth()->user()->organisatie_id);
+        
         $request->validate([
             'voornaam' => 'required|string|max:255',
             'naam' => 'required|string|max:255',
@@ -65,26 +68,36 @@ class KlantenController extends Controller
         ]);
 
         try {
-            // STAP 1: Maak klant aan met ALLE velden (HERSTELD)
-            $klant = Klant::create($request->only([
+            // STAP 1: Maak klant aan met ALLE velden + organisatie_id (GEFIXED!)
+            $klantData = $request->only([
                 'voornaam', 'naam', 'email', 'telefoonnummer', 'geboortedatum',
                 'straatnaam', 'huisnummer', 'adres', 'postcode', 'stad', 'land',
                 'geslacht', 'status', 'sport', 'niveau', 'club', 'herkomst',
                 'hoe_ontdekt', 'opmerkingen'
-            ]));
+            ]);
+            
+            // BELANGRIJK: Zet organisatie_id van de ingelogde gebruiker
+            $klantData['organisatie_id'] = auth()->user()->organisatie_id;
+            
+            \Log::info('🔍 KLANT CREATE - Data:', $klantData);
+            
+            $klant = Klant::create($klantData);
+            
+            \Log::info('✅ KLANT CREATED - ID: ' . $klant->id . ', Org ID: ' . $klant->organisatie_id);
 
             // STAP 1.5: BESTAANDE WELKOMSTMAIL SYSTEEM (MOET BLIJVEN WERKEN!)
             try {
                 // Generate temporary password
                 $temporaryPassword = \Str::random(12);
                 
-                // Create user account (BESTAAND SYSTEEM)
+                // Create user account (BESTAAND SYSTEEM) + organisatie_id!
                 $user = \App\Models\User::create([
                     'name' => $klant->voornaam . ' ' . $klant->naam,
                     'email' => $klant->email,
                     'password' => \Hash::make($temporaryPassword),
                     'role' => 'klant', // NIET 'customer'
                     'klant_id' => $klant->id,
+                    'organisatie_id' => auth()->user()->organisatie_id, // BELANGRIJK!
                 ]);
 
                 // Create invitation token (BESTAAND SYSTEEM)

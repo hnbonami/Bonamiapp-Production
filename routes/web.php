@@ -176,7 +176,7 @@ Route::middleware('auth')->group(function () {
     // Eenvoudige print-versie (browser native print/PDF)
     Route::get('bikefit/{bikefit}/print', [\App\Http\Controllers\PdfController::class, 'printOnly'])->name('bikefit.report.print');
     // Alternatieve print route via BikefitResultsController
-    Route::get('bikefit/{bikefit}/print-direct', [\AppHttp\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
+    Route::get('bikefit/{bikefit}/print-direct', [\App\Http\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
     // Direct PDF download route voor bikefit rapport
     Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
     // Bikefit berekende resultaten en verslag generatie
@@ -292,12 +292,12 @@ Route::post('/organisatie/uitnodiging/{token}', [OrganisatieController::class, '
 Route::middleware(['auth'])->group(function () {
     // We verwijderen deze duplicate route
     // Sjablonen preview route
-    Route::get("sjablonen/{id}/preview", [\App\Http\Controllers\SjablonenController::class, "preview"])->name("sjablonen.preview");
+    Route::get("sjablonen/{id}/preview", [App\Http\Controllers\SjablonenController::class, "preview"])->name("sjablonen.preview");
     
     // Route::resource('sjablonen', App\Http\Controllers\SjablonenController::class);
     
     // Upload route voor achtergrondafbeeldingen
-    Route::post('/sjablonen/{sjabloon}/upload-background', [SjablonenController::class, 'uploadBackground'])
+    Route::post('/sjablonen/{sjabloon}/upload-background', [App\Http\Controllers\SjablonenController::class, 'uploadBackground'])
         ->name('sjablonen.uploadBackground');
 });
 
@@ -572,11 +572,11 @@ Route::get('/import/klanten/template', [\App\Http\Controllers\KlantenController:
 Route::get('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
 Route::post('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
 Route::get('/import/bikefits/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
-Route::get('/bikefit/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
+Route::get('/bikefit/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
 
 // Export routes
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'exportKlanten'])->name('klanten.export');
-Route::get('/export/bikefits', [\AppHttp\Controllers\BikefitController::class, 'exportBikefits'])->name('bikefits.export');
+Route::get('/export/bikefits', [\App\Http\Controllers\BikefitController::class, 'exportBikefits'])->name('bikefits.export');
 
 // Database admin routes - WERKENDE DATABASE IMPORT/EXPORT SYSTEEM
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
@@ -601,7 +601,7 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 Route::middleware('auth')->group(function () {
     // Import routes moeten VOOR resource routes staan
     Route::get('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
-    Route::post('/klanten/import', [\AppHttp\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+    Route::post('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
     Route::get('/klanten/template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
     
     // Resource routes
@@ -774,19 +774,19 @@ Route::middleware(['auth', 'verified'])->group(function() {
 // Sjablonen routes - WERKENDE ROUTES HERSTELD!
 Route::middleware(['auth'])->group(function () {
     // Testtype route MOET VOOR resource routes staan
-    Route::get('sjablonen/testtypes/{categorie}', [\App\Http\Controllers\SjablonenController::class, 'getTesttypes'])->name('sjablonen.testtypes');
+    Route::get('sjablonen/testtypes/{categorie}', [App\Http\Controllers\SjablonenController::class, 'getTesttypes'])->name('sjablonen.testtypes');
     
     // Achtergrond upload routes - MOET VOOR resource routes staan om conflict te vermijden
-    Route::post('sjablonen/backgrounds/upload', [\App\Http\Controllers\SjablonenController::class, 'uploadBackground'])->name('sjablonen.backgrounds.upload');
-    Route::delete('sjablonen/backgrounds/{filename}', [\App\Http\Controllers\SjablonenController::class, 'deleteBackground'])->name('sjablonen.backgrounds.delete');
+    Route::post('sjablonen/backgrounds/upload', [App\Http\Controllers\SjablonenController::class, 'uploadBackground'])->name('sjablonen.backgrounds.upload');
+    Route::delete('sjablonen/backgrounds/{filename}', [App\Http\Controllers\SjablonenController::class, 'deleteBackground'])->name('sjablonen.backgrounds.delete');
     
     // HOOFDROUTE - DEZE WERKTE AL!!!
-    Route::resource('sjablonen', \App\Http\Controllers\SjablonenController::class);
+    Route::resource('sjablonen', App\Http\Controllers\SjablonenController::class);
     
     // AJAX routes voor sjabloon editor
-    Route::post('sjablonen/{sjabloon}/pages/{pagina}/update', [\App\Http\Controllers\SjablonenController::class, 'updatePagina'])->name('sjablonen.pagina.update');
-    Route::post('sjablonen/{sjabloon}/pages', [\App\Http\Controllers\SjablonenController::class, 'addPagina'])->name('sjablonen.pagina.add');
-    Route::delete('sjablonen/{sjabloon}/pages/{pagina}', [\App\Http\Controllers\SjablonenController::class, 'deletePagina'])->name('sjablonen.pagina.delete');
+    Route::post('sjablonen/{sjabloon}/pages/{pagina}/update', [App\Http\Controllers\SjablonenController::class, 'updatePagina'])->name('sjablonen.pagina.update');
+    Route::post('sjablonen/{sjabloon}/pages', [App\Http\Controllers\SjablonenController::class, 'addPagina'])->name('sjablonen.pagina.add');
+    Route::delete('sjablonen/{sjabloon}/pages/{pagina}', [App\Http\Controllers\SjablonenController::class, 'deletePagina'])->name('sjablonen.pagina.delete');
 });
 
 // Rapport routes
@@ -1282,16 +1282,16 @@ Route::resource('klanten', \App\Http\Controllers\KlantenController::class);
 Route::post('klanten/{klant}/send-invitation', [\App\Http\Controllers\KlantenController::class, 'sendInvitation'])->name('klanten.send-invitation');
 
 // Klanten Import/Export routes
-Route::get('/import/klanten', [\AppHttp\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
-Route::post('/import/klanten', [\AppHttp\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+Route::get('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
+Route::post('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
 Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');
 
 // Bikefit Import/Export routes  
 Route::get('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
-Route::post('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
+Route::post('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
 Route::get('/import/bikefits/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
-Route::get('/bikefit/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
+Route::get('/bikefit/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
 
 // Inspanningstesten Import/Export routes
 Route::get('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'showImport'])->name('inspanningstesten.import.form');

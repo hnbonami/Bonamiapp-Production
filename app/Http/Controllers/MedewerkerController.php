@@ -89,23 +89,13 @@ class MedewerkerController extends Controller
         ]);
 
         try {
-            $medewerker = User::create([
-                'name' => $validated['voornaam'] . ' ' . $validated['achternaam'],
-                'voornaam' => $validated['voornaam'],
-                'achternaam' => $validated['achternaam'],
-                'email' => $validated['email'],
-                'telefoonnummer' => $validated['telefoonnummer'] ?? null,
-                'geboortedatum' => $validated['geboortedatum'] ?? null,
-                'geslacht' => $validated['geslacht'] ?? null,
-                'role' => $validated['rol'] ?? 'medewerker',
-                'status' => $validated['status'] ?? 'Actief',
-                'organisatie_id' => auth()->user()->organisatie_id,
-                'password' => \Hash::make(\Str::random(12)),
-                'email_verified_at' => now(),
-            ]);
+                    $medewerker = Medewerker::create($validatedData);
+        
+        // Refresh zodat alle relaties up-to-date zijn
+        $medewerker->refresh();
 
-            \Log::info('✅ Medewerker aangemaakt', ['medewerker_id' => $medewerker->id]);
-            return redirect()->route('medewerkers.index')->with('success', 'Medewerker succesvol toegevoegd!');
+        return redirect()->route('medewerkers.show', $medewerker->id)
+            ->with('success', 'Medewerker succesvol toegevoegd!');
                 
         } catch (\Exception $e) {
             \Log::error('❌ Fout bij aanmaken medewerker', ['error' => $e->getMessage()]);

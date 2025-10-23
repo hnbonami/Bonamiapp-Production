@@ -316,7 +316,12 @@ class SjablonenController extends Controller
             // Maak een kopie van het sjabloon
             $newSjabloon = $sjabloon->replicate();
             $newSjabloon->naam = $sjabloon->naam . ' (Kopie)';
-            $newSjabloon->user_id = auth()->id();
+            
+            // Voeg user_id alleen toe als de kolom bestaat
+            if (Schema::hasColumn('sjablonen', 'user_id')) {
+                $newSjabloon->user_id = auth()->id();
+            }
+            
             $newSjabloon->organisatie_id = auth()->user()->organisatie_id;
             $newSjabloon->save();
 

@@ -129,28 +129,14 @@ class BikefitController extends Controller
         
         // Save the bikefit
         $bikefit = Bikefit::create($validated);
-
-        // Handle uitleensysteem data if provided
-        if ($request->filled('onderdeel_type')) {
-            $this->handleUitleensysteemFields($request, $klant, $bikefit);
-        }
         
-        // Generate and save PDF report
-        try {
-            $reportPath = app(BikefitReportGenerator::class)->savePdf($bikefit);
-            // Provide a download link back on the klant show page
-            session()->flash('success', 'Bikefit opgeslagen. Verslag gegenereerd.');
-            session()->flash('bikefit_report_path', $reportPath);
-        } catch (\Throwable $e) {
-            // Don't block the save if PDF generation fails; log and continue
-            \Log::error('PDF report save failed: ' . $e->getMessage());
-            session()->flash('error', 'Bikefit opgeslagen, maar verslag kon niet worden gegenereerd.');
-        }
+        // Refresh zodat alle relaties up-to-date zijn
+        $bikefit->refresh();
 
-        return redirect()->route('bikefit.results', [
-            'klant' => $klant->id,
+        return redirect()->route('bikefit.show', [
+            'klant' => $klant->id, 
             'bikefit' => $bikefit->id
-        ]);
+        ])->with('success', 'Bikefit succesvol aangemaakt.');
     }
 
     public function report(Klant $klant, $bikefitId, BikefitReportGenerator $gen)

@@ -82,24 +82,40 @@ class KlantController extends Controller
      */
     public function index(Request $request)
     {
-        \Log::info('🔍 ROUTE REGISTERED: klanten using KlantController');
-        
-        // Zoekfunctionaliteit
+        $user = auth()->user();
         $zoekterm = $request->input('zoek');
         
-        if ($zoekterm) {
-            \Log::info('🔎 Zoeken naar klanten', ['zoekterm' => $zoekterm]);
-            
-            $klanten = Klant::where(function($query) use ($zoekterm) {
-                $query->where('naam', 'like', '%' . $zoekterm . '%')
-                      ->orWhere('voornaam', 'like', '%' . $zoekterm . '%')
-                      ->orWhere('email', 'like', '%' . $zoekterm . '%');
-            })->orderBy('created_at', 'desc')->get();
-            
-            \Log::info('✅ Zoekresultaten gevonden', ['aantal' => $klanten->count()]);
+        // 🔥 DEBUG: Log user info
+        \Log::info('🔍 KLANTEN INDEX:', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'user_role' => $user->role,
+            'user_org_id' => $user->organisatie_id
+        ]);
+        
+        // Start query
+        $query = Klant::query();
+        
+        // Filter op organisatie (behalve superadmin)
+        if ($user->role !== 'superadmin' && $user->organisatie_id) {
+            $query->where('organisatie_id', $user->organisatie_id);
+            \Log::info('✅ Filter toegepast op organisatie: ' . $user->organisatie_id);
         } else {
-            $klanten = Klant::orderBy('created_at', 'desc')->get();
+            \Log::warning('⚠️ GEEN FILTER - Role: ' . $user->role . ', Org ID: ' . $user->organisatie_id);
         }
+        
+        // Zoeken
+        if ($zoekterm) {
+            $query->where(function($q) use ($zoekterm) {
+                $q->where('naam', 'like', '%' . $zoekterm . '%')
+                  ->orWhere('voornaam', 'like', '%' . $zoekterm . '%')
+                  ->orWhere('email', 'like', '%' . $zoekterm . '%');
+            });
+        }
+        
+        $klanten = $query->orderBy('created_at', 'desc')->get();
+        
+        \Log::info('📊 Klanten opgehaald: ' . $klanten->count());
         
         return view('klanten.index', compact('klanten'));
     }
@@ -140,7 +156,7 @@ class KlantController extends Controller
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Voeg organisatie_id en klant-specifieke velden toe
+        // 🔥 KRITIEK: Voeg organisatie_id toe ALS EERSTE!
         $validated['organisatie_id'] = auth()->user()->organisatie_id;
         $validated['name'] = $validated['voornaam'] . ' ' . $validated['naam'];
         $validated['role'] = 'klant';
@@ -152,22 +168,17 @@ class KlantController extends Controller
             $validated['avatar_path'] = $path;
         }
 
-        // Maak klant aan
-        $klant = User::create($validated);
+        // Log voor debugging
+        \Log::info('🔥 Creating klant with data:', $validated);
 
-        // User aanmaken
-        if (!empty($validated['email'])) {
-            $password = Str::random(12);
-            $user = User::create([
-                'name' => $validated['voornaam'] . ' ' . $validated['naam'],
-                'email' => $validated['email'],
-                'password' => Hash::make($password),
-                'role' => 'klant',
-            ]);
-            $loginUrl = url('/login');
-            Mail::to($user->email)->send(new AccountCreatedMail($user->name, $user->email, $password, $loginUrl));
-        }
-        return redirect()->route('klanten.index')->with('success', 'Klant toegevoegd en loginmail verzonden!');
+        // Maak klant aan
+        $klant = Klant::create($validated);
+        
+        // Refresh de klant zodat alle relaties up-to-date zijn
+        $klant->refresh();
+
+        return redirect()->route('klanten.show', $klant->id)
+            ->with('success', 'Klant succesvol toegevoegd!');
     }
     public function show(Klant $klant)
     {

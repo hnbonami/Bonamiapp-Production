@@ -13,6 +13,19 @@ class Klant extends Model
 
     protected $table = 'klanten';
 
+    /**
+     * Boot het model - zet automatisch organisatie_id bij nieuwe records
+     */
+    protected static function booted()
+    {
+        static::creating(function ($klant) {
+            // Zet automatisch organisatie_id als deze nog niet is gezet
+            if (empty($klant->organisatie_id) && auth()->check() && auth()->user()->organisatie_id) {
+                $klant->organisatie_id = auth()->user()->organisatie_id;
+            }
+        });
+    }
+
     protected $fillable = [
         'organisatie_id',
         'voornaam',

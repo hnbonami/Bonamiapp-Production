@@ -14,20 +14,11 @@ trait BelongsToOrganisatie
      */
     protected static function bootBelongsToOrganisatie()
     {
-        // Voeg global scope toe die automatisch filtert op organisatie
-        static::addGlobalScope('organisatie', function ($query) {
-            $user = auth()->user();
-            
-            // Superadmin ziet alles
-            if ($user && $user->isSuperAdmin()) {
-                return;
-            }
-            
-            // Andere users zien alleen eigen organisatie data
-            if ($user && $user->organisatie_id) {
-                // Gebruik $query->getModel()->getTable() om de tabelnaam te krijgen
-                $tableName = $query->getModel()->getTable();
-                $query->where($tableName . '.organisatie_id', $user->organisatie_id);
+        // Voeg global scope toe om automatisch te filteren op organisatie_id
+        static::addGlobalScope('organisatie', function (Builder $builder) {
+            // Alleen filteren als gebruiker is ingelogd
+            if (auth()->check() && auth()->user()->organisatie_id) {
+                $builder->where($builder->getModel()->getTable() . '.organisatie_id', auth()->user()->organisatie_id);
             }
         });
     }
