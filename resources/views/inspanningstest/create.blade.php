@@ -63,7 +63,7 @@
         </div>
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6 text-gray-900">
-                <form method="POST" action="{{ route('org.inspanningstest.store', [$org, $klant->id]) }}" id="inspanningstest-form">
+                <form method="POST" action="{{ route('inspanningstest.store', $klant->id) }}" id="inspanningstest-form">
                     @csrf
                     
                     <!-- Basis informatie -->
@@ -3306,9 +3306,8 @@ function generateCompleteAIAnalysis() {
     
     console.log('📊 Complete testdata verzameld:', completeTestData);
     
-    // Verstuur naar complete AI analyse endpoint (ORG-aware)
-    const orgSlug = '{{ $org->slug ?? "default" }}';
-    fetch(`/org/${orgSlug}/api/ai-advice`, {
+    // Verstuur naar complete AI analyse endpoint
+    fetch(`/api/ai-advice`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

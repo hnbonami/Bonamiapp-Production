@@ -3279,9 +3279,8 @@ function generateCompleteAIAnalysis() {
     
     console.log('📊 Complete testdata verzameld:', completeTestData);
     
-    // Verstuur naar complete AI analyse endpoint (ORG-aware)
-    const orgSlug = '{{ $org->slug ?? "default" }}';
-    fetch(`/org/${orgSlug}/api/ai-advice`, {
+    // Verstuur naar complete AI analyse endpoint
+    fetch(`/api/ai-advice`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
