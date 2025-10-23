@@ -134,10 +134,24 @@ class MedewerkerController extends Controller
                 'organisatie_id' => $medewerker->organisatie_id
             ]);
 
+            // Maak InvitationToken aan met wachtwoord (zoals bij klanten!)
+            InvitationToken::create([
+                'email' => $medewerker->email,
+                'token' => Str::random(60),
+                'temporary_password' => $temporaryPassword,
+                'type' => 'medewerker',
+                'expires_at' => now()->addDays(7),
+                'created_by' => auth()->id()
+            ]);
+
+            \Log::info('✅ InvitationToken aangemaakt voor medewerker', [
+                'email' => $medewerker->email
+            ]);
+
             // AUTOMATISCH welkomstmail versturen (net zoals bij klanten)
             try {
                 $emailService = app(EmailIntegrationService::class);
-                $emailSent = $emailService->sendEmployeeWelcomeEmail($medewerker, $temporaryPassword);
+                $emailSent = $emailService->sendEmployeeWelcomeEmail($medewerker);
                 
                 if ($emailSent) {
                     \Log::info('✅ Automatische welkomstmail verstuurd', [
@@ -372,9 +386,27 @@ class MedewerkerController extends Controller
                 'medewerker_id' => $medewerker->id
             ]);
 
-            // Stuur welkomstmail met NIEUW wachtwoord via EmailIntegrationService
+            // Update of maak nieuw InvitationToken aan met NIEUW wachtwoord
+            InvitationToken::updateOrCreate(
+                [
+                    'email' => $medewerker->email,
+                    'type' => 'medewerker'
+                ],
+                [
+                    'token' => Str::random(60),
+                    'temporary_password' => $temporaryPassword,
+                    'expires_at' => now()->addDays(7),
+                    'created_by' => auth()->id()
+                ]
+            );
+
+            \Log::info('✅ InvitationToken bijgewerkt met nieuw wachtwoord', [
+                'email' => $medewerker->email
+            ]);
+
+            // Stuur welkomstmail via EmailIntegrationService (haalt wachtwoord uit InvitationToken)
             $emailService = app(EmailIntegrationService::class);
-            $emailSent = $emailService->sendEmployeeWelcomeEmail($medewerker, $temporaryPassword);
+            $emailSent = $emailService->sendEmployeeWelcomeEmail($medewerker);
             
             if ($emailSent) {
                 \Log::info('✅ Uitnodigingsmail succesvol verstuurd', [

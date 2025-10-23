@@ -187,13 +187,19 @@
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2 21c0-4 4-7 10-7s10 3 10 7"/></svg>
                                     </a>
 
-                                    <!-- Email -->
-                                    <a href="mailto:{{ $medewerker->email }}" 
-                                       aria-label="Email" 
-                                       class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800" 
-                                       title="Email sturen">
-                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l9 6 9-6"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 6v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6"/></svg>
-                                    </a>
+                                    <!-- Uitnodiging versturen -->
+                                    <form action="{{ route('medewerkers.send-invitation', $medewerker) }}" 
+                                          method="POST" 
+                                          class="inline"
+                                          onsubmit="return confirm('Uitnodiging versturen naar {{ $medewerker->email }}? Dit genereert een nieuw tijdelijk wachtwoord.');">
+                                        @csrf
+                                        <button type="submit" 
+                                                aria-label="Uitnodiging versturen" 
+                                                class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 hover:bg-emerald-200" 
+                                                title="Uitnodiging versturen">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l9 6 9-6"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 6v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6"/></svg>
+                                        </button>
+                                    </form>
 
                                     <!-- Verwijderen -->
                                     <form action="{{ route('medewerkers.destroy', $medewerker->id) }}" 

@@ -1286,6 +1286,9 @@ Route::post('inspanningstest/ai-complete-analysis', [InspanningstestController::
 Route::resource('klanten', \App\Http\Controllers\KlantenController::class);
 Route::post('klanten/{klant}/send-invitation', [\App\Http\Controllers\KlantenController::class, 'sendInvitation'])->name('klanten.send-invitation');
 
+// Medewerkers routes
+Route::post('medewerkers/{medewerker}/send-invitation', [\App\Http\Controllers\MedewerkerController::class, 'sendInvitation'])->name('medewerkers.send-invitation');
+
 // Klanten Import/Export routes
 Route::get('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
 Route::post('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');

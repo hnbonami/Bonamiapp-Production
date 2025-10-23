@@ -520,13 +520,13 @@ class EmailIntegrationService
             // Update trigger statistics
             $this->updateTriggerStats('welcome_employee', true);
             
-            // Also log manually for backup
+            // Also log manually for backup - ZORG dat body_html altijd een waarde heeft
             try {
                 EmailLog::create([
                     'recipient_email' => $employee->email,
                     'recipient_name' => $employee->voornaam . ' ' . $employee->achternaam,
                     'subject' => $subject,
-                    'body_html' => $content ?? '',
+                    'body_html' => $content, // Niet ?? '' want $content is altijd set
                     'email_template_id' => $template->id ?? null,
                     'trigger_name' => 'welcome_employee',
                     'status' => 'sent',
@@ -540,7 +540,7 @@ class EmailIntegrationService
                         'recipient_email' => $employee->email,
                         'recipient_name' => $employee->voornaam . ' ' . $employee->achternaam,
                         'subject' => $subject,
-                        'body_html' => $content ?? '',
+                        'body_html' => $content, // Niet ?? '' want $content is altijd set
                         'email_template_id' => $template->id ?? null,
                         'trigger_name' => 'welcome_employee',
                         'status' => 'sent',
