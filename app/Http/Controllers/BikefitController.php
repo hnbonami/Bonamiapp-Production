@@ -1724,6 +1724,230 @@ const fs = require('fs');
         }
     }
 
+    /**
+     * Importeer bikefits vanuit database bestand
+     */
+    public function import(Request $request)
+    {
+        // Log incoming request voor debugging
+        \Log::info('📥 Bikefit import request ontvangen', [
+            'has_excel_file' => $request->hasFile('excel_file'),
+            'all_files' => array_keys($request->allFiles()),
+            'input_keys' => array_keys($request->all())
+        ]);
+
+        // Check of er een file is (de form gebruikt 'excel_file' als naam)
+        if (!$request->hasFile('excel_file')) {
+            return redirect()->back()->with('error', 'Geen bestand geselecteerd. Upload een SQL bestand.');
+        }
+
+        // Valideer het bestand
+        $request->validate([
+            'excel_file' => 'required|file|max:10240' // Max 10MB
+        ]);
+
+        try {
+            $organisatieId = auth()->user()->organisatie_id;
+            
+            // Haal het geüploade bestand op
+            $file = $request->file('excel_file');
+            $extension = strtolower($file->getClientOriginalExtension());
+            
+            \Log::info('📥 Bikefit import gestart', [
+                                              'user_id' => auth()->id(),
+                'organisatie_id' => $organisatieId,
+                'filename' => $file->getClientOriginalName(),
+                'extension' => $extension
+            ]);
+            
+            // Check bestandstype
+            if (in_array($extension, ['xlsx', 'xls', 'csv'])) {
+                // INLINE Excel/CSV import met fallback
+                try {
+                    if (class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
+                        // PhpSpreadsheet beschikbaar
+                        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getRealPath());
+                        $worksheet = $spreadsheet->getActiveSheet();
+                        $rows = $worksheet->toArray();
+                    } else {
+                        // Fallback: converteer naar CSV en lees met PHP
+                        return redirect()->back()->with('error', 
+                            'PhpSpreadsheet niet geïnstalleerd. Installeer met: composer require phpoffice/phpspreadsheet');
+                    }
+                } catch (\Exception $e) {
+                    \Log::error('Excel read failed', ['error' => $e->getMessage()]);
+                    return redirect()->back()->with('error', 
+                        'Excel bestand kon niet gelezen worden: ' . $e->getMessage());
+                }
+                
+                // Verwijder header rij
+                $header = array_shift($rows);
+                
+                $imported = 0;
+                $errors = [];
+                
+                foreach ($rows as $index => $row) {
+                    try {
+                        if (empty(array_filter($row))) continue;
+                        
+                        // Zoek klant op basis van email (kolom 0) of naam (kolom 1)
+                        $klantEmail = trim($row[0] ?? '');
+                        $klantNaam = trim($row[1] ?? '');
+                        
+                        \Log::info('Zoek klant', [
+                            'row' => $index + 2,
+                            'email' => $klantEmail,
+                            'naam' => $klantNaam,
+                            'organisatie_id' => $organisatieId
+                        ]);
+                        
+                        $klant = null;
+                        if ($klantEmail) {
+                            $klant = \App\Models\Klant::where('email', $klantEmail)
+                                ->where('organisatie_id', $organisatieId)
+                                ->first();
+                            \Log::info('Email zoekresultaat', ['found' => $klant ? 'ja' : 'nee']);
+                        }
+                        
+                        if (!$klant && $klantNaam) {
+                            $klant = \App\Models\Klant::where('naam', $klantNaam)
+                                ->where('organisatie_id', $organisatieId)
+                                ->first();
+                            \Log::info('Naam zoekresultaat', ['found' => $klant ? 'ja' : 'nee']);
+                        }
+                        
+                        if (!$klant) {
+                            // Toon beschikbare klanten in foutmelding
+                            $beschikbareKlanten = \App\Models\Klant::where('organisatie_id', $organisatieId)
+                                ->take(5)
+                                ->get(['naam', 'email'])
+                                ->map(fn($k) => "{$k->naam} ({$k->email})")
+                                ->implode(', ');
+                            
+                            $errors[] = "Rij " . ($index + 2) . ": Klant '{$klantNaam}' (email: '{$klantEmail}') niet gevonden in organisatie ID{$organisatieId}. Beschikbare klanten: {$beschikbareKlanten}";
+                            continue;
+                        }
+                        
+                        // Map alle Excel kolommen naar bikefit velden
+                        $bikefitData = [
+                            'organisatie_id' => $organisatieId,
+                            'klant_id' => $klant->id,
+                            'datum' => $row[2] ?? now(), // Kolom C
+                            'testtype' => $row[3] ?? null,
+                            'type_fitting' => $row[4] ?? null,
+                            'fietsmerk' => $row[5] ?? null,
+                            'kadermaat' => $row[6] ?? null,
+                            'bouwjaar' => $row[7] ?? null,
+                            'frametype' => $row[8] ?? null,
+                            'lengte_cm' => $row[9] ?? null,
+                            'binnenbeenlengte_cm' => $row[10] ?? null,
+                            'user_id' => auth()->id(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                        
+                        $bikefit = \App\Models\Bikefit::create($bikefitData);
+                        $imported++;
+                        
+                        \Log::info('✅ Bikefit aangemaakt', [
+                            'bikefit_id' => $bikefit->id,
+                            'klant_id' => $klant->id,
+                            'klant_naam' => $klant->naam,
+                            'organisatie_id' => $organisatieId,
+                            'testtype' => $bikefitData['testtype']
+                        ]);
+                    } catch (\Exception $e) {
+                        $errors[] = "Rij " . ($index + 2) . ": " . $e->getMessage();
+                        \Log::warning('Import rij fout', [
+                            'row' => $index + 2,
+                            'data' => array_slice($row, 0, 5),
+                            'error' => $e->getMessage()
+                        ]);
+                    }
+                }
+                
+                \Log::info('Excel import voltooid', [
+                    'imported' => $imported,
+                    'errors' => count($errors)
+                ]);
+                
+                if (count($errors) > 0) {
+                    return redirect()->back()
+                        ->with('warning', "Import: {$imported} bikefits, " . count($errors) . " fouten.")
+                        ->with('import_errors', $errors);
+                }
+                
+                return redirect()->back()
+                    ->with('success', "Excel import succesvol! {$imported} bikefits geïmporteerd.");
+            }
+            
+            if (!in_array($extension, ['sql', 'txt'])) {
+                return redirect()->back()->with('error', 
+                    'Ongeldig bestandstype. Upload een Excel (.xlsx) of SQL bestand (.sql).');
+            }
+
+            // SQL import
+            $sqlContent = file_get_contents($file->getRealPath());
+            
+            // Split SQL statements op basis van ;
+            $statements = array_filter(
+                array_map('trim', explode(';', $sqlContent)),
+                fn($stmt) => !empty($stmt)
+            );
+            
+            $imported = 0;
+            $errors = [];
+            
+            // Voer elke statement uit
+            foreach ($statements as $statement) {
+                try {
+                    // Skip comments en lege regels
+                    if (empty($statement) || str_starts_with($statement, '--') || str_starts_with($statement, '/*')) {
+                        continue;
+                    }
+                    
+                    \DB::statement($statement);
+                    $imported++;
+                } catch (\Exception $e) {
+                    $errors[] = substr($statement, 0, 100) . '... - ' . $e->getMessage();
+                    \Log::warning('⚠️ SQL statement gefaald tijdens import', [
+                        'statement' => substr($statement, 0, 200),
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+            
+            // Update alle geïmporteerde bikefits met juiste organisatie_id
+            \DB::table('bikefits')
+                ->whereNull('organisatie_id')
+                ->update(['organisatie_id' => $organisatieId]);
+            
+            \Log::info('✅ Bikefit import voltooid', [
+                'statements_executed' => $imported,
+                'errors_count' => count($errors),
+                'organisatie_id' => $organisatieId
+            ]);
+            
+            if (count($errors) > 0) {
+                return redirect()->back()
+                    ->with('warning', "Import voltooid met {$imported} statements. " . count($errors) . " errors gevonden.")
+                    ->with('import_errors', $errors);
+            }
+            
+            return redirect()->back()
+                ->with('success', "Database import succesvol! {$imported} SQL statements uitgevoerd.");
+                
+        } catch (\Exception $e) {
+            \Log::error('❌ Bikefit import gefaald', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Import gefaald: ' . $e->getMessage());
+        }
+    }
+
     public function index(Request $request, Klant $klant)
     {
         // Controleer of klant bij huidige organisatie hoort
@@ -1732,5 +1956,81 @@ const fs = require('fs');
         }
         
         // ...existing code...
+    }
+
+    /**
+     * Importeer bikefits vanuit Excel bestand
+     */
+    private function importFromExcel($file, $organisatieId)
+    {
+        try {
+            // Gebruik PhpSpreadsheet om Excel te lezen
+            $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getRealPath());
+            $worksheet = $spreadsheet->getActiveSheet();
+            $rows = $worksheet->toArray();
+            
+            // Verwijder header rij
+            $header = array_shift($rows);
+            
+            $imported = 0;
+            $errors = [];
+            
+            foreach ($rows as $index => $row) {
+                try {
+                    // Skip lege rijen
+                    if (empty(array_filter($row))) {
+                        continue;
+                    }
+                    
+                    // Map Excel kolommen naar database velden
+                    // Pas dit aan op basis van je Excel structuur
+                    $bikefitData = [
+                        'organisatie_id' => $organisatieId,
+                        'klant_id' => $row[0] ?? null, // Pas aan naar juiste kolom
+                        'datum' => $row[1] ?? now(),
+                        // Voeg hier meer velden toe op basis van je Excel structuur
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                    
+                    // Valideer en maak bikefit aan
+                    if ($bikefitData['klant_id']) {
+                        \App\Models\Bikefit::create($bikefitData);
+                        $imported++;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $errors[] = "Rij " . ($index + 2) . ": " . $e->getMessage();
+                    \Log::warning('⚠️ Excel rij import gefaald', [
+                        'row' => $index + 2,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+            
+            \Log::info('✅ Excel import voltooid', [
+                'imported' => $imported,
+                'errors_count' => count($errors),
+                'organisatie_id' => $organisatieId
+            ]);
+            
+            if (count($errors) > 0) {
+                return redirect()->back()
+                    ->with('warning', "Import voltooid: {$imported} bikefits geïmporteerd, " . count($errors) . " fouten.")
+                    ->with('import_errors', $errors);
+            }
+            
+            return redirect()->back()
+                ->with('success', "Excel import succesvol! {$imported} bikefits geïmporteerd.");
+                
+        } catch (\Exception $e) {
+            \Log::error('❌ Excel import gefaald', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->back()
+                ->with('error', 'Excel import gefaald: ' . $e->getMessage());
+        }
     }
 }
