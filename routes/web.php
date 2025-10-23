@@ -178,11 +178,11 @@ Route::middleware('auth')->group(function () {
     // Alternatieve print route via BikefitResultsController
     Route::get('bikefit/{bikefit}/print-direct', [\AppHttp\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
     // Direct PDF download route voor bikefit rapport
-    Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf');
+    Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
     // Bikefit berekende resultaten en verslag generatie
-    Route::get('bikefit/{bikefit}/results', [\App\Http\Controllers\BikefitResultsController::class, 'show'])->name('bikefit.results');
-    Route::post('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport');
-    Route::get('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview');
+    Route::get('bikefit/{bikefit}/results', [\App\Http\Controllers\BikefitResultsController::class, 'show'])->name('bikefit.results')->scopeBindings();
+    Route::post('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
+    Route::get('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview')->scopeBindings();
     // SAVE CUSTOM RESULTS ROUTE - ESSENTIAL FOR EDITABLE RESULTS FUNCTIONALITY
     Route::post('bikefit/{bikefit}/save-custom-results', [\App\Http\Controllers\BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results')->scopeBindings();
     // RESET TO CALCULATED ROUTE - ESSENTIAL FOR RESET FUNCTIONALITY
@@ -204,8 +204,8 @@ Route::middleware('auth')->group(function () {
 
     // Inspanningstest routes
     Route::group(['prefix' => 'klanten/{klant}'], function () {
-        Route::get('inspanningstest/{test}/results', [InspanningstestController::class, 'results'])->name('inspanningstest.results');
-        Route::post('inspanningstest/{test}/generate-report', [InspanningstestController::class, 'generateReport'])->name('inspanningstest.generateReport');
+        Route::get('inspanningstest/{test}/results', [InspanningstestController::class, 'results'])->name('inspanningstest.results')->scopeBindings();
+        Route::post('inspanningstest/{test}/generate-report', [InspanningstestController::class, 'generateReport'])->name('inspanningstest.generateReport')->scopeBindings();
         Route::get('inspanningstest/nieuw', [InspanningstestController::class, 'create'])->name('inspanningstest.create');
         Route::post('inspanningstest', [InspanningstestController::class, 'store'])->name('inspanningstest.store');
         Route::post('inspanningstest/auto-save', [InspanningstestController::class, 'autoSave'])->name('inspanningstest.autoSave');

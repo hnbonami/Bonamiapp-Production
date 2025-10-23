@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Klant;
 use App\Models\Bikefit;
 use App\Services\BikefitCalculator;
 use PDF; // Voeg deze regel toe voor de PDF facade
@@ -122,10 +123,39 @@ class BikefitResultsController extends Controller
             ->header('Content-Type', 'application/pdf')
             ->header('Content-Disposition', 'attachment; filename="'.$filename.'"');
     }
-    public function show($klantId, $bikefitId)
+    public function show(Klant $klant, Bikefit $bikefit)
     {
-        $bikefit = \App\Models\Bikefit::findOrFail($bikefitId);
-        $klant = \App\Models\Klant::findOrFail($klantId);
+        // Route model binding geeft ons direct de models
+        $klantId = $klant->id;
+        $bikefitId = $bikefit->id;
+        
+        // Check organisatie toegang (behalve voor superadmin)
+        $user = auth()->user();
+        if ($user->role !== 'superadmin') {
+            // Check of klant bij de juiste organisatie hoort
+            if ($klant->organisatie_id !== $user->organisatie_id) {
+                \Log::warning('Bikefit results access denied: organisatie mismatch', [
+                    'user_id' => $user->id,
+                    'user_org' => $user->organisatie_id,
+                    'klant_id' => $klant->id,
+                    'klant_org' => $klant->organisatie_id
+                ]);
+                abort(403, 'Geen toegang tot klanten van andere organisatie');
+            }
+            
+            // Check of bikefit bij deze klant hoort
+            if ($bikefit->klant_id !== $klant->id) {
+                \Log::warning('Bikefit results access denied: klant mismatch', [
+                    'user_id' => $user->id,
+                    'klant_id' => $klant->id,
+                    'bikefit_id' => $bikefit->id,
+                    'bikefit_klant_id' => $bikefit->klant_id
+                ]);
+                abort(403, 'Deze bikefit hoort niet bij deze klant');
+            }
+        }
+        
+        // Gebruik de klant van route model binding (geen opnieuw ophalen nodig)
         $results = (new \App\Services\BikefitCalculator())->calculate($bikefit);
         $bikefitVoor = clone $bikefit;
         $bikefitVoor->context = 'voor';

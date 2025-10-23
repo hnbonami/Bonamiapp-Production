@@ -39,11 +39,6 @@ class Klant extends Model
         'is_gesynchroniseerd'
     ];
 
-    public function inspanningstests()
-    {
-        return $this->hasMany(Inspanningstest::class);
-    }
-
     public function bikefits()
     {
         return $this->hasMany(Bikefit::class);
@@ -177,5 +172,21 @@ class Klant extends Model
     public function documenten()
     {
         return $this->hasMany(\App\Models\KlantDocument::class, 'klant_id')->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * Relatie met inspanningstesten
+     */
+    public function tests()
+    {
+        return $this->hasMany(Inspanningstest::class, 'klant_id');
+    }
+    
+    /**
+     * Alias voor tests() relatie (voor backwards compatibility en eager loading)
+     */
+    public function inspanningstesten()
+    {
+        return $this->hasMany(Inspanningstest::class, 'klant_id');
     }
 }

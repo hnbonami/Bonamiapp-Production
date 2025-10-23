@@ -171,8 +171,8 @@ class KlantController extends Controller
     }
     public function show(Klant $klant)
     {
-        // Laad gerelateerde data
-        $klant->load(['bikefits', 'inspanningstests']);
+        // Laad gerelateerde data met correcte relatie namen
+        $klant->load(['bikefits', 'inspanningstesten']);
 
         // Maak user beschikbaar voor de view
         $user = auth()->user();

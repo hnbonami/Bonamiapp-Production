@@ -304,7 +304,7 @@ if (uploadModal) {
 
     @php
         $bikefits = $klant->bikefits->map(function($b) { $b->type = 'bikefit'; return $b; });
-        $inspanningstests = $klant->inspanningstests->map(function($i) { $i->type = 'inspanningstest'; return $i; });
+        $inspanningstests = $klant->inspanningstesten->map(function($i) { $i->type = 'inspanningstest'; return $i; });
         $documenten = $klant->documenten->map(function($d) { $d->type = 'document'; return $d; });
         $testen = $bikefits->concat($inspanningstests)->concat($documenten)->sortByDesc(function($item) {
             if ($item->type === 'bikefit') {

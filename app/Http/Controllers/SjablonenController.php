@@ -6,6 +6,7 @@ use App\Models\Sjabloon;
 use App\Models\SjabloonPage;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Schema;
 
 class SjablonenController extends Controller
 {
@@ -40,15 +41,22 @@ class SjablonenController extends Controller
             'beschrijving' => 'nullable|string',
         ]);
 
-        $sjabloon = Sjabloon::create([
+        // Bouw data array dynamisch op basis van aanwezige kolommen
+        $data = [
             'naam' => $request->naam,
             'categorie' => $request->categorie,
             'testtype' => $request->testtype,
             'beschrijving' => $request->beschrijving,
             'is_actief' => true,
-            'user_id' => auth()->id(),
             'organisatie_id' => auth()->user()->organisatie_id,
-        ]);
+        ];
+        
+        // Voeg user_id alleen toe als de kolom bestaat
+        if (Schema::hasColumn('sjablonen', 'user_id')) {
+            $data['user_id'] = auth()->id();
+        }
+
+        $sjabloon = Sjabloon::create($data);
 
         return redirect()->route('sjablonen.edit', $sjabloon)
                         ->with('success', 'Sjabloon aangemaakt!');
@@ -723,33 +731,77 @@ class SjablonenController extends Controller
      */
     public static function findMatchingTemplate($testtype, $category = null)
     {
+        $user = auth()->user();
+        
+        // Base query met organisatie filter
         $query = Sjabloon::where('is_actief', true);
         
-        // First try to match both testtype and category
+        // Filter op organisatie (behalve voor superadmin)
+        if ($user && $user->role !== 'superadmin') {
+            $query->where('organisatie_id', $user->organisatie_id);
+        }
+        
+        \Log::info('🔍 Finding template', [
+            'testtype' => $testtype,
+            'category' => $category,
+            'user_org' => $user ? $user->organisatie_id : null,
+            'is_superadmin' => $user ? ($user->role === 'superadmin') : false
+        ]);
+        
+        // First try to match both testtype and category (exact match)
         if ($testtype && $category) {
-            $template = $query->where('testtype', $testtype)
+            $template = (clone $query)->where('testtype', $testtype)
                              ->where('categorie', $category)
                              ->first();
             if ($template) {
+                \Log::info('✅ Template found (exact match)', ['template_id' => $template->id]);
                 return $template;
             }
         }
         
-        // If no exact match, try just testtype
+        // If no exact match, try just testtype (exact match)
         if ($testtype) {
-            $template = $query->where('testtype', $testtype)->first();
+            $template = (clone $query)->where('testtype', $testtype)->first();
             if ($template) {
+                \Log::info('✅ Template found (testtype match)', ['template_id' => $template->id]);
                 return $template;
             }
         }
         
-        // If still no match, try just category
-        if ($category) {
-            $template = $query->where('categorie', $category)->first();
+        // If still no match, try LIKE search on testtype (fuzzy match)
+        if ($testtype) {
+            $template = (clone $query)->where('testtype', 'LIKE', '%' . $testtype . '%')->first();
             if ($template) {
+                \Log::info('✅ Template found (testtype fuzzy match)', ['template_id' => $template->id]);
                 return $template;
             }
         }
+        
+        // If still no match, try just category + NULL testtype (wildcard voor alle testtypes)
+        if ($category) {
+            $template = (clone $query)->where('categorie', $category)
+                             ->whereNull('testtype')
+                             ->first();
+            if ($template) {
+                \Log::info('✅ Template found (category wildcard)', ['template_id' => $template->id]);
+                return $template;
+            }
+        }
+        
+        // Last resort: just category (any testtype)
+        if ($category) {
+            $template = (clone $query)->where('categorie', $category)->first();
+            if ($template) {
+                \Log::info('✅ Template found (category match)', ['template_id' => $template->id]);
+                return $template;
+            }
+        }
+        
+        \Log::warning('❌ No template found', [
+            'testtype' => $testtype,
+            'category' => $category,
+            'user_org' => $user ? $user->organisatie_id : null
+        ]);
         
         return null;
     }

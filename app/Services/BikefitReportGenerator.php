@@ -2,6 +2,8 @@
 namespace App\Services;
 
 use App\Models\Bikefit;
+use App\Models\Klant;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class BikefitReportGenerator
 {
@@ -67,79 +69,92 @@ class BikefitReportGenerator
      * @param Bikefit $bikefit
      * @return string Relative storage path (storage/app/...)
      */
-    public function savePdf(Bikefit $bikefit): string
+    public function savePdf(Bikefit $bikefit, $filename = null)
     {
-        \Log::info('BikefitReportGenerator::savePdf aangeroepen voor bikefit ID: ' . ($bikefit->id ?? 'onbekend'));
-        $data = $this->generate($bikefit);
-        // ...existing code...
-        $template = null;
-        if (!empty($bikefit->template_kind)) {
-            $template = \App\Models\ReportTemplate::where('kind', $bikefit->template_kind)->where('is_active', true)->first();
-        }
-        if (!$template) {
-            $template = \App\Models\ReportTemplate::where('is_active', true)->first();
-        }
+        \Log::info('BikefitReportGenerator::savePdf aangeroepen voor bikefit ID: ' . $bikefit->id);
+        
         try {
-            if ($template) {
-                $renderer = new \App\Services\ReportTemplateRenderer();
-                $html = $renderer->renderTemplateForBikefit($template, $bikefit);
-                $html = '<html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8" /></head><body>' . $html . '<div style="color:red;font-size:20px;">[DEBUG: template renderer gebruikt]</div></body></html>';
+            // Gebruik de nieuwe sjabloon-gebaseerde report generatie
+            $sjablonenController = new \App\Http\Controllers\SjablonenController();
+            
+            // Zoek matching sjabloon
+            $sjabloon = $sjablonenController->findMatchingTemplate($bikefit->testtype, 'bikefit');
+            
+            if (!$sjabloon) {
+                \Log::warning('Geen sjabloon gevonden, gebruik fallback HTML');
+                $html = '<html><body><h1>Bikefit Rapport</h1><p>Geen sjabloon beschikbaar voor: ' . $bikefit->testtype . '</p></body></html>';
             } else {
-                $html = view('bikefit.report', array_merge($data, ['klant' => $bikefit->klant ?? null]))->render();
-                $html .= '<div style="color:blue;font-size:20px;">[DEBUG: fallback bikefit.report gebruikt]</div>';
+                // Genereer HTML via sjabloon systeem
+                $sjabloon->load(['pages' => function($query) {
+                    $query->orderBy('page_number', 'asc');
+                }]);
+                
+                // Gebruik reflection om private method aan te roepen
+                $reflection = new \ReflectionClass($sjablonenController);
+                $method = $reflection->getMethod('generatePagesForBikefit');
+                $method->setAccessible(true);
+                $generatedPages = $method->invoke($sjablonenController, $sjabloon, $bikefit);
+                
+                // Render de view met generated pages
+                $html = view('sjablonen.pdf-template', [
+                    'template' => $sjabloon,
+                    'klantModel' => $bikefit->klant,
+                    'generatedPages' => $generatedPages
+                ])->render();
             }
-        } catch (\Throwable $e) {
-            \Log::error('Fout in template rendering: ' . $e->getMessage());
-            $html = '<html><body><div style="color:magenta;font-size:24px;">[DEBUG: Exception in template renderer: ' . e($e->getMessage()) . ']</div></body></html>';
-        }
-        \Log::info('[PDF DEBUG] HTML naar dompdf:', ['html' => $html]);
-        if (empty(trim(strip_tags($html)))) {
-            $html = '<html><body><div style="color:orange;font-size:24px;">[DEBUG: HTML was leeg!]</div></body></html>';
-        }
-        $pdf = \PDF::loadHTML($html)->setPaper('a4', 'portrait');
-        $dir = 'reports/' . ($bikefit->klant_id ?? 'unknown');
-        $filename = 'bikefit_' . $bikefit->id . '_report.pdf';
-        $fullPath = $dir . '/' . $filename;
+            
+            \Log::info('[PDF DEBUG] HTML naar dompdf:', ['html' => $html]);
+            if (empty(trim(strip_tags($html)))) {
+                $html = '<html><body><div style="color:orange;font-size:24px;">[DEBUG: HTML was leeg!]</div></body></html>';
+            }
+            $pdf = \PDF::loadHTML($html)->setPaper('a4', 'portrait');
+            $dir = 'reports/' . ($bikefit->klant_id ?? 'unknown');
+            $filename = 'bikefit_' . $bikefit->id . '_report.pdf';
+            $fullPath = $dir . '/' . $filename;
 
-        // Tijdelijk PDF-bestand genereren
-        $tmpPdfPath = sys_get_temp_dir() . '/bikefit_tmp_' . uniqid() . '.pdf';
-        file_put_contents($tmpPdfPath, $pdf->output());
+            // Tijdelijk PDF-bestand genereren
+            $tmpPdfPath = sys_get_temp_dir() . '/bikefit_tmp_' . uniqid() . '.pdf';
+            file_put_contents($tmpPdfPath, $pdf->output());
 
-    // Debug: bereik FPDI-check
-    \Log::info('FPDI-check bereikt, ga achtergrondbestand controleren.');
-    $backgroundPath = public_path('backgrounds/background.pdf');
-    if (file_exists($backgroundPath)) {
-            \Log::info('Achtergrond PDF gevonden en wordt toegepast: ' . $backgroundPath);
-            try {
-                require_once(base_path('vendor/setasign/fpdi-fpdf/src/autoload.php'));
-                $fpdi = new \setasign\Fpdi\Fpdi();
-                $pageCount = $fpdi->setSourceFile($backgroundPath);
-                $srcPdf = new \setasign\Fpdi\Fpdi();
-                $srcPageCount = $srcPdf->setSourceFile($tmpPdfPath);
-                for ($i = 1; $i <= $srcPageCount; $i++) {
-                    $bgPage = $i <= $pageCount ? $i : $pageCount;
-                    $templateId = $fpdi->importPage($bgPage);
-                    $size = $fpdi->getTemplateSize($templateId);
-                    $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
-                    $fpdi->useTemplate($templateId);
-                    $srcTemplateId = $srcPdf->importPage($i);
-                    $fpdi->useTemplate($srcTemplateId, 0, 0);
+        // Debug: bereik FPDI-check
+        \Log::info('FPDI-check bereikt, ga achtergrondbestand controleren.');
+        $backgroundPath = public_path('backgrounds/background.pdf');
+        if (file_exists($backgroundPath)) {
+                \Log::info('Achtergrond PDF gevonden en wordt toegepast: ' . $backgroundPath);
+                try {
+                    require_once(base_path('vendor/setasign/fpdi-fpdf/src/autoload.php'));
+                    $fpdi = new \setasign\Fpdi\Fpdi();
+                    $pageCount = $fpdi->setSourceFile($backgroundPath);
+                    $srcPdf = new \setasign\Fpdi\Fpdi();
+                    $srcPageCount = $srcPdf->setSourceFile($tmpPdfPath);
+                    for ($i = 1; $i <= $srcPageCount; $i++) {
+                        $bgPage = $i <= $pageCount ? $i : $pageCount;
+                        $templateId = $fpdi->importPage($bgPage);
+                        $size = $fpdi->getTemplateSize($templateId);
+                        $fpdi->AddPage($size['orientation'], [$size['width'], $size['height']]);
+                        $fpdi->useTemplate($templateId);
+                        $srcTemplateId = $srcPdf->importPage($i);
+                        $fpdi->useTemplate($srcTemplateId, 0, 0);
+                    }
+                    $finalPdf = $fpdi->Output('S');
+                    \Storage::disk('public')->put($fullPath, $finalPdf);
+                    @unlink($tmpPdfPath);
+                    \Log::info('PDF met achtergrond succesvol opgeslagen: ' . $fullPath);
+                } catch (\Throwable $e) {
+                    \Log::error('Fout bij toepassen achtergrond PDF: ' . $e->getMessage());
+                    // fallback: sla standaard PDF op
+                    \Storage::disk('public')->put($fullPath, $pdf->output());
+                    @unlink($tmpPdfPath);
                 }
-                $finalPdf = $fpdi->Output('S');
-                \Storage::disk('public')->put($fullPath, $finalPdf);
-                @unlink($tmpPdfPath);
-                \Log::info('PDF met achtergrond succesvol opgeslagen: ' . $fullPath);
-            } catch (\Throwable $e) {
-                \Log::error('Fout bij toepassen achtergrond PDF: ' . $e->getMessage());
-                // fallback: sla standaard PDF op
+            } else {
+                \Log::info('Geen achtergrond PDF gevonden, standaard PDF opgeslagen.');
                 \Storage::disk('public')->put($fullPath, $pdf->output());
                 @unlink($tmpPdfPath);
             }
-        } else {
-            \Log::info('Geen achtergrond PDF gevonden, standaard PDF opgeslagen.');
-            \Storage::disk('public')->put($fullPath, $pdf->output());
-            @unlink($tmpPdfPath);
+            return $fullPath;
+        } catch (\Exception $e) {
+            \Log::error('Fout in savePdf: ' . $e->getMessage());
+            throw $e;
         }
-        return $fullPath;
     }
 }
