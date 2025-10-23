@@ -2,274 +2,268 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DashboardContent;
+use App\Models\StaffNote;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardContentController extends Controller
 {
-    /**
-     * Haal dashboard content op voor de homepage
-     */
     public function index()
     {
-        \Log::info('📊 Dashboard laden - TEGELS VIEW');
+        $user = Auth::user();
         
-        // Haal alle actieve (niet gearchiveerde) dashboard content op
-        $content = DashboardContent::where('is_archived', false)
-            ->where('is_actief', true)
-            ->orderBy('volgorde')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        \Log::info('✅ Dashboard content geladen', [
-            'count' => $content->count(),
-            'items' => $content->pluck('titel')->toArray()
-        ]);
-
-        // Check of gebruiker content kan beheren
-        $canManage = auth()->user()->role === 'admin' || auth()->user()->role === 'medewerker';
+        // Check if nieuwe velden bestaan (na migratie)
+        $hasNewFields = \Schema::hasColumn('staff_notes', 'type');
         
-        // Check of nieuwe velden bestaan (voor backwards compatibility)
-        $hasNewFields = Schema::hasColumn('dashboard_contents', 'tile_size');
+        if ($hasNewFields) {
+            $content = StaffNote::with('user')
+                ->visibleFor($user->role)
+                ->where('is_archived', false)
+                ->where(function($q) {
+                    $q->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+                })
+                ->where(function($q) {
+                    $q->whereNull('published_at')
+                      ->orWhere('published_at', '<=', now());
+                })
+                ->orderBy('is_pinned', 'desc')
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+        } else {
+            // Fallback voor oude structuur
+            $content = StaffNote::with('user')
+                ->visibleFor($user->role)
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
 
-        // GEBRUIK dashboard-content.index view met TEGELS!
+        $canManage = in_array($user->role, ['superadmin', 'admin', 'medewerker']);
+
         return view('dashboard-content.index', compact('content', 'canManage', 'hasNewFields'));
     }
 
-    /**
-     * Toon formulier voor nieuwe content
-     */
     public function create()
     {
-        // Alleen admins, medewerkers en eigenaren mogen content aanmaken
-        if (!$this->canManageContent()) {
-            abort(403, 'Je hebt geen rechten om dashboard content aan te maken.');
+        // Check if user is staff
+        $user = Auth::user();
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
         }
-
-        return view('dashboard-content.create');
+        
+        $templates = $this->getTemplates();
+        
+        return view('dashboard-content.create', compact('templates'));
     }
 
-    /**
-     * Store nieuwe dashboard content
-     */
     public function store(Request $request)
     {
-        // Log alle input voor debugging
-        \Log::info('📝 Dashboard content store request', [
-            'all_input' => $request->all(),
-            'has_titel' => $request->has('titel'),
-            'has_inhoud' => $request->has('inhoud'),
-            'has_content' => $request->has('content'),
-        ]);
-
-        // Validatie - BELANGRIJK: 'inhoud' is NIET required als 'content' bestaat
-        $validated = $request->validate([
-            'titel' => 'required|string|max:255',
-            'inhoud' => 'nullable|string', // Niet required!
-            'content' => 'nullable|string', // Alternatieve veldnaam
-            'type' => 'nullable|string',
-            'kleur' => 'nullable|string',
-            'icoon' => 'nullable|string',
-            'link_url' => 'nullable|url',
-            'link_tekst' => 'nullable|string',
-            'is_actief' => 'nullable|boolean',
-        ]);
-
-        // Map 'content' naar 'inhoud' als het bestaat
-        if (isset($validated['content']) && !isset($validated['inhoud'])) {
-            $validated['inhoud'] = $validated['content'];
-            unset($validated['content']);
-        }
-
-        // Als BEIDE niet bestaan, zet lege string
-        if (!isset($validated['inhoud'])) {
-            $validated['inhoud'] = '';
-        }
-
-        // Zet defaults
-        $validated['user_id'] = auth()->id();
-        $validated['organisatie_id'] = auth()->user()->organisatie_id ?? null;
-        $validated['is_actief'] = $request->has('is_actief') ? true : false;
-        $validated['is_archived'] = false;
-        
-        // Bepaal volgorde (laatste positie)
-        $maxOrder = DashboardContent::max('volgorde') ?? 0;
-        $validated['volgorde'] = $maxOrder + 1;
-
-        try {
-            $content = DashboardContent::create($validated);
-
-            \Log::info('✅ Dashboard content aangemaakt', ['id' => $content->id]);
-
-            return redirect()->route('dashboard')
-                ->with('success', 'Dashboard content succesvol aangemaakt!');
-        } catch (\Exception $e) {
-            \Log::error('❌ Dashboard content aanmaken mislukt', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'validated' => $validated
-            ]);
-
-            return back()->withInput()
-                ->withErrors(['error' => 'Er ging iets mis bij het opslaan: ' . $e->getMessage()]);
-        }
-    }
-
-    /**
-     * Toon gearchiveerde content
-     */
-    public function archived()
-    {
-        // Alleen admins, medewerkers en eigenaren mogen archief zien
-        if (!$this->canManageContent()) {
-            abort(403, 'Je hebt geen rechten om het archief te bekijken.');
-        }
-
-        $user = auth()->user();
-        $organisatieId = $user->organisatie_id ?? optional($user->medewerker)->organisatie_id ?? null;
-
-        $archivedContent = DashboardContent::where('is_archived', true)
-            ->when($organisatieId, function($query, $organisatieId) {
-                return $query->where('organisatie_id', $organisatieId);
-            })
-            ->orderBy('archived_at', 'desc')
-            ->get();
-        
-        return view('dashboard-content.archived', compact('archivedContent'));
-    }
-
-    /**
-     * Helper method: Check of user content mag beheren
-     */
-    private function canManageContent(): bool
-    {
-        $user = auth()->user();
-        
-        // Als user geen speciale role heeft, geef true (default allow)
-        // Dit voorkomt dat normale users geblokkeerd worden
-        if (!isset($user->role)) {
-            return true;
-        }
-        
-        // Klanten mogen GEEN content beheren (expliciet geblokkeerd)
-        if ($user->role === 'klant') {
-            return false;
-        }
-
-        // Alle andere users (admin, medewerker, eigenaar) mogen WEL
-        return true;
-    }
-
-    /**
-     * Toon specifieke content
-     */
-    public function show(DashboardContent $dashboardContent)
-    {
-        return view('dashboard-content.show', compact('dashboardContent'));
-    }
-
-    /**
-     * Toon edit formulier
-     */
-    public function edit(DashboardContent $dashboardContent)
-    {
-        if (!$this->canManageContent()) {
-            abort(403, 'Je hebt geen rechten om dashboard content te bewerken.');
-        }
-
-        return view('dashboard-content.edit', compact('dashboardContent'));
-    }
-
-    /**
-     * Update content
-     */
-    public function update(Request $request, DashboardContent $dashboardContent)
-    {
-        if (!$this->canManageContent()) {
-            abort(403, 'Je hebt geen rechten om dashboard content te bewerken.');
+        // Check if user is staff
+        $user = Auth::user();
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
         }
 
         $validated = $request->validate([
-            'titel' => 'required|string|max:255',
-            'inhoud' => 'required|string',
-            'type' => 'required|in:info,waarschuwing,succes,belangrijk',
-            'kleur' => 'nullable|string|max:50',
-            'icoon' => 'nullable|string|max:50',
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'type' => 'required|in:note,task,announcement,image,mixed',
+            'tile_size' => 'required|in:mini,small,medium,large,banner',
+            'visibility' => 'required|in:staff,all',
+            'priority' => 'required|in:low,medium,high,urgent',
+            'background_color' => 'required|string|max:7',
+            'text_color' => 'required|string|max:7',
+            'expires_at' => 'nullable|date|after:now',
+            'published_at' => 'nullable|date',
+            'is_pinned' => 'boolean',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
             'link_url' => 'nullable|url|max:500',
-            'link_tekst' => 'nullable|string|max:100',
-            'is_actief' => 'boolean',
+            'open_in_new_tab' => 'boolean'
         ]);
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('dashboard-content', 'public');
+            $validated['image_path'] = $imagePath;
+        }
+
+        // Set defaults
+        $validated['user_id'] = Auth::id();
+        $validated['sort_order'] = StaffNote::max('sort_order') + 1;
+        $validated['published_at'] = $validated['published_at'] ?? now();
+
+        $content = StaffNote::create($validated);
+
+        return redirect()->route('dashboard-content.index')
+            ->with('success', 'Content succesvol aangemaakt!');
+    }
+
+    public function edit(StaffNote $dashboardContent)
+    {
+        // Check if user is staff
+        $user = Auth::user();
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
+        }
+        
+        $templates = $this->getTemplates();
+        
+        return view('dashboard-content.edit', compact('dashboardContent', 'templates'));
+    }
+
+    public function update(Request $request, StaffNote $dashboardContent)
+    {
+        // Check if user is staff
+        $user = Auth::user();
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'content' => 'required|string',
+            'type' => 'required|in:note,task,announcement,image,mixed',
+            'tile_size' => 'required|in:mini,small,medium,large,banner',
+            'visibility' => 'required|in:staff,all',
+            'priority' => 'required|in:low,medium,high,urgent',
+            'background_color' => 'required|string|max:7',
+            'text_color' => 'required|string|max:7',
+            'expires_at' => 'nullable|date',
+            'published_at' => 'nullable|date',
+            'is_pinned' => 'boolean',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+            'link_url' => 'nullable|url|max:500',
+            'open_in_new_tab' => 'boolean'
+        ]);
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($dashboardContent->image_path) {
+                Storage::disk('public')->delete($dashboardContent->image_path);
+            }
+            
+            $imagePath = $request->file('image')->store('dashboard-content', 'public');
+            $validated['image_path'] = $imagePath;
+        }
 
         $dashboardContent->update($validated);
 
-        return redirect()->route('dashboard')->with('success', 'Dashboard content succesvol bijgewerkt!');
+        return redirect()->route('dashboard-content.index')
+            ->with('success', 'Content succesvol bijgewerkt!');
     }
 
-    /**
-     * Verwijder content
-     */
-    public function destroy(DashboardContent $dashboardContent)
+    public function destroy(StaffNote $dashboardContent)
     {
-        if (!$this->canManageContent()) {
-            abort(403, 'Je hebt geen rechten om dashboard content te verwijderen.');
+        // Check if user is staff
+        $user = Auth::user();
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
+        }
+
+        // Delete image if exists
+        if ($dashboardContent->image_path) {
+            Storage::disk('public')->delete($dashboardContent->image_path);
         }
 
         $dashboardContent->delete();
 
-        return redirect()->route('dashboard')->with('success', 'Dashboard content succesvol verwijderd!');
+        return redirect()->route('dashboard-content.index')
+            ->with('success', 'Content verwijderd!');
     }
 
-    /**
-     * Archiveer content
-     */
-    public function archive(DashboardContent $dashboardContent)
+    public function archive(StaffNote $dashboardContent)
     {
-        if (!$this->canManageContent()) {
-            abort(403, 'Je hebt geen rechten om dashboard content te archiveren.');
+        // Check if user is staff
+        $user = Auth::user();
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
         }
 
-        $dashboardContent->update([
-            'is_archived' => true,
-            'archived_at' => now(),
-        ]);
+        $dashboardContent->update(['is_archived' => true]);
 
-        return redirect()->route('dashboard')->with('success', 'Dashboard content gearchiveerd!');
+        return back()->with('success', 'Content gearchiveerd!');
     }
 
-    /**
-     * Herstel gearchiveerde content
-     */
-    public function restore(DashboardContent $dashboardContent)
-    {
-        if (!$this->canManageContent()) {
-            abort(403, 'Je hebt geen rechten om dashboard content te herstellen.');
-        }
-
-        $dashboardContent->update([
-            'is_archived' => false,
-            'archived_at' => null,
-        ]);
-
-        return redirect()->route('dashboard-content.archived')->with('success', 'Dashboard content hersteld!');
-    }
-
-    /**
-     * Update de volgorde van content items
-     */
     public function updateOrder(Request $request)
     {
-        if (!$this->canManageContent()) {
-            abort(403, 'Je hebt geen rechten om de volgorde te wijzigen.');
+        // Check if user is staff
+        $user = Auth::user();
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
         }
 
-        $order = $request->input('order', []);
+        $items = $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|exists:staff_notes,id',
+            'items.*.sort_order' => 'required|integer'
+        ]);
 
-        foreach ($order as $index => $id) {
-            DashboardContent::where('id', $id)->update(['volgorde' => $index]);
+        foreach ($items['items'] as $item) {
+            StaffNote::where('id', $item['id'])
+                ->update(['sort_order' => $item['sort_order']]);
         }
 
         return response()->json(['success' => true]);
+    }
+
+    public function archived()
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
+        }
+
+        $archivedContent = StaffNote::with('user')
+            ->where('is_archived', true)
+            ->orderBy('updated_at', 'desc')
+            ->get();
+
+        return view('dashboard-content.archived', compact('archivedContent'));
+    }
+
+    public function restore(StaffNote $dashboardContent)
+    {
+        // Check if user is staff
+        $user = Auth::user();
+        if (!in_array($user->role, ['superadmin', 'admin', 'medewerker'])) {
+            abort(403, 'Geen toegang');
+        }
+
+        $dashboardContent->update(['is_archived' => false]);
+
+        return back()->with('success', 'Content hersteld!');
+    }
+
+    private function getTemplates()
+    {
+        return [
+            'announcement' => [
+                'title' => 'Belangrijke Mededeling',
+                'type' => 'announcement',
+                'tile_size' => 'banner',
+                'background_color' => '#fef2f2',
+                'text_color' => '#991b1b',
+                'priority' => 'high'
+            ],
+            'task' => [
+                'title' => 'Takenlijst',
+                'type' => 'task', 
+                'tile_size' => 'medium',
+                'background_color' => '#f0f9ff',
+                'text_color' => '#0c4a6e',
+                'priority' => 'medium'
+            ],
+            'promotion' => [
+                'title' => 'Promotie',
+                'type' => 'image',
+                'tile_size' => 'large',
+                'background_color' => '#ffffff',
+                'text_color' => '#111827',
+                'priority' => 'medium'
+            ]
+        ];
     }
 }

@@ -29,7 +29,7 @@ class StaffNote extends Model
         'is_pinned',
         'link_url',
         'open_in_new_tab',
-        'organisatie_id' // Multi-tenancy support
+        'organisatie_id', // ⚡ TOEVOEGEN voor multi-tenant support
     ];
 
     protected $casts = [
@@ -43,12 +43,6 @@ class StaffNote extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    // Relatie met organisatie
-    public function organisatie()
-    {
-        return $this->belongsTo(Organisatie::class);
     }
 
     // Scopes
@@ -88,12 +82,6 @@ class StaffNote extends Model
         return $query->orderBy('is_pinned', 'desc')
                     ->orderBy('sort_order', 'asc')
                     ->orderBy('created_at', 'desc');
-    }
-
-    // Scope voor organisatie filtering
-    public function scopeForOrganisatie($query, $organisatieId)
-    {
-        return $query->where('organisatie_id', $organisatieId);
     }
 
     // Accessors
@@ -141,93 +129,42 @@ class StaffNote extends Model
         return $this->expires_at && $this->expires_at->isPast();
     }
 
+    /**
+     * Check of user content kan beheren
+     */
+    public function canManage($user)
+    {
+        return in_array($user->role, ['superadmin', 'admin', 'medewerker', 'organisatie_admin']);
+    }
+
+    /**
+     * Check of user content mag bewerken
+     */
+    public function canEdit($user)
+    {
+        // Superadmin kan alles
+        if ($user->role === 'superadmin') {
+            return true;
+        }
+        
+        // Admin/medewerker kunnen alleen content van hun organisatie bewerken
+        if (in_array($user->role, ['admin', 'medewerker', 'organisatie_admin'])) {
+            return $this->organisatie_id === $user->organisatie_id;
+        }
+        
+        return false;
+    }
+
+    /**
+     * Check of user content mag slepen (drag & drop)
+     */
     public function canDrag($user)
     {
-        return in_array($user->role, ['admin', 'medewerker']);
+        return $this->canEdit($user);
     }
 
     public function getImageUrl()
     {
         return $this->image_path ? asset('storage/' . $this->image_path) : null;
-    }
-}
-
-class DashboardContent extends Model
-{
-    use HasFactory;
-
-    /**
-     * Tabel naam
-     */
-    protected $table = 'dashboard_contents';
-
-    /**
-     * Fillable velden voor mass assignment
-     */
-    protected $fillable = [
-        'organisatie_id',
-        'user_id',
-        'titel',
-        'inhoud',
-        'type',
-        'kleur',
-        'icoon',
-        'link_url',
-        'link_tekst',
-        'volgorde',
-        'is_actief',
-        'is_archived',
-        'archived_at',
-    ];
-
-    /**
-     * Cast attributen naar specifieke types
-     */
-    protected $casts = [
-        'is_actief' => 'boolean',
-        'is_archived' => 'boolean',
-        'archived_at' => 'datetime',
-        'volgorde' => 'integer',
-    ];
-
-    /**
-     * Relatie met organisatie
-     */
-    public function organisatie()
-    {
-        return $this->belongsTo(Organisatie::class);
-    }
-
-    /**
-     * Relatie met user die het aanmaakte
-     */
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    /**
-     * Scope voor organisatie filtering
-     */
-    public function scopeForOrganisatie($query, $organisatieId)
-    {
-        return $query->where('organisatie_id', $organisatieId);
-    }
-
-    /**
-     * Scope voor alleen actieve content
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_actief', true)
-                    ->where('is_archived', false);
-    }
-
-    /**
-     * Scope voor gearchiveerde content
-     */
-    public function scopeArchived($query)
-    {
-        return $query->where('is_archived', true);
     }
 }

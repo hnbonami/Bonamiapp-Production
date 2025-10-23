@@ -47,25 +47,26 @@
             
             <div class="space-y-4">
                 <div>
-                    <label for="titel" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="title" class="block text-sm font-medium text-gray-700 mb-2">
                         Titel *
                     </label>
-                    <input type="text" name="titel" id="titel" value="{{ old('titel') }}" 
+                    <input type="text" name="title" id="title" value="{{ old('title') }}" 
                            class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                            placeholder="Voer een titel in..." required>
-                    @error('titel')
+                    @error('title')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div>
-                    <label for="inhoud" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
                         Inhoud *
                     </label>
-                    <textarea name="inhoud" id="inhoud" rows="6" 
+                    <textarea name="content" id="content" rows="6" 
                               class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Voer de inhoud in...">{{ old('inhoud') }}</textarea>
-                    @error('inhoud')
+                              placeholder="Voer de inhoud in...">{{ old('content') }}</textarea>
+                    <input type="hidden" id="content-required" required>
+                    @error('content')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
@@ -246,17 +247,17 @@
 <script>
 // Initialize CKEditor
 let editor;
-ClassicEditor.create(document.querySelector('#inhoud'))
+ClassicEditor.create(document.querySelector('#content'))
     .then(newEditor => {
         editor = newEditor;
         
         // Update preview when content changes
         editor.model.document.on('change:data', () => {
             updatePreview();
+            // Update hidden field for validation
+            const content = editor.getData();
+            document.getElementById('content-required').value = content.trim() ? 'has-content' : '';
         });
-    })
-    .catch(error => {
-        console.error('CKEditor initialization failed:', error);
     });
 
 // Type selection handling
@@ -325,8 +326,8 @@ function removeImage() {
 
 // Live preview update
 function updatePreview() {
-    const titel = document.getElementById('titel').value || 'Voorbeeld Titel';
-    const inhoud = editor ? editor.getData() : 'Voorbeeld inhoud...';
+    const title = document.getElementById('title').value || 'Voorbeeld Titel';
+    const content = editor ? editor.getData() : 'Voorbeeld inhoud...';
     const bgColor = document.getElementById('background_color').value;
     const textColor = document.getElementById('text_color').value;
     const selectedType = document.querySelector('input[name="type"]:checked')?.value || 'note';
@@ -339,8 +340,8 @@ function updatePreview() {
         'mixed': '📊'
     };
     
-    document.getElementById('preview-title').textContent = titel;
-    document.getElementById('preview-content').innerHTML = inhoud.substring(0, 150) + '...';
+    document.getElementById('preview-title').textContent = title;
+    document.getElementById('preview-content').innerHTML = content.substring(0, 150) + '...';
     document.getElementById('preview-icon').textContent = icons[selectedType];
     document.getElementById('preview-tile').style.backgroundColor = bgColor;
     document.getElementById('preview-tile').style.color = textColor;
@@ -349,18 +350,26 @@ function updatePreview() {
 // Form submission handling
 document.querySelector('form').addEventListener('submit', function(e) {
     if (editor) {
-        const inhoud = editor.getData();
+        const content = editor.getData();
+        document.getElementById('content').value = content;
         
-        // Zet de CKEditor inhoud in het textarea veld
-        document.getElementById('inhoud').value = inhoud;
-        
-        // Validatie check
-        if (!inhoud.trim()) {
+        // Custom validation check
+        if (!content.trim()) {
             e.preventDefault();
-            alert('Inhoud is verplicht! Vul alsjeblieft de inhoud in.');
+            // Show custom error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'mt-1 text-sm text-red-600';
+            errorDiv.textContent = 'Inhoud is verplicht!';
             
-            // Scroll naar CKEditor
-            document.querySelector('.ck-editor').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Remove existing error message
+            const existingError = document.querySelector('#content').parentNode.querySelector('.text-red-600');
+            if (existingError) existingError.remove();
+            
+            // Add new error message
+            document.querySelector('#content').parentNode.appendChild(errorDiv);
+            
+            // Scroll to CKEditor
+            document.querySelector('.ck-editor').scrollIntoView({ behavior: 'smooth' });
             return false;
         }
     }
