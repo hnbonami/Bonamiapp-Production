@@ -1325,3 +1325,35 @@ Route::post('/klanten/{klant}/inspanningstest/{test}/update-zones', [\App\Http\C
 // Auto-save routes
 Route::post('/klanten/{klant}/bikefit/auto-save', [App\Http\Controllers\BikefitController::class, 'autoSave']);
 Route::post('/klanten/{klant}/bikefit/{bikefit}/auto-save', [App\Http\Controllers\BikefitController::class, 'autoSave']);
+
+// ==========================================
+// 💰 PRESTATIES & COMMISSIES ROUTES
+// ==========================================
+Route::middleware(['auth', 'verified'])->group(function () {
+    
+    // Coach Prestaties Routes (medewerkers kunnen eigen prestaties beheren)
+    Route::prefix('prestaties')->name('prestaties.')->group(function () {
+        Route::get('/', [App\Http\Controllers\PrestatieController::class, 'index'])->name('index');
+        Route::post('/', [App\Http\Controllers\PrestatieController::class, 'store'])->name('store');
+        Route::put('/{prestatie}', [App\Http\Controllers\PrestatieController::class, 'update'])->name('update');
+        Route::delete('/{prestatie}', [App\Http\Controllers\PrestatieController::class, 'destroy'])->name('destroy');
+    });
+    
+    // Admin Prestaties Routes (admin kan alles beheren)
+    Route::prefix('admin/prestaties')->name('admin.prestaties.')->group(function () {
+        // Diensten beheer
+        Route::get('/diensten', [App\Http\Controllers\Admin\DienstenController::class, 'index'])->name('diensten.index');
+        Route::post('/diensten', [App\Http\Controllers\Admin\DienstenController::class, 'store'])->name('diensten.store');
+        Route::put('/diensten/{dienst}', [App\Http\Controllers\Admin\DienstenController::class, 'update'])->name('diensten.update');
+        Route::delete('/diensten/{dienst}', [App\Http\Controllers\Admin\DienstenController::class, 'destroy'])->name('diensten.destroy');
+        
+        // Coach diensten configuratie (welke diensten ziet welke coach)
+        Route::get('/coaches', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'index'])->name('coaches.index');
+        Route::get('/coaches/{user}/configure', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'configure'])->name('coaches.configure');
+        Route::post('/coaches/{user}/diensten', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'updateDiensten'])->name('coaches.diensten.update');
+        
+        // Prestaties overzicht per coach
+        Route::get('/overzicht', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'overzicht'])->name('overzicht');
+        Route::get('/overzicht/{user}', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'coachDetail'])->name('coach.detail');
+    });
+});

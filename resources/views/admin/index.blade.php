@@ -93,6 +93,27 @@
         </div>
         @endhasFeature
 
+        {{-- Prestaties & Commissies - alleen tonen als feature actief is --}}
+        @hasFeature('prestaties')
+        <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="p-3 rounded-lg" style="background-color: #c8e1eb;">
+                    <svg class="w-6 h-6" style="color: #111;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 ml-3">Prestaties & Commissies</h3>
+            </div>
+            <p class="text-gray-600 mb-4">Coach prestaties beheren. Diensten configureren, commissies instellen en kwartaaloverzichten bekijken.</p>
+            <a href="{{ route('admin.prestaties.diensten.index') }}" class="inline-flex items-center font-medium" style="color: #111;">
+                Prestaties Beheer Openen
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+        @endhasFeature
+
     </div>
 </div>
 @endsection

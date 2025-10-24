@@ -348,4 +348,23 @@ class User extends Authenticatable
         }
         return false;
     }
+
+    /**
+     * Diensten die deze coach kan uitvoeren (voor prestaties systeem)
+     */
+    public function diensten()
+    {
+        return $this->belongsToMany(\App\Models\Dienst::class, 'coach_diensten', 'user_id', 'dienst_id')
+                    ->withPivot('custom_prijs', 'commissie_percentage', 'is_actief')
+                    ->wherePivot('is_actief', true) // Specificeer pivot tabel voor is_actief
+                    ->withTimestamps();
+    }
+
+    /**
+     * Prestaties van deze coach
+     */
+    public function prestaties()
+    {
+        return $this->hasMany(\App\Models\Prestatie::class);
+    }
 }

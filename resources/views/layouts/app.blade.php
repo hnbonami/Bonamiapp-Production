@@ -408,6 +408,27 @@
             @endif
             @endhasFeature
             
+            {{-- Prestaties - alleen tonen als feature actief is --}}
+            @hasFeature('prestaties')
+            @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
+                <a href="/prestaties" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('prestaties*') || request()->is('admin/prestaties*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                    Prestaties
+                    @if(Auth::user()->isMedewerker() && !Auth::user()->isBeheerder())
+                        @php
+                            $huidigKwartaal = 'Q' . now()->quarter;
+                            $mijnPrestaties = \App\Models\Prestatie::where('user_id', Auth::id())
+                                ->where('jaar', now()->year)
+                                ->where('kwartaal', $huidigKwartaal)
+                                ->count();
+                        @endphp
+                        @if($mijnPrestaties > 0)
+                            <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ $mijnPrestaties }}</span>
+                        @endif
+                    @endif
+                </a>
+            @endif
+            @endhasFeature
+            
             @if(Auth::user() && Auth::user()->isBeheerder())
                 <div class="border-t border-gray-200 mt-2 pt-2">
                     <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Beheer</div>
@@ -529,6 +550,31 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9bb3bd" stroke-width="1.5"><rect x="3" y="4" width="18" height="6" rx="1"/><rect x="3" y="14" width="10" height="6" rx="1"/></svg>
                     <span class="font-medium text-[17px]">Sjablonen</span>
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Sjabloon::count() }}</span>
+                </a>
+                @endif
+                @endhasFeature
+                
+                {{-- Prestaties - alleen tonen als feature actief is en voor medewerkers --}}
+                @hasFeature('prestaties')
+                @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
+                <a href="/prestaties" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('prestaties*') || request()->is('admin/prestaties*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('prestaties*') || request()->is('admin/prestaties*') ? 'background:#f6fbfe' : '' }}">
+                    @if(request()->is('prestaties*') || request()->is('admin/prestaties*'))
+                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
+                    @endif
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9bb3bd" stroke-width="1.5"><path d="M3 13h4l3-9 4 18 3-9h4"/></svg>
+                    <span class="font-medium text-[17px]">Prestaties</span>
+                    @if(Auth::user()->isMedewerker() && !Auth::user()->isBeheerder())
+                        @php
+                            $huidigKwartaal = 'Q' . now()->quarter;
+                            $mijnPrestaties = \App\Models\Prestatie::where('user_id', Auth::id())
+                                ->where('jaar', now()->year)
+                                ->where('kwartaal', $huidigKwartaal)
+                                ->count();
+                        @endphp
+                        @if($mijnPrestaties > 0)
+                            <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ $mijnPrestaties }}</span>
+                        @endif
+                    @endif
                 </a>
                 @endif
                 @endhasFeature
