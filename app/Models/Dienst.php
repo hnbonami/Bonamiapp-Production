@@ -92,4 +92,23 @@ class Dienst extends Model
         }
         return 0;
     }
+
+    /**
+     * Bereken commissie bedrag op basis van prijs exclusief BTW
+     */
+    public function berekenCommissieBedrag(): float
+    {
+        if ($this->prijs_excl_btw && $this->commissie_percentage > 0) {
+            return round($this->prijs_excl_btw * ($this->commissie_percentage / 100), 2);
+        }
+        return 0;
+    }
+
+    /**
+     * Bereken netto bedrag na commissie (excl. BTW)
+     */
+    public function berekenNettoBedrag(): float
+    {
+        return round($this->prijs_excl_btw - $this->berekenCommissieBedrag(), 2);
+    }
 }

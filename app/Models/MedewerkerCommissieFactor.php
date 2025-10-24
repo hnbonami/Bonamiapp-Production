@@ -15,6 +15,7 @@ class MedewerkerCommissieFactor extends Model
         'diploma_factor',
         'ervaring_factor',
         'ancienniteit_factor',
+        'bonus_richting',
         'custom_commissie_percentage',
         'opmerking',
         'is_actief',
@@ -46,10 +47,30 @@ class MedewerkerCommissieFactor extends Model
 
     /**
      * Bereken totale bonus percentage (diploma + ervaring + anciënniteit)
+     * Met rekening houdend met richting (plus of min)
      */
     public function getTotaleBonusAttribute(): float
     {
-        return (float) ($this->diploma_factor + $this->ervaring_factor + $this->ancienniteit_factor);
+        $totaal = (float) ($this->diploma_factor + $this->ervaring_factor + $this->ancienniteit_factor);
+        
+        // Als richting = 'min', retourneer negatief
+        return $this->bonus_richting === 'min' ? -$totaal : $totaal;
+    }
+
+    /**
+     * Check of bonus naar medewerker gaat (plus mode)
+     */
+    public function isPlusMode(): bool
+    {
+        return $this->bonus_richting === 'plus';
+    }
+
+    /**
+     * Check of bonus naar organisatie gaat (min mode)
+     */
+    public function isMinMode(): bool
+    {
+        return $this->bonus_richting === 'min';
     }
 
     /**

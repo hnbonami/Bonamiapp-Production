@@ -23,74 +23,115 @@
     {{-- Diensten Tabel --}}
     <div class="bg-white rounded-lg shadow overflow-hidden">
         <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dienst</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prijs</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">BTW</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commissie %</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Commissie Bedrag</th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acties</th>
-                </tr>
-            </thead>
+                                <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Dienst
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Prijs
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                BTW
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Commissie %
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Commissie Bedrag
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Acties
+                            </th>
+                        </tr>
+                    </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($diensten as $dienst)
-                    <tr>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-medium text-gray-900">{{ $dienst->naam }}</div>
-                            @if($dienst->omschrijving)
-                                <div class="text-sm text-gray-500">{{ $dienst->omschrijving }}</div>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="text-sm font-semibold text-gray-900">€{{ number_format($dienst->standaard_prijs, 2, ',', '.') }}</div>
-                            <div class="text-xs text-gray-500">Excl: €{{ number_format($dienst->prijs_excl_btw ?? $dienst->standaard_prijs / 1.21, 2, ',', '.') }}</div>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-500">
-                            {{ $dienst->btw_percentage ?? 21 }}%
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-900">
-                            {{ number_format($dienst->commissie_percentage, 2) }}%
-                        </td>
-                        <td class="px-6 py-4 text-sm font-medium text-green-600">
-                            €{{ number_format(($dienst->standaard_prijs * $dienst->commissie_percentage) / 100, 2, ',', '.') }}
-                        </td>
-                        <td class="px-6 py-4">
-                            @if($dienst->is_actief)
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Actief</span>
-                            @else
-                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Inactief</span>
-                            @endif
-                        </td>
-                        <td class="px-6 py-4 text-right">
-                            <div class="flex flex-row flex-nowrap items-center justify-end gap-2">
-                                <a href="{{ route('admin.prestaties.diensten.edit', $dienst) }}" 
-                                   class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" 
-                                   title="Bewerk">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                                    </svg>
-                                </a>
-                                <button onclick="deleteDienst({{ $dienst->id }})" 
-                                        class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-rose-100 text-rose-700" 
-                                        title="Verwijderen">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001 1h8a1 1 0 001-1m-10 0V6a2 2 0 012-2h4a2 2 0 012 2v1"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                            Geen diensten gevonden. Klik op "Nieuwe Dienst" om te beginnen.
-                        </td>
-                    </tr>
-                @endforelse
-            </tbody>
+                        @foreach($diensten as $dienst)
+                        <tr class="hover:bg-gray-50">
+                            <!-- DIENST NAAM + OMSCHRIJVING -->
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ $dienst->naam }}
+                                </div>
+                                @if($dienst->omschrijving)
+                                <div class="text-sm text-gray-500">
+                                    {{ $dienst->omschrijving }}
+                                </div>
+                                @endif
+                            </td>
+                            
+                            <!-- PRIJS -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-semibold text-gray-900">
+                                    €{{ number_format($dienst->prijs_incl_btw, 2, ',', '.') }}
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    Excl: €{{ number_format($dienst->prijs_excl_btw, 2, ',', '.') }}
+                                </div>
+                            </td>
+                            
+                            <!-- BTW -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ number_format($dienst->btw_percentage, 2) }}%
+                            </td>
+                            
+                            <!-- COMMISSIE % -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {{ number_format($dienst->commissie_percentage, 2) }}%
+                            </td>
+                            
+                            <!-- COMMISSIE BEDRAG -->
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-semibold">
+                                €{{ number_format($dienst->berekenCommissieBedrag(), 2, ',', '.') }}
+                            </td>
+                            
+                            <!-- STATUS -->
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if($dienst->is_actief)
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                                        Actief
+                                    </span>
+                                @else
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                        Inactief
+                                    </span>
+                                @endif
+                            </td>
+                            
+                            <!-- ACTIES -->
+                            <td class="px-6 py-4 whitespace-nowrap text-right align-top">
+                                <div class="action-buttons flex flex-row flex-nowrap items-center justify-end gap-2">
+                                    <a href="{{ route('admin.prestaties.diensten.edit', $dienst) }}" 
+                                       aria-label="Bewerk" 
+                                       class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" 
+                                       title="Bewerk">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                        </svg>
+                                    </a>
+                                    <form action="{{ route('admin.prestaties.diensten.destroy', $dienst) }}" method="POST" class="inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                onclick="return confirm('Weet je zeker dat je deze dienst wilt verwijderen?')" 
+                                                aria-label="Verwijderen" 
+                                                class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-rose-100 text-rose-700" 
+                                                style="margin-right:2px;"
+                                                title="Verwijderen">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001 1h8a1 1 0 001-1m-10 0V6a2 2 0 012-2h4a2 2 0 012 2v1"/>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
         </table>
     </div>
 </div>

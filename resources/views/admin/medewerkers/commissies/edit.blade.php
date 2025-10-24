@@ -41,6 +41,36 @@
                 @csrf
                 @method('PUT')
                 
+                {{-- Bonus Richting Toggle --}}
+                <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <label class="block text-sm font-bold text-gray-700 mb-3">Bonus Richting</label>
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="bonus_richting" value="plus" 
+                                   {{ old('bonus_richting', $algemeneFactoren->bonus_richting ?? 'plus') === 'plus' ? 'checked' : '' }}
+                                   class="w-4 h-4 text-green-600 focus:ring-green-500">
+                            <span class="ml-2 text-sm">
+                                <span class="font-semibold text-green-700">+ Mode</span>
+                                <span class="text-gray-600 text-xs block">Meer naar medewerker (standaard)</span>
+                            </span>
+                        </label>
+                        <label class="flex items-center cursor-pointer">
+                            <input type="radio" name="bonus_richting" value="min" 
+                                   {{ old('bonus_richting', $algemeneFactoren->bonus_richting ?? 'plus') === 'min' ? 'checked' : '' }}
+                                   class="w-4 h-4 text-red-600 focus:ring-red-500">
+                            <span class="ml-2 text-sm">
+                                <span class="font-semibold text-red-700">- Mode</span>
+                                <span class="text-gray-600 text-xs block">Meer naar organisatie</span>
+                            </span>
+                        </label>
+                    </div>
+                    <div class="mt-3 text-xs text-gray-600 bg-white p-2 rounded">
+                        <strong>Voorbeeld (30% standaard commissie, 15% bonus):</strong><br>
+                        • <span class="text-green-700 font-semibold">+ Mode:</span> Medewerker 45%, Bonami 55%<br>
+                        • <span class="text-red-700 font-semibold">- Mode:</span> Medewerker 15%, Bonami 85%
+                    </div>
+                </div>
+                
                 {{-- Bonussen in 3 kolommen naast elkaar --}}
                 <div class="grid grid-cols-3 gap-3 mb-4">
                     {{-- Diploma Factor --}}
@@ -78,11 +108,12 @@
                 </div>
 
                 {{-- Totale Bonus Preview --}}
-                <div class="mb-4 p-4 bg-blue-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Totale Bonus</div>
-                    <div class="text-2xl font-bold text-blue-600" id="totale-bonus-preview">
+                <div class="mb-4 p-4 rounded-lg" id="bonus-preview-box">
+                    <div class="text-sm text-gray-600 mb-1">Totale Bonus Effect</div>
+                    <div class="text-2xl font-bold" id="totale-bonus-preview">
                         +{{ number_format(($algemeneFactoren->diploma_factor ?? 0) + ($algemeneFactoren->ervaring_factor ?? 0) + ($algemeneFactoren->ancienniteit_factor ?? 0), 2) }}%
                     </div>
+                    <div class="text-xs mt-1" id="bonus-uitleg"></div>
                 </div>
 
                 {{-- Opmerking --}}
@@ -159,16 +190,43 @@
 </div>
 
 <script>
-// Live update totale bonus preview
+// Live update totale bonus preview met richting
+function updateBonusPreview() {
+    const diploma = parseFloat(document.querySelector('input[name="diploma_factor"]').value) || 0;
+    const ervaring = parseFloat(document.querySelector('input[name="ervaring_factor"]').value) || 0;
+    const ancienniteit = parseFloat(document.querySelector('input[name="ancienniteit_factor"]').value) || 0;
+    const totaal = diploma + ervaring + ancienniteit;
+    
+    const richting = document.querySelector('input[name="bonus_richting"]:checked')?.value || 'plus';
+    const previewBox = document.getElementById('bonus-preview-box');
+    const previewText = document.getElementById('totale-bonus-preview');
+    const uitlegText = document.getElementById('bonus-uitleg');
+    
+    if (richting === 'plus') {
+        previewBox.className = 'mb-4 p-4 rounded-lg bg-green-50 border border-green-200';
+        previewText.className = 'text-2xl font-bold text-green-600';
+        previewText.textContent = '+' + totaal.toFixed(2) + '%';
+        uitlegText.textContent = 'Medewerker krijgt MEER commissie';
+        uitlegText.className = 'text-xs mt-1 text-green-700 font-semibold';
+    } else {
+        previewBox.className = 'mb-4 p-4 rounded-lg bg-red-50 border border-red-200';
+        previewText.className = 'text-2xl font-bold text-red-600';
+        previewText.textContent = '-' + totaal.toFixed(2) + '%';
+        uitlegText.textContent = 'Organisatie krijgt MEER commissie';
+        uitlegText.className = 'text-xs mt-1 text-red-700 font-semibold';
+    }
+}
+
+// Event listeners
 document.querySelectorAll('input[name="diploma_factor"], input[name="ervaring_factor"], input[name="ancienniteit_factor"]').forEach(input => {
-    input.addEventListener('input', function() {
-        const diploma = parseFloat(document.querySelector('input[name="diploma_factor"]').value) || 0;
-        const ervaring = parseFloat(document.querySelector('input[name="ervaring_factor"]').value) || 0;
-        const ancienniteit = parseFloat(document.querySelector('input[name="ancienniteit_factor"]').value) || 0;
-        const totaal = diploma + ervaring + ancienniteit;
-        
-        document.getElementById('totale-bonus-preview').textContent = '+' + totaal.toFixed(2) + '%';
-    });
+    input.addEventListener('input', updateBonusPreview);
 });
+
+document.querySelectorAll('input[name="bonus_richting"]').forEach(radio => {
+    radio.addEventListener('change', updateBonusPreview);
+});
+
+// Initial update
+document.addEventListener('DOMContentLoaded', updateBonusPreview);
 </script>
 @endsection

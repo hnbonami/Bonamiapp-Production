@@ -64,9 +64,14 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="px-3 py-1 inline-flex text-sm leading-5 font-bold rounded-full 
-                                    {{ $totaleBonus > 0 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
-                                    +{{ number_format($totaleBonus, 1) }}%
+                                    {{ $totaleBonus > 0 ? 'bg-green-100 text-green-800' : ($totaleBonus < 0 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-600') }}">
+                                    {{ $totaleBonus > 0 ? '+' : '' }}{{ number_format($totaleBonus, 1) }}%
                                 </span>
+                                @if($factoren)
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        {{ $factoren->bonus_richting === 'plus' ? '→ Naar medewerker' : '→ Naar organisatie' }}
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right">
                                 <a href="{{ route('admin.medewerkers.commissies.edit', $medewerker) }}" 

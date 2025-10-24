@@ -56,6 +56,10 @@ class DienstenController extends Controller
             $btwPercentage = 21;
             $prijsInclBtw = $validated['prijs'];
             $prijsExclBtw = round($prijsInclBtw / (1 + ($btwPercentage / 100)), 2);
+            
+            // Commissie wordt berekend over prijs EXCL. BTW
+            $commissieBedrag = round($prijsExclBtw * ($validated['commissie_percentage'] / 100), 2);
+            $nettoBedrag = round($prijsExclBtw - $commissieBedrag, 2);
 
             // Bereid data voor
             $data = [
@@ -70,7 +74,12 @@ class DienstenController extends Controller
                 'organisatie_id' => auth()->user()->organisatie_id,
             ];
 
-            \Log::info('📦 Data klaar voor create', ['data' => $data]);
+            \Log::info('📦 Data klaar voor create', [
+                'data' => $data,
+                'prijs_excl_btw' => $prijsExclBtw,
+                'commissie_bedrag' => $commissieBedrag,
+                'netto_bedrag' => $nettoBedrag
+            ]);
 
             // Maak dienst aan
             $dienst = Dienst::create($data);
@@ -158,6 +167,10 @@ class DienstenController extends Controller
             $btwPercentage = 21;
             $prijsInclBtw = $validated['prijs'];
             $prijsExclBtw = round($prijsInclBtw / (1 + ($btwPercentage / 100)), 2);
+            
+            // Commissie wordt berekend over prijs EXCL. BTW
+            $commissieBedrag = round($prijsExclBtw * ($validated['commissie_percentage'] / 100), 2);
+            $nettoBedrag = round($prijsExclBtw - $commissieBedrag, 2);
 
             $dienst->naam = $validated['naam'];
             $dienst->omschrijving = $validated['omschrijving'] ?? null;
@@ -170,7 +183,11 @@ class DienstenController extends Controller
             
             $dienst->save();
 
-            \Log::info('✅ Dienst saved successfully');
+            \Log::info('✅ Dienst saved successfully', [
+                'prijs_excl_btw' => $prijsExclBtw,
+                'commissie_bedrag' => $commissieBedrag,
+                'netto_bedrag' => $nettoBedrag
+            ]);
 
             return redirect()->route('admin.prestaties.diensten.index')
                 ->with('success', 'Dienst succesvol bijgewerkt!');

@@ -79,6 +79,7 @@ class MedewerkerCommissieController extends Controller
             'diploma_factor' => 'required|numeric|min:0|max:100',
             'ervaring_factor' => 'required|numeric|min:0|max:100',
             'ancienniteit_factor' => 'required|numeric|min:0|max:100',
+            'bonus_richting' => 'required|in:plus,min',
             'opmerking' => 'nullable|string|max:500',
         ]);
 
