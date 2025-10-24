@@ -82,40 +82,50 @@ class PrestatieController extends Controller
         $validated = $request->validate([
             'datum_prestatie' => 'required|date',
             'einddatum_prestatie' => 'nullable|date|after_or_equal:datum_prestatie',
-            'dienst_id' => 'required|exists:diensten,id',
+            'dienst_id' => 'required', // Niet alleen exists:diensten,id omdat "andere" ook geldig is
             'klant_id' => 'nullable|exists:klanten,id',
             'prijs' => 'required|numeric|min:0',
             'opmerkingen' => 'nullable|string',
         ]);
         
-        // Haal dienst op voor commissie berekening
-        $dienst = Dienst::findOrFail($validated['dienst_id']);
+        // Check of het "andere" dienst is
+        $isAndereDienst = ($validated['dienst_id'] === 'andere');
         
-        // Haal het juiste commissie percentage op voor deze medewerker
-        $user = auth()->user();
-        
-        // Check of er een custom commissie is ingesteld voor deze dienst
-        $customFactor = $user->commissieFactoren()
-            ->where('dienst_id', $dienst->id)
-            ->actief()
-            ->first();
-        
-        if ($customFactor && $customFactor->custom_commissie_percentage !== null) {
-            // Gebruik custom commissie percentage
-            $commissiePercentage = $customFactor->custom_commissie_percentage;
+        // Haal dienst op voor commissie berekening (of gebruik NULL voor "andere")
+        if ($isAndereDienst) {
+            $dienst = null;
+            $dienstId = null;
+            // Voor "andere" dienst: gebruik standaard commissie percentage van gebruiker
+            $commissiePercentage = 0; // Of een standaard percentage
         } else {
-            // Gebruik berekende commissie op basis van factoren
-            $commissiePercentage = $user->getCommissiePercentageVoorDienst($dienst);
+            $dienst = Dienst::findOrFail($validated['dienst_id']);
+            $dienstId = $dienst->id;
+            
+            // Haal het juiste commissie percentage op voor deze medewerker
+            $user = auth()->user();
+            
+            // Check of er een custom commissie is ingesteld voor deze dienst
+            $customFactor = $user->commissieFactoren()
+                ->where('dienst_id', $dienst->id)
+                ->actief()
+                ->first();
+            
+            if ($customFactor && $customFactor->custom_commissie_percentage !== null) {
+                // Gebruik custom commissie percentage
+                $commissiePercentage = $customFactor->custom_commissie_percentage;
+            } else {
+                // Gebruik berekende commissie op basis van factoren
+                $commissiePercentage = $user->getCommissiePercentageVoorDienst($dienst);
+            }
         }
         
         \Log::info('💰 Commissie berekening voor nieuwe prestatie', [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'dienst_id' => $dienst->id,
-            'dienst_naam' => $dienst->naam,
-            'dienst_standaard_percentage' => $dienst->commissie_percentage,
-            'heeft_custom_factor' => $customFactor !== null,
-            'custom_percentage' => $customFactor ? $customFactor->custom_commissie_percentage : null,
+            'user_id' => auth()->id(),
+            'user_name' => auth()->user()->name,
+            'is_andere_dienst' => $isAndereDienst,
+            'dienst_id' => $dienstId,
+            'dienst_naam' => $dienst ? $dienst->naam : 'Andere',
+            'dienst_standaard_percentage' => $dienst ? $dienst->commissie_percentage : null,
             'berekende_commissie_percentage' => $commissiePercentage,
             'prijs' => $validated['prijs']
         ]);
@@ -141,7 +151,7 @@ class PrestatieController extends Controller
         Prestatie::create([
             'user_id' => auth()->id(),
             'organisatie_id' => auth()->user()->organisatie_id, // ORGANISATIE ID toevoegen
-            'dienst_id' => $validated['dienst_id'],
+            'dienst_id' => $dienstId, // NULL als het "andere" is
             'klant_id' => $validated['klant_id'] ?? null,
             'klant_naam' => $klantNaam ?? 'Geen klant',
             'datum_prestatie' => $validated['datum_prestatie'],

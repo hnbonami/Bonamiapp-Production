@@ -2186,37 +2186,37 @@ function computeDmaxFromBaseline(xArray, yArray, a, b, c, m, bLine, startX, endX
         const x = startX + (endX - startX) * (i / (testPoints - 1));
         const parabolaY = a * x * x + b * x + c;
         const lineY = m * x + bLine;
-        const distance = Math.abs(parabolaY - lineY);
-        
-        if (distance > maxDistance) {
+        if (distance > maxDistance) {abolaY - lineY);
             maxDistance = distance;
-            dmaxX = x;
+            dmaxX = x; maxDistance) {
+        }   maxDistance = distance;
+    }       dmaxX = x;
         }
-    }
-    
     console.log(`🎯 D-max Modified berekend op ${dmaxX.toFixed(1)}W met afstand ${maxDistance.toFixed(4)}`);
     return dmaxX;
-}
-
+}   console.log(`🎯 D-max Modified berekend op ${dmaxX.toFixed(1)}W met afstand ${maxDistance.toFixed(4)}`);
+    return dmaxX;
 // Interpoleer punt op specifieke lactaat waarde
 function interpolatePointAtLactaat(validData, xField, targetLactaat) {
-    if (!validData || validData.length === 0) {
+    if (!validData || validData.length === 0) {e
         console.error('❌ interpolatePointAtLactaat: Geen valide data');
+        return null;| validData.length === 0) {
+    }   console.error('❌ interpolatePointAtLactaat: Geen valide data');
         return null;
-    }
-    
     if (validData.length === 1) {
         return {
             [xField]: validData[0][xField],
             lactaat: targetLactaat,
             hartslag: validData[0].hartslag || 140
+        };  lactaat: targetLactaat,
+    }       hartslag: validData[0].hartslag || 140
         };
-    }
-    
     for (let i = 0; i < validData.length - 1; i++) {
         const p1 = validData[i];
-        const p2 = validData[i + 1];
-        
+        const p2 = validData[i + 1];ngth - 1; i++) {
+        const p1 = validData[i];
+        if (p1.lactaat <= targetLactaat && p2.lactaat >= targetLactaat) {
+            const ratio = (targetLactaat - p1.lactaat) / (p2.lactaat - p1.lactaat);
         if (p1.lactaat <= targetLactaat && p2.lactaat >= targetLactaat) {
             const ratio = (targetLactaat - p1.lactaat) / (p2.lactaat - p1.lactaat);
             const interpolatedPoint = {

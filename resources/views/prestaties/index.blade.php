@@ -109,13 +109,14 @@
                                         {{ $dienst->naam }}
                                     </option>
                                 @endforeach
+                                <option value="andere" data-prijs="0" data-commissie="0">Andere</option>
                             </select>
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Prijs</label>
                             <input type="number" name="prijs" id="prijs-input" step="0.01" required
-                                   class="w-full rounded border-gray-300 py-2 px-3" readonly>
+                                   class="w-full rounded border-gray-300 py-2 px-3">
                         </div>
                     </div>
                     
@@ -125,24 +126,25 @@
                         <div class="text-xl font-bold text-blue-600" id="commissie-preview">€0,00</div>
                     </div>
                     
-                    {{-- Klant volledige breedte --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Klant (optioneel)</label>
-                        <input type="text" id="klant-zoek" placeholder="Zoek klant..." 
-                               class="w-full rounded border-gray-300 py-2 px-3 mb-1">
-                        <select name="klant_id" id="klant-select" class="w-full rounded border-gray-300 py-2 px-3" size="4">
-                            <option value="">-- Geen klant --</option>
-                            @foreach($klanten as $klant)
-                                <option value="{{ $klant['id'] }}" data-naam="{{ strtolower($klant['naam']) }}">{{ $klant['naam'] }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    
-                    {{-- Opmerkingen --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Opmerkingen</label>
-                        <textarea name="opmerkingen" rows="3" 
-                                  class="w-full rounded border-gray-300 py-2 px-3"></textarea>
+                    {{-- Klant en Opmerkingen naast elkaar --}}
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Klant (optioneel)</label>
+                            <input type="text" id="klant-zoek" placeholder="Zoek klant..." 
+                                   class="w-full rounded border-gray-300 py-2 px-3 mb-1">
+                            <select name="klant_id" id="klant-select" class="w-full rounded border-gray-300 py-2 px-3" size="4">
+                                <option value="">-- Geen klant --</option>
+                                @foreach($klanten as $klant)
+                                    <option value="{{ $klant['id'] }}" data-naam="{{ strtolower($klant['naam']) }}">{{ $klant['naam'] }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Opmerkingen</label>
+                            <textarea name="opmerkingen" rows="6" 
+                                      class="w-full rounded border-gray-300 py-2 px-3"></textarea>
+                        </div>
                     </div>
                     
                     {{-- Uitgevoerd checkbox --}}
@@ -366,13 +368,40 @@ klantSelect.addEventListener('click', function() {
 // Auto-fill prijs en commissie bij dienst selectie
 document.getElementById('dienst-select').addEventListener('change', function() {
     const selectedOption = this.options[this.selectedIndex];
+    const prijsInput = document.getElementById('prijs-input');
     const prijs = parseFloat(selectedOption.dataset.prijs || 0);
     const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
-    const commissieBedrag = (prijs * commissiePercentage) / 100;
     
-    document.getElementById('prijs-input').value = prijs.toFixed(2);
-    document.getElementById('commissie-preview').textContent = 
-        '€' + commissieBedrag.toFixed(2).replace('.', ',');
+    // Als "Andere" geselecteerd is, maak prijs input bewerkbaar
+    if (this.value === 'andere') {
+        prijsInput.value = '';
+        prijsInput.removeAttribute('readonly');
+        prijsInput.focus();
+        document.getElementById('commissie-preview').textContent = '€0,00';
+    } else {
+        // Voor gewone diensten: auto-fill en readonly
+        prijsInput.setAttribute('readonly', 'readonly');
+        prijsInput.value = prijs.toFixed(2);
+        
+        const commissieBedrag = (prijs * commissiePercentage) / 100;
+        document.getElementById('commissie-preview').textContent = 
+            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+    }
+});
+
+// Update commissie preview wanneer prijs handmatig wordt gewijzigd (bij "Andere")
+document.getElementById('prijs-input').addEventListener('input', function() {
+    const dienstSelect = document.getElementById('dienst-select');
+    const selectedOption = dienstSelect.options[dienstSelect.selectedIndex];
+    
+    if (dienstSelect.value === 'andere') {
+        const prijs = parseFloat(this.value || 0);
+        const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
+        const commissieBedrag = (prijs * commissiePercentage) / 100;
+        
+        document.getElementById('commissie-preview').textContent = 
+            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+    }
 });
 
 // Kwartaal filter - redirect bij wijziging

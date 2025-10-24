@@ -74,7 +74,11 @@ class Prestatie extends Model
      */
     public function dienst()
     {
-        return $this->belongsTo(Dienst::class);
+        return $this->belongsTo(Dienst::class, 'dienst_id')->withDefault([
+            'naam' => 'Andere',
+            'standaard_prijs' => 0,
+            'commissie_percentage' => 0
+        ]);
     }
 
     /**
