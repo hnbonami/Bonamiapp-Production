@@ -12,23 +12,25 @@
         {{-- Jaar & Kwartaal filter --}}
         <div class="flex gap-2 items-center">
             <span class="text-sm text-gray-600">Periode:</span>
-            <select id="jaar-filter" class="text-sm rounded border-gray-300 py-1 px-2">
-                @if(isset($beschikbareJaren) && count($beschikbareJaren) > 0)
-                    @foreach($beschikbareJaren as $jaar)
-                        <option value="{{ $jaar }}" {{ $jaar == $huidigJaar ? 'selected' : '' }}>
-                            {{ $jaar }}
-                        </option>
-                    @endforeach
-                @else
-                    {{-- Fallback: altijd huidig + volgend jaar --}}
-                    @php
-                        $currentYear = now()->year;
-                        $nextYear = $currentYear + 1;
-                    @endphp
-                    <option value="{{ $currentYear }}" selected>{{ $currentYear }}</option>
-                    <option value="{{ $nextYear }}">{{ $nextYear }}</option>
-                @endif
-            </select>
+            
+            {{-- Jaar navigatie met +/- knoppen --}}
+            <div class="flex items-center gap-1">
+                <a href="{{ route('prestaties.index') }}?jaar={{ $huidigJaar - 1 }}&kwartaal={{ $huidigKwartaal }}" 
+                   class="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <span class="text-sm font-semibold px-3 py-1 bg-blue-50 text-blue-700 rounded">
+                    {{ $huidigJaar }}
+                </span>
+                <a href="{{ route('prestaties.index') }}?jaar={{ $huidigJaar + 1 }}&kwartaal={{ $huidigKwartaal }}" 
+                   class="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
             
             <select id="kwartaal-filter" class="text-sm rounded border-gray-300 py-1 px-2">
                 <option value="Q1" {{ $huidigKwartaal == 'Q1' ? 'selected' : '' }}>Q1</option>
@@ -209,10 +211,6 @@
 </div>
 
 <script>
-// Debug: Check of elementen bestaan
-console.log('🔍 Jaar filter:', document.getElementById('jaar-filter'));
-console.log('🔍 Kwartaal filter:', document.getElementById('kwartaal-filter'));
-
 // Klant zoekfunctie
 const klantZoek = document.getElementById('klant-zoek');
 const klantSelect = document.getElementById('klant-select');
@@ -250,10 +248,8 @@ klantSelect.addEventListener('change', function() {
     const selectedOption = this.options[this.selectedIndex];
     
     if (this.value && this.value !== '') {
-        // Toon geselecteerde klant naam in zoekveld
         klantZoek.value = selectedOption.textContent.trim();
     } else {
-        // Leeg zoekveld als "Geen klant" geselecteerd
         klantZoek.value = '';
     }
 });
@@ -273,43 +269,19 @@ document.getElementById('dienst-select').addEventListener('change', function() {
     const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
     const commissieBedrag = (prijs * commissiePercentage) / 100;
     
-    console.log('🔍 Dienst geselecteerd:', {
-        prijs: prijs,
-        commissiePercentage: commissiePercentage,
-        commissieBedrag: commissieBedrag
-    });
-    
     document.getElementById('prijs-input').value = prijs.toFixed(2);
     document.getElementById('commissie-preview').textContent = 
         '€' + commissieBedrag.toFixed(2).replace('.', ',');
 });
 
-// Jaar filter - MET DEBUG!
-const jaarFilter = document.getElementById('jaar-filter');
-if (jaarFilter) {
-    console.log('✅ Jaar filter gevonden!');
-    jaarFilter.addEventListener('change', function() {
-        const jaar = this.value;
-        const kwartaal = document.getElementById('kwartaal-filter').value;
-        console.log('📅 Jaar gewijzigd naar:', jaar, 'Kwartaal:', kwartaal);
-        window.location.href = `/prestaties?jaar=${jaar}&kwartaal=${kwartaal}`;
-    });
-} else {
-    console.error('❌ Jaar filter NIET gevonden!');
-}
-
-// Kwartaal filter - MET DEBUG!
+// Kwartaal filter - redirect bij wijziging
 const kwartaalFilter = document.getElementById('kwartaal-filter');
 if (kwartaalFilter) {
-    console.log('✅ Kwartaal filter gevonden!');
     kwartaalFilter.addEventListener('change', function() {
-        const jaar = document.getElementById('jaar-filter').value;
+        const jaar = {{ $huidigJaar }};
         const kwartaal = this.value;
-        console.log('📅 Kwartaal gewijzigd naar:', kwartaal, 'Jaar:', jaar);
         window.location.href = `/prestaties?jaar=${jaar}&kwartaal=${kwartaal}`;
     });
-} else {
-    console.error('❌ Kwartaal filter NIET gevonden!');
 }
 </script>
 @endsection
