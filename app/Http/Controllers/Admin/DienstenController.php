@@ -14,9 +14,7 @@ class DienstenController extends Controller
      */
     public function index()
     {
-        // Haal alle diensten op, gesorteerd op volgorde
         $diensten = Dienst::orderBy('sorteer_volgorde')->get();
-        
         return view('admin.prestaties.diensten', compact('diensten'));
     }
     
@@ -25,7 +23,6 @@ class DienstenController extends Controller
      */
     public function store(Request $request)
     {
-        // Valideer input
         $validated = $request->validate([
             'naam' => 'required|string|max:255',
             'omschrijving' => 'nullable|string',
@@ -34,40 +31,19 @@ class DienstenController extends Controller
             'actief' => 'nullable|boolean',
         ]);
         
-        // Zet actief op true als checkbox aangevinkt was
-        $validated['actief'] = $request->has('actief') ? true : false;
+        // Map formulier velden naar database kolommen
+        $dienst = Dienst::create([
+            'naam' => $validated['naam'],
+            'beschrijving' => $validated['omschrijving'] ?? null,
+            'standaard_prijs' => (float) $validated['prijs'],
+            'commissie_percentage' => (float) $validated['commissie_percentage'],
+            'is_actief' => $request->has('actief'),
+            'sorteer_volgorde' => (Dienst::max('sorteer_volgorde') ?? 0) + 1,
+        ]);
         
-        // Bepaal sorteer volgorde (laatste + 1)
-        $maxVolgorde = Dienst::max('sorteer_volgorde') ?? 0;
-        $validated['sorteer_volgorde'] = $maxVolgorde + 1;
-        
-        // Maak dienst aan
-        Dienst::create($validated);
+        Log::info('Dienst aangemaakt', ['dienst_id' => $dienst->id, 'user_id' => auth()->id()]);
         
         return redirect()->route('admin.prestaties.diensten.index')
-            ->with('success', 'Dienst succesvol aangemaakt!');
-    }    /**
-     * Sla nieuwe dienst op
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'naam' => 'required|string|max:255',
-            'beschrijving' => 'nullable|string',
-            'standaard_prijs' => 'required|numeric|min:0',
-            'btw_percentage' => 'required|numeric|min:0|max:100',
-            'is_actief' => 'boolean',
-        ]);
-
-        $dienst = Dienst::create($validated);
-
-        Log::info('Dienst aangemaakt', [
-            'dienst_id' => $dienst->id,
-            'naam' => $dienst->naam,
-            'user_id' => auth()->id(),
-        ]);
-
-        return redirect()->route('admin.diensten.index')
             ->with('success', 'Dienst succesvol aangemaakt!');
     }
 
@@ -78,39 +54,36 @@ class DienstenController extends Controller
     {
         $validated = $request->validate([
             'naam' => 'required|string|max:255',
-            'beschrijving' => 'nullable|string',
-            'standaard_prijs' => 'required|numeric|min:0',
-            'btw_percentage' => 'required|numeric|min:0|max:100',
-            'is_actief' => 'boolean',
-            'sorteer_volgorde' => 'nullable|integer',
+            'omschrijving' => 'nullable|string',
+            'prijs' => 'required|numeric|min:0',
+            'commissie_percentage' => 'required|numeric|min:0|max:100',
+            'actief' => 'nullable|boolean',
         ]);
-
-        $dienst->update($validated);
-
-        Log::info('Dienst bijgewerkt', [
-            'dienst_id' => $dienst->id,
-            'naam' => $dienst->naam,
-            'user_id' => auth()->id(),
+        
+        $dienst->update([
+            'naam' => $validated['naam'],
+            'beschrijving' => $validated['omschrijving'] ?? null,
+            'standaard_prijs' => (float) $validated['prijs'],
+            'commissie_percentage' => (float) $validated['commissie_percentage'],
+            'is_actief' => $request->has('actief'),
         ]);
-
-        return redirect()->route('admin.diensten.index')
+        
+        Log::info('Dienst bijgewerkt', ['dienst_id' => $dienst->id, 'user_id' => auth()->id()]);
+        
+        return redirect()->route('admin.prestaties.diensten.index')
             ->with('success', 'Dienst succesvol bijgewerkt!');
     }
 
     /**
-     * Verwijder dienst (soft delete)
+     * Verwijder dienst
      */
     public function destroy(Dienst $dienst)
     {
         $dienst->delete();
-
-        Log::info('Dienst verwijderd', [
-            'dienst_id' => $dienst->id,
-            'naam' => $dienst->naam,
-            'user_id' => auth()->id(),
-        ]);
-
-        return redirect()->route('admin.diensten.index')
+        
+        Log::info('Dienst verwijderd', ['dienst_id' => $dienst->id, 'user_id' => auth()->id()]);
+        
+        return redirect()->route('admin.prestaties.diensten.index')
             ->with('success', 'Dienst succesvol verwijderd!');
     }
 }
