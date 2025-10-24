@@ -15,6 +15,7 @@ class Prestatie extends Model
 
     protected $fillable = [
         'user_id',
+        'organisatie_id', // ORGANISATIE ID TOEVOEGEN
         'dienst_id',
         'klant_id', // Link naar klant (optioneel)
         'klant_naam',

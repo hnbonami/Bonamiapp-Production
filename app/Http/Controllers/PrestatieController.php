@@ -91,9 +91,34 @@ class PrestatieController extends Controller
         // Haal dienst op voor commissie berekening
         $dienst = Dienst::findOrFail($validated['dienst_id']);
         
-        // Haal commissie percentage op (custom of standaard)
-        $userDienst = auth()->user()->diensten()->where('dienst_id', $dienst->id)->first();
-        $commissiePercentage = $userDienst ? $userDienst->pivot->commissie_percentage : $dienst->commissie_percentage;
+        // Haal het juiste commissie percentage op voor deze medewerker
+        $user = auth()->user();
+        
+        // Check of er een custom commissie is ingesteld voor deze dienst
+        $customFactor = $user->commissieFactoren()
+            ->where('dienst_id', $dienst->id)
+            ->actief()
+            ->first();
+        
+        if ($customFactor && $customFactor->custom_commissie_percentage !== null) {
+            // Gebruik custom commissie percentage
+            $commissiePercentage = $customFactor->custom_commissie_percentage;
+        } else {
+            // Gebruik berekende commissie op basis van factoren
+            $commissiePercentage = $user->getCommissiePercentageVoorDienst($dienst);
+        }
+        
+        \Log::info('💰 Commissie berekening voor nieuwe prestatie', [
+            'user_id' => $user->id,
+            'user_name' => $user->name,
+            'dienst_id' => $dienst->id,
+            'dienst_naam' => $dienst->naam,
+            'dienst_standaard_percentage' => $dienst->commissie_percentage,
+            'heeft_custom_factor' => $customFactor !== null,
+            'custom_percentage' => $customFactor ? $customFactor->custom_commissie_percentage : null,
+            'berekende_commissie_percentage' => $commissiePercentage,
+            'prijs' => $validated['prijs']
+        ]);
         
         // Bereken commissie bedrag
         $commissieBedrag = ($validated['prijs'] * $commissiePercentage) / 100;
@@ -115,6 +140,7 @@ class PrestatieController extends Controller
         // Maak prestatie aan
         Prestatie::create([
             'user_id' => auth()->id(),
+            'organisatie_id' => auth()->user()->organisatie_id, // ORGANISATIE ID toevoegen
             'dienst_id' => $validated['dienst_id'],
             'klant_id' => $validated['klant_id'] ?? null,
             'klant_naam' => $klantNaam ?? 'Geen klant',
@@ -127,6 +153,7 @@ class PrestatieController extends Controller
             'commissie_percentage' => $commissiePercentage,
             'commissie_bedrag' => $commissieBedrag,
             'opmerkingen' => $validated['opmerkingen'],
+            'is_uitgevoerd' => $request->has('is_uitgevoerd') ? true : false,
             'jaar' => date('Y', strtotime($validated['datum_prestatie'])),
             'kwartaal' => 'Q' . ceil(date('n', strtotime($validated['datum_prestatie'])) / 3),
         ]);
@@ -187,5 +214,27 @@ class PrestatieController extends Controller
 
         return redirect()->route('prestaties.index')
             ->with('success', 'Prestatie succesvol verwijderd!');
+    }
+
+    /**
+     * Toggle uitgevoerd status van prestatie
+     */
+    public function toggleUitgevoerd(Request $request, Prestatie $prestatie)
+    {
+        // Check of coach deze prestatie mag bewerken
+        if ($prestatie->user_id !== auth()->id() && !auth()->user()->is_admin) {
+            return response()->json(['success' => false, 'message' => 'Geen toegang'], 403);
+        }
+
+        $prestatie->is_uitgevoerd = $request->input('is_uitgevoerd', false);
+        $prestatie->save();
+
+        Log::info('Prestatie uitgevoerd status gewijzigd', [
+            'prestatie_id' => $prestatie->id,
+            'is_uitgevoerd' => $prestatie->is_uitgevoerd,
+            'user_id' => auth()->id(),
+        ]);
+
+        return response()->json(['success' => true]);
     }
 }

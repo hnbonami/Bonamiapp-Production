@@ -38,12 +38,25 @@
                             $factoren = $medewerker->commissieFactoren->first();
                             $totaleBonus = $factoren ? $factoren->totale_bonus : 0;
                         @endphp
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-gray-50 {{ $medewerker->id === auth()->id() ? 'bg-blue-50' : '' }}">
                             <td class="px-6 py-4">
                                 <div class="flex items-center">
                                     <div>
-                                        <div class="text-sm font-medium text-gray-900">{{ $medewerker->name }}</div>
-                                        <div class="text-sm text-gray-500">{{ $medewerker->email }}</div>
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ $medewerker->name }}
+                                            @if($medewerker->id === auth()->id())
+                                                <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Jij</span>
+                                            @endif
+                                        </div>
+                                        <div class="text-sm text-gray-500">
+                                            {{ $medewerker->email }} 
+                                            <span class="ml-2 px-2 py-0.5 text-xs rounded-full 
+                                                {{ in_array($medewerker->role, ['super_admin', 'superadmin']) ? 'bg-purple-100 text-purple-800' : '' }}
+                                                {{ $medewerker->role === 'admin' ? 'bg-orange-100 text-orange-800' : '' }}
+                                                {{ $medewerker->role === 'medewerker' ? 'bg-cyan-100 text-cyan-800' : '' }}">
+                                                {{ in_array($medewerker->role, ['super_admin', 'superadmin']) ? 'Super Admin' : ucfirst(str_replace('_', ' ', $medewerker->role)) }}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </td>

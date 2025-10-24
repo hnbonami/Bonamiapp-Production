@@ -15,20 +15,53 @@ class MedewerkerCommissieController extends Controller
      */
     public function index()
     {
+        // DEBUG: Check ingelogde gebruiker
+        $huidigGebruiker = auth()->user();
+        
+        \Log::info('🔍 DEBUG: Ingelogde gebruiker data', [
+            'id' => $huidigGebruiker->id,
+            'name' => $huidigGebruiker->name,
+            'email' => $huidigGebruiker->email,
+            'role' => $huidigGebruiker->role,
+            'organisatie_id' => $huidigGebruiker->organisatie_id,
+        ]);
+
         // 🔒 ORGANISATIE FILTER: Alleen medewerkers van eigen organisatie
         $medewerkers = User::with(['commissieFactoren' => function($query) {
             $query->algemeen()->actief();
         }])
-        ->where('organisatie_id', auth()->user()->organisatie_id) // ORGANISATIE FILTER
-        ->whereIn('role', ['medewerker', 'admin', 'super_admin'])
+        ->where('organisatie_id', $huidigGebruiker->organisatie_id) // ORGANISATIE FILTER
+        ->whereIn('role', ['medewerker', 'admin', 'super_admin', 'superadmin']) // Beide varianten van super admin
+        ->orderByRaw("FIELD(role, 'superadmin', 'super_admin', 'admin', 'medewerker')") // Super admin eerst
         ->orderBy('name')
         ->get();
 
-        \Log::info('💼 Medewerker commissies overzicht geladen MET organisatie filter', [
-            'organisatie_id' => auth()->user()->organisatie_id,
+        // DEBUG: Check alle gevonden medewerkers
+        \Log::info('💼 Medewerker commissies overzicht geladen', [
+            'gezochte_organisatie_id' => $huidigGebruiker->organisatie_id,
             'aantal_medewerkers' => $medewerkers->count(),
-            'rollen' => $medewerkers->pluck('role', 'name')->toArray()
+            'gevonden_medewerkers' => $medewerkers->map(function($m) {
+                return [
+                    'id' => $m->id,
+                    'name' => $m->name,
+                    'email' => $m->email,
+                    'role' => $m->role,
+                    'organisatie_id' => $m->organisatie_id
+                ];
+            })->toArray(),
+            'ingelogde_gebruiker_in_lijst' => $medewerkers->contains('id', $huidigGebruiker->id) ? 'JA' : 'NEE'
         ]);
+
+        // Check of ingelogde gebruiker in lijst staat
+        if (!$medewerkers->contains('id', $huidigGebruiker->id)) {
+            \Log::warning('⚠️ WAARSCHUWING: Ingelogde gebruiker staat NIET in de medewerkers lijst!', [
+                'mogelijke_oorzaken' => [
+                    'organisatie_id_mismatch' => $huidigGebruiker->organisatie_id,
+                    'role_niet_in_filter' => $huidigGebruiker->role,
+                    'is_role_in_array' => in_array($huidigGebruiker->role, ['medewerker', 'admin', 'super_admin'])
+                ]
+            ]);
+        }
 
         return view('admin.medewerkers.commissies.index', compact('medewerkers'));
     }
