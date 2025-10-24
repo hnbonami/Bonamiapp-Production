@@ -21,33 +21,38 @@
     <div class="bg-white rounded-lg shadow">
         <div class="overflow-x-auto">
             <table class="w-full">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dienst</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prijs</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commissie %</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commissie Bedrag</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
-                    </tr>
-                </thead>
+                                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dienst</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prijs</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">BTW</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commissie %</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Commissie Bedrag</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
+                        </tr>
+                    </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($diensten as $dienst)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4">
                                 <div class="text-sm font-medium text-gray-900">{{ $dienst->naam }}</div>
-                                @if($dienst->beschrijving)
-                                    <div class="text-sm text-gray-500">{{ $dienst->beschrijving }}</div>
+                                @if($dienst->omschrijving)
+                                    <div class="text-sm text-gray-500">{{ $dienst->omschrijving }}</div>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="text-sm font-semibold text-gray-900">€{{ number_format($dienst->standaard_prijs, 2, ',', '.') }}</span>
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-semibold text-gray-900">€{{ number_format($dienst->standaard_prijs, 2, ',', '.') }}</div>
+                                <div class="text-xs text-gray-500">Excl: €{{ number_format($dienst->prijs_excl_btw ?? $dienst->standaard_prijs / 1.21, 2, ',', '.') }}</div>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="text-sm text-gray-900">{{ $dienst->commissie_percentage }}%</span>
+                            <td class="px-6 py-4 text-sm text-gray-500">
+                                {{ $dienst->btw_percentage ?? 21 }}%
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="text-sm font-semibold text-green-600">€{{ number_format(($dienst->standaard_prijs * $dienst->commissie_percentage) / 100, 2, ',', '.') }}</span>
+                            <td class="px-6 py-4 text-sm text-gray-900">
+                                {{ number_format($dienst->commissie_percentage, 2) }}%
+                            </td>
+                            <td class="px-6 py-4 text-sm font-medium text-green-600">
+                                €{{ number_format(($dienst->standaard_prijs * $dienst->commissie_percentage) / 100, 2, ',', '.') }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap">
                                 @if($dienst->is_actief)
@@ -145,24 +150,33 @@
                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
             </div>
             
-            {{-- Prijs --}}
+            {{-- Prijs veld --}}
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Prijs (€) <span class="text-red-500">*</span>
-                </label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Prijs (incl. BTW)</label>
                 <input type="number" name="prijs" id="edit-prijs" step="0.01" required 
-                       placeholder="0.00"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            {{-- BTW Info --}}
+            <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div class="text-xs text-gray-600 mb-1">BTW Berekening (automatisch)</div>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                        <span class="text-gray-500">BTW %:</span>
+                        <span class="font-medium">21%</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Excl. BTW:</span>
+                        <span class="font-medium" id="prijs-excl-btw">€0,00</span>
+                    </div>
+                </div>
             </div>
             
-            {{-- Commissie --}}
+            {{-- Commissie percentage --}}
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Commissie (%) <span class="text-red-500">*</span>
-                </label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Commissie Percentage</label>
                 <input type="number" name="commissie_percentage" id="edit-commissie_percentage" step="0.01" required 
-                       placeholder="0.00"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
             </div>
             
             {{-- Actief checkbox --}}
@@ -224,24 +238,33 @@
                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
             </div>
             
-            {{-- Prijs --}}
+            {{-- Prijs veld --}}
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Prijs (€) <span class="text-red-500">*</span>
-                </label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Prijs (incl. BTW)</label>
                 <input type="number" name="prijs" id="prijs" step="0.01" required 
-                       placeholder="0.00"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            {{-- BTW Info --}}
+            <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div class="text-xs text-gray-600 mb-1">BTW Berekening (automatisch)</div>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                        <span class="text-gray-500">BTW %:</span>
+                        <span class="font-medium">21%</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-500">Excl. BTW:</span>
+                        <span class="font-medium" id="prijs-excl-btw">€0,00</span>
+                    </div>
+                </div>
             </div>
             
-            {{-- Commissie --}}
+            {{-- Commissie percentage --}}
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Commissie (%) <span class="text-red-500">*</span>
-                </label>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Commissie Percentage</label>
                 <input type="number" name="commissie_percentage" id="commissie_percentage" step="0.01" required 
-                       placeholder="0.00"
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
             </div>
             
             {{-- Actief checkbox --}}
@@ -327,6 +350,20 @@ document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeDienstModal();
         closeEditDienstModal();
+    }
+});
+
+// BTW berekening in real-time
+document.addEventListener('DOMContentLoaded', function() {
+    const prijsInput = document.querySelector('input[name="prijs"]');
+    const prijsExclBtwElement = document.getElementById('prijs-excl-btw');
+    
+    if (prijsInput && prijsExclBtwElement) {
+        prijsInput.addEventListener('input', function() {
+            const prijsInclBtw = parseFloat(this.value) || 0;
+            const prijsExclBtw = prijsInclBtw / 1.21;
+            prijsExclBtwElement.textContent = '€' + prijsExclBtw.toFixed(2).replace('.', ',');
+        });
     }
 });
 </script>

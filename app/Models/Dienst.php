@@ -13,6 +13,7 @@ class Dienst extends Model
     protected $table = 'diensten';
 
     protected $fillable = [
+        'organisatie_id', // VOEG TOE
         'naam',
         'omschrijving',
         'standaard_prijs',

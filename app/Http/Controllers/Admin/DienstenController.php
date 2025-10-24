@@ -14,9 +14,12 @@ class DienstenController extends Controller
      */
     public function index()
     {
-        $diensten = Dienst::orderBy('sorteer_volgorde')->get();
-        
-        return view('admin.diensten.index', compact('diensten'));
+        // 🔒 ORGANISATIE FILTER: Alleen diensten van eigen organisatie
+        $diensten = Dienst::where('organisatie_id', auth()->user()->organisatie_id)
+            ->orderBy('naam')
+            ->get();
+
+        return view('admin.prestaties.diensten', compact('diensten'));
     }
 
     /**
@@ -52,6 +55,9 @@ class DienstenController extends Controller
         
         // Actief status - BELANGRIJKE FIX: checkbox is aanwezig = true, niet aanwezig = false
         $validated['is_actief'] = $request->has('actief') && $request->input('actief') == '1';
+        
+        // 🔒 KRITIEK: Voeg organisatie_id toe
+        $validated['organisatie_id'] = auth()->user()->organisatie_id;
         
         \Log::info('Store dienst validated data', [
             'validated' => $validated,
