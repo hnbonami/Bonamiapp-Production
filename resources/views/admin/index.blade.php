@@ -8,7 +8,8 @@
     <!-- Admin Cards Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
-        <!-- Database Tools -->
+        {{-- Database Tools - alleen tonen als feature actief is --}}
+        @hasFeature('database_tools')
         <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="bg-blue-100 p-3 rounded-lg">
@@ -27,8 +28,10 @@
                 </svg>
             </a>
         </div>
+        @endhasFeature
 
-        <!-- Email Beheer -->
+        {{-- Email Beheer - alleen tonen als feature actief is --}}
+        @hasFeature('sjablonen')
         <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="bg-green-100 p-3 rounded-lg">
@@ -46,8 +49,10 @@
                 </svg>
             </a>
         </div>
+        @endhasFeature
 
-        <!-- Bikefit Uitleenbeheer -->
+        {{-- Bikefit Uitleenbeheer - alleen tonen als feature actief is --}}
+        @hasFeature('testzadels')
         <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="bg-purple-100 p-3 rounded-lg">
@@ -65,8 +70,9 @@
                 </svg>
             </a>
         </div>
+        @endhasFeature
 
-        <!-- Rechten & Rollen Beheer -->
+        {{-- Rechten & Rollen Beheer - altijd tonen voor admins --}}
         <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="p-3 rounded-lg" style="background-color: #c8e1eb;">
