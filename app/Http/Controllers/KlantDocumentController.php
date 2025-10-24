@@ -19,7 +19,8 @@ class KlantDocumentController extends Controller
             $validated = $request->validate([
                 'document' => 'required|file|max:51200', // Max 50MB
                 'naam' => 'nullable|string|max:255',
-                'beschrijving' => 'nullable|string',
+                'beschrijving' => 'nullable|string|max:1000',
+                'toegang' => 'required|in:alleen_mezelf,klant,alle_medewerkers,iedereen'
             ]);
 
             $file = $request->file('document');
@@ -44,7 +45,6 @@ class KlantDocumentController extends Controller
             $document = KlantDocument::create([
                 'klant_id' => $klant->id,
                 'titel' => $validated['naam'] ?? $file->getClientOriginalName(),
-                'naam' => $validated['naam'] ?? $file->getClientOriginalName(),
                 'beschrijving' => $validated['beschrijving'] ?? null,
                 'bestandsnaam' => $file->getClientOriginalName(),
                 'opgeslagen_naam' => $uniqueName,
@@ -52,6 +52,7 @@ class KlantDocumentController extends Controller
                 'bestandsgrootte' => $file->getSize(),
                 'categorie' => 'Algemeen',
                 'upload_datum' => now(),
+                'toegang' => $validated['toegang'] ?? 'alle_medewerkers',
             ]);
 
             \Log::info('✅ Document geüpload', [
@@ -139,7 +140,7 @@ class KlantDocumentController extends Controller
     }
 
     /**
-     * Update document gegevens
+     * Update document gegevens (naam, beschrijving, toegangsrechten)
      */
     public function update(Request $request, Klant $klant, KlantDocument $document)
     {
@@ -149,23 +150,52 @@ class KlantDocumentController extends Controller
                 abort(403, 'Geen toegang tot dit document');
             }
 
+            // Valideer input met toegangsrechten
             $validated = $request->validate([
-                'naam' => 'required|string|max:255',
-                'beschrijving' => 'nullable|string',
+                'naam' => 'nullable|string|max:255',
+                'beschrijving' => 'nullable|string|max:1000',
+                'toegang' => 'required|in:alleen_mezelf,klant,alle_medewerkers,iedereen'
             ]);
 
+            // Check of gebruiker rechten heeft om te bewerken
+            $user = auth()->user();
+            
+            // BELANGRIJK: Klanten mogen NOOIT documenten bewerken!
+            if ($user->isKlant()) {
+                \Log::warning('⛔ KLANT probeerde document te bewerken - GEWEIGERD', [
+                    'user_id' => $user->id,
+                    'user_role' => $user->role,
+                    'document_id' => $document->id
+                ]);
+                
+                abort(403, 'Klanten mogen geen documenten bewerken.');
+            }
+            
+            // Alleen beheerders of medewerkers met upload rechten
+            if (!$user->isBeheerder() && !($user->isMedewerker() && $user->upload_documenten)) {
+                \Log::warning('Ongeautoriseerde poging om document te bewerken', [
+                    'user_id' => $user->id,
+                    'document_id' => $document->id
+                ]);
+                
+                return redirect()->back()->with('error', 'Je hebt geen rechten om documenten te bewerken.');
+            }
+
+            // Update document met toegangsrechten
             $document->update([
-                'titel' => $validated['naam'],
-                'naam' => $validated['naam'],
+                'titel' => $validated['naam'] ?? $document->titel,
                 'beschrijving' => $validated['beschrijving'],
+                'toegang' => $validated['toegang']
             ]);
 
-            \Log::info('✏️ Document bijgewerkt', [
+            \Log::info('✏️ Document bijgewerkt met toegangsrechten', [
                 'document_id' => $document->id,
-                'klant_id' => $klant->id
+                'klant_id' => $klant->id,
+                'user_id' => $user->id,
+                'toegang' => $validated['toegang']
             ]);
 
-            return redirect()->route('klanten.show', $klant)->with('success', 'Document bijgewerkt!');
+            return redirect()->route('klanten.show', $klant)->with('success', 'Document succesvol bijgewerkt!');
 
         } catch (\Exception $e) {
             \Log::error('❌ Document update fout: ' . $e->getMessage());

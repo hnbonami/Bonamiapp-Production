@@ -22,8 +22,7 @@ class KlantDocument extends Model
         'bestandsgrootte',
         'categorie',
         'upload_datum',
-        'gecomprimeerd',
-        'originele_grootte',
+        'toegang', // Toegangsrechten veld
     ];
 
     protected $casts = [
@@ -32,6 +31,12 @@ class KlantDocument extends Model
         'bestandsgrootte' => 'integer',
         'originele_grootte' => 'integer',
     ];
+
+    // Toegangsrecht constanten
+    const TOEGANG_ALLEEN_MEZELF = 'alleen_mezelf';
+    const TOEGANG_KLANT = 'klant';
+    const TOEGANG_ALLE_MEDEWERKERS = 'alle_medewerkers';
+    const TOEGANG_IEDEREEN = 'iedereen';
 
     /**
      * Relatie met klant
@@ -121,5 +126,47 @@ class KlantDocument extends Model
         } else {
             return '📁';
         }
+    }
+
+    /**
+     * Check of gebruiker toegang heeft tot dit document
+     */
+    public function heeftToegang($user): bool
+    {
+        if (!$user) {
+            return false;
+        }
+
+        // Admin heeft altijd toegang
+        if ($user->role === 'admin' || $user->isBeheerder()) {
+            return true;
+        }
+
+        // Check toegangsrechten
+        switch ($this->toegang) {
+            case self::TOEGANG_ALLEEN_MEZELF:
+                return $this->uploaded_by === $user->id;
+            
+            case self::TOEGANG_KLANT:
+                return $this->uploaded_by === $user->id || 
+                       ($user->role === 'klant' && $this->klant_id === $user->klant_id);
+            
+            case self::TOEGANG_ALLE_MEDEWERKERS:
+                return $user->isMedewerker() || $user->isBeheerder();
+            
+            case self::TOEGANG_IEDEREEN:
+                return true;
+            
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Relatie met de gebruiker die het document heeft geüpload
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
     }
 }
