@@ -10,14 +10,15 @@ use Illuminate\Support\Facades\Log;
 class DienstenController extends Controller
 {
     /**
-     * Toon diensten beheer overzicht
+     * Toon overzicht van alle diensten
      */
     public function index()
     {
         $diensten = Dienst::orderBy('sorteer_volgorde')->get();
-        return view('admin.prestaties.diensten', compact('diensten'));
+        
+        return view('admin.diensten.index', compact('diensten'));
     }
-    
+
     /**
      * Sla nieuwe dienst op
      */
@@ -26,24 +27,37 @@ class DienstenController extends Controller
         $validated = $request->validate([
             'naam' => 'required|string|max:255',
             'omschrijving' => 'nullable|string',
-            'prijs' => 'required|numeric|min:0',
+            'standaard_prijs' => 'required|numeric|min:0',
+            'btw_percentage' => 'required|numeric|in:0,6,12,21',
+            'prijs_type' => 'required|in:incl,excl',
             'commissie_percentage' => 'required|numeric|min:0|max:100',
-            'actief' => 'nullable|boolean',
+            'is_actief' => 'boolean',
         ]);
+
+        // Bereken automatisch incl/excl prijzen op basis van prijs_type
+        if ($validated['prijs_type'] === 'incl') {
+            $validated['prijs_incl_btw'] = $validated['standaard_prijs'];
+            $validated['prijs_excl_btw'] = $validated['standaard_prijs'] / (1 + ($validated['btw_percentage'] / 100));
+        } else {
+            $validated['prijs_excl_btw'] = $validated['standaard_prijs'];
+            $validated['prijs_incl_btw'] = $validated['standaard_prijs'] * (1 + ($validated['btw_percentage'] / 100));
+        }
+
+        // Verwijder prijs_type uit validated data (niet in database)
+        unset($validated['prijs_type']);
         
-        // Map formulier velden naar database kolommen
-        $dienst = Dienst::create([
-            'naam' => $validated['naam'],
-            'beschrijving' => $validated['omschrijving'] ?? null,
-            'standaard_prijs' => (float) $validated['prijs'],
-            'commissie_percentage' => (float) $validated['commissie_percentage'],
-            'is_actief' => $request->has('actief'),
-            'sorteer_volgorde' => (Dienst::max('sorteer_volgorde') ?? 0) + 1,
+        // Zorg dat is_actief een boolean is
+        $validated['is_actief'] = $request->has('is_actief') ? true : false;
+
+        $dienst = Dienst::create($validated);
+
+        Log::info('Dienst aangemaakt', [
+            'dienst_id' => $dienst->id,
+            'naam' => $dienst->naam,
+            'user_id' => auth()->id(),
         ]);
-        
-        Log::info('Dienst aangemaakt', ['dienst_id' => $dienst->id, 'user_id' => auth()->id()]);
-        
-        return redirect()->route('admin.prestaties.diensten.index')
+
+        return redirect()->route('admin.diensten.index')
             ->with('success', 'Dienst succesvol aangemaakt!');
     }
 
@@ -55,22 +69,37 @@ class DienstenController extends Controller
         $validated = $request->validate([
             'naam' => 'required|string|max:255',
             'omschrijving' => 'nullable|string',
-            'prijs' => 'required|numeric|min:0',
+            'standaard_prijs' => 'required|numeric|min:0',
+            'btw_percentage' => 'required|numeric|in:0,6,12,21',
+            'prijs_type' => 'required|in:incl,excl',
             'commissie_percentage' => 'required|numeric|min:0|max:100',
-            'actief' => 'nullable|boolean',
+            'is_actief' => 'boolean',
         ]);
+
+        // Bereken automatisch incl/excl prijzen op basis van prijs_type
+        if ($validated['prijs_type'] === 'incl') {
+            $validated['prijs_incl_btw'] = $validated['standaard_prijs'];
+            $validated['prijs_excl_btw'] = $validated['standaard_prijs'] / (1 + ($validated['btw_percentage'] / 100));
+        } else {
+            $validated['prijs_excl_btw'] = $validated['standaard_prijs'];
+            $validated['prijs_incl_btw'] = $validated['standaard_prijs'] * (1 + ($validated['btw_percentage'] / 100));
+        }
+
+        // Verwijder prijs_type uit validated data
+        unset($validated['prijs_type']);
         
-        $dienst->update([
-            'naam' => $validated['naam'],
-            'beschrijving' => $validated['omschrijving'] ?? null,
-            'standaard_prijs' => (float) $validated['prijs'],
-            'commissie_percentage' => (float) $validated['commissie_percentage'],
-            'is_actief' => $request->has('actief'),
+        // Zorg dat is_actief een boolean is
+        $validated['is_actief'] = $request->has('is_actief') ? true : false;
+
+        $dienst->update($validated);
+
+        Log::info('Dienst bijgewerkt', [
+            'dienst_id' => $dienst->id,
+            'naam' => $dienst->naam,
+            'user_id' => auth()->id(),
         ]);
-        
-        Log::info('Dienst bijgewerkt', ['dienst_id' => $dienst->id, 'user_id' => auth()->id()]);
-        
-        return redirect()->route('admin.prestaties.diensten.index')
+
+        return redirect()->route('admin.diensten.index')
             ->with('success', 'Dienst succesvol bijgewerkt!');
     }
 
@@ -80,10 +109,14 @@ class DienstenController extends Controller
     public function destroy(Dienst $dienst)
     {
         $dienst->delete();
-        
-        Log::info('Dienst verwijderd', ['dienst_id' => $dienst->id, 'user_id' => auth()->id()]);
-        
-        return redirect()->route('admin.prestaties.diensten.index')
+
+        Log::info('Dienst verwijderd', [
+            'dienst_id' => $dienst->id,
+            'naam' => $dienst->naam,
+            'user_id' => auth()->id(),
+        ]);
+
+        return redirect()->route('admin.diensten.index')
             ->with('success', 'Dienst succesvol verwijderd!');
     }
 }

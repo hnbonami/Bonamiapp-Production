@@ -12,19 +12,25 @@
         {{-- Jaar & Kwartaal filter --}}
         <div class="flex gap-2 items-center">
             <span class="text-sm text-gray-600">Periode:</span>
-            <select id="jaar-filter" class="text-sm rounded border-gray-300 py-1 px-2">
-                @php
-                    $currentYear = now()->year;
-                    $nextYear = $currentYear + 1;
-                    // Toon alle jaren vanaf 2023 tot volgend jaar
-                    $jarenRange = range(2023, $nextYear);
-                @endphp
-                @foreach($jarenRange as $jaar)
-                    <option value="{{ $jaar }}" {{ $jaar == $huidigJaar ? 'selected' : '' }}>
-                        {{ $jaar }}
-                    </option>
-                @endforeach
-            </select>
+            
+            {{-- Jaar navigatie met +/- knoppen --}}
+            <div class="flex items-center gap-1">
+                <a href="{{ route('admin.prestaties.overzicht') }}?jaar={{ $huidigJaar - 1 }}&kwartaal={{ $huidigKwartaal }}" 
+                   class="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+                <span class="text-sm font-semibold px-3 py-1 bg-blue-50 text-blue-700 rounded">
+                    {{ $huidigJaar }}
+                </span>
+                <a href="{{ route('admin.prestaties.overzicht') }}?jaar={{ $huidigJaar + 1 }}&kwartaal={{ $huidigKwartaal }}" 
+                   class="px-2 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
             
             <select id="kwartaal-filter" class="text-sm rounded border-gray-300 py-1 px-2">
                 <option value="Q1" {{ $huidigKwartaal == 'Q1' ? 'selected' : '' }}>Q1</option>
@@ -148,16 +154,9 @@
 </div>
 
 <script>
-// Jaar filter
-document.getElementById('jaar-filter').addEventListener('change', function() {
-    const jaar = this.value;
-    const kwartaal = document.getElementById('kwartaal-filter').value;
-    window.location.href = `/admin/prestaties/overzicht?jaar=${jaar}&kwartaal=${kwartaal}`;
-});
-
-// Kwartaal filter
+// Kwartaal filter - redirect bij wijziging
 document.getElementById('kwartaal-filter').addEventListener('change', function() {
-    const jaar = document.getElementById('jaar-filter').value;
+    const jaar = {{ $huidigJaar }};
     const kwartaal = this.value;
     window.location.href = `/admin/prestaties/overzicht?jaar=${jaar}&kwartaal=${kwartaal}`;
 });

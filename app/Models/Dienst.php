@@ -14,10 +14,12 @@ class Dienst extends Model
 
     protected $fillable = [
         'naam',
-        'beschrijving',
+        'omschrijving',
         'standaard_prijs',
-        'commissie_percentage',
         'btw_percentage',
+        'prijs_incl_btw',
+        'prijs_excl_btw',
+        'commissie_percentage',
         'is_actief',
         'sorteer_volgorde',
     ];
@@ -25,7 +27,11 @@ class Dienst extends Model
     protected $casts = [
         'standaard_prijs' => 'decimal:2',
         'btw_percentage' => 'decimal:2',
+        'prijs_incl_btw' => 'decimal:2',
+        'prijs_excl_btw' => 'decimal:2',
+        'commissie_percentage' => 'decimal:2',
         'is_actief' => 'boolean',
+        'sorteer_volgorde' => 'integer',
     ];
 
     /**
@@ -55,11 +61,35 @@ class Dienst extends Model
     }
 
     /**
-     * Bereken netto prijs (bruto - btw)
+     * Bereken prijs exclusief BTW op basis van prijs inclusief BTW
      */
-    public function berekenNettoPrijs(): float
+    public function berekenPrijsExclBtw(): float
     {
-        $btwBedrag = $this->standaard_prijs * ($this->btw_percentage / 100);
-        return round($this->standaard_prijs - $btwBedrag, 2);
+        if ($this->prijs_incl_btw && $this->btw_percentage > 0) {
+            return $this->prijs_incl_btw / (1 + ($this->btw_percentage / 100));
+        }
+        return $this->prijs_excl_btw ?? 0;
+    }
+
+    /**
+     * Bereken prijs inclusief BTW op basis van prijs exclusief BTW
+     */
+    public function berekenPrijsInclBtw(): float
+    {
+        if ($this->prijs_excl_btw && $this->btw_percentage > 0) {
+            return $this->prijs_excl_btw * (1 + ($this->btw_percentage / 100));
+        }
+        return $this->prijs_incl_btw ?? 0;
+    }
+
+    /**
+     * Bereken BTW bedrag
+     */
+    public function berekenBtwBedrag(): float
+    {
+        if ($this->prijs_incl_btw && $this->prijs_excl_btw) {
+            return $this->prijs_incl_btw - $this->prijs_excl_btw;
+        }
+        return 0;
     }
 }

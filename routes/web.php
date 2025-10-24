@@ -72,6 +72,7 @@ use App\Http\Controllers\InspanningstestController;
 use App\Http\Controllers\KlantController;
 use App\Http\Controllers\MedewerkerController;
 use App\Http\Controllers\OrganisatieController;
+use App\Http\Controllers\Admin\DienstenController;
 use App\Exports\MedewerkersExport;
 use App\Exports\KlantenExport;
 use Maatwebsite\Excel\Facades\Excel;
