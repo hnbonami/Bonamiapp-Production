@@ -242,20 +242,19 @@
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {{ $trigger->last_run_at ? $trigger->last_run_at->diffForHumans() : 'Nog nooit' }}
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        @if($trigger->id && !empty($trigger->id))
-                                            <a href="{{ route('admin.email.triggers.edit', $trigger->id) }}" 
-                                               class="text-blue-600 hover:text-blue-900 mr-3">
-                                                Bewerken
-                                            </a>
-                                            <!-- Test Trigger Knop -->
-                                            <button onclick="testTrigger('{{ $trigger->type }}')" 
-                                                    class="text-green-600 hover:text-green-900">
-                                                Test
-                                            </button>
-                                        @else
-                                            <span class="text-gray-400">Auto-gegenereerd</span>
-                                        @endif
+                                    <td class="px-6 py-4 whitespace-nowrap text-right align-top">
+                                        <div class="action-buttons flex flex-row flex-nowrap items-center justify-end gap-2">
+                                            @if($trigger->id && !empty($trigger->id))
+                                                <a href="{{ route('admin.email.triggers.edit', $trigger->id) }}" aria-label="Bewerk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" title="Bewerk">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                                </a>
+                                                <button onclick="testTrigger('{{ $trigger->type }}')" aria-label="Test" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800" title="Test">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                                </button>
+                                            @else
+                                                <span class="text-sm text-gray-400">Auto-gegenereerd</span>
+                                            @endif
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

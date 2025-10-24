@@ -7,7 +7,7 @@
     <div class="flex justify-between items-center mb-8">
         <div>
             <h1 class="text-3xl font-bold text-gray-900">🚀 Trigger Beheer TEST</h1>
-            <p class="text-gray-600 mt-2">Test alle automatische triggers en verstuur emails indien nodig. Veilig om te gebruiken - er worden alleen emails verstuurd aan mensen die ze daadwerkelijk nodig hebben.</p>
+            <p class="text-gray-600 mt-2">testTest alle automatische triggers en verstuur emails indien nodig. Veilig om te gebruiken - er worden alleen emails verstuurd aan mensen die ze daadwerkelijk nodig hebben.</p>
         </div>
         <a href="{{ route('admin.email.index') }}" 
            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
@@ -166,14 +166,22 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {{ $trigger->last_run_at ? \Carbon\Carbon::parse($trigger->last_run_at)->diffForHumans() : 'Nog nooit' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            @if($trigger->id)
-                                <a href="{{ route('admin.email.triggers.edit', $trigger->id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Bewerken</a>
-                                <a href="/admin/email" class="text-blue-600 hover:text-blue-900 mr-3">Email Templates</a>
-                                <button onclick="runTrigger('{{ $trigger->type }}')" class="text-green-600 hover:text-green-900">Test Run</button>
-                            @else
-                                <a href="/admin/email" class="text-blue-600 hover:text-blue-900">Email Templates</a>
-                            @endif
+                        <td class="px-6 py-4 whitespace-nowrap text-right align-top">
+                            <div class="action-buttons flex flex-row flex-nowrap items-center justify-end gap-2">
+                                @if($trigger->id)
+                                    <a href="{{ route('admin.email.triggers.edit', $trigger->id) }}" aria-label="Bewerk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" title="Bewerk">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                    </a>
+                                @endif
+                                <a href="/admin/email" aria-label="Email Templates" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" title="Email Templates">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                                </a>
+                                @if($trigger->id)
+                                    <button onclick="runTrigger('{{ $trigger->type }}')" aria-label="Test" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800" title="Test">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                     @empty
