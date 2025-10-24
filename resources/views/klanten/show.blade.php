@@ -155,8 +155,9 @@
         
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
             
+            {{-- Bikefit Card - alleen tonen als feature actief is --}}
+            @hasFeature('bikefits')
             @if($user->isBeheerder() || ($user->isMedewerker() && $user->bikefit))
-            <!-- Bikefit Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
                     <div style="background:#c8e1eb;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -172,9 +173,11 @@
                 </a>
             </div>
             @endif
+            @endhasFeature
             
+            {{-- Inspanningstest Card - alleen tonen als feature actief is --}}
+            @hasFeature('inspanningstesten')
             @if($user->isBeheerder() || ($user->isMedewerker() && $user->inspanningstest))
-            <!-- Inspanningstest Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
                     <div style="background:#c8e1eb;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -190,6 +193,7 @@
                 </a>
             </div>
             @endif
+            @endhasFeature
             
             @if($user->isBeheerder() || ($user->isMedewerker() && $user->upload_documenten))
             <!-- Document Upload Card -->
@@ -394,8 +398,9 @@ if (uploadModal) {
                                     </a>
                                 @endif
                                 
-                                {{-- Edit/Duplicate/Delete knoppen - ALLEEN voor admin/medewerkers --}}
+                                {{-- Edit/Duplicate/Delete knoppen - ALLEEN voor admin/medewerkers met feature toegang --}}
                             @if($test->type === 'bikefit')
+                                @hasFeature('bikefits')
                                 @if($user && ($user->isBeheerder() || ($user->isMedewerker() && $user->bikefit)))
                                 <a href="{{ route('bikefit.edit', [$klant->id, $test->id]) }}" aria-label="Bewerk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" title="Bewerk">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -414,6 +419,7 @@ if (uploadModal) {
                                     </button>
                                 </form>
                                 @endif
+                                @endhasFeature
                             @elseif($test->type === 'document')
                                 @if($user && ($user->isBeheerder() || ($user->isMedewerker() && $user->upload_documenten)))
                                 <form action="{{ route('klanten.documenten.destroy', [$klant, $test]) }}" method="POST" class="inline">
@@ -424,7 +430,8 @@ if (uploadModal) {
                                     </button>
                                 </form>
                                 @endif
-                            @else
+                            @elseif($test->type === 'inspanningstest')
+                                @hasFeature('inspanningstesten')
                                 @if($user && ($user->isBeheerder() || ($user->isMedewerker() && $user->inspanningstest)))
                                 <a href="{{ route('inspanningstest.edit', [$klant->id, $test->id]) }}" aria-label="Bewerk" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" title="Bewerk">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -443,6 +450,7 @@ if (uploadModal) {
                                     </button>
                                 </form>
                                 @endif
+                                @endhasFeature
                             @endif
                             </div>
                         </td>
