@@ -1130,4 +1130,130 @@ class EmailIntegrationService
             return false;
         }
     }
+
+    /**
+     * Run een specifieke email trigger
+     */
+    public function runTrigger($trigger)
+    {
+        \Log::info('🎯 Running single trigger', [
+            'trigger_id' => $trigger->id,
+            'trigger_name' => $trigger->name,
+            'trigger_type' => $trigger->trigger_type
+        ]);
+        
+        $emailsSent = 0;
+        
+        try {
+            // Check welk type trigger dit is en voer de juiste logica uit
+            switch ($trigger->trigger_type) {
+                case 'birthday':
+                    $emailsSent = $this->runBirthdayTrigger($trigger);
+                    break;
+                    
+                case 'testzadel_reminder':
+                    $emailsSent = $this->runTestzadelReminderTrigger($trigger);
+                    break;
+                    
+                case 'welcome_customer':
+                    $emailsSent = $this->runWelcomeCustomerTrigger($trigger);
+                    break;
+                    
+                case 'welcome_employee':
+                    $emailsSent = $this->runWelcomeEmployeeTrigger($trigger);
+                    break;
+                    
+                default:
+                    \Log::warning('Unknown trigger type', [
+                        'trigger_type' => $trigger->trigger_type
+                    ]);
+                    break;
+            }
+            
+            // Update trigger statistics
+            $trigger->increment('emails_sent', $emailsSent);
+            $trigger->update(['last_run_at' => now()]);
+            
+            \Log::info('✅ Trigger completed', [
+                'trigger_name' => $trigger->name,
+                'emails_sent' => $emailsSent
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Trigger failed', [
+                'trigger_name' => $trigger->name,
+                'error' => $e->getMessage()
+            ]);
+            
+            throw $e;
+        }
+        
+        return $emailsSent;
+    }
+    
+    /**
+     * Run alle actieve triggers
+     */
+    public function runAllTriggers()
+    {
+        $results = [
+            'success' => true,
+            'triggers_run' => 0,
+            'emails_sent' => 0,
+            'errors' => []
+        ];
+        
+        $activeTriggers = \App\Models\EmailTrigger::where('is_active', true)->get();
+        
+        \Log::info('🚀 Running all active triggers', [
+            'total_triggers' => $activeTriggers->count()
+        ]);
+        
+        foreach ($activeTriggers as $trigger) {
+            try {
+                $sent = $this->runTrigger($trigger);
+                $results['triggers_run']++;
+                $results['emails_sent'] += $sent;
+            } catch (\Exception $e) {
+                $results['errors'][] = "Trigger {$trigger->name}: {$e->getMessage()}";
+                \Log::error("Trigger failed: {$trigger->name}", [
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+        
+        return $results;
+    }
+    
+    /**
+     * Placeholder methodes voor verschillende trigger types
+     * Deze zullen later uitgebreid worden
+     */
+    private function runBirthdayTrigger($trigger)
+    {
+        // TODO: Implementeer birthday trigger logica
+        \Log::info('Birthday trigger - not yet implemented');
+        return 0;
+    }
+    
+    private function runTestzadelReminderTrigger($trigger)
+    {
+        // TODO: Implementeer testzadel reminder logica
+        \Log::info('Testzadel reminder trigger - not yet implemented');
+        return 0;
+    }
+    
+    private function runWelcomeCustomerTrigger($trigger)
+    {
+        // TODO: Implementeer welcome customer logica
+        \Log::info('Welcome customer trigger - not yet implemented');
+        return 0;
+    }
+    
+    private function runWelcomeEmployeeTrigger($trigger)
+    {
+        // TODO: Implementeer welcome employee logica
+        \Log::info('Welcome employee trigger - not yet implemented');
+        return 0;
+    }
 }

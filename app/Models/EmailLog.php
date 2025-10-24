@@ -28,12 +28,17 @@ class EmailLog extends Model
     protected $fillable = [
         'recipient_email',
         'subject',
+        'body_html',
         'template_id',
         'trigger_name',
         'status',
         'sent_at',
         'error_message',
-        'variables'
+        'variables',
+    ];
+
+    protected $attributes = [
+        'body_html' => '', // Default waarde voor body_html
     ];
     
     protected $casts = [
