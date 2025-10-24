@@ -18,11 +18,31 @@ class UploadController extends Controller
     public function show($uploadId)
     {
         $upload = Upload::findOrFail($uploadId);
+        $user = auth()->user();
+
+        // Check toegangsrechten
+        if (!$upload->heeftToegang($user)) {
+            \Log::warning('Ongeautoriseerde toegang tot upload', [
+                'upload_id' => $uploadId,
+                'user_id' => $user ? $user->id : null,
+                'toegang' => $upload->toegang
+            ]);
+            
+            abort(403, 'Je hebt geen toegang tot dit document.');
+        }
+
         $path = $upload->path;
         if (!Storage::disk('private')->exists($path)) {
             // Toon nu expliciet de view upload_not_found buiten de errors map
             return response()->view('upload_not_found', ['upload' => $upload], 404);
         }
+        
+        \Log::info('Document succesvol getoond', [
+            'upload_id' => $uploadId,
+            'user_id' => $user->id,
+            'toegang' => $upload->toegang
+        ]);
+        
         return response()->file(Storage::disk('private')->path($path));
     }
 
@@ -35,9 +55,13 @@ class UploadController extends Controller
             set_time_limit(300); // 5 minuten
             ini_set('memory_limit', '256M');
             
-            // Verhoogde limiet naar 50MB (51200 KB)
+            // Verhoogde limiet naar 50MB (51200 KB) + toegangsrechten validatie
             $request->validate([
-                'file' => 'required|file|max:51200|mimes:pdf,mp4,mov,avi,jpg,jpeg,png,doc,docx'
+                'file' => 'required|file|max:51200|mimes:pdf,mp4,mov,avi,jpg,jpeg,png,doc,docx',
+                'toegang' => 'required|in:alleen_mezelf,klant,alle_medewerkers,iedereen',
+                'naam' => 'nullable|string|max:255',
+                'beschrijving' => 'nullable|string|max:1000',
+                'is_cover' => 'nullable|boolean'
             ]);
 
             $bikefit = Bikefit::findOrFail($bikefitId);
@@ -74,9 +98,14 @@ class UploadController extends Controller
 
             $upload = new Upload([
                 'user_id' => auth()->id(),
+                'klant_id' => $klantId,
+                'bikefit_id' => $bikefitId,
                 'path' => $path,
                 'size' => $fileToUpload->getSize(),
-                'bikefit_id' => $bikefitId,
+                'toegang' => $request->input('toegang', 'alle_medewerkers'),
+                'naam' => $request->input('naam'),
+                'beschrijving' => $request->input('beschrijving'),
+                'is_cover' => $request->boolean('is_cover', false),
             ]);
             $upload->save();
             
@@ -107,8 +136,30 @@ class UploadController extends Controller
     public function destroy($id)
     {
         $upload = Upload::findOrFail($id);
+        $user = auth()->user();
+
+        // Check of gebruiker mag verwijderen (uploader of admin)
+        if ($upload->user_id !== $user->id && $user->role !== 'admin') {
+            \Log::warning('Ongeautoriseerde poging tot verwijderen upload', [
+                'upload_id' => $id,
+                'user_id' => $user->id
+            ]);
+            
+            abort(403, 'Je hebt geen rechten om dit document te verwijderen.');
+        }
+
+        // Verwijder fysieke bestand
+        if (Storage::disk('private')->exists($upload->path)) {
+            Storage::disk('private')->delete($upload->path);
+        }
+
         $upload->delete();
 
-        return redirect()->back()->with('success', 'Bestand succesvol verwijderd.');
+        \Log::info('Upload verwijderd', [
+            'upload_id' => $id,
+            'user_id' => $user->id
+        ]);
+
+        return redirect()->back()->with('success', 'Document succesvol verwijderd.');
     }
 }

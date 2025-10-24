@@ -260,10 +260,30 @@
                 <input type="text" name="naam" id="modal-naam" placeholder="Document naam..."
                        class="block w-full text-sm border border-gray-300 rounded-lg" style="padding:0.625rem 0.75rem;">
             </div>
-            <div style="margin-bottom:1.5rem;">
+            <div style="margin-bottom:1rem;">
                 <label for="modal-beschrijving" class="block text-sm font-medium text-gray-700 mb-2">Beschrijving (optioneel)</label>
                 <input type="text" name="beschrijving" id="modal-beschrijving" placeholder="Korte beschrijving..."
                        class="block w-full text-sm border border-gray-300 rounded-lg" style="padding:0.625rem 0.75rem;">
+            </div>
+            
+            {{-- TOEGANGSRECHTEN --}}
+            <div style="margin-bottom:1.5rem;">
+                <label for="modal-toegang" class="block text-sm font-medium text-gray-700 mb-2">
+                    Toegang <span style="color:#ef4444;">*</span>
+                </label>
+                <select name="toegang" id="modal-toegang" required
+                        class="block w-full text-sm border border-gray-300 rounded-lg" style="padding:0.625rem 0.75rem;">
+                    <option value="alle_medewerkers" selected>🏢 Alle medewerkers</option>
+                    <option value="alleen_mezelf">🔒 Alleen mezelf</option>
+                    <option value="klant">👤 Klant + mezelf</option>
+                    <option value="iedereen">🌍 Iedereen</option>
+                </select>
+                <div style="margin-top:0.5rem;padding:0.625rem;background:#eff6ff;border-radius:6px;font-size:0.75rem;color:#1e40af;">
+                    <p style="margin:0 0 0.25rem 0;"><strong>🔒 Alleen mezelf:</strong> Alleen jij hebt toegang</p>
+                    <p style="margin:0 0 0.25rem 0;"><strong>👤 Klant + mezelf:</strong> De gekoppelde klant en jij</p>
+                    <p style="margin:0 0 0.25rem 0;"><strong>🏢 Alle medewerkers:</strong> Alle medewerkers en admins</p>
+                    <p style="margin:0;"><strong>🌍 Iedereen:</strong> Publiek toegankelijk</p>
+                </div>
             </div>
             <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
                 <button type="button" onclick="closeUploadModal()" style="background:#e5e7eb;color:#374151;padding:0.625rem 1.5rem;border-radius:6px;font-weight:600;border:none;cursor:pointer;">
