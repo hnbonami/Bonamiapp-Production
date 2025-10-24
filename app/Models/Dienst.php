@@ -16,6 +16,7 @@ class Dienst extends Model
         'naam',
         'beschrijving',
         'standaard_prijs',
+        'commissie_percentage',
         'btw_percentage',
         'is_actief',
         'sorteer_volgorde',

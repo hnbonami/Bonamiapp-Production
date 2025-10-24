@@ -30,8 +30,10 @@ class PrestatieController extends Controller
             ->orderBy('datum_prestatie', 'desc')
             ->get();
 
-        // Haal beschikbare diensten op voor deze coach (wherePivot zit al in relatie)
-        $beschikbareDiensten = $user->diensten()->get();
+        // Haal beschikbare diensten op voor deze coach
+        $beschikbareDiensten = Dienst::where('is_actief', true)
+            ->orderBy('naam')
+            ->get();
 
         // Haal alle klanten op voor dropdown (alleen voornaam + naam)
         $klanten = \App\Models\Klant::select('id', 'voornaam', 'naam')
@@ -96,14 +98,32 @@ class PrestatieController extends Controller
         // Bereken commissie bedrag
         $commissieBedrag = ($validated['prijs'] * $commissiePercentage) / 100;
         
+        // BTW berekening (standaard 21%, later uit te breiden per dienst)
+        $btwPercentage = 21; // TODO: Later toevoegen aan diensten tabel (incl/excl BTW optie)
+        $btwBedrag = ($validated['prijs'] * $btwPercentage) / 100;
+        $nettoPrijs = $validated['prijs'] - $btwBedrag;
+        
+        // Haal klant naam op als klant_id is opgegeven
+        $klantNaam = null;
+        if (!empty($validated['klant_id'])) {
+            $klant = \App\Models\Klant::find($validated['klant_id']);
+            if ($klant) {
+                $klantNaam = trim($klant->voornaam . ' ' . $klant->naam);
+            }
+        }
+        
         // Maak prestatie aan
         Prestatie::create([
             'user_id' => auth()->id(),
             'dienst_id' => $validated['dienst_id'],
             'klant_id' => $validated['klant_id'] ?? null,
+            'klant_naam' => $klantNaam ?? 'Geen klant',
             'datum_prestatie' => $validated['datum_prestatie'],
             'einddatum_prestatie' => $validated['einddatum_prestatie'] ?? null,
-            'prijs' => $validated['prijs'],
+            'bruto_prijs' => $validated['prijs'],
+            'btw_percentage' => $btwPercentage,
+            'btw_bedrag' => $btwBedrag,
+            'netto_prijs' => $nettoPrijs,
             'commissie_percentage' => $commissiePercentage,
             'commissie_bedrag' => $commissieBedrag,
             'opmerkingen' => $validated['opmerkingen'],

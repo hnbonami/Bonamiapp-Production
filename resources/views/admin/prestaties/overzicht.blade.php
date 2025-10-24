@@ -104,12 +104,12 @@
                                 <div class="flex items-center">
                                     <div class="flex-shrink-0 h-10 w-10">
                                         <div class="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                            <span class="text-blue-600 font-semibold">{{ substr($stat->user->name, 0, 1) }}</span>
+                                            <span class="text-blue-600 font-semibold">{{ substr($stat->name, 0, 1) }}</span>
                                         </div>
                                     </div>
                                     <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ $stat->user->name }}</div>
-                                        <div class="text-sm text-gray-500">{{ $stat->user->email }}</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $stat->name }}</div>
+                                        <div class="text-sm text-gray-500">{{ $stat->email }}</div>
                                     </div>
                                 </div>
                             </td>
@@ -123,7 +123,7 @@
                                 <span class="text-sm text-gray-900">€{{ number_format($stat->gemiddelde_commissie, 2, ',', '.') }}</span>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <a href="{{ route('admin.prestaties.coach.detail', $stat->user->id) }}?jaar={{ $huidigJaar }}&kwartaal={{ $huidigKwartaal }}" 
+                                <a href="{{ route('admin.prestaties.coach.detail', $stat->id) }}?jaar={{ $huidigJaar }}&kwartaal={{ $huidigKwartaal }}" 
                                    class="text-blue-600 hover:text-blue-900">
                                     Details →
                                 </a>

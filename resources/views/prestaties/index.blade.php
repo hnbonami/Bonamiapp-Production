@@ -179,7 +179,7 @@
                                         
                                         <div class="text-right ml-3">
                                             <div class="text-base font-bold text-gray-900">
-                                                €{{ number_format($prestatie->prijs, 2, ',', '.') }}
+                                                €{{ number_format($prestatie->bruto_prijs, 2, ',', '.') }}
                                             </div>
                                             <div class="text-xs text-green-600">
                                                 +€{{ number_format($prestatie->commissie_bedrag, 2, ',', '.') }}
@@ -213,15 +213,17 @@
 console.log('🔍 Jaar filter:', document.getElementById('jaar-filter'));
 console.log('🔍 Kwartaal filter:', document.getElementById('kwartaal-filter'));
 
-// Klant zoekfunctie - WERKEND!
-document.getElementById('klant-zoek').addEventListener('input', function() {
+// Klant zoekfunctie
+const klantZoek = document.getElementById('klant-zoek');
+const klantSelect = document.getElementById('klant-select');
+
+// Filter klanten bij typen in zoekveld
+klantZoek.addEventListener('input', function() {
     const zoekterm = this.value.toLowerCase();
-    const select = document.getElementById('klant-select');
-    const options = select.querySelectorAll('option');
+    const options = klantSelect.querySelectorAll('option');
     
     options.forEach(option => {
         if (option.value === '') {
-            // Altijd "Geen klant" tonen
             option.style.display = '';
             return;
         }
@@ -234,12 +236,33 @@ document.getElementById('klant-zoek').addEventListener('input', function() {
         }
     });
     
-    // Reset selectie naar eerste zichtbare optie
+    // Auto-selecteer eerste zichtbare optie bij typen
     if (zoekterm) {
         const eersteZichtbaar = Array.from(options).find(opt => opt.style.display !== 'none' && opt.value !== '');
         if (eersteZichtbaar) {
-            select.value = eersteZichtbaar.value;
+            klantSelect.value = eersteZichtbaar.value;
         }
+    }
+});
+
+// Wanneer klant geselecteerd wordt in dropdown, toon naam in zoekveld
+klantSelect.addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    
+    if (this.value && this.value !== '') {
+        // Toon geselecteerde klant naam in zoekveld
+        klantZoek.value = selectedOption.textContent.trim();
+    } else {
+        // Leeg zoekveld als "Geen klant" geselecteerd
+        klantZoek.value = '';
+    }
+});
+
+// Ook bij click op een optie
+klantSelect.addEventListener('click', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (this.value && this.value !== '') {
+        klantZoek.value = selectedOption.textContent.trim();
     }
 });
 
@@ -249,6 +272,12 @@ document.getElementById('dienst-select').addEventListener('change', function() {
     const prijs = parseFloat(selectedOption.dataset.prijs || 0);
     const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
     const commissieBedrag = (prijs * commissiePercentage) / 100;
+    
+    console.log('🔍 Dienst geselecteerd:', {
+        prijs: prijs,
+        commissiePercentage: commissiePercentage,
+        commissieBedrag: commissieBedrag
+    });
     
     document.getElementById('prijs-input').value = prijs.toFixed(2);
     document.getElementById('commissie-preview').textContent = 

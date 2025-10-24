@@ -105,12 +105,20 @@
                 <h3 class="text-xl font-semibold text-gray-800 ml-3">Prestaties & Commissies</h3>
             </div>
             <p class="text-gray-600 mb-4">Coach prestaties beheren. Diensten configureren, commissies instellen en kwartaaloverzichten bekijken.</p>
-            <a href="{{ route('admin.prestaties.diensten.index') }}" class="inline-flex items-center font-medium" style="color: #111;">
-                Prestaties Beheer Openen
-                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-            </a>
+            <div class="flex gap-4">
+                <a href="{{ route('admin.prestaties.diensten.index') }}" class="inline-flex items-center font-medium" style="color: #111;">
+                    Diensten
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+                <a href="{{ route('admin.prestaties.overzicht') }}" class="inline-flex items-center font-medium" style="color: #111;">
+                    Overzicht
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
         </div>
         @endhasFeature
 

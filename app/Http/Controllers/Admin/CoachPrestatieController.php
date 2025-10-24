@@ -79,34 +79,49 @@ class CoachPrestatieController extends Controller
      */
     public function overzicht(Request $request)
     {
-        $jaar = $request->get('jaar', now()->year);
-        $kwartaal = $request->get('kwartaal');
-
-        $query = Prestatie::with(['user', 'dienst']);
-
-        if ($jaar) {
-            $query->where('jaar', $jaar);
-        }
-
-        if ($kwartaal) {
-            $query->where('kwartaal', $kwartaal);
-        }
-
-        $prestaties = $query->orderBy('datum_prestatie', 'desc')->get();
-
-        // Groepeer per coach
-        $prestatiesPerCoach = $prestaties->groupBy('user_id')->map(function($groep) {
-            return [
-                'coach' => $groep->first()->user,
-                'totaal_bruto' => $groep->sum('bruto_prijs'),
-                'totaal_btw' => $groep->sum('btw_bedrag'),
-                'totaal_netto' => $groep->sum('netto_prijs'),
-                'totaal_commissie' => $groep->sum('commissie_bedrag'),
-                'aantal' => $groep->count(),
-            ];
+        // Haal jaar en kwartaal uit request, of gebruik huidige waarden
+        $huidigJaar = $request->input('jaar', now()->year);
+        $huidigKwartaal = $request->input('kwartaal', $this->getHuidigKwartaal());
+        
+        // Bereken start en eind datum voor het kwartaal
+        [$startDatum, $eindDatum] = $this->getKwartaalDatums($huidigJaar, $huidigKwartaal);
+        
+        // Haal stats per medewerker op - met raw aggregaties die compatibel zijn met collectie
+        $statsData = \DB::table('users')
+            ->join('prestaties', 'users.id', '=', 'prestaties.user_id')
+            ->whereBetween('prestaties.datum_prestatie', [$startDatum, $eindDatum])
+            ->whereNull('prestaties.deleted_at')
+            ->groupBy('users.id', 'users.name', 'users.email')
+            ->select(
+                'users.id',
+                'users.name',
+                'users.email',
+                \DB::raw('COUNT(prestaties.id) as aantal_prestaties'),
+                \DB::raw('SUM(prestaties.commissie_bedrag) as totale_commissie'),
+                \DB::raw('AVG(prestaties.commissie_bedrag) as gemiddelde_commissie')
+            )
+            ->get();
+        
+        // Map naar User models met stats eigenschappen
+        $medewerkerStats = $statsData->map(function ($stat) {
+            $user = User::find($stat->id);
+            $user->aantal_prestaties = (int) $stat->aantal_prestaties;
+            $user->totale_commissie = (float) $stat->totale_commissie;
+            $user->gemiddelde_commissie = (float) $stat->gemiddelde_commissie;
+            return $user;
         });
-
-        return view('admin.prestaties.overzicht', compact('prestatiesPerCoach', 'jaar', 'kwartaal'));
+        
+        // Bereken totalen
+        $totaalPrestaties = Prestatie::whereBetween('datum_prestatie', [$startDatum, $eindDatum])->count();
+        $totaleCommissie = Prestatie::whereBetween('datum_prestatie', [$startDatum, $eindDatum])->sum('commissie_bedrag');
+        
+        return view('admin.prestaties.overzicht', compact(
+            'medewerkerStats',
+            'totaalPrestaties',
+            'totaleCommissie',
+            'huidigJaar',
+            'huidigKwartaal'
+        ));
     }
 
     /**
@@ -124,25 +139,25 @@ class CoachPrestatieController extends Controller
         // Haal stats per medewerker op
         $medewerkerStats = User::select('users.id', 'users.name', 'users.email')
             ->join('prestaties', 'users.id', '=', 'prestaties.user_id')
-            ->whereBetween('prestaties.startdatum', [$startDatum, $eindDatum])
+            ->whereBetween('prestaties.datum_prestatie', [$startDatum, $eindDatum])
             ->groupBy('users.id', 'users.name', 'users.email')
             ->selectRaw('
                 COUNT(prestaties.id) as aantal_prestaties,
-                SUM(prestaties.commissie) as totale_commissie,
-                AVG(prestaties.commissie) as gemiddelde_commissie
+                SUM(prestaties.commissie_bedrag) as totale_commissie,
+                AVG(prestaties.commissie_bedrag) as gemiddelde_commissie
             ')
             ->get();
         
         // Bereken totalen
-        $totaalPrestaties = Prestatie::whereBetween('startdatum', [$startDatum, $eindDatum])->count();
-        $totaleCommissie = Prestatie::whereBetween('startdatum', [$startDatum, $eindDatum])->sum('commissie');
+        $totaalPrestaties = Prestatie::whereBetween('datum_prestatie', [$startDatum, $eindDatum])->count();
+        $totaleCommissie = Prestatie::whereBetween('datum_prestatie', [$startDatum, $eindDatum])->sum('commissie_bedrag');
         
         return view('admin.prestaties.overzicht', compact(
             'medewerkerStats',
-            'huidigJaar',
-            'huidigKwartaal',
             'totaalPrestaties',
-            'totaleCommissie'
+            'totaleCommissie',
+            'huidigJaar',
+            'huidigKwartaal'
         ));
     }
     
@@ -160,14 +175,14 @@ class CoachPrestatieController extends Controller
         
         // Haal prestaties op voor deze coach in deze periode
         $prestaties = Prestatie::where('user_id', $user->id)
-            ->whereBetween('startdatum', [$startDatum, $eindDatum])
+            ->whereBetween('datum_prestatie', [$startDatum, $eindDatum])
             ->with(['dienst', 'klant'])
-            ->orderBy('startdatum', 'desc')
+            ->orderBy('datum_prestatie', 'desc')
             ->get();
         
         // Bereken stats
         $aantalPrestaties = $prestaties->count();
-        $totaleCommissie = $prestaties->sum('commissie');
+        $totaleCommissie = $prestaties->sum('commissie_bedrag');
         $gemiddeldeCommissie = $aantalPrestaties > 0 ? $totaleCommissie / $aantalPrestaties : 0;
         
         return view('admin.prestaties.coach-detail', compact(
