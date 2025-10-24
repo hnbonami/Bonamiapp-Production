@@ -24,14 +24,21 @@ class DienstenController extends Controller
      */
     public function store(Request $request)
     {
+        // Log alle input voor debugging
+        \Log::info('Store dienst request', [
+            'all_input' => $request->all(),
+            'has_actief' => $request->has('actief'),
+            'actief_value' => $request->input('actief'),
+        ]);
+        
+        // Valideer input
         $validated = $request->validate([
             'naam' => 'required|string|max:255',
-            'omschrijving' => 'nullable|string',
+            'beschrijving' => 'nullable|string',  // CHANGED from omschrijving
             'standaard_prijs' => 'required|numeric|min:0',
             'btw_percentage' => 'required|numeric|in:0,6,12,21',
-            'prijs_type' => 'required|in:incl,excl',
+            'prijs_type' => 'nullable|in:incl,excl',
             'commissie_percentage' => 'required|numeric|min:0|max:100',
-            'is_actief' => 'boolean',
         ]);
 
         // Bereken automatisch incl/excl prijzen op basis van prijs_type
@@ -42,13 +49,16 @@ class DienstenController extends Controller
             $validated['prijs_excl_btw'] = $validated['standaard_prijs'];
             $validated['prijs_incl_btw'] = $validated['standaard_prijs'] * (1 + ($validated['btw_percentage'] / 100));
         }
-
-        // Verwijder prijs_type uit validated data (niet in database)
-        unset($validated['prijs_type']);
         
-        // Zorg dat is_actief een boolean is
-        $validated['is_actief'] = $request->has('is_actief') ? true : false;
-
+        // Actief status - BELANGRIJKE FIX: checkbox is aanwezig = true, niet aanwezig = false
+        $validated['is_actief'] = $request->has('actief') && $request->input('actief') == '1';
+        
+        \Log::info('Store dienst validated data', [
+            'validated' => $validated,
+            'is_actief_final' => $validated['is_actief']
+        ]);
+        
+        // Maak dienst aan
         $dienst = Dienst::create($validated);
 
         Log::info('Dienst aangemaakt', [
@@ -57,7 +67,7 @@ class DienstenController extends Controller
             'user_id' => auth()->id(),
         ]);
 
-        return redirect()->route('admin.diensten.index')
+        return redirect()->route('admin.prestaties.diensten.index')
             ->with('success', 'Dienst succesvol aangemaakt!');
     }
 
@@ -66,40 +76,53 @@ class DienstenController extends Controller
      */
     public function update(Request $request, Dienst $dienst)
     {
+        // Log alle input voor debugging
+        \Log::info('Update dienst request', [
+            'dienst_id' => $dienst->id,
+            'all_input' => $request->all(),
+            'has_actief' => $request->has('actief'),
+            'actief_value' => $request->input('actief'),
+        ]);
+        
+        // Valideer input
         $validated = $request->validate([
             'naam' => 'required|string|max:255',
-            'omschrijving' => 'nullable|string',
+            'beschrijving' => 'nullable|string',
             'standaard_prijs' => 'required|numeric|min:0',
             'btw_percentage' => 'required|numeric|in:0,6,12,21',
-            'prijs_type' => 'required|in:incl,excl',
+            'prijs_type' => 'nullable|in:incl,excl',
             'commissie_percentage' => 'required|numeric|min:0|max:100',
-            'is_actief' => 'boolean',
         ]);
-
-        // Bereken automatisch incl/excl prijzen op basis van prijs_type
-        if ($validated['prijs_type'] === 'incl') {
+        
+        // Bereken BTW prijzen
+        $btwPercentage = $validated['btw_percentage'];
+        $prijsType = $request->input('prijs_type', 'incl');
+        
+        if ($prijsType === 'incl') {
             $validated['prijs_incl_btw'] = $validated['standaard_prijs'];
-            $validated['prijs_excl_btw'] = $validated['standaard_prijs'] / (1 + ($validated['btw_percentage'] / 100));
+            $validated['prijs_excl_btw'] = $validated['standaard_prijs'] / (1 + ($btwPercentage / 100));
         } else {
             $validated['prijs_excl_btw'] = $validated['standaard_prijs'];
-            $validated['prijs_incl_btw'] = $validated['standaard_prijs'] * (1 + ($validated['btw_percentage'] / 100));
+            $validated['prijs_incl_btw'] = $validated['standaard_prijs'] * (1 + ($btwPercentage / 100));
         }
-
-        // Verwijder prijs_type uit validated data
-        unset($validated['prijs_type']);
         
-        // Zorg dat is_actief een boolean is
-        $validated['is_actief'] = $request->has('is_actief') ? true : false;
-
-        $dienst->update($validated);
-
-        Log::info('Dienst bijgewerkt', [
-            'dienst_id' => $dienst->id,
-            'naam' => $dienst->naam,
-            'user_id' => auth()->id(),
+        // Actief status - BELANGRIJKE FIX: checkbox is aanwezig = true, niet aanwezig = false
+        $validated['is_actief'] = $request->has('actief') && $request->input('actief') == '1';
+        
+        \Log::info('Update dienst validated data', [
+            'validated' => $validated,
+            'is_actief_final' => $validated['is_actief']
         ]);
-
-        return redirect()->route('admin.diensten.index')
+        
+        // Update dienst
+        $dienst->update($validated);
+        
+        \Log::info('Dienst updated', [
+            'dienst_id' => $dienst->id,
+            'is_actief_na_update' => $dienst->fresh()->is_actief
+        ]);
+        
+        return redirect()->route('admin.prestaties.diensten.index')
             ->with('success', 'Dienst succesvol bijgewerkt!');
     }
 
@@ -116,7 +139,7 @@ class DienstenController extends Controller
             'user_id' => auth()->id(),
         ]);
 
-        return redirect()->route('admin.diensten.index')
+        return redirect()->route('admin.prestaties.diensten.index')
             ->with('success', 'Dienst succesvol verwijderd!');
     }
 }

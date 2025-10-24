@@ -69,7 +69,7 @@
                                     <button onclick="editDienst(this)" 
                                             data-id="{{ $dienst->id }}"
                                             data-naam="{{ $dienst->naam }}"
-                                            data-omschrijving="{{ $dienst->omschrijving ?? '' }}"
+                                            data-beschrijving="{{ $dienst->beschrijving ?? '' }}"
                                             data-prijs="{{ $dienst->standaard_prijs }}"
                                             data-btw="{{ $dienst->btw_percentage ?? 21 }}"
                                             data-commissie="{{ $dienst->commissie_percentage }}"
@@ -101,7 +101,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-12 text-center">
+                            <td colspan="8" class="px-6 py-12 text-center">
                                 <div class="flex flex-col items-center justify-center">
                                     <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
@@ -125,7 +125,7 @@
     <div class="relative top-20 mx-auto border w-full max-w-md shadow-lg rounded-md bg-white" style="padding:2rem;">
         <div class="flex justify-between items-center pb-3 border-b">
             <h3 class="text-lg font-semibold text-gray-900">Dienst Bewerken</h3>
-            <button onclick="closeEditDienstModal()" class="text-gray-400 hover:text-gray-500">
+            <button type="button" onclick="closeEditDienstModal()" class="text-gray-400 hover:text-gray-500">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
@@ -146,8 +146,8 @@
             </div>
             
             <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Omschrijving</label>
-                <textarea name="omschrijving" id="edit-omschrijving" rows="2"
+                <label class="block text-sm font-medium text-gray-700 mb-2">Beschrijving</label>
+                <textarea name="beschrijving" id="edit-beschrijving" rows="2"
                           placeholder="Korte beschrijving van de dienst..."
                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
             </div>
@@ -179,7 +179,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Prijs (€) <span class="text-red-500">*</span>
                 </label>
-                <input type="number" name="standaard_prijs" id="edit-prijs" step="0.01" required 
+                <input type="number" name="standaard_prijs" id="edit-standaard-prijs" step="0.01" required 
                        placeholder="0.00"
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
@@ -188,7 +188,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                     Commissie (%) <span class="text-red-500">*</span>
                 </label>
-                <input type="number" name="commissie_percentage" id="edit-commissie_percentage" step="0.01" required 
+                <input type="number" name="commissie_percentage" id="edit-commissie-percentage" step="0.01" required 
                        placeholder="0.00"
                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
@@ -241,7 +241,7 @@
             
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Omschrijving</label>
-                <textarea name="omschrijving" id="omschrijving" rows="2"
+                <textarea name="beschrijving" id="omschrijving" rows="2"
                           placeholder="Korte beschrijving van de dienst..."
                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
             </div>
@@ -323,45 +323,83 @@ function closeDienstModal() {
 }
 
 // Edit dienst modal
+// Edit dienst modal - VOLLEDIG HERSCHREVEN
 function editDienst(button) {
+    console.log('🔧 Edit dienst clicked', button.dataset);
+    
     const modal = document.getElementById('editDienstModal');
     const form = document.getElementById('editDienstForm');
     
+    // Stop alle event propagation
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
     // Haal data van button
     const id = button.dataset.id;
-    const naam = button.dataset.naam;
-    const omschrijving = button.dataset.omschrijving;
-    const prijs = button.dataset.prijs;
-    const btw = button.dataset.btw || '21';
-    const commissie = button.dataset.commissie;
+    const naam = button.dataset.naam || '';
+    const beschrijving = button.dataset.beschrijving || '';
+    const prijs = button.dataset.prijs || '0';
+    const btwRaw = button.dataset.btw || '21';
+    const commissie = button.dataset.commissie || '0';
     const actief = button.dataset.actief === '1';
+    
+    // FIX: BTW kan "6.00" zijn maar select wil "6" - verwijder decimalen!
+    const btw = Math.floor(parseFloat(btwRaw)).toString();
+    
+    console.log('🔧 Data:', {id, naam, beschrijving, prijs, btwRaw, btw, commissie, actief});
     
     // Stel form action in
     form.action = `/admin/prestaties/diensten/${id}`;
     
-    // Vul velden
+    // Vul velden ZONDER reset (reset wist alles!)
     document.getElementById('edit-naam').value = naam;
-    document.getElementById('edit-omschrijving').value = omschrijving;
-    document.getElementById('edit-prijs').value = prijs;
-    document.getElementById('edit-btw-percentage').value = btw;
-    document.getElementById('edit-commissie_percentage').value = commissie;
+    document.getElementById('edit-beschrijving').value = beschrijving;
+    document.getElementById('edit-standaard-prijs').value = prijs;
+    document.getElementById('edit-commissie-percentage').value = commissie;
     document.getElementById('edit-actief').checked = actief;
+    
+    // BTW DIRECT instellen met gecorrigeerde waarde
+    const btwSelect = document.getElementById('edit-btw-percentage');
+    btwSelect.value = btw;
+    
+    // Verifieer dat BTW correct is ingesteld
+    console.log('🔧 BTW ingesteld:', {
+        'raw': btwRaw,
+        'gecorrigeerd': btw,
+        'actual': btwSelect.value,
+        'opties': Array.from(btwSelect.options).map(o => o.value),
+        'MATCH': btwSelect.value === btw ? '✅' : '❌'
+    });
     
     // Toon modal
     modal.classList.remove('hidden');
+    console.log('🔧 Modal open, action:', form.action);
 }
 
 function closeEditDienstModal() {
-    document.getElementById('editDienstModal').classList.add('hidden');
+    const modal = document.getElementById('editDienstModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
 }
 
-// Sluit modals bij klik buiten
-document.getElementById('dienstModal')?.addEventListener('click', function(e) {
-    if (e.target === this) closeDienstModal();
-});
-
-document.getElementById('editDienstModal')?.addEventListener('click', function(e) {
-    if (e.target === this) closeEditDienstModal();
+// Sluit modals bij klik buiten (maar NIET op de modal content zelf)
+// SIMPELE versie zonder conflicts
+window.addEventListener('click', function(e) {
+    const editModal = document.getElementById('editDienstModal');
+    const createModal = document.getElementById('dienstModal');
+    
+    // Sluit edit modal als je OP de backdrop klikt (niet erin)
+    if (e.target === editModal) {
+        closeEditDienstModal();
+    }
+    
+    // Sluit create modal als je OP de backdrop klikt (niet erin)
+    if (e.target === createModal) {
+        closeDienstModal();
+    }
 });
 
 // Sluit modals met ESC
