@@ -197,6 +197,44 @@ class CoachPrestatieController extends Controller
     }
     
     /**
+     * Toggle factuur naar klant status via AJAX
+     */
+    public function toggleFactuur(Request $request, Prestatie $prestatie)
+    {
+        try {
+            $validated = $request->validate([
+                'factuur_naar_klant' => 'required|boolean'
+            ]);
+            
+            $prestatie->update([
+                'factuur_naar_klant' => $validated['factuur_naar_klant']
+            ]);
+            
+            \Log::info('Factuur status updated', [
+                'prestatie_id' => $prestatie->id,
+                'factuur_naar_klant' => $validated['factuur_naar_klant']
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Factuur status bijgewerkt',
+                'factuur_naar_klant' => $prestatie->factuur_naar_klant
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Toggle factuur failed', [
+                'error' => $e->getMessage(),
+                'prestatie_id' => $prestatie->id
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Er ging iets mis: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Helper: Bepaal huidig kwartaal
      */
     private function getHuidigKwartaal()

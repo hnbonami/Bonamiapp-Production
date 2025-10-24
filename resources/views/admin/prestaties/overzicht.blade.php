@@ -390,7 +390,10 @@ sorteerSelect.addEventListener('change', filterEnSorteerPrestaties);
 function toggleFactuurNaarKlant(prestatieId, isChecked) {
     console.log('Toggle factuur naar klant:', prestatieId, isChecked);
     
-    fetch(`/admin/prestaties/${prestatieId}/toggle-factuur`, {
+    // Gebruik directe URL constructie omdat de route nog niet bestaat
+    const url = `/admin/prestaties/${prestatieId}/toggle-factuur`;
+    
+    fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

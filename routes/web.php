@@ -1349,7 +1349,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('/', [App\Http\Controllers\PrestatieController::class, 'store'])->name('store');
         Route::put('/{prestatie}', [App\Http\Controllers\PrestatieController::class, 'update'])->name('update');
         Route::delete('/{prestatie}', [App\Http\Controllers\PrestatieController::class, 'destroy'])->name('destroy');
-        Route::post('/{prestatie}/toggle-uitgevoerd', [App\Http\Controllers\PrestatieController::class, 'toggleUitgevoerd'])->name('toggleUitgevoerd');
     });
     
     // Admin Prestaties Routes (admin kan alles beheren)
@@ -1357,6 +1356,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Prestaties overzicht - MOET VOOR diensten routes staan!
         Route::get('/overzicht', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'overzicht'])->name('overzicht');
         Route::get('/overzicht/{user}', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'coachDetail'])->name('coach.detail');
+        
+        // Toggle factuur naar klant status
+        Route::post('/{prestatie}/toggle-factuur', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'toggleFactuur'])->name('toggle-factuur');
         
         // Diensten beheer
         Route::prefix('/diensten')->name('diensten.')->group(function () {
@@ -1380,7 +1382,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{medewerker}', [\App\Http\Controllers\Admin\MedewerkerCommissieController::class, 'update'])->name('update');
         Route::put('/{medewerker}/dienst/{dienst}', [\App\Http\Controllers\Admin\MedewerkerCommissieController::class, 'updateDienstCommissie'])->name('dienst.update');
     });
-    
-    // Toggle factuur naar klant
-    Route::post('/prestaties/{prestatie}/toggle-factuur', [App\Http\Controllers\Admin\PrestatiesController::class, 'toggleFactuurNaarKlant'])->name('admin.prestaties.toggle-factuur');
 });
