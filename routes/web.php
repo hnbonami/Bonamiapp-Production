@@ -181,7 +181,7 @@ Route::middleware('auth')->group(function () {
     // Eenvoudige print-versie (browser native print/PDF)
     Route::get('bikefit/{bikefit}/print', [\App\Http\Controllers\PdfController::class, 'printOnly'])->name('bikefit.report.print');
     // Alternatieve print route via BikefitResultsController
-    Route::get('bikefit/{bikefit}/print-direct', [\AppHttp\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
+    Route::get('bikefit/{bikefit}/print-direct', [\App\Http\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
     // Direct PDF download route voor bikefit rapport
     Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
     // Bikefit berekende resultaten en verslag generatie
@@ -591,7 +591,7 @@ Route::get('/bikefit/template', [\App\Http\Controllers\BikefitController::class,
 
 // Export routes
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'exportKlanten'])->name('klanten.export');
-Route::get('/export/bikefits', [\AppHttp\Controllers\BikefitController::class, 'exportBikefits'])->name('bikefits.export');
+Route::get('/export/bikefits', [\App\Http\Controllers\BikefitController::class, 'exportBikefits'])->name('bikefits.export');
 
 // Database admin routes - WERKENDE DATABASE IMPORT/EXPORT SYSTEEM
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
@@ -616,8 +616,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 Route::middleware('auth')->group(function () {
     // Import routes moeten VOOR resource routes staan
     Route::get('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
-    Route::post('/klanten/import', [\AppHttp\Controllers\KlantenController::class, 'import'])->name('klanten.import');
-    Route::get('/klanten/template', [\AppHttp\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
+    Route::post('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+    Route::get('/klanten/template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
     
     // Resource routes
     Route::resource('klanten', \App\Http\Controllers\KlantenController::class);
@@ -1300,16 +1300,16 @@ Route::post('klanten/{klant}/send-invitation', [\App\Http\Controllers\KlantenCon
 Route::post('medewerkers/{medewerker}/send-invitation', [\App\Http\Controllers\MedewerkerController::class, 'sendInvitation'])->name('medewerkers.send-invitation');
 
 // Klanten Import/Export routes
-Route::get('/import/klanten', [\AppHttp\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
-Route::post('/import/klanten', [\AppHttp\Controllers\KlantenController::class, 'import'])->name('klanten.import');
-Route::get('/download/klanten-template', [\AppHttp\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
-Route::get('/export/klanten', [\AppHttp\Controllers\KlantenController::class, 'export'])->name('klanten.export');
+Route::get('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
+Route::post('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
+Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');
 
 // Bikefit Import/Export routes  
-Route::get('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
-Route::post('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
-Route::get('/import/bikefits/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
-Route::get('/bikefit/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
+Route::get('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
+Route::post('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
+Route::get('/import/bikefits/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
+Route::get('/bikefit/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
 
 // Inspanningstesten Import/Export routes
 Route::get('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'showImport'])->name('inspanningstesten.import.form');
