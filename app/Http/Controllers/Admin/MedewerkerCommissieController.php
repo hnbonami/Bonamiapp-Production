@@ -15,15 +15,17 @@ class MedewerkerCommissieController extends Controller
      */
     public function index()
     {
-        // Haal alleen gebruikers met medewerker, admin of super_admin rol
+        // 🔒 ORGANISATIE FILTER: Alleen medewerkers van eigen organisatie
         $medewerkers = User::with(['commissieFactoren' => function($query) {
             $query->algemeen()->actief();
         }])
+        ->where('organisatie_id', auth()->user()->organisatie_id) // ORGANISATIE FILTER
         ->whereIn('role', ['medewerker', 'admin', 'super_admin'])
         ->orderBy('name')
         ->get();
 
-        \Log::info('💼 Medewerker commissies overzicht geladen', [
+        \Log::info('💼 Medewerker commissies overzicht geladen MET organisatie filter', [
+            'organisatie_id' => auth()->user()->organisatie_id,
             'aantal_medewerkers' => $medewerkers->count(),
             'rollen' => $medewerkers->pluck('role', 'name')->toArray()
         ]);
@@ -36,6 +38,11 @@ class MedewerkerCommissieController extends Controller
      */
     public function edit(User $medewerker)
     {
+        // 🔒 BEVEILIGING: Check of medewerker bij zelfde organisatie hoort
+        if ($medewerker->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze medewerker');
+        }
+
         // Haal algemene factoren op (of maak nieuwe aan)
         $algemeneFactoren = $medewerker->commissieFactoren()
             ->algemeen()
@@ -44,6 +51,7 @@ class MedewerkerCommissieController extends Controller
 
         // Haal alle diensten op met eventuele custom commissies
         $diensten = Dienst::where('is_actief', true)
+            ->where('organisatie_id', auth()->user()->organisatie_id) // ORGANISATIE FILTER
             ->orderBy('naam')
             ->get()
             ->map(function($dienst) use ($medewerker) {

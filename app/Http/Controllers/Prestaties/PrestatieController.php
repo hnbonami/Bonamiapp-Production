@@ -2,19 +2,39 @@ public function index(Request $request)
     {
         // ...bestaande code...
         
+        // 🔒 KRITIEK: Organisatie filter toevoegen aan alle queries!
+        $organisatieId = auth()->user()->organisatie_id;
+
+        $prestaties = Prestatie::with(['dienst', 'klant'])
+            ->where('user_id', auth()->id())
+            ->where('organisatie_id', $organisatieId) // ORGANISATIE FILTER
+            ->whereBetween('datum_prestatie', [$kwartaalStart, $kwartaalEind])
+            ->orderBy('datum_prestatie', 'desc')
+            ->get();
+
         // Haal ALLE actieve diensten op (niet alleen toegewezen)
         $beschikbareDiensten = Dienst::where('is_actief', true)
+            ->where('organisatie_id', $organisatieId) // ORGANISATIE FILTER
             ->orderBy('naam')
             ->get();
-        
-        // Log voor debugging
-        \Log::info('💼 Beschikbare diensten voor prestaties', [
+
+        $klanten = Klant::where('organisatie_id', $organisatieId) // ORGANISATIE FILTER
+            ->select('id', 'voornaam', 'naam')
+            ->orderBy('naam')
+            ->get()
+            ->map(function($klant) {
+                return [
+                    'id' => $klant->id,
+                    'naam' => $klant->voornaam . ' ' . $klant->naam
+                ];
+            });
+
+        \Log::info('📊 Prestaties geladen MET organisatie filter', [
             'user_id' => auth()->id(),
-            'totaal_actieve_diensten' => Dienst::where('is_actief', true)->count(),
-            'getoonde_diensten' => $beschikbareDiensten->count(),
-            'dienst_namen' => $beschikbareDiensten->pluck('naam')->toArray()
+            'organisatie_id' => $organisatieId,
+            'aantal_prestaties' => $prestaties->count()
         ]);
-        
+
         // ...bestaande code...
     }
 
@@ -30,9 +50,10 @@ public function store(Request $request)
         $commissiePercentage = $user->getCommissiePercentageVoorDienst($dienst);
         $commissieBedrag = ($validated['prijs'] * $commissiePercentage) / 100;
 
-        // Maak prestatie aan met berekende commissie
+        // 🔒 KRITIEK: Organisatie ID toevoegen bij aanmaken
         $prestatie = Prestatie::create([
             'user_id' => $user->id,
+            'organisatie_id' => $user->organisatie_id, // ORGANISATIE FILTER
             'dienst_id' => $dienst->id,
             'klant_id' => $validated['klant_id'] ?? null,
             'datum_prestatie' => $validated['datum_prestatie'],
@@ -43,13 +64,10 @@ public function store(Request $request)
             'opmerkingen' => $validated['opmerkingen'] ?? null,
         ]);
 
-        \Log::info('✅ Prestatie aangemaakt met medewerker-specifieke commissie', [
+        \Log::info('✅ Prestatie aangemaakt MET organisatie filter', [
             'prestatie_id' => $prestatie->id,
-            'user_id' => $user->id,
-            'dienst_naam' => $dienst->naam,
-            'dienst_basis_commissie' => $dienst->commissie_percentage,
-            'berekende_commissie' => $commissiePercentage,
-            'commissie_bedrag' => $commissieBedrag,
+            'organisatie_id' => $user->organisatie_id,
+            'user_id' => $user->id
         ]);
 
         return redirect()->route('prestaties.index')

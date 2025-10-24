@@ -41,37 +41,40 @@
                 @csrf
                 @method('PUT')
                 
-                {{-- Diploma Factor --}}
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Diploma Bonus (%)
-                        <span class="text-gray-500 text-xs">Bonus voor behaalde diploma's</span>
-                    </label>
-                    <input type="number" name="diploma_factor" step="0.01" min="0" max="100"
-                           value="{{ old('diploma_factor', $algemeneFactoren->diploma_factor ?? 0) }}"
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
+                {{-- Bonussen in 3 kolommen naast elkaar --}}
+                <div class="grid grid-cols-3 gap-3 mb-4">
+                    {{-- Diploma Factor --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Diploma Bonus (%)
+                        </label>
+                        <input type="number" name="diploma_factor" step="0.01" min="0" max="100"
+                               value="{{ old('diploma_factor', $algemeneFactoren->diploma_factor ?? 0) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="text-xs text-gray-500">Behaalde diploma's</span>
+                    </div>
 
-                {{-- Ervaring Factor --}}
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Ervaring Bonus (%)
-                        <span class="text-gray-500 text-xs">Bonus voor jaren ervaring</span>
-                    </label>
-                    <input type="number" name="ervaring_factor" step="0.01" min="0" max="100"
-                           value="{{ old('ervaring_factor', $algemeneFactoren->ervaring_factor ?? 0) }}"
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
+                    {{-- Ervaring Factor --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Ervaring Bonus (%)
+                        </label>
+                        <input type="number" name="ervaring_factor" step="0.01" min="0" max="100"
+                               value="{{ old('ervaring_factor', $algemeneFactoren->ervaring_factor ?? 0) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="text-xs text-gray-500">Jaren ervaring</span>
+                    </div>
 
-                {{-- Anciënniteit Factor --}}
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Anciënniteit Bonus (%)
-                        <span class="text-gray-500 text-xs">Bonus voor diensttijd bij Bonami</span>
-                    </label>
-                    <input type="number" name="ancienniteit_factor" step="0.01" min="0" max="100"
-                           value="{{ old('ancienniteit_factor', $algemeneFactoren->ancienniteit_factor ?? 0) }}"
-                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    {{-- Anciënniteit Factor --}}
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Anciënniteit Bonus (%)
+                        </label>
+                        <input type="number" name="ancienniteit_factor" step="0.01" min="0" max="100"
+                               value="{{ old('ancienniteit_factor', $algemeneFactoren->ancienniteit_factor ?? 0) }}"
+                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <span class="text-xs text-gray-500">Diensttijd Bonami</span>
+                    </div>
                 </div>
 
                 {{-- Totale Bonus Preview --}}
@@ -100,10 +103,10 @@
 
         {{-- Dienst-Specifieke Commissies --}}
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-bold mb-4">Dienst-Specifieke Commissies</h2>
-            <p class="text-sm text-gray-600 mb-4">Overschrijf de standaard commissie voor specifieke diensten</p>
+            <h2 class="text-lg font-bold mb-2">Dienst-Specifieke Commissies</h2>
+            <p class="text-xs text-gray-600 mb-4">Overschrijf de standaard commissie voor specifieke diensten</p>
             
-            <div class="space-y-4">
+            <div class="space-y-3">
                 @foreach($diensten as $dienstData)
                     @php
                         $dienst = $dienstData['dienst'];
@@ -111,36 +114,35 @@
                         $berekend = $dienstData['berekende_commissie'];
                     @endphp
                     
-                    <div class="border rounded-lg p-4">
-                        <div class="flex justify-between items-start mb-2">
-                            <div class="flex-1">
-                                <div class="font-medium text-gray-900">{{ $dienst->naam }}</div>
-                                <div class="text-xs text-gray-500 mt-1">
-                                    Standaard: {{ $dienst->commissie_percentage }}%
-                                    @if($algemeneFactoren)
-                                        + {{ number_format($algemeneFactoren->totale_bonus, 1) }}% bonus
-                                    @endif
-                                    = {{ number_format($berekend, 1) }}%
-                                </div>
-                            </div>
-                        </div>
-
+                    <div class="border rounded-lg p-3">
                         <form action="{{ route('admin.medewerkers.commissies.dienst.update', [$medewerker, $dienst]) }}" 
-                              method="POST" class="mt-3">
+                              method="POST">
                             @csrf
                             @method('PUT')
                             
-                            <div class="flex gap-2">
-                                <input type="number" name="custom_commissie_percentage" step="0.01" min="0" max="100"
-                                       value="{{ $customFactor->custom_commissie_percentage ?? '' }}"
-                                       placeholder="Custom % (leeg = standaard)"
-                                       class="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <div class="grid grid-cols-2 gap-3 items-end">
+                                <div>
+                                    <div class="font-medium text-sm text-gray-900">{{ $dienst->naam }}</div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        Standaard: {{ $dienst->commissie_percentage }}%
+                                        @if($algemeneFactoren)
+                                            + {{ number_format($algemeneFactoren->totale_bonus, 1) }}% = {{ number_format($berekend, 1) }}%
+                                        @endif
+                                    </div>
+                                </div>
                                 
-                                <button type="submit" 
-                                        class="px-4 py-2 rounded font-medium text-sm"
-                                        style="background-color: #c8e1eb; color: #111;">
-                                    {{ $customFactor ? 'Update' : 'Instellen' }}
-                                </button>
+                                <div class="flex gap-2">
+                                    <input type="number" name="custom_commissie_percentage" step="0.01" min="0" max="100"
+                                           value="{{ $customFactor->custom_commissie_percentage ?? '' }}"
+                                           placeholder="Custom %"
+                                           class="flex-1 border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                    
+                                    <button type="submit" 
+                                            class="px-3 py-1 rounded font-medium text-xs whitespace-nowrap"
+                                            style="background-color: #c8e1eb; color: #111;">
+                                        {{ $customFactor ? 'Update' : 'Stel in' }}
+                                    </button>
+                                </div>
                             </div>
 
                             @if($customFactor && $customFactor->custom_commissie_percentage)
