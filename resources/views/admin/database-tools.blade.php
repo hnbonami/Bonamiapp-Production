@@ -6,6 +6,7 @@
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
             <div class="p-6 text-gray-900">
                 <h1 class="text-3xl font-bold text-gray-900 mb-6">📊 Database Tools</h1>
+                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Data Importeren</h2>
                 <p class="text-gray-600 mb-8">Upload Excel bestanden om grote hoeveelheden klanten en bikefits in één keer toe te voegen.</p>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -20,15 +21,6 @@
                             <h3 class="text-xl font-semibold text-gray-800 ml-3">Klanten Toevoegen</h3>
                         </div>
                         <p class="text-gray-600 mb-4">Import klanten gegevens uit Excel bestand</p>
-                        
-                        <div class="mb-4">
-                            <a href="{{ route('klanten.template') }}" class="inline-flex items-center font-medium" style="color: #111;">
-                                📥 Download Template
-                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                </svg>
-                            </a>
-                        </div>
                         
                         <div class="mb-4">
                             <a href="/import/klanten" class="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-sm text-gray-800 uppercase tracking-widest transition" style="background-color: #c8e1eb;">
@@ -50,15 +42,6 @@
                         <p class="text-gray-600 mb-4">Import bikefit gegevens uit Excel bestand</p>
                         
                         <div class="mb-4">
-                            <a href="{{ route('bikefit.template') }}" class="inline-flex items-center font-medium" style="color: #111;">
-                                📥 Download Template
-                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                </svg>
-                            </a>
-                        </div>
-                        
-                        <div class="mb-4">
                             <a href="/import/bikefits" class="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-sm text-gray-800 uppercase tracking-widest transition" style="background-color: #c8e1eb;">
                                 📤 Import Bikefits
                             </a>
@@ -76,15 +59,6 @@
                             <h3 class="text-xl font-semibold text-gray-800 ml-3">Inspanningstesten Toevoegen</h3>
                         </div>
                         <p class="text-gray-600 mb-4">Import inspanningstest gegevens uit Excel bestand</p>
-                        
-                        <div class="mb-4">
-                            <a href="{{ route('inspanningstesten.template') }}" class="inline-flex items-center font-medium" style="color: #111;">
-                                📥 Download Template
-                                <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                </svg>
-                            </a>
-                        </div>
                         
                         <div class="mb-4">
                             <a href="/import/inspanningstesten" class="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-sm text-gray-800 uppercase tracking-widest transition" style="background-color: #c8e1eb;">
