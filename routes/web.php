@@ -181,7 +181,7 @@ Route::middleware('auth')->group(function () {
     // Eenvoudige print-versie (browser native print/PDF)
     Route::get('bikefit/{bikefit}/print', [\App\Http\Controllers\PdfController::class, 'printOnly'])->name('bikefit.report.print');
     // Alternatieve print route via BikefitResultsController
-    Route::get('bikefit/{bikefit}/print-direct', [\App\Http\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
+    Route::get('bikefit/{bikefit}/print-direct', [\AppHttp\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
     // Direct PDF download route voor bikefit rapport
     Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
     // Bikefit berekende resultaten en verslag generatie
@@ -591,7 +591,7 @@ Route::get('/bikefit/template', [\App\Http\Controllers\BikefitController::class,
 
 // Export routes
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'exportKlanten'])->name('klanten.export');
-Route::get('/export/bikefits', [\App\Http\Controllers\BikefitController::class, 'exportBikefits'])->name('bikefits.export');
+Route::get('/export/bikefits', [\AppHttp\Controllers\BikefitController::class, 'exportBikefits'])->name('bikefits.export');
 
 // Database admin routes - WERKENDE DATABASE IMPORT/EXPORT SYSTEEM
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {

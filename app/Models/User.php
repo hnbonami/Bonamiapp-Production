@@ -310,4 +310,42 @@ class User extends Authenticatable
         $this->increment('login_count');
         $this->update(['last_login_at' => now()]);
     }
+
+    /**
+     * Check of de gebruiker toegang heeft tot een specifieke feature
+     * 
+     * @param string $featureKey De key van de feature (bijv. 'klantenbeheer', 'bikefits')
+     * @return bool
+     */
+    public function hasFeatureAccess(string $featureKey): bool
+    {
+        // Superadmin heeft altijd toegang tot alles
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+
+        // Gebruiker zonder organisatie heeft geen toegang
+        if (!$this->organisatie_id) {
+            return false;
+        }
+
+        // Check of organisatie deze feature heeft
+        return $this->organisatie->hasFeature($featureKey);
+    }
+
+    /**
+     * Check of gebruiker toegang heeft tot multiple features (OR logica)
+     * 
+     * @param array $featureKeys Array van feature keys
+     * @return bool True als gebruiker toegang heeft tot minimaal 1 van de features
+     */
+    public function hasAnyFeatureAccess(array $featureKeys): bool
+    {
+        foreach ($featureKeys as $key) {
+            if ($this->hasFeatureAccess($key)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

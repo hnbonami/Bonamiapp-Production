@@ -346,7 +346,9 @@
                     Mijn Profiel
                 </a>
                 @endif
-            @endif            @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
+            @endif
+            
+            @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
                 <a href="/staff-notes" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('staff-notes*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Notities
                     @php $unreadNotes = \App\Models\StaffNote::where('is_new', true)->count(); @endphp
@@ -356,38 +358,55 @@
                 </a>
             @endif
             
+            {{-- Klanten - alleen tonen als feature actief is --}}
+            @hasFeature('klantenbeheer')
             @if(Auth::user() && !Auth::user()->isKlant())
                 <a href="/klanten" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ str_starts_with($routeName, 'klanten') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Klanten 
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Klant::count() }}</span>
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Klant::where('organisatie_id', auth()->user()->organisatie_id)->count() }}</span>
                 </a>
             @endif
+            @endhasFeature
             
+            {{-- Medewerkers - alleen tonen als feature actief is --}}
+            @hasFeature('medewerkerbeheer')
             @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/medewerkers" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ str_starts_with($routeName, 'medewerkers') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Medewerkers 
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\User::where('role', '!=', 'klant')->when(!auth()->user()->isSuperAdmin(), function($q) {
-                                $q->where('organisatie_id', auth()->user()->organisatie_id);
-                            })->count() }}</span>
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\User::where('role', '!=', 'klant')->where('organisatie_id', auth()->user()->organisatie_id)->count() }}</span>
                 </a>
             @endif
+            @endhasFeature
             
+            {{-- Instagram - alleen tonen als feature actief is --}}
+            @hasFeature('instagram')
             @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/instagram" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('instagram*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Instagram
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\InstagramPost::count() }}</span>
                 </a>
-                
+            @endif
+            @endhasFeature
+            
+            {{-- Nieuwsbrief - alleen tonen als feature actief is --}}
+            @hasFeature('nieuwsbrief')
+            @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/nieuwsbrieven" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ (request()->is('nieuwsbrieven*') || request()->is('newsletters*') || request()->is('nieuwsbrief*')) ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Nieuwsbrief
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Newsletter::count() }}</span>
                 </a>
-                
+            @endif
+            @endhasFeature
+            
+            {{-- Sjablonen - alleen tonen als feature actief is --}}
+            @hasFeature('sjablonen')
+            @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/sjablonen" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('sjablonen*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                     Sjablonen 
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Sjabloon::count() }}</span>
                 </a>
             @endif
+            @endhasFeature
             
             @if(Auth::user() && Auth::user()->isBeheerder())
                 <div class="border-t border-gray-200 mt-2 pt-2">
@@ -443,6 +462,9 @@
                 @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
                     @include('components.sidebar-notes-tab')
                 @endif
+                
+                {{-- Klanten - alleen tonen als feature actief is --}}
+                @hasFeature('klantenbeheer')
                 @if(Auth::user() && !Auth::user()->isKlant())
                 <a href="/klanten" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('klanten*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('klanten*') ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('klanten*'))
@@ -450,9 +472,13 @@
                     @endif
                     <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><g stroke="#9bb3bd" stroke-width="1.5" fill="none"><circle cx="7" cy="8" r="2.2"/><circle cx="13" cy="8" r="2.2"/><path d="M4.5 15c0-2.1 3.5-3.5 5.5-3.5s5.5 1.4 5.5 3.5v1a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1z"/></g></svg>
                     <span class="font-medium text-[17px]">Klanten</span>
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Klant::count() }}</span>
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Klant::where('organisatie_id', auth()->user()->organisatie_id)->count() }}</span>
                 </a>
                 @endif
+                @endhasFeature
+                
+                {{-- Medewerkers - alleen tonen als feature actief is --}}
+                @hasFeature('medewerkerbeheer')
                 @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/medewerkers" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('medewerkers*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('medewerkers*') ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('medewerkers*'))
@@ -460,13 +486,14 @@
                     @endif
                     <svg width="22" height="22" fill="none" viewBox="0 0 20 20"><rect x="4" y="8" width="12" height="7" rx="2" stroke="#9bb3bd" stroke-width="1.5"/><path d="M8 8V6.5A2.5 2.5 0 0 1 10.5 4h-1A2.5 2.5 0 0 1 12 6.5V8" stroke="#9bb3bd" stroke-width="1.5"/></svg>
                     <span class="font-medium text-[17px]">Medewerkers</span>
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\User::where('role', '!=', 'klant')->when(!auth()->user()->isSuperAdmin(), function($q) {
-                                $q->where('organisatie_id', auth()->user()->organisatie_id);
-                            })->count() }}</span>
+                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\User::where('role', '!=', 'klant')->where('organisatie_id', auth()->user()->organisatie_id)->count() }}</span>
                 </a>
                 @endif
+                @endhasFeature
+                
+                {{-- Instagram - alleen tonen als feature actief is --}}
+                @hasFeature('instagram')
                 @if(Auth::user() && Auth::user()->isBeheerder())
-                <!-- Instagram -->
                 <a href="/instagram" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('instagram*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('instagram*') ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('instagram*'))
                         <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
@@ -475,7 +502,12 @@
                     <span class="font-medium text-[17px]">Instagram</span>
                     <span class="ml-px inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\InstagramPost::count() }}</span>
                 </a>
-                <!-- Nieuwsbrief -->
+                @endif
+                @endhasFeature
+                
+                {{-- Nieuwsbrief - alleen tonen als feature actief is --}}
+                @hasFeature('nieuwsbrief')
+                @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/nieuwsbrieven" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ (request()->is('nieuwsbrieven*') || request()->is('newsletters*') || request()->is('nieuwsbrief*')) ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ (request()->is('nieuwsbrieven*') || request()->is('newsletters*') || request()->is('nieuwsbrief*')) ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('nieuwsbrief*') || request()->is('nieuwsbrieven*') || request()->is('newsletters*'))
                         <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
@@ -484,7 +516,12 @@
                     <span class="font-medium text-[17px]">Nieuwsbrief</span>
                     <span class="ml-px inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Newsletter::count() }}</span>
                 </a>
-                <!-- Sjablonen (report templates) -->
+                @endif
+                @endhasFeature
+                
+                {{-- Sjablonen - alleen tonen als feature actief is --}}
+                @hasFeature('sjablonen')
+                @if(Auth::user() && Auth::user()->isBeheerder())
                 <a href="/sjablonen" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('sjablonen*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('sjablonen*') ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('sjablonen*'))
                         <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
@@ -494,6 +531,7 @@
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Sjabloon::count() }}</span>
                 </a>
                 @endif
+                @endhasFeature
             <!-- Beheer-tabblad echt helemaal onderaan -->
             @if(Auth::user() && Auth::user()->isBeheerder())
                 <div class="mt-8">

@@ -96,10 +96,11 @@ class Organisatie extends Model
     {
         // Superadmin organisatie heeft altijd alle features
         if ($this->id === 1) {
+            \Log::info("✅ Organisatie {$this->id} is superadmin - heeft alle features");
             return true;
         }
 
-        return $this->features()
+        $hasFeature = $this->features()
             ->where('key', $featureKey)
             ->where('organisatie_features.is_actief', true)
             ->where(function($query) {
@@ -107,6 +108,15 @@ class Organisatie extends Model
                       ->orWhere('organisatie_features.expires_at', '>', now());
             })
             ->exists();
+
+        \Log::info("🔍 Feature check voor organisatie {$this->id} ({$this->naam})", [
+            'feature_key' => $featureKey,
+            'has_access' => $hasFeature,
+            'total_features' => $this->features()->count(),
+            'active_features' => $this->features()->wherePivot('is_actief', true)->count()
+        ]);
+
+        return $hasFeature;
     }
 
     /**

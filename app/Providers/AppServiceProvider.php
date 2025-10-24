@@ -19,6 +19,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Registreer custom Blade directive voor feature checks
+        \Blade::if('hasFeature', function (string $featureKey) {
+            $user = auth()->user();
+            if (!$user) {
+                return false;
+            }
+            return $user->hasFeatureAccess($featureKey);
+        });
     }
 }

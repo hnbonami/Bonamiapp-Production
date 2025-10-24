@@ -1,4 +1,4 @@
-git status<?php
+<?php
 
 namespace App\Http;
 
@@ -43,5 +43,16 @@ class Kernel extends HttpKernel
             'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
+    ];
+
+    /**
+     * The application's middleware aliases.
+     *
+     * @var array
+     */
+    protected $middlewareAliases = [
+        // ...existing code...
+        'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
+        'feature' => \App\Http\Middleware\CheckFeatureAccess::class,
     ];
 }
