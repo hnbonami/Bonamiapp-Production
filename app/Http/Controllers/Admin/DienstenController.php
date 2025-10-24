@@ -23,58 +23,109 @@ class DienstenController extends Controller
     }
 
     /**
+     * Toon formulier voor het aanmaken van een nieuwe dienst
+     */
+    public function create()
+    {
+        return view('admin.prestaties.diensten.create');
+    }
+
+    /**
      * Sla nieuwe dienst op
      */
     public function store(Request $request)
     {
-        // Log alle input voor debugging
-        \Log::info('Store dienst request', [
-            'all_input' => $request->all(),
-            'has_actief' => $request->has('actief'),
-            'actief_value' => $request->input('actief'),
-        ]);
-        
-        // Valideer input
-        $validated = $request->validate([
-            'naam' => 'required|string|max:255',
-            'beschrijving' => 'nullable|string',  // CHANGED from omschrijving
-            'standaard_prijs' => 'required|numeric|min:0',
-            'btw_percentage' => 'required|numeric|in:0,6,12,21',
-            'prijs_type' => 'nullable|in:incl,excl',
-            'commissie_percentage' => 'required|numeric|min:0|max:100',
-        ]);
+        try {
+            \Log::info('💾 STORE DIENST START', [
+                'all_input' => $request->all(),
+                'user_id' => auth()->id(),
+                'organisatie_id' => auth()->user()->organisatie_id
+            ]);
+            
+            // Valideer input
+            $validated = $request->validate([
+                'naam' => 'required|string|max:255',
+                'omschrijving' => 'nullable|string',
+                'prijs' => 'required|numeric|min:0',
+                'commissie_percentage' => 'required|numeric|min:0|max:100',
+            ]);
 
-        // Bereken automatisch incl/excl prijzen op basis van prijs_type
-        if ($validated['prijs_type'] === 'incl') {
-            $validated['prijs_incl_btw'] = $validated['standaard_prijs'];
-            $validated['prijs_excl_btw'] = $validated['standaard_prijs'] / (1 + ($validated['btw_percentage'] / 100));
-        } else {
-            $validated['prijs_excl_btw'] = $validated['standaard_prijs'];
-            $validated['prijs_incl_btw'] = $validated['standaard_prijs'] * (1 + ($validated['btw_percentage'] / 100));
+            \Log::info('✅ Validatie geslaagd', ['validated' => $validated]);
+
+            // BTW berekeningen (standaard 21%)
+            $btwPercentage = 21;
+            $prijsInclBtw = $validated['prijs'];
+            $prijsExclBtw = round($prijsInclBtw / (1 + ($btwPercentage / 100)), 2);
+
+            // Bereid data voor
+            $data = [
+                'naam' => $validated['naam'],
+                'omschrijving' => $validated['omschrijving'] ?? null,
+                'standaard_prijs' => round($prijsInclBtw, 2),
+                'btw_percentage' => $btwPercentage,
+                'commissie_percentage' => $validated['commissie_percentage'],
+                'prijs_incl_btw' => round($prijsInclBtw, 2),
+                'prijs_excl_btw' => $prijsExclBtw,
+                'is_actief' => $request->has('actief') ? true : false,
+                'organisatie_id' => auth()->user()->organisatie_id,
+            ];
+
+            \Log::info('📦 Data klaar voor create', ['data' => $data]);
+
+            // Maak dienst aan
+            $dienst = Dienst::create($data);
+
+            // Maak dienst aan
+            $dienst = Dienst::create($data);
+
+            \Log::info('✅ Dienst aangemaakt', [
+                'dienst_id' => $dienst->id,
+                'naam' => $dienst->naam,
+                'user_id' => auth()->id(),
+            ]);
+
+            return redirect()->route('admin.prestaties.diensten.index')
+                ->with('success', 'Dienst succesvol aangemaakt!');
+                
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('❌ VALIDATIE FOUT', ['errors' => $e->errors()]);
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+            \Log::error('❌ STORE DIENST FAILED', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->withErrors(['error' => 'Fout bij opslaan: ' . $e->getMessage()])->withInput();
         }
-        
-        // Actief status - BELANGRIJKE FIX: checkbox is aanwezig = true, niet aanwezig = false
-        $validated['is_actief'] = $request->has('actief') && $request->input('actief') == '1';
-        
-        // 🔒 KRITIEK: Voeg organisatie_id toe
-        $validated['organisatie_id'] = auth()->user()->organisatie_id;
-        
-        \Log::info('Store dienst validated data', [
-            'validated' => $validated,
-            'is_actief_final' => $validated['is_actief']
-        ]);
-        
-        // Maak dienst aan
-        $dienst = Dienst::create($validated);
+    }
 
-        Log::info('Dienst aangemaakt', [
-            'dienst_id' => $dienst->id,
-            'naam' => $dienst->naam,
-            'user_id' => auth()->id(),
-        ]);
+    /**
+     * Toon details van een dienst
+     */
+    public function show(Dienst $dienst)
+    {
+        // 🔒 Check organisatie
+        if ($dienst->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403);
+        }
 
-        return redirect()->route('admin.prestaties.diensten.index')
-            ->with('success', 'Dienst succesvol aangemaakt!');
+        return response()->json($dienst);
+    }
+
+    /**
+     * Toon formulier voor het bewerken van een dienst
+     */
+    public function edit(Dienst $dienst)
+    {
+        // 🔒 Check organisatie
+        if ($dienst->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403);
+        }
+
+        return view('admin.prestaties.diensten.edit', compact('dienst'));
     }
 
     /**
@@ -82,54 +133,56 @@ class DienstenController extends Controller
      */
     public function update(Request $request, Dienst $dienst)
     {
-        // Log alle input voor debugging
-        \Log::info('Update dienst request', [
+        \Log::info('✅ Update method START', [
             'dienst_id' => $dienst->id,
-            'all_input' => $request->all(),
-            'has_actief' => $request->has('actief'),
-            'actief_value' => $request->input('actief'),
+            'request_all' => $request->all()
         ]);
-        
-        // Valideer input
-        $validated = $request->validate([
-            'naam' => 'required|string|max:255',
-            'beschrijving' => 'nullable|string',
-            'standaard_prijs' => 'required|numeric|min:0',
-            'btw_percentage' => 'required|numeric|in:0,6,12,21',
-            'prijs_type' => 'nullable|in:incl,excl',
-            'commissie_percentage' => 'required|numeric|min:0|max:100',
-        ]);
-        
-        // Bereken BTW prijzen
-        $btwPercentage = $validated['btw_percentage'];
-        $prijsType = $request->input('prijs_type', 'incl');
-        
-        if ($prijsType === 'incl') {
-            $validated['prijs_incl_btw'] = $validated['standaard_prijs'];
-            $validated['prijs_excl_btw'] = $validated['standaard_prijs'] / (1 + ($btwPercentage / 100));
-        } else {
-            $validated['prijs_excl_btw'] = $validated['standaard_prijs'];
-            $validated['prijs_incl_btw'] = $validated['standaard_prijs'] * (1 + ($btwPercentage / 100));
+
+        // 🔒 Check organisatie
+        if ($dienst->organisatie_id !== auth()->user()->organisatie_id) {
+            \Log::error('❌ Organisatie mismatch');
+            abort(403);
         }
-        
-        // Actief status - BELANGRIJKE FIX: checkbox is aanwezig = true, niet aanwezig = false
-        $validated['is_actief'] = $request->has('actief') && $request->input('actief') == '1';
-        
-        \Log::info('Update dienst validated data', [
-            'validated' => $validated,
-            'is_actief_final' => $validated['is_actief']
-        ]);
-        
-        // Update dienst
-        $dienst->update($validated);
-        
-        \Log::info('Dienst updated', [
-            'dienst_id' => $dienst->id,
-            'is_actief_na_update' => $dienst->fresh()->is_actief
-        ]);
-        
-        return redirect()->route('admin.prestaties.diensten.index')
-            ->with('success', 'Dienst succesvol bijgewerkt!');
+
+        try {
+            $validated = $request->validate([
+                'naam' => 'required|string|max:255',
+                'omschrijving' => 'nullable|string',
+                'prijs' => 'required|numeric|min:0',
+                'commissie_percentage' => 'required|numeric|min:0|max:100',
+            ]);
+
+            \Log::info('✅ Validation passed', ['validated' => $validated]);
+
+            // BTW berekeningen
+            $btwPercentage = 21;
+            $prijsInclBtw = $validated['prijs'];
+            $prijsExclBtw = round($prijsInclBtw / (1 + ($btwPercentage / 100)), 2);
+
+            $dienst->naam = $validated['naam'];
+            $dienst->omschrijving = $validated['omschrijving'] ?? null;
+            $dienst->standaard_prijs = round($prijsInclBtw, 2);
+            $dienst->btw_percentage = $btwPercentage;
+            $dienst->commissie_percentage = $validated['commissie_percentage'];
+            $dienst->prijs_incl_btw = round($prijsInclBtw, 2);
+            $dienst->prijs_excl_btw = $prijsExclBtw;
+            $dienst->is_actief = $request->has('actief') ? 1 : 0;
+            
+            $dienst->save();
+
+            \Log::info('✅ Dienst saved successfully');
+
+            return redirect()->route('admin.prestaties.diensten.index')
+                ->with('success', 'Dienst succesvol bijgewerkt!');
+                
+        } catch (\Exception $e) {
+            \Log::error('❌ Update failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->withErrors(['error' => 'Fout bij opslaan: ' . $e->getMessage()])->withInput();
+        }
     }
 
     /**
@@ -137,6 +190,11 @@ class DienstenController extends Controller
      */
     public function destroy(Dienst $dienst)
     {
+        // 🔒 Check organisatie
+        if ($dienst->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403);
+        }
+
         $dienst->delete();
 
         Log::info('Dienst verwijderd', [

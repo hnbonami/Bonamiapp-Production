@@ -13,16 +13,15 @@ class Dienst extends Model
     protected $table = 'diensten';
 
     protected $fillable = [
-        'organisatie_id', // VOEG TOE
         'naam',
-        'omschrijving',
+        'omschrijving',  // ✅ Database kolom (wordt toegevoegd via migration)
         'standaard_prijs',
         'btw_percentage',
+        'commissie_percentage',
         'prijs_incl_btw',
         'prijs_excl_btw',
-        'commissie_percentage',
         'is_actief',
-        'sorteer_volgorde',
+        'organisatie_id',
     ];
 
     protected $casts = [

@@ -512,6 +512,17 @@ Route::middleware(['auth', 'verified'])->group(function() {
         Route::put('/{user}', [App\Http\Controllers\Admin\UserManagementController::class, 'update'])->name('update');
         Route::post('/roles/update', [App\Http\Controllers\Admin\UserManagementController::class, 'updateRolePermissions'])->name('roles.update');
     });
+    
+    // Diensten beheer
+    Route::prefix('prestaties/diensten')->name('admin.prestaties.diensten.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\DienstenController::class, 'index'])->name('index');
+        Route::get('/create', [\App\Http\Controllers\Admin\DienstenController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Admin\DienstenController::class, 'store'])->name('store');
+        Route::get('/{dienst}', [\App\Http\Controllers\Admin\DienstenController::class, 'show'])->name('show');
+        Route::get('/{dienst}/edit', [\App\Http\Controllers\Admin\DienstenController::class, 'edit'])->name('edit');
+        Route::put('/{dienst}', [\App\Http\Controllers\Admin\DienstenController::class, 'update'])->name('update');
+        Route::delete('/{dienst}', [\App\Http\Controllers\Admin\DienstenController::class, 'destroy'])->name('destroy');
+    });
 });
 
 // Admin index route - CRITICAL FOR SITE TO WORK
@@ -1304,19 +1315,19 @@ Route::post('medewerkers/{medewerker}/send-invitation', [\App\Http\Controllers\M
 Route::get('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
 Route::post('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
 Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
-Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');
+Route::get('/export/klanten', [\AppHttp\Controllers\KlantenController::class, 'export'])->name('klanten.export');
 
 // Bikefit Import/Export routes  
-Route::get('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
-Route::post('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
-Route::get('/import/bikefits/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
-Route::get('/bikefit/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
+Route::get('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
+Route::post('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
+Route::get('/import/bikefits/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
+Route::get('/bikefit/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
 
 // Inspanningstesten Import/Export routes
 Route::get('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'showImport'])->name('inspanningstesten.import.form');
 Route::post('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'import'])->name('inspanningstesten.import');
 Route::get('/download/inspanningstesten-template', [\App\Http\Controllers\InspanningstestenController::class, 'downloadTemplate'])->name('inspanningstesten.template');
-Route::get('/export/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'export'])->name('inspanningstesten.export');
+Route::get('/export/inspanningstesten', [\AppHttp\Controllers\InspanningstestenController::class, 'export'])->name('inspanningstesten.export');
 
 // AI Analyse endpoints
 Route::post('/klanten/{klant}/inspanningstest/{test}/ai-analyse', [\App\Http\Controllers\InspanningstestController::class, 'generateCompleteAIAnalysis'])->name('inspanningstest.ai.analyse');
@@ -1347,10 +1358,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/overzicht/{user}', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'coachDetail'])->name('coach.detail');
         
         // Diensten beheer
-        Route::get('/diensten', [App\Http\Controllers\Admin\DienstenController::class, 'index'])->name('diensten.index');
-        Route::post('/diensten', [App\Http\Controllers\Admin\DienstenController::class, 'store'])->name('diensten.store');
-        Route::put('/diensten/{dienst}', [App\Http\Controllers\Admin\DienstenController::class, 'update'])->name('diensten.update');
-        Route::delete('/diensten/{dienst}', [App\Http\Controllers\Admin\DienstenController::class, 'destroy'])->name('diensten.destroy');
+        Route::prefix('/diensten')->name('diensten.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\DienstenController::class, 'index'])->name('index');
+            Route::post('/', [App\Http\Controllers\Admin\DienstenController::class, 'store'])->name('store');
+            Route::get('/{dienst}', [App\Http\Controllers\Admin\DienstenController::class, 'show'])->name('show');
+            Route::put('/{dienst}', [App\Http\Controllers\Admin\DienstenController::class, 'update'])->name('update');
+            Route::delete('/{dienst}', [App\Http\Controllers\Admin\DienstenController::class, 'destroy'])->name('destroy');
+        });
         
         // Coach diensten configuratie (welke diensten ziet welke coach)
         Route::get('/coaches', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'index'])->name('coaches.index');
