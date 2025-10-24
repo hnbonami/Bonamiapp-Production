@@ -31,7 +31,7 @@
         @endhasFeature
 
         {{-- Email Beheer - alleen tonen als feature actief is --}}
-        @hasFeature('sjablonen')
+        @hasFeature('email_beheer')
         <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="bg-green-100 p-3 rounded-lg">
@@ -72,7 +72,8 @@
         </div>
         @endhasFeature
 
-        {{-- Rechten & Rollen Beheer - altijd tonen voor admins --}}
+        {{-- Rechten & Rollen Beheer - alleen tonen als feature actief is --}}
+        @hasFeature('gebruikersbeheer')
         <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="p-3 rounded-lg" style="background-color: #c8e1eb;">
@@ -90,6 +91,7 @@
                 </svg>
             </a>
         </div>
+        @endhasFeature
 
     </div>
 </div>
