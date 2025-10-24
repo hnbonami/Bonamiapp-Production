@@ -46,9 +46,11 @@
                         <select id="bikefit_id" name="bikefit_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">Geen bikefit gekoppeld</option>
                             @foreach($bikefits as $bikefit)
-                                <option value="{{ $bikefit->id }}" {{ $testzadel->bikefit_id == $bikefit->id ? 'selected' : '' }}>
-                                    {{ $bikefit->klant->voornaam }} {{ $bikefit->klant->naam }} - {{ $bikefit->datum->format('d/m/Y') }}
-                                </option>
+                                @if($bikefit->klant)
+                                    <option value="{{ $bikefit->id }}" {{ $testzadel->bikefit_id == $bikefit->id ? 'selected' : '' }}>
+                                        {{ $bikefit->klant->voornaam }} {{ $bikefit->klant->naam }} - {{ $bikefit->datum->format('d/m/Y') }}
+                                    </option>
+                                @endif
                             @endforeach
                         </select>
                     </div>

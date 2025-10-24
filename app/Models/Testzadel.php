@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\BelongsToOrganisatie;
 use Illuminate\Support\Facades\Schema;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Testzadel extends Model
 {
@@ -190,5 +191,16 @@ class Testzadel extends Model
     public function scopeGearchiveerd($query)
     {
         return $query->where('status', self::STATUS_GEARCHIVEERD);
+    }
+
+    /**
+     * Get the teruggegeven_op attribute (accessor voor werkelijke_retour_datum)
+     */
+    protected function teruggegevenOp(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => $this->werkelijke_retour_datum,
+            set: fn ($value) => ['werkelijke_retour_datum' => $value]
+        );
     }
 }
