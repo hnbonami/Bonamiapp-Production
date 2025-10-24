@@ -1341,6 +1341,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Admin Prestaties Routes (admin kan alles beheren)
     Route::prefix('admin/prestaties')->name('admin.prestaties.')->group(function () {
+        // Prestaties overzicht - MOET VOOR diensten routes staan!
+        Route::get('/overzicht', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'overzicht'])->name('overzicht');
+        Route::get('/overzicht/{user}', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'coachDetail'])->name('coach.detail');
+        
         // Diensten beheer
         Route::get('/diensten', [App\Http\Controllers\Admin\DienstenController::class, 'index'])->name('diensten.index');
         Route::post('/diensten', [App\Http\Controllers\Admin\DienstenController::class, 'store'])->name('diensten.store');
@@ -1351,9 +1355,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/coaches', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'index'])->name('coaches.index');
         Route::get('/coaches/{user}/configure', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'configure'])->name('coaches.configure');
         Route::post('/coaches/{user}/diensten', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'updateDiensten'])->name('coaches.diensten.update');
-        
-        // Prestaties overzicht per coach
-        Route::get('/overzicht', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'overzicht'])->name('overzicht');
-        Route::get('/overzicht/{user}', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'coachDetail'])->name('coach.detail');
     });
 });

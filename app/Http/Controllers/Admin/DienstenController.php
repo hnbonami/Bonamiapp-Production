@@ -10,16 +10,43 @@ use Illuminate\Support\Facades\Log;
 class DienstenController extends Controller
 {
     /**
-     * Toon overzicht van alle diensten
+     * Toon diensten beheer overzicht
      */
     public function index()
     {
+        // Haal alle diensten op, gesorteerd op volgorde
         $diensten = Dienst::orderBy('sorteer_volgorde')->get();
         
         return view('admin.prestaties.diensten', compact('diensten'));
     }
-
+    
     /**
+     * Sla nieuwe dienst op
+     */
+    public function store(Request $request)
+    {
+        // Valideer input
+        $validated = $request->validate([
+            'naam' => 'required|string|max:255',
+            'omschrijving' => 'nullable|string',
+            'prijs' => 'required|numeric|min:0',
+            'commissie_percentage' => 'required|numeric|min:0|max:100',
+            'actief' => 'nullable|boolean',
+        ]);
+        
+        // Zet actief op true als checkbox aangevinkt was
+        $validated['actief'] = $request->has('actief') ? true : false;
+        
+        // Bepaal sorteer volgorde (laatste + 1)
+        $maxVolgorde = Dienst::max('sorteer_volgorde') ?? 0;
+        $validated['sorteer_volgorde'] = $maxVolgorde + 1;
+        
+        // Maak dienst aan
+        Dienst::create($validated);
+        
+        return redirect()->route('admin.prestaties.diensten.index')
+            ->with('success', 'Dienst succesvol aangemaakt!');
+    }    /**
      * Sla nieuwe dienst op
      */
     public function store(Request $request)

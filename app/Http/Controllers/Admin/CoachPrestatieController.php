@@ -8,6 +8,7 @@ use App\Models\Dienst;
 use App\Models\Prestatie;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class CoachPrestatieController extends Controller
 {
@@ -109,32 +110,107 @@ class CoachPrestatieController extends Controller
     }
 
     /**
-     * Detail van specifieke coach prestaties
+     * Admin overzicht van alle prestaties per medewerker
+     */
+    public function adminOverzicht(Request $request)
+    {
+        // Haal jaar en kwartaal uit request, of gebruik huidige waarden
+        $huidigJaar = $request->input('jaar', now()->year);
+        $huidigKwartaal = $request->input('kwartaal', $this->getHuidigKwartaal());
+        
+        // Bereken start en eind datum voor het kwartaal
+        [$startDatum, $eindDatum] = $this->getKwartaalDatums($huidigJaar, $huidigKwartaal);
+        
+        // Haal stats per medewerker op
+        $medewerkerStats = User::select('users.id', 'users.name', 'users.email')
+            ->join('prestaties', 'users.id', '=', 'prestaties.user_id')
+            ->whereBetween('prestaties.startdatum', [$startDatum, $eindDatum])
+            ->groupBy('users.id', 'users.name', 'users.email')
+            ->selectRaw('
+                COUNT(prestaties.id) as aantal_prestaties,
+                SUM(prestaties.commissie) as totale_commissie,
+                AVG(prestaties.commissie) as gemiddelde_commissie
+            ')
+            ->get();
+        
+        // Bereken totalen
+        $totaalPrestaties = Prestatie::whereBetween('startdatum', [$startDatum, $eindDatum])->count();
+        $totaleCommissie = Prestatie::whereBetween('startdatum', [$startDatum, $eindDatum])->sum('commissie');
+        
+        return view('admin.prestaties.overzicht', compact(
+            'medewerkerStats',
+            'huidigJaar',
+            'huidigKwartaal',
+            'totaalPrestaties',
+            'totaleCommissie'
+        ));
+    }
+    
+    /**
+     * Detail view voor een specifieke coach
      */
     public function coachDetail(Request $request, User $user)
     {
-        $jaar = $request->get('jaar', now()->year);
-        $kwartaal = $request->get('kwartaal');
-
-        $query = Prestatie::where('user_id', $user->id)->with(['dienst', 'klant']);
-
-        if ($jaar) {
-            $query->where('jaar', $jaar);
-        }
-
-        if ($kwartaal) {
-            $query->where('kwartaal', $kwartaal);
-        }
-
-        $prestaties = $query->orderBy('datum_prestatie', 'desc')->get();
-
-        $totalen = [
-            'bruto' => $prestaties->sum('bruto_prijs'),
-            'btw' => $prestaties->sum('btw_bedrag'),
-            'netto' => $prestaties->sum('netto_prijs'),
-            'commissie' => $prestaties->sum('commissie_bedrag'),
+        // Haal jaar en kwartaal uit request
+        $huidigJaar = $request->input('jaar', now()->year);
+        $huidigKwartaal = $request->input('kwartaal', $this->getHuidigKwartaal());
+        
+        // Bereken start en eind datum voor het kwartaal
+        [$startDatum, $eindDatum] = $this->getKwartaalDatums($huidigJaar, $huidigKwartaal);
+        
+        // Haal prestaties op voor deze coach in deze periode
+        $prestaties = Prestatie::where('user_id', $user->id)
+            ->whereBetween('startdatum', [$startDatum, $eindDatum])
+            ->with(['dienst', 'klant'])
+            ->orderBy('startdatum', 'desc')
+            ->get();
+        
+        // Bereken stats
+        $aantalPrestaties = $prestaties->count();
+        $totaleCommissie = $prestaties->sum('commissie');
+        $gemiddeldeCommissie = $aantalPrestaties > 0 ? $totaleCommissie / $aantalPrestaties : 0;
+        
+        return view('admin.prestaties.coach-detail', compact(
+            'user',
+            'prestaties',
+            'huidigJaar',
+            'huidigKwartaal',
+            'aantalPrestaties',
+            'totaleCommissie',
+            'gemiddeldeCommissie'
+        ));
+    }
+    
+    /**
+     * Helper: Bepaal huidig kwartaal
+     */
+    private function getHuidigKwartaal()
+    {
+        $maand = now()->month;
+        
+        if ($maand <= 3) return 'Q1';
+        if ($maand <= 6) return 'Q2';
+        if ($maand <= 9) return 'Q3';
+        return 'Q4';
+    }
+    
+    /**
+     * Helper: Bereken start en eind datum voor een kwartaal
+     */
+    private function getKwartaalDatums($jaar, $kwartaal)
+    {
+        $kwartaalMapping = [
+            'Q1' => ['start' => 1, 'eind' => 3],
+            'Q2' => ['start' => 4, 'eind' => 6],
+            'Q3' => ['start' => 7, 'eind' => 9],
+            'Q4' => ['start' => 10, 'eind' => 12],
         ];
-
-        return view('admin.prestaties.coach-detail', compact('user', 'prestaties', 'totalen', 'jaar', 'kwartaal'));
+        
+        $maanden = $kwartaalMapping[$kwartaal];
+        
+        $startDatum = Carbon::createFromDate($jaar, $maanden['start'], 1)->startOfMonth();
+        $eindDatum = Carbon::createFromDate($jaar, $maanden['eind'], 1)->endOfMonth();
+        
+        return [$startDatum, $eindDatum];
     }
 }

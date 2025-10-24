@@ -20,10 +20,13 @@
                         </option>
                     @endforeach
                 @else
-                    {{-- Fallback als $beschikbareJaren niet bestaat --}}
-                    <option value="2025" selected>2025</option>
-                    <option value="2024">2024</option>
-                    <option value="2023">2023</option>
+                    {{-- Fallback: altijd huidig + volgend jaar --}}
+                    @php
+                        $currentYear = now()->year;
+                        $nextYear = $currentYear + 1;
+                    @endphp
+                    <option value="{{ $currentYear }}" selected>{{ $currentYear }}</option>
+                    <option value="{{ $nextYear }}">{{ $nextYear }}</option>
                 @endif
             </select>
             
