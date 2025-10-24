@@ -15,29 +15,25 @@ class Testzadel extends Model
     protected $table = 'testzadels';
 
     protected $fillable = [
-        'merk',
-        'model', 
-        'type',
-        'breedte_mm',
+        'organisatie_id',
         'klant_id',
         'bikefit_id',
-        'status',
-        'uitgeleend_op',
-        'verwachte_retour_datum',
-        'teruggegeven_op',
-        'automatisch_herinneringsmails_versturen',
-        'opmerkingen',
-        // Legacy kolommen voor backward compatibility
+        'onderdeel_type',
+        'onderdeel_status',
         'zadel_merk',
         'zadel_model',
         'zadel_type',
         'zadel_breedte',
         'uitleen_datum',
+        'verwachte_retour_datum',
         'werkelijke_retour_datum',
         'automatisch_mailtje',
         'herinnering_verstuurd',
         'herinnering_verstuurd_op',
-        'laatste_herinnering'
+        'laatste_herinnering',
+        'onderdeel_omschrijving',
+        'opmerkingen',
+        'status',
     ];
 
     protected $casts = [

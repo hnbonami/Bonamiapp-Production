@@ -137,6 +137,9 @@ class BikefitController extends Controller
 
         \Log::info('✅ BIKEFIT CREATED - ID: ' . $bikefit->id . ', Org ID: ' . $bikefit->organisatie_id);
 
+        // Verwerk uitleensysteem data (testzadels, zooltjes, etc.)
+        $this->handleUitleensysteem($request, $bikefit);
+
         return redirect()->route('bikefit.results', [
             'klant' => $klant->id, 
             'bikefit' => $bikefit->id
@@ -318,11 +321,6 @@ class BikefitController extends Controller
             throw $e;
         }
 
-        // Handle uitleensysteem data if provided
-        if ($request->filled('onderdeel_type')) {
-            $this->handleUitleensysteemFields($request, Klant::find($bikefit->klant_id), $bikefit);
-        }
-
         // Debug: Log wat er daadwerkelijk is opgeslagen
         $bikefit->refresh();
         \Log::info('After update - database values:', [
@@ -330,6 +328,18 @@ class BikefitController extends Controller
             'aanpassingen_stuurpen_pre' => $bikefit->aanpassingen_stuurpen_pre,
             'aanpassingen_stuurpen_post' => $bikefit->aanpassingen_stuurpen_post,
         ]);
+
+        // Verwerk uitleensysteem data (testzadels, zooltjes, etc.)
+        // Check of er al een testzadel bestaat voor dit bikefit
+        $testzadel = \App\Models\Testzadel::where('bikefit_id', $bikefit->id)->first();
+        
+        if ($testzadel && $request->filled('onderdeel_type')) {
+            // Update bestaande testzadel
+            $this->updateTestzadel($request, $testzadel);
+        } elseif ($request->filled('onderdeel_type')) {
+            // Maak nieuwe testzadel aan
+            $this->handleUitleensysteem($request, $bikefit);
+        }
 
         // Check of de gebruiker op "Opslaan" heeft geklikt (naar results)
         if ($request->has('save_and_results')) {
@@ -1204,7 +1214,7 @@ const fs = require('fs');
             // Create upload record using correct column names
             $upload = new \App\Models\Upload();
             $upload->bikefit_id = $bikefit->id;
-            $upload->path = $path; // Keep original path without storage/ prefix
+            $upload->path = $path;
             $upload->filename = $filename;
             $upload->original_name = $file->getClientOriginalName();
             $upload->mime_type = $file->getClientMimeType();
@@ -1459,16 +1469,26 @@ const fs = require('fs');
      */
     private function handleUitleensysteem($request, $bikefit)
     {
+        \Log::info('🔍 handleUitleensysteem called', [
+            'bikefit_id' => $bikefit->id,
+            'klant_id' => $bikefit->klant_id,
+            'has_onderdeel_type' => $request->filled('onderdeel_type'),
+            'onderdeel_type_value' => $request->input('onderdeel_type'),
+            'all_request_keys' => array_keys($request->all())
+        ]);
+        
         // Check if any uitleensysteem data is provided
         if (!$request->filled('onderdeel_type')) {
+            \Log::info('⚠️ Geen onderdeel_type gevonden, skip uitleensysteem handling');
             return;
         }
 
         $uitleenData = [
+            'organisatie_id' => auth()->user()->organisatie_id, // BELANGRIJK: zet organisatie_id
             'klant_id' => $bikefit->klant_id,
             'bikefit_id' => $bikefit->id,
             'onderdeel_type' => $request->input('onderdeel_type'),
-            'onderdeel_status' => $request->input('onderdeel_status'),
+            'onderdeel_status' => $request->input('onderdeel_status', 'nieuw'), // Default 'nieuw'
             'automatisch_mailtje' => $request->boolean('automatisch_mailtje'),
             'onderdeel_omschrijving' => $request->input('onderdeel_omschrijving'),
         ];
@@ -1476,7 +1496,12 @@ const fs = require('fs');
         // Handle type-specific data using the correct field names
         $onderdeelType = $request->input('onderdeel_type');
         
-        if (in_array($onderdeelType, ['testzadel', 'nieuw zadel'])) {
+        \Log::info('📦 Processing onderdeel type', [
+            'type' => $onderdeelType,
+            'is_testzadel' => in_array($onderdeelType, ['testzadel', 'Testzadel', 'nieuw zadel'])
+        ]);
+        
+        if (in_array(strtolower($onderdeelType), ['testzadel', 'nieuw zadel'])) {
             // Use zadel-specific fields with fallbacks
             $uitleenData['zadel_merk'] = $request->input('zadel_merk');
             $uitleenData['zadel_model'] = $request->input('zadel_model');
@@ -1488,20 +1513,43 @@ const fs = require('fs');
         }
 
         // Handle dates and other fields
-        $uitleenData['uitleen_datum'] = $request->input('uitgeleend_op');
+        $uitleenData['uitleen_datum'] = $request->input('uitgeleend_op', now()); // Default now
         $uitleenData['verwachte_retour_datum'] = $request->input('verwachte_terugbring_datum');
         $uitleenData['opmerkingen'] = $request->input('onderdeel_opmerkingen');
         $uitleenData['status'] = 'uitgeleend'; // EXPLICIET uitgeleend zetten
 
-        // Create testzadel record met logging
-        \Log::info('🔧 Creating new testzadel with status uitgeleend', [
-            'klant_id' => $uitleenData['klant_id'] ?? 'missing',
-            'bikefit_id' => $uitleenData['bikefit_id'] ?? 'missing', 
+        // Create testzadel record met uitgebreide logging
+        \Log::info('🔧 Creating new testzadel with data:', [
+            'organisatie_id' => $uitleenData['organisatie_id'],
+            'klant_id' => $uitleenData['klant_id'],
+            'bikefit_id' => $uitleenData['bikefit_id'],
             'status' => $uitleenData['status'],
-            'onderdeel_type' => $uitleenData['onderdeel_type'] ?? 'missing'
+            'onderdeel_type' => $uitleenData['onderdeel_type'],
+            'zadel_merk' => $uitleenData['zadel_merk'] ?? 'niet ingevuld',
+            'full_data' => $uitleenData
         ]);
         
-        \App\Models\Testzadel::create($uitleenData);
+        try {
+            $testzadel = \App\Models\Testzadel::create($uitleenData);
+            
+            \Log::info('✅ Testzadel succesvol aangemaakt!', [
+                'testzadel_id' => $testzadel->id,
+                'onderdeel_type' => $testzadel->onderdeel_type,
+                'status' => $testzadel->status,
+                'klant_naam' => $testzadel->klant->naam ?? 'onbekend'
+            ]);
+            
+            // Schedule reminder email if automatisch_mailtje is enabled
+            if ($uitleenData['automatisch_mailtje']) {
+                $this->scheduleReminderEmail($testzadel);
+            }
+        } catch (\Exception $e) {
+            \Log::error('❌ Testzadel aanmaken GEFAALD', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'data' => $uitleenData
+            ]);
+        }
     }
 
     /**
@@ -1754,7 +1802,7 @@ const fs = require('fs');
             $extension = strtolower($file->getClientOriginalExtension());
             
             \Log::info('📥 Bikefit import gestart', [
-                                              'user_id' => auth()->id(),
+                'user_id' => auth()->id(),
                 'organisatie_id' => $organisatieId,
                 'filename' => $file->getClientOriginalName(),
                 'extension' => $extension
