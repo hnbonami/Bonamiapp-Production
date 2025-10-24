@@ -1380,4 +1380,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{medewerker}', [\App\Http\Controllers\Admin\MedewerkerCommissieController::class, 'update'])->name('update');
         Route::put('/{medewerker}/dienst/{dienst}', [\App\Http\Controllers\Admin\MedewerkerCommissieController::class, 'updateDienstCommissie'])->name('dienst.update');
     });
+    
+    // Toggle factuur naar klant
+    Route::post('/prestaties/{prestatie}/toggle-factuur', [App\Http\Controllers\Admin\PrestatiesController::class, 'toggleFactuurNaarKlant'])->name('admin.prestaties.toggle-factuur');
 });

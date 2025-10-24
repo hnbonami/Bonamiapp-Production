@@ -247,4 +247,30 @@ class PrestatieController extends Controller
 
         return response()->json(['success' => true]);
     }
+
+    /**
+     * Toggle factuur naar klant status van prestatie (alleen voor admins)
+     */
+    public function toggleFactuurNaarKlant(Request $request, Prestatie $prestatie)
+    {
+        // Alleen admins mogen dit wijzigen
+        if (!auth()->user()->is_admin) {
+            return response()->json(['success' => false, 'message' => 'Geen toegang'], 403);
+        }
+
+        $validated = $request->validate([
+            'factuur_naar_klant' => 'required|boolean'
+        ]);
+
+        $prestatie->factuur_naar_klant = $validated['factuur_naar_klant'];
+        $prestatie->save();
+
+        Log::info('Factuur naar klant status gewijzigd', [
+            'prestatie_id' => $prestatie->id,
+            'factuur_naar_klant' => $prestatie->factuur_naar_klant,
+            'user_id' => auth()->id(),
+        ]);
+
+        return response()->json(['success' => true]);
+    }
 }

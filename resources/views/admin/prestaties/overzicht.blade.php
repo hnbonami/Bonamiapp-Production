@@ -91,9 +91,9 @@
         <div class="p-6 border-b border-gray-200">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Alle Prestaties</h2>
             
-            {{-- Zoek en Filter velden --}}
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div class="relative">
+            {{-- Zoek en Filter velden - op één rij --}}
+            <div class="flex flex-wrap gap-3">
+                <div class="relative flex-1 min-w-[200px]">
                     <input type="text" id="zoek-klant" placeholder="Zoek klant..." 
                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -103,20 +103,26 @@
                     </div>
                 </div>
                 
-                <select id="filter-medewerker" class="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select id="filter-medewerker" class="flex-1 min-w-[180px] border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Alle medewerkers</option>
                     @foreach($medewerkerStats as $stat)
                         <option value="{{ $stat->id }}">{{ $stat->name }}</option>
                     @endforeach
                 </select>
                 
-                <select id="filter-uitgevoerd" class="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select id="filter-uitgevoerd" class="flex-1 min-w-[150px] border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Alle statussen</option>
                     <option value="1">Uitgevoerd</option>
                     <option value="0">Niet uitgevoerd</option>
                 </select>
                 
-                <select id="sorteer" class="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select id="filter-factuur" class="flex-1 min-w-[180px] border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Alle facturen</option>
+                    <option value="1">Factuur verstuurd</option>
+                    <option value="0">Geen factuur</option>
+                </select>
+                
+                <select id="sorteer" class="flex-1 min-w-[160px] border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="datum-desc">Nieuwste eerst</option>
                     <option value="datum-asc">Oudste eerst</option>
                     <option value="klant-asc">Klant A-Z</option>
@@ -157,6 +163,7 @@
                             data-klant="{{ strtolower($prestatie->klant_naam ?? '') }}"
                             data-medewerker="{{ $prestatie->user_id }}"
                             data-uitgevoerd="{{ $prestatie->is_uitgevoerd ? '1' : '0' }}"
+                            data-factuur="{{ $prestatie->factuur_naar_klant ? '1' : '0' }}"
                             data-datum="{{ $prestatie->datum_prestatie->format('Y-m-d') }}"
                             data-prijs="{{ $prestatie->bruto_prijs }}">
                             
@@ -199,15 +206,11 @@
                             </td>
                             
                             <td class="px-4 py-4 text-center">
-                                @if($prestatie->factuur_naar_klant)
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                                        ✓ Ja
-                                    </span>
-                                @else
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                                        - Nee
-                                    </span>
-                                @endif
+                                <input type="checkbox" 
+                                       class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
+                                       {{ $prestatie->factuur_naar_klant ? 'checked' : '' }}
+                                       onchange="toggleFactuurNaarKlant({{ $prestatie->id }}, this.checked)"
+                                       title="Factuur naar klant verstuurd">
                             </td>
                             
                             <td class="px-4 py-4 whitespace-nowrap">
@@ -316,6 +319,7 @@
 const zoekKlant = document.getElementById('zoek-klant');
 const filterMedewerker = document.getElementById('filter-medewerker');
 const filterUitgevoerd = document.getElementById('filter-uitgevoerd');
+const filterFactuur = document.getElementById('filter-factuur');
 const sorteerSelect = document.getElementById('sorteer');
 const tabelRows = document.querySelectorAll('.prestatie-row');
 
@@ -323,6 +327,7 @@ function filterEnSorteerPrestaties() {
     const zoekterm = zoekKlant.value.toLowerCase();
     const medewerkerId = filterMedewerker.value;
     const uitgevoerdStatus = filterUitgevoerd.value;
+    const factuurStatus = filterFactuur.value;
     
     // Filter rows
     let zichtbareRows = Array.from(tabelRows).filter(row => {
@@ -338,7 +343,11 @@ function filterEnSorteerPrestaties() {
         const rowUitgevoerd = row.getAttribute('data-uitgevoerd');
         const matchUitgevoerd = !uitgevoerdStatus || rowUitgevoerd === uitgevoerdStatus;
         
-        const isZichtbaar = matchZoek && matchMedewerker && matchUitgevoerd;
+        // Factuur filter
+        const rowFactuur = row.getAttribute('data-factuur');
+        const matchFactuur = !factuurStatus || rowFactuur === factuurStatus;
+        
+        const isZichtbaar = matchZoek && matchMedewerker && matchUitgevoerd && matchFactuur;
         row.style.display = isZichtbaar ? '' : 'none';
         
         return isZichtbaar;
@@ -374,7 +383,43 @@ function filterEnSorteerPrestaties() {
 zoekKlant.addEventListener('input', filterEnSorteerPrestaties);
 filterMedewerker.addEventListener('change', filterEnSorteerPrestaties);
 filterUitgevoerd.addEventListener('change', filterEnSorteerPrestaties);
+filterFactuur.addEventListener('change', filterEnSorteerPrestaties);
 sorteerSelect.addEventListener('change', filterEnSorteerPrestaties);
+
+// Toggle factuur naar klant status
+function toggleFactuurNaarKlant(prestatieId, isChecked) {
+    console.log('Toggle factuur naar klant:', prestatieId, isChecked);
+    
+    fetch(`/admin/prestaties/${prestatieId}/toggle-factuur`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ factuur_naar_klant: isChecked })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Server error response:', text);
+                throw new Error('Server error: ' + response.status);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Success:', data);
+        if (!data.success) {
+            alert('Er ging iets mis bij het opslaan');
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error details:', error);
+        alert('Er ging iets mis bij het opslaan: ' + error.message);
+        location.reload();
+    });
+}
 
 // Kwartaal filter - redirect bij wijziging
 document.getElementById('kwartaal-filter').addEventListener('change', function() {
