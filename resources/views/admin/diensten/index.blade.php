@@ -17,6 +17,21 @@
         </button>
     </div>
 
+    {{-- Success/Error berichten --}}
+    @if(session('success'))
+        <div class="mb-4 p-4 bg-green-50 border-l-4 border-green-500 text-green-800 rounded flex items-center justify-between">
+            <span>✅ {{ session('success') }}</span>
+            <button onclick="this.parentElement.remove()" class="text-green-600 hover:text-green-800">&times;</button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-800 rounded flex items-center justify-between">
+            <span>❌ {{ session('error') }}</span>
+            <button onclick="this.parentElement.remove()" class="text-red-600 hover:text-red-800">&times;</button>
+        </div>
+    @endif
+
     {{-- Diensten Tabel --}}
     <div class="bg-white rounded-lg shadow">
         <div class="overflow-x-auto">

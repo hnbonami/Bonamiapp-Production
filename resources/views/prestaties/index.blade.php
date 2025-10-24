@@ -97,8 +97,8 @@
                                 <option value="">-- Kies dienst --</option>
                                 @foreach($beschikbareDiensten as $dienst)
                                     <option value="{{ $dienst->id }}" 
-                                            data-prijs="{{ $dienst->pivot->custom_prijs ?? $dienst->standaard_prijs }}"
-                                            data-commissie="{{ $dienst->pivot->commissie_percentage ?? $dienst->commissie_percentage }}">
+                                            data-prijs="{{ $dienst->standaard_prijs }}"
+                                            data-commissie="{{ $dienst->commissie_percentage }}">
                                         {{ $dienst->naam }}
                                     </option>
                                 @endforeach
