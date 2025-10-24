@@ -387,6 +387,8 @@ if (kwartaalFilter) {
 
 // Toggle uitgevoerd status
 function toggleUitgevoerd(prestatieId, isChecked) {
+    console.log('Toggle uitgevoerd:', prestatieId, isChecked);
+    
     fetch(`/prestaties/${prestatieId}/toggle-uitgevoerd`, {
         method: 'POST',
         headers: {
@@ -395,16 +397,26 @@ function toggleUitgevoerd(prestatieId, isChecked) {
         },
         body: JSON.stringify({ is_uitgevoerd: isChecked })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            return response.text().then(text => {
+                console.error('Server error response:', text);
+                throw new Error('Server error: ' + response.status);
+            });
+        }
+        return response.json();
+    })
     .then(data => {
+        console.log('Success:', data);
         if (!data.success) {
             alert('Er ging iets mis bij het opslaan');
             location.reload();
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert('Er ging iets mis bij het opslaan');
+        console.error('Error details:', error);
+        alert('Er ging iets mis bij het opslaan: ' + error.message);
         location.reload();
     });
 }
