@@ -50,8 +50,17 @@
         
         <div class="bg-white rounded-lg shadow p-4">
             <div class="text-xs text-gray-600 mb-1">Commissie %</div>
-            <div class="text-2xl font-bold text-green-600">
-                {{ $prestaties->count() > 0 ? number_format($prestaties->avg('commissie_percentage'), 1, ',', '.') : '0' }}%
+            <div class="flex items-center gap-2">
+                <div class="text-2xl font-bold text-green-600">
+                    {{ $prestaties->count() > 0 ? number_format($prestaties->avg('commissie_percentage'), 1, ',', '.') : '0' }}%
+                </div>
+                <button onclick="openCommissieInfoModal()" 
+                        class="text-blue-500 hover:text-blue-700 transition"
+                        title="Hoe wordt mijn commissie berekend?">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+                    </svg>
+                </button>
             </div>
         </div>
         
@@ -292,7 +301,167 @@
     </div>
 </div>
 
+{{-- Commissie Info Modal --}}
+<div id="commissie-info-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            {{-- Header --}}
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">💰 Jouw Commissie Berekening</h2>
+                    <p class="text-sm text-gray-600 mt-1">Zo wordt je commissie percentage bepaald</p>
+                </div>
+                <button onclick="closeCommissieInfoModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            @php
+                $user = auth()->user();
+                $algemeneFactoren = $user->commissieFactoren()->actief()->first();
+            @endphp
+
+            {{-- Algemene Commissie Factoren --}}
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-bold text-gray-900 mb-3">Algemene Bonussen</h3>
+                
+                @if($algemeneFactoren)
+                    <div class="space-y-2 mb-4">
+                        @if($algemeneFactoren->diploma_factor > 0)
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700">🎓 Diploma Bonus</span>
+                                <span class="font-semibold text-green-600">{{ $algemeneFactoren->bonus_richting === 'plus' ? '+' : '-' }}{{ number_format($algemeneFactoren->diploma_factor, 1) }}%</span>
+                            </div>
+                        @endif
+                        
+                        @if($algemeneFactoren->ervaring_factor > 0)
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700">💼 Ervaring Bonus</span>
+                                <span class="font-semibold text-green-600">{{ $algemeneFactoren->bonus_richting === 'plus' ? '+' : '-' }}{{ number_format($algemeneFactoren->ervaring_factor, 1) }}%</span>
+                            </div>
+                        @endif
+                        
+                        @if($algemeneFactoren->ancienniteit_factor > 0)
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-700">⏳ Anciënniteit Bonus</span>
+                                <span class="font-semibold text-green-600">{{ $algemeneFactoren->bonus_richting === 'plus' ? '+' : '-' }}{{ number_format($algemeneFactoren->ancienniteit_factor, 1) }}%</span>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="pt-3 border-t border-gray-200">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-semibold text-gray-900">Totale Bonus</span>
+                            <span class="text-lg font-bold {{ $algemeneFactoren->bonus_richting === 'plus' ? 'text-green-600' : 'text-red-600' }}">
+                                {{ $algemeneFactoren->bonus_richting === 'plus' ? '+' : '-' }}{{ number_format($algemeneFactoren->totale_bonus, 1) }}%
+                            </span>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">
+                            @if($algemeneFactoren->bonus_richting === 'plus')
+                                ✅ Jij krijgt meer commissie
+                            @else
+                                ⚠️ Organisatie krijgt meer commissie
+                            @endif
+                        </div>
+                    </div>
+                @else
+                    <p class="text-sm text-gray-600 italic">Geen algemene bonussen ingesteld</p>
+                @endif
+            </div>
+
+            {{-- Dienst-Specifieke Commissies --}}
+            <div class="mb-6">
+                <h3 class="font-bold text-gray-900 mb-3">Commissie per Dienst</h3>
+                
+                <div class="space-y-2">
+                    @foreach($beschikbareDiensten as $dienst)
+                        @php
+                            $customFactor = $user->commissieFactoren()
+                                ->where('dienst_id', $dienst->id)
+                                ->actief()
+                                ->first();
+                            
+                            $berekendPercentage = $user->getCommissiePercentageVoorDienst($dienst);
+                        @endphp
+                        
+                        <div class="p-3 bg-white border border-gray-200 rounded-lg">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-900">{{ $dienst->naam }}</div>
+                                    <div class="text-xs text-gray-600 mt-1">
+                                        Basis: {{ number_format($dienst->commissie_percentage, 1) }}%
+                                        @if($algemeneFactoren && $algemeneFactoren->totale_bonus > 0)
+                                            {{ $algemeneFactoren->bonus_richting === 'plus' ? '+' : '-' }} {{ number_format($algemeneFactoren->totale_bonus, 1) }}%
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    @if($customFactor && $customFactor->custom_commissie_percentage !== null)
+                                        <div class="text-lg font-bold text-blue-600">
+                                            {{ number_format($customFactor->custom_commissie_percentage, 1) }}%
+                                        </div>
+                                        <div class="text-xs text-blue-600">Custom</div>
+                                    @else
+                                        <div class="text-lg font-bold text-green-600">
+                                            {{ number_format($berekendPercentage, 1) }}%
+                                        </div>
+                                        <div class="text-xs text-gray-500">Berekend</div>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Opmerking --}}
+            @if($algemeneFactoren && $algemeneFactoren->opmerking)
+                <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div class="text-xs font-semibold text-blue-900 mb-1">📝 Opmerking van beheerder:</div>
+                    <div class="text-sm text-blue-800">{{ $algemeneFactoren->opmerking }}</div>
+                </div>
+            @endif
+
+            {{-- Sluiten knop --}}
+            <div class="mt-6 flex justify-end">
+                <button onclick="closeCommissieInfoModal()" 
+                        class="px-6 py-2 rounded-lg font-medium text-gray-900 hover:opacity-90 transition"
+                        style="background-color: #c8e1eb;">
+                    Sluiten
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
+// Commissie Info Modal functies
+function openCommissieInfoModal() {
+    document.getElementById('commissie-info-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeCommissieInfoModal() {
+    document.getElementById('commissie-info-modal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Sluit modal bij klikken buiten de modal
+document.getElementById('commissie-info-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCommissieInfoModal();
+    }
+});
+
+// Sluit modal met Escape toets
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeCommissieInfoModal();
+    }
+});
+
 // Prestatie zoekfunctie in tabel
 const prestatieZoek = document.getElementById('prestatie-zoek');
 const prestatieTabel = document.getElementById('prestaties-tabel');
