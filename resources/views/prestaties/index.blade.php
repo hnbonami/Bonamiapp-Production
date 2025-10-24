@@ -55,11 +55,12 @@
                     {{ $prestaties->count() > 0 ? number_format($prestaties->avg('commissie_percentage'), 1, ',', '.') : '0' }}%
                 </div>
                 <button onclick="openCommissieInfoModal()" 
-                        class="text-blue-500 hover:text-blue-700 transition"
+                        class="flex items-center gap-1 text-blue-500 hover:text-blue-700 transition"
                         title="Hoe wordt mijn commissie berekend?">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
                     </svg>
+                    <span class="text-xs">info</span>
                 </button>
             </div>
         </div>
@@ -383,7 +384,24 @@
                                 ->actief()
                                 ->first();
                             
+                            // Bereken medewerker commissie percentage
                             $berekendPercentage = $user->getCommissiePercentageVoorDienst($dienst);
+                            
+                            // Bereken organisatie commissie percentage voor weergave
+                            if ($algemeneFactoren) {
+                                if ($algemeneFactoren->bonus_richting === 'plus') {
+                                    // + Mode: organisatie - bonus = minder voor organisatie, meer voor medewerker
+                                    $organisatieCommissie = $dienst->commissie_percentage - $algemeneFactoren->totale_bonus;
+                                } else {
+                                    // - Mode: organisatie + bonus = meer voor organisatie, minder voor medewerker
+                                    $organisatieCommissie = $dienst->commissie_percentage + $algemeneFactoren->totale_bonus;
+                                }
+                            } else {
+                                $organisatieCommissie = $dienst->commissie_percentage;
+                            }
+                            
+                            // Medewerker krijgt het omgekeerde (100% - organisatie commissie)
+                            $medewerkerCommissie = 100 - $organisatieCommissie;
                         @endphp
                         
                         <div class="p-3 bg-white border border-gray-200 rounded-lg">
@@ -391,9 +409,9 @@
                                 <div class="flex-1">
                                     <div class="font-medium text-gray-900">{{ $dienst->naam }}</div>
                                     <div class="text-xs text-gray-600 mt-1">
-                                        Basis: {{ number_format($dienst->commissie_percentage, 1) }}%
+                                        Basis organisatie: {{ number_format($dienst->commissie_percentage, 1) }}%
                                         @if($algemeneFactoren && $algemeneFactoren->totale_bonus > 0)
-                                            {{ $algemeneFactoren->bonus_richting === 'plus' ? '+' : '-' }} {{ number_format($algemeneFactoren->totale_bonus, 1) }}%
+                                            {{ $algemeneFactoren->bonus_richting === 'plus' ? '-' : '+' }} {{ number_format($algemeneFactoren->totale_bonus, 1) }}% = {{ number_format($organisatieCommissie, 1) }}%
                                         @endif
                                     </div>
                                 </div>
@@ -402,12 +420,12 @@
                                         <div class="text-lg font-bold text-blue-600">
                                             {{ number_format($customFactor->custom_commissie_percentage, 1) }}%
                                         </div>
-                                        <div class="text-xs text-blue-600">Custom</div>
+                                        <div class="text-xs text-blue-600">Custom medewerker</div>
                                     @else
                                         <div class="text-lg font-bold text-green-600">
-                                            {{ number_format($berekendPercentage, 1) }}%
+                                            {{ number_format($medewerkerCommissie, 1) }}%
                                         </div>
-                                        <div class="text-xs text-gray-500">Berekend</div>
+                                        <div class="text-xs text-gray-500">Jouw commissie</div>
                                     @endif
                                 </div>
                             </div>

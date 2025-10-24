@@ -65,9 +65,9 @@
                         </label>
                     </div>
                     <div class="mt-3 text-xs text-gray-600 bg-white p-2 rounded">
-                        <strong>Voorbeeld (30% standaard commissie, 15% bonus):</strong><br>
-                        • <span class="text-green-700 font-semibold">+ Mode:</span> Medewerker 45%, Bonami 55%<br>
-                        • <span class="text-red-700 font-semibold">- Mode:</span> Medewerker 15%, Bonami 85%
+                        <strong>Voorbeeld (30% standaard voor organisatie commissie, 15% bonus naar medewerker):</strong><br>
+                        • <span class="text-green-700 font-semibold">+ Mode:</span> Medewerker 15%, Bonami 85%<br>
+                        • <span class="text-red-700 font-semibold">- Mode:</span> Medewerker 45%, Bonami 55%
                     </div>
                 </div>
                 
@@ -137,12 +137,24 @@
             <h2 class="text-lg font-bold mb-2">Dienst-Specifieke Commissies</h2>
             <p class="text-xs text-gray-600 mb-4">Overschrijf de standaard commissie voor specifieke diensten</p>
             
-            <div class="space-y-3">
+                        <div class="space-y-3">
                 @foreach($diensten as $dienstData)
                     @php
                         $dienst = $dienstData['dienst'];
                         $customFactor = $dienstData['custom_factor'];
-                        $berekend = $dienstData['berekende_commissie'];
+                        
+                        // Bereken het percentage afhankelijk van bonus_richting
+                        if ($algemeneFactoren) {
+                            if ($algemeneFactoren->bonus_richting === 'plus') {
+                                // + Mode: organisatie commissie - bonus = lagere commissie voor organisatie, meer voor medewerker
+                                $berekend = $dienst->commissie_percentage - $algemeneFactoren->totale_bonus;
+                            } else {
+                                // - Mode: organisatie commissie + bonus = hogere commissie voor organisatie, minder voor medewerker
+                                $berekend = $dienst->commissie_percentage + $algemeneFactoren->totale_bonus;
+                            }
+                        } else {
+                            $berekend = $dienst->commissie_percentage;
+                        }
                     @endphp
                     
                     <div class="border rounded-lg p-3">
@@ -154,10 +166,10 @@
                             <div class="grid grid-cols-2 gap-3 items-end">
                                 <div>
                                     <div class="font-medium text-sm text-gray-900">{{ $dienst->naam }}</div>
-                                    <div class="text-xs text-gray-500 mt-1">
-                                        Standaard: {{ $dienst->commissie_percentage }}%
-                                        @if($algemeneFactoren)
-                                            + {{ number_format($algemeneFactoren->totale_bonus, 1) }}% = {{ number_format($berekend, 1) }}%
+                                    <div class="text-xs text-gray-600 mt-1">
+                                        Standaard: {{ number_format($dienst->commissie_percentage, 2) }}%
+                                        @if($algemeneFactoren && $algemeneFactoren->totale_bonus > 0)
+                                            {{ $algemeneFactoren->bonus_richting === 'plus' ? '-' : '+' }} {{ number_format($algemeneFactoren->totale_bonus, 1) }}% = {{ number_format($berekend, 1) }}%
                                         @endif
                                     </div>
                                 </div>

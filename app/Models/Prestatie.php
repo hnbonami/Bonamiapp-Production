@@ -21,6 +21,7 @@ class Prestatie extends Model
         'klant_naam',
         'omschrijving_dienst',
         'datum_prestatie',
+        'einddatum_prestatie', // Einddatum voor prestaties die meerdere dagen duren
         'bruto_prijs',
         'btw_percentage',
         'btw_bedrag',
@@ -28,6 +29,8 @@ class Prestatie extends Model
         'commissie_percentage',
         'commissie_bedrag',
         'is_gefactureerd',
+        'is_uitgevoerd', // Status of dienst is uitgevoerd
+        'factuur_naar_klant', // Of er een factuur naar klant is gestuurd
         'factuur_nummer',
         'kwartaal',
         'jaar',
@@ -36,6 +39,7 @@ class Prestatie extends Model
 
     protected $casts = [
         'datum_prestatie' => 'date',
+        'einddatum_prestatie' => 'date', // Cast naar Carbon date object
         'bruto_prijs' => 'decimal:2',
         'btw_percentage' => 'decimal:2',
         'btw_bedrag' => 'decimal:2',
@@ -43,6 +47,8 @@ class Prestatie extends Model
         'commissie_percentage' => 'decimal:2',
         'commissie_bedrag' => 'decimal:2',
         'is_gefactureerd' => 'boolean',
+        'is_uitgevoerd' => 'boolean',
+        'factuur_naar_klant' => 'boolean',
     ];
 
     /**

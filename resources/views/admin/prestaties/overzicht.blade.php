@@ -86,6 +86,164 @@
         </div>
     </div>
 
+    {{-- Alle Prestaties Tabel --}}
+    <div class="bg-white rounded-lg shadow mb-6">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Alle Prestaties</h2>
+            
+            {{-- Zoek en Filter velden --}}
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div class="relative">
+                    <input type="text" id="zoek-klant" placeholder="Zoek klant..." 
+                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                <select id="filter-medewerker" class="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Alle medewerkers</option>
+                    @foreach($medewerkerStats as $stat)
+                        <option value="{{ $stat->id }}">{{ $stat->name }}</option>
+                    @endforeach
+                </select>
+                
+                <select id="filter-uitgevoerd" class="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">Alle statussen</option>
+                    <option value="1">Uitgevoerd</option>
+                    <option value="0">Niet uitgevoerd</option>
+                </select>
+                
+                <select id="sorteer" class="w-full border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="datum-desc">Nieuwste eerst</option>
+                    <option value="datum-asc">Oudste eerst</option>
+                    <option value="klant-asc">Klant A-Z</option>
+                    <option value="klant-desc">Klant Z-A</option>
+                    <option value="prijs-desc">Prijs hoog-laag</option>
+                    <option value="prijs-asc">Prijs laag-hoog</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="w-full" id="alle-prestaties-tabel">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klant</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medewerker</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dienst</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Prijs incl BTW</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Commissie</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Uitgevoerd</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Factuur Klant</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Startdatum</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Einddatum</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opmerkingen</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @php
+                        $allePrestaties = \App\Models\Prestatie::where('jaar', $huidigJaar)
+                            ->where('kwartaal', $huidigKwartaal)
+                            ->with(['user', 'dienst', 'klant'])
+                            ->orderBy('datum_prestatie', 'desc')
+                            ->get();
+                    @endphp
+                    
+                    @forelse($allePrestaties as $prestatie)
+                        <tr class="hover:bg-gray-50 prestatie-row" 
+                            data-klant="{{ strtolower($prestatie->klant_naam ?? '') }}"
+                            data-medewerker="{{ $prestatie->user_id }}"
+                            data-uitgevoerd="{{ $prestatie->is_uitgevoerd ? '1' : '0' }}"
+                            data-datum="{{ $prestatie->datum_prestatie->format('Y-m-d') }}"
+                            data-prijs="{{ $prestatie->bruto_prijs }}">
+                            
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ $prestatie->klant_naam ?? 'Geen klant' }}
+                                </div>
+                            </td>
+                            
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ $prestatie->user->name ?? '-' }}</div>
+                            </td>
+                            
+                            <td class="px-4 py-4">
+                                <div class="text-sm text-gray-900">{{ $prestatie->dienst->naam ?? 'Andere' }}</div>
+                            </td>
+                            
+                            <td class="px-4 py-4 whitespace-nowrap text-right">
+                                <span class="text-sm font-semibold text-gray-900">
+                                    €{{ number_format($prestatie->bruto_prijs, 2, ',', '.') }}
+                                </span>
+                            </td>
+                            
+                            <td class="px-4 py-4 whitespace-nowrap text-right">
+                                <span class="text-sm font-semibold text-green-600">
+                                    €{{ number_format($prestatie->commissie_bedrag, 2, ',', '.') }}
+                                </span>
+                            </td>
+                            
+                            <td class="px-4 py-4 text-center">
+                                @if($prestatie->is_uitgevoerd)
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        ✓ Ja
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        - Nee
+                                    </span>
+                                @endif
+                            </td>
+                            
+                            <td class="px-4 py-4 text-center">
+                                @if($prestatie->factuur_naar_klant)
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                                        ✓ Ja
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        - Nee
+                                    </span>
+                                @endif
+                            </td>
+                            
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-900">
+                                    {{ $prestatie->datum_prestatie ? $prestatie->datum_prestatie->format('d/m/Y') : '-' }}
+                                </span>
+                            </td>
+                            
+                            <td class="px-4 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-900">
+                                    @if($prestatie->einddatum_prestatie)
+                                        {{ \Carbon\Carbon::parse($prestatie->einddatum_prestatie)->format('d/m/Y') }}
+                                    @else
+                                        -
+                                    @endif
+                                </span>
+                            </td>
+                            
+                            <td class="px-4 py-4">
+                                <div class="text-sm text-gray-500 max-w-xs truncate" title="{{ $prestatie->opmerkingen }}">
+                                    {{ $prestatie->opmerkingen ?? '-' }}
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="10" class="px-6 py-12 text-center">
+                                <p class="text-gray-500">Geen prestaties gevonden in deze periode</p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     {{-- Medewerkers Overzicht --}}
     <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200">
@@ -154,6 +312,70 @@
 </div>
 
 <script>
+// Filter en zoek functionaliteit voor alle prestaties tabel
+const zoekKlant = document.getElementById('zoek-klant');
+const filterMedewerker = document.getElementById('filter-medewerker');
+const filterUitgevoerd = document.getElementById('filter-uitgevoerd');
+const sorteerSelect = document.getElementById('sorteer');
+const tabelRows = document.querySelectorAll('.prestatie-row');
+
+function filterEnSorteerPrestaties() {
+    const zoekterm = zoekKlant.value.toLowerCase();
+    const medewerkerId = filterMedewerker.value;
+    const uitgevoerdStatus = filterUitgevoerd.value;
+    
+    // Filter rows
+    let zichtbareRows = Array.from(tabelRows).filter(row => {
+        // Klant zoekfilter
+        const klantNaam = row.getAttribute('data-klant');
+        const matchZoek = klantNaam.includes(zoekterm);
+        
+        // Medewerker filter
+        const rowMedewerker = row.getAttribute('data-medewerker');
+        const matchMedewerker = !medewerkerId || rowMedewerker === medewerkerId;
+        
+        // Uitgevoerd filter
+        const rowUitgevoerd = row.getAttribute('data-uitgevoerd');
+        const matchUitgevoerd = !uitgevoerdStatus || rowUitgevoerd === uitgevoerdStatus;
+        
+        const isZichtbaar = matchZoek && matchMedewerker && matchUitgevoerd;
+        row.style.display = isZichtbaar ? '' : 'none';
+        
+        return isZichtbaar;
+    });
+    
+    // Sorteer zichtbare rows
+    const sorteerWaarde = sorteerSelect.value;
+    zichtbareRows.sort((a, b) => {
+        switch(sorteerWaarde) {
+            case 'datum-desc':
+                return b.getAttribute('data-datum').localeCompare(a.getAttribute('data-datum'));
+            case 'datum-asc':
+                return a.getAttribute('data-datum').localeCompare(b.getAttribute('data-datum'));
+            case 'klant-asc':
+                return a.getAttribute('data-klant').localeCompare(b.getAttribute('data-klant'));
+            case 'klant-desc':
+                return b.getAttribute('data-klant').localeCompare(a.getAttribute('data-klant'));
+            case 'prijs-desc':
+                return parseFloat(b.getAttribute('data-prijs')) - parseFloat(a.getAttribute('data-prijs'));
+            case 'prijs-asc':
+                return parseFloat(a.getAttribute('data-prijs')) - parseFloat(b.getAttribute('data-prijs'));
+            default:
+                return 0;
+        }
+    });
+    
+    // Herorden de DOM
+    const tbody = document.querySelector('#alle-prestaties-tabel tbody');
+    zichtbareRows.forEach(row => tbody.appendChild(row));
+}
+
+// Event listeners
+zoekKlant.addEventListener('input', filterEnSorteerPrestaties);
+filterMedewerker.addEventListener('change', filterEnSorteerPrestaties);
+filterUitgevoerd.addEventListener('change', filterEnSorteerPrestaties);
+sorteerSelect.addEventListener('change', filterEnSorteerPrestaties);
+
 // Kwartaal filter - redirect bij wijziging
 document.getElementById('kwartaal-filter').addEventListener('change', function() {
     const jaar = {{ $huidigJaar }};
