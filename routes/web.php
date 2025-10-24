@@ -1357,4 +1357,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/coaches/{user}/configure', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'configure'])->name('coaches.configure');
         Route::post('/coaches/{user}/diensten', [App\Http\Controllers\Admin\CoachPrestatieController::class, 'updateDiensten'])->name('coaches.diensten.update');
     });
+    
+    // Medewerker Commissies (buiten admin prefix om dubbele nesting te vermijden)
+    Route::prefix('admin/medewerkers/commissies')->middleware(['auth', 'verified'])->name('admin.medewerkers.commissies.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Admin\MedewerkerCommissieController::class, 'index'])->name('index');
+        Route::get('/{medewerker}/edit', [\App\Http\Controllers\Admin\MedewerkerCommissieController::class, 'edit'])->name('edit');
+        Route::put('/{medewerker}', [\App\Http\Controllers\Admin\MedewerkerCommissieController::class, 'update'])->name('update');
+        Route::put('/{medewerker}/dienst/{dienst}', [\App\Http\Controllers\Admin\MedewerkerCommissieController::class, 'updateDienstCommissie'])->name('dienst.update');
+    });
 });

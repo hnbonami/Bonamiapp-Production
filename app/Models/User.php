@@ -367,4 +367,95 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\Prestatie::class);
     }
+
+    /**
+     * Relatie met commissie factoren
+     */
+    public function commissieFactoren()
+    {
+        return $this->hasMany(MedewerkerCommissieFactor::class);
+    }
+
+    /**
+     * Bereken commissie percentage voor een specifieke dienst
+     * Rekening houdend met diploma, ervaring en anciënniteit bonussen
+     * 
+     * @param Dienst $dienst De dienst waarvoor commissie berekend moet worden
+     * @return float Het finale commissie percentage
+     */
+    public function getCommissiePercentageVoorDienst(Dienst $dienst): float
+    {
+        // 1. Check eerst of er een dienst-specifieke custom commissie is
+        $dienstSpecifiek = $this->commissieFactoren()
+            ->where('dienst_id', $dienst->id)
+            ->actief()
+            ->first();
+        
+        if ($dienstSpecifiek && $dienstSpecifiek->custom_commissie_percentage !== null) {
+            \Log::info('💰 Dienst-specifieke commissie gebruikt', [
+                'user_id' => $this->id,
+                'dienst_id' => $dienst->id,
+                'custom_percentage' => $dienstSpecifiek->custom_commissie_percentage
+            ]);
+            
+            return (float) $dienstSpecifiek->custom_commissie_percentage;
+        }
+        
+        // 2. Haal algemene commissie factoren op
+        $algemeen = $this->commissieFactoren()
+            ->algemeen()
+            ->actief()
+            ->first();
+        
+        if (!$algemeen) {
+            \Log::info('💰 Standaard dienst commissie gebruikt (geen factoren)', [
+                'user_id' => $this->id,
+                'dienst_id' => $dienst->id,
+                'percentage' => $dienst->commissie_percentage
+            ]);
+            
+            return (float) $dienst->commissie_percentage;
+        }
+        
+        // 3. Bereken: basis dienst commissie + bonussen
+        $basisCommissie = (float) $dienst->commissie_percentage;
+        $totaleBonus = $algemeen->totale_bonus;
+        $finaleCommissie = $basisCommissie + $totaleBonus;
+        
+        \Log::info('💰 Commissie berekend met bonussen', [
+            'user_id' => $this->id,
+            'dienst_id' => $dienst->id,
+            'basis' => $basisCommissie,
+            'diploma' => $algemeen->diploma_factor,
+            'ervaring' => $algemeen->ervaring_factor,
+            'ancienniteit' => $algemeen->ancienniteit_factor,
+            'totale_bonus' => $totaleBonus,
+            'finale_commissie' => $finaleCommissie
+        ]);
+        
+        return $finaleCommissie;
+    }
+
+    /**
+     * Haal algemene commissie factoren op voor deze medewerker
+     * 
+     * @return MedewerkerCommissieFactor|null
+     */
+    public function getAlgemeneCommissieFactoren(): ?MedewerkerCommissieFactor
+    {
+        return $this->commissieFactoren()
+            ->algemeen()
+            ->actief()
+            ->first();
+    }
+
+    /**
+     * Check of deze medewerker commissie factoren heeft
+     * 
+     * @return bool
+     */
+    public function heeftCommissieFactoren(): bool
+    {
+        return $this->commissieFactoren()->actief()->exists();
+    }
 }

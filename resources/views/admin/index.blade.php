@@ -112,6 +112,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
                 </a>
+                <a href="{{ route('admin.medewerkers.commissies.index') }}" class="inline-flex items-center font-medium" style="color: #111;">
+                    Commissies
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
                 <a href="{{ route('admin.prestaties.overzicht') }}" class="inline-flex items-center font-medium" style="color: #111;">
                     Overzicht
                     <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
