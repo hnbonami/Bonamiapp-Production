@@ -1386,3 +1386,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('/{medewerker}/dienst/{dienst}', [\App\Http\Controllers\Admin\MedewerkerCommissieController::class, 'updateDienstCommissie'])->name('dienst.update');
     });
 });
+
+// API endpoint voor commissie percentage (gebruikt door AJAX in frontend)
+Route::get('/api/commissie-percentage', function(Request $request) {
+    $dienstId = $request->input('dienst_id');
+    $user = auth()->user();
+    
+    if (!$user || !$dienstId) {
+        return response()->json(['commissie_percentage' => 0]);
+    }
+    
+    $dienst = \App\Models\Dienst::find($dienstId);
+    
+    if (!$dienst) {
+        return response()->json(['commissie_percentage' => 0]);
+    }
+    
+    // Gebruik de User model method om het correcte commissie percentage te berekenen
+    $commissiePercentage = $user->getCommissiePercentageVoorDienst($dienst);
+    
+    \Log::info('📊 Commissie percentage opgehaald', [
+        'user_id' => $user->id,
+        'dienst_id' => $dienstId,
+        'commissie_percentage' => $commissiePercentage
+    ]);
+    
+    return response()->json(['commissie_percentage' => $commissiePercentage]);
+})->middleware('auth')->name('api.commissie-percentage');
