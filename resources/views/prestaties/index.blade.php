@@ -1,6 +1,21 @@
 @extends('layouts.app')
 
 @section('content')
+{{-- Success/Error Banners --}}
+@if(session('success'))
+    <div id="success-banner" style="background:#d1fae5;color:#065f46;padding:1em;margin-bottom:1em;border-radius:5px;display:flex;justify-content:space-between;align-items:center;">
+        <span>{{ session('success') }}</span>
+        <button onclick="this.parentElement.remove()" style="color:#065f46;font-size:1.5em;line-height:1;border:none;background:none;cursor:pointer;">&times;</button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div id="error-banner" style="background:#fef2f2;color:#dc2626;padding:1em;margin-bottom:1em;border-radius:5px;display:flex;justify-content:space-between;align-items:center;">
+        <span>{{ session('error') }}</span>
+        <button onclick="this.parentElement.remove()" style="color:#dc2626;font-size:1.5em;line-height:1;border:none;background:none;cursor:pointer;">&times;</button>
+    </div>
+@endif
+
 <div class="container mx-auto px-4 py-6">
     {{-- Header met jaar & kwartaal selectie --}}
     <div class="flex justify-between items-center mb-4">
@@ -49,10 +64,16 @@
         </div>
         
         <div class="bg-white rounded-lg shadow p-4">
-            <div class="text-xs text-gray-600 mb-1">Commissie %</div>
+            <div class="text-xs text-gray-600 mb-1">Mijn Bonus</div>
             <div class="flex items-center gap-2">
                 <div class="text-2xl font-bold text-green-600">
-                    {{ $prestaties->count() > 0 ? number_format($prestaties->avg('commissie_percentage'), 1, ',', '.') : '0' }}%
+                    @php
+                        // Haal de totale bonus op van de ingelogde medewerker
+                        $medewerker = auth()->user();
+                        $factoren = $medewerker->commissieFactoren->first();
+                        $totaleBonus = $factoren ? $factoren->totale_bonus : 0;
+                    @endphp
+                    {{ $totaleBonus > 0 ? '+' : '' }}{{ number_format($totaleBonus, 1, ',', '.') }}%
                 </div>
                 <button onclick="openCommissieInfoModal()" 
                         class="flex items-center gap-1 text-blue-500 hover:text-blue-700 transition"
@@ -63,19 +84,44 @@
                     <span class="text-xs">info</span>
                 </button>
             </div>
+            @if($factoren)
+                <div class="text-xs text-gray-500 mt-1">
+                    {{ $factoren->bonus_richting === 'plus' ? '→ Extra inkomst voor jou' : '→ Gaat naar organisatie' }}
+                </div>
+            @endif
         </div>
         
         <div class="bg-white rounded-lg shadow p-4">
-            <div class="text-xs text-gray-600 mb-1">Totale Commissie</div>
-            <div class="text-2xl font-bold text-blue-600">
-                €{{ number_format($totaleCommissie, 2, ',', '.') }}
+            <div class="text-xs text-gray-600 mb-1">Mijn Totale Inkomst</div>
+            <div class="text-2xl font-bold text-green-600">
+                @php
+                    // Bereken totale netto inkomst voor medewerker
+                    $totaleNettoMedewerker = $prestaties->sum(function($p) {
+                        $prijsExclBtw = $p->bruto_prijs / 1.21; // Stap 1: BTW aftrekken
+                        $bonamiCommissie = $prijsExclBtw * ($p->commissie_percentage / 100); // Stap 2: Bonami commissie
+                        return $prijsExclBtw - $bonamiCommissie; // Stap 3: Netto voor medewerker
+                    });
+                @endphp
+                €{{ number_format($totaleNettoMedewerker, 2, ',', '.') }}
             </div>
         </div>
         
         <div class="bg-white rounded-lg shadow p-4">
-            <div class="text-xs text-gray-600 mb-1">Gemiddelde per Prestatie</div>
+            <div class="text-xs text-gray-600 mb-1">Gemiddelde Inkomst per Prestatie</div>
             <div class="text-2xl font-bold text-gray-900">
-                €{{ $prestaties->count() > 0 ? number_format($totaleCommissie / $prestaties->count(), 2, ',', '.') : '0,00' }}
+                @php
+                    if ($prestaties->count() > 0) {
+                        $totaleNettoMedewerker = $prestaties->sum(function($p) {
+                            $prijsExclBtw = $p->bruto_prijs / 1.21;
+                            $bonamiCommissie = $prijsExclBtw * ($p->commissie_percentage / 100);
+                            return $prijsExclBtw - $bonamiCommissie;
+                        });
+                        $gemiddelde = $totaleNettoMedewerker / $prestaties->count();
+                    } else {
+                        $gemiddelde = 0;
+                    }
+                @endphp
+                €{{ number_format($gemiddelde, 2, ',', '.') }}
             </div>
         </div>
     </div>
@@ -286,10 +332,10 @@
                                     Prijs
                                 </th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-commissie">
-                                    Commissie
+                                    Mijn Inkomst
                                 </th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-netto">
-                                    Netto Inkomst
+                                    Bonami Commissie
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-opmerkingen">
                                     Opmerkingen
@@ -333,12 +379,19 @@
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-600 text-right kolom-commissie">
                                         @php
-                                            $commissie = ($prestatie->bruto_prijs / 1.21) * $prestatie->commissie_percentage / 100;
+                                            // Stap 1: BTW aftrekken (prijs / 1.21)
+                                            $prijsExclBtw = $prestatie->bruto_prijs / 1.21;
+                                            // Stap 2: Medewerker inkomst (medewerker percentage × prijs excl BTW)
+                                            $medewerkerInkomst = $prijsExclBtw * ($prestatie->commissie_percentage / 100);
                                         @endphp
-                                        €{{ number_format($commissie, 2, ',', '.') }}
+                                        €{{ number_format($medewerkerInkomst, 2, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-blue-600 text-right kolom-netto">
-                                        €{{ number_format($prestatie->bruto_prijs - $commissie, 2, ',', '.') }}
+                                        @php
+                                            // Stap 3: Bonami commissie = rest van prijs excl BTW
+                                            $bonamiCommissie = $prijsExclBtw - $medewerkerInkomst;
+                                        @endphp
+                                        €{{ number_format($bonamiCommissie, 2, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-500 kolom-opmerkingen">
                                         {{ $prestatie->opmerkingen ?? '-' }}
@@ -396,7 +449,7 @@
                             @endforelse
                         </tbody>
                         @if($prestaties->count() > 0)
-                            <tfoot class="bg-gray-50 font-semibold">
+            <tfoot class="bg-gray-50 font-semibold">
                                 <tr>
                                     <td colspan="4" class="px-4 py-3 text-sm text-gray-900">Totaal</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 text-right">
@@ -404,16 +457,24 @@
                                     </td>
                                     <td class="px-4 py-3 text-sm text-green-600 text-right">
                                         @php
-                                            // Bereken totale commissie voor alle prestaties
-                                            $totaleCommissie = $prestaties->sum(function($p) {
-                                                $prijsExclBtw = $p->bruto_prijs / 1.21; // BTW aftrekken
-                                                return ($prijsExclBtw * $p->commissie_percentage) / 100; // Medewerker percentage
+                                            // Bereken totale inkomst voor medewerker
+                                            $totaleMedewerkerInkomst = $prestaties->sum(function($p) {
+                                                $prijsExclBtw = $p->bruto_prijs / 1.21; // Stap 1: BTW aftrekken
+                                                return $prijsExclBtw * ($p->commissie_percentage / 100); // Stap 2: Medewerker inkomst
                                             });
                                         @endphp
-                                        €{{ number_format($totaleCommissie, 2, ',', '.') }}
+                                        €{{ number_format($totaleMedewerkerInkomst, 2, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-3 text-sm text-blue-600 text-right">
-                                        €{{ number_format($prestaties->sum('bruto_prijs') - $totaleCommissie, 2, ',', '.') }}
+                                        @php
+                                            // Bereken totale Bonami commissie
+                                            $totaleBonamiCommissie = $prestaties->sum(function($p) {
+                                                $prijsExclBtw = $p->bruto_prijs / 1.21; // Stap 1: BTW aftrekken
+                                                $medewerkerInkomst = $prijsExclBtw * ($p->commissie_percentage / 100); // Stap 2: Medewerker inkomst
+                                                return $prijsExclBtw - $medewerkerInkomst; // Stap 3: Bonami commissie
+                                            });
+                                        @endphp
+                                        €{{ number_format($totaleBonamiCommissie, 2, ',', '.') }}
                                     </td>
                                     <td colspan="2" class="px-4 py-3 text-sm text-gray-500"></td>
                                 </tr>
@@ -693,6 +754,72 @@
 </div>
 
 <script>
+// Toon success/error banner met auto-dismiss na 5 seconden
+document.addEventListener('DOMContentLoaded', function() {
+    const successBanner = document.getElementById('success-banner');
+    const errorBanner = document.getElementById('error-banner');
+    
+    if (successBanner) {
+        setTimeout(() => {
+            successBanner.style.opacity = '0';
+            successBanner.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => successBanner.remove(), 500);
+        }, 5000);
+    }
+    
+    if (errorBanner) {
+        setTimeout(() => {
+            errorBanner.style.opacity = '0';
+            errorBanner.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => errorBanner.remove(), 500);
+        }, 5000);
+    }
+});
+
+// Helper functie om JavaScript success banner te tonen
+function toonSuccessBanner(bericht) {
+    const existingBanner = document.getElementById('js-success-banner');
+    if (existingBanner) existingBanner.remove();
+    
+    const banner = document.createElement('div');
+    banner.id = 'js-success-banner';
+    banner.style.cssText = 'background:#d1fae5;color:#065f46;padding:1em;margin-bottom:1em;border-radius:5px;display:flex;justify-content:space-between;align-items:center;';
+    banner.innerHTML = `
+        <span>${bericht}</span>
+        <button onclick="this.parentElement.remove()" style="color:#065f46;font-size:1.5em;line-height:1;border:none;background:none;cursor:pointer;">&times;</button>
+    `;
+    
+    document.querySelector('.container').insertBefore(banner, document.querySelector('.container').firstChild);
+    
+    setTimeout(() => {
+        banner.style.opacity = '0';
+        banner.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => banner.remove(), 500);
+    }, 5000);
+}
+
+// Helper functie om JavaScript error banner te tonen
+function toonErrorBanner(bericht) {
+    const existingBanner = document.getElementById('js-error-banner');
+    if (existingBanner) existingBanner.remove();
+    
+    const banner = document.createElement('div');
+    banner.id = 'js-error-banner';
+    banner.style.cssText = 'background:#fef2f2;color:#dc2626;padding:1em;margin-bottom:1em;border-radius:5px;display:flex;justify-content:space-between;align-items:center;';
+    banner.innerHTML = `
+        <span>${bericht}</span>
+        <button onclick="this.parentElement.remove()" style="color:#dc2626;font-size:1.5em;line-height:1;border:none;background:none;cursor:pointer;">&times;</button>
+    `;
+    
+    document.querySelector('.container').insertBefore(banner, document.querySelector('.container').firstChild);
+    
+    setTimeout(() => {
+        banner.style.opacity = '0';
+        banner.style.transition = 'opacity 0.5s ease';
+        setTimeout(() => banner.remove(), 500);
+    }, 5000);
+}
+
 // Commissie Info Modal functies
 function openCommissieInfoModal() {
     document.getElementById('commissie-info-modal').classList.remove('hidden');
@@ -915,13 +1042,16 @@ document.getElementById('dienst-select').addEventListener('change', function() {
         prijsInput.setAttribute('readonly', 'readonly');
         prijsInput.value = prijs.toFixed(2);
         
-        // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+        // Bereken netto inkomst voor medewerker:
+        // Stap 1: BTW aftrekken (prijs / 1.21)
         const prijsExclBtw = prijs / 1.21;
-        const medewerkerPercentage = 100 - commissiePercentage;
-        const inkomst = (prijsExclBtw * medewerkerPercentage) / 100;
+        // Stap 2: Bonami commissie berekenen
+        const bonamiCommissie = prijsExclBtw * (commissiePercentage / 100);
+        // Stap 3: Netto inkomst = prijs excl BTW - Bonami commissie
+        const nettoInkomst = prijsExclBtw - bonamiCommissie;
         
         document.getElementById('commissie-preview').textContent = 
-            '€' + inkomst.toFixed(2).replace('.', ',');
+            '€' + nettoInkomst.toFixed(2).replace('.', ',');
     }
 });
 
@@ -934,13 +1064,16 @@ document.getElementById('prijs-input').addEventListener('input', function() {
         const prijs = parseFloat(this.value || 0);
         const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
         
-        // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+        // Bereken netto inkomst voor medewerker:
+        // Stap 1: BTW aftrekken (prijs / 1.21)
         const prijsExclBtw = prijs / 1.21;
-        const medewerkerPercentage = 100 - commissiePercentage;
-        const inkomst = (prijsExclBtw * medewerkerPercentage) / 100;
+        // Stap 2: Bonami commissie berekenen
+        const bonamiCommissie = prijsExclBtw * (commissiePercentage / 100);
+        // Stap 3: Netto inkomst = prijs excl BTW - Bonami commissie
+        const nettoInkomst = prijsExclBtw - bonamiCommissie;
         
         document.getElementById('commissie-preview').textContent = 
-            '€' + inkomst.toFixed(2).replace('.', ',');
+            '€' + nettoInkomst.toFixed(2).replace('.', ',');
     }
 });
 
@@ -956,8 +1089,6 @@ if (kwartaalFilter) {
 
 // Toggle uitgevoerd status
 function toggleUitgevoerd(prestatieId, isChecked) {
-    console.log('Toggle uitgevoerd:', prestatieId, isChecked);
-    
     fetch(`/prestaties/${prestatieId}/toggle-uitgevoerd`, {
         method: 'POST',
         headers: {
@@ -967,7 +1098,6 @@ function toggleUitgevoerd(prestatieId, isChecked) {
         body: JSON.stringify({ is_uitgevoerd: isChecked })
     })
     .then(response => {
-        console.log('Response status:', response.status);
         if (!response.ok) {
             return response.text().then(text => {
                 console.error('Server error response:', text);
@@ -977,15 +1107,16 @@ function toggleUitgevoerd(prestatieId, isChecked) {
         return response.json();
     })
     .then(data => {
-        console.log('Success:', data);
-        if (!data.success) {
-            alert('Er ging iets mis bij het opslaan');
+        if (data.success) {
+            toonSuccessBanner(isChecked ? '✅ Prestatie gemarkeerd als uitgevoerd' : '⏳ Prestatie gemarkeerd als niet uitgevoerd');
+        } else {
+            toonErrorBanner('❌ Er ging iets mis bij het opslaan');
             location.reload();
         }
     })
     .catch(error => {
         console.error('Error details:', error);
-        alert('Er ging iets mis bij het opslaan: ' + error.message);
+        toonErrorBanner('❌ Er ging iets mis bij het opslaan: ' + error.message);
         location.reload();
     });
 }
@@ -1066,15 +1197,15 @@ function dupliceerPrestatie(prestatieId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Prestatie succesvol gedupliceerd!');
-            location.reload();
+            toonSuccessBanner('📋 Prestatie succesvol gedupliceerd!');
+            setTimeout(() => location.reload(), 1000);
         } else {
-            alert('Er ging iets mis bij het dupliceren');
+            toonErrorBanner('❌ Er ging iets mis bij het dupliceren');
         }
     })
     .catch(error => {
         console.error('Error duplicating prestatie:', error);
-        alert('Er ging iets mis bij het dupliceren: ' + error.message);
+        toonErrorBanner('❌ Er ging iets mis bij het dupliceren: ' + error.message);
     });
 }
 
@@ -1156,25 +1287,31 @@ document.getElementById('edit-dienst').addEventListener('change', function() {
         prijsInput.focus();
         
         const huidigePrijs = parseFloat(prijsInput.value || 0);
-        // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+        // Bereken netto inkomst voor medewerker:
+        // Stap 1: BTW aftrekken (prijs / 1.21)
         const prijsExclBtw = huidigePrijs / 1.21;
-        const medewerkerPercentage = 100 - commissiePercentage;
-        const inkomst = (prijsExclBtw * medewerkerPercentage) / 100;
+        // Stap 2: Bonami commissie berekenen
+        const bonamiCommissie = prijsExclBtw * (commissiePercentage / 100);
+        // Stap 3: Netto inkomst = prijs excl BTW - Bonami commissie
+        const nettoInkomst = prijsExclBtw - bonamiCommissie;
         
         document.getElementById('edit-commissie-preview').textContent = 
-            '€' + inkomst.toFixed(2).replace('.', ',');
+            '€' + nettoInkomst.toFixed(2).replace('.', ',');
     } else {
         // Voor gewone diensten: auto-fill en readonly
         prijsInput.setAttribute('readonly', 'readonly');
         prijsInput.value = prijs.toFixed(2);
         
-        // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+        // Bereken netto inkomst voor medewerker:
+        // Stap 1: BTW aftrekken (prijs / 1.21)
         const prijsExclBtw = prijs / 1.21;
-        const medewerkerPercentage = 100 - commissiePercentage;
-        const inkomst = (prijsExclBtw * medewerkerPercentage) / 100;
+        // Stap 2: Bonami commissie berekenen
+        const bonamiCommissie = prijsExclBtw * (commissiePercentage / 100);
+        // Stap 3: Netto inkomst = prijs excl BTW - Bonami commissie
+        const nettoInkomst = prijsExclBtw - bonamiCommissie;
         
         document.getElementById('edit-commissie-preview').textContent = 
-            '€' + inkomst.toFixed(2).replace('.', ',');
+            '€' + nettoInkomst.toFixed(2).replace('.', ',');
     }
 });
 
@@ -1187,13 +1324,16 @@ document.getElementById('edit-prijs').addEventListener('input', function() {
         const prijs = parseFloat(this.value || 0);
         const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
         
-        // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+        // Bereken netto inkomst voor medewerker:
+        // Stap 1: BTW aftrekken (prijs / 1.21)
         const prijsExclBtw = prijs / 1.21;
-        const medewerkerPercentage = 100 - commissiePercentage;
-        const inkomst = (prijsExclBtw * medewerkerPercentage) / 100;
+        // Stap 2: Bonami commissie berekenen
+        const bonamiCommissie = prijsExclBtw * (commissiePercentage / 100);
+        // Stap 3: Netto inkomst = prijs excl BTW - Bonami commissie
+        const nettoInkomst = prijsExclBtw - bonamiCommissie;
         
         document.getElementById('edit-commissie-preview').textContent = 
-            '€' + inkomst.toFixed(2).replace('.', ',');
+            '€' + nettoInkomst.toFixed(2).replace('.', ',');
     }
 });
 </script>
