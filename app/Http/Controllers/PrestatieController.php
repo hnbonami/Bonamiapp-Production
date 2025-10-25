@@ -227,25 +227,115 @@ class PrestatieController extends Controller
     }
 
     /**
-     * Toggle uitgevoerd status van prestatie
+     * Haal prestatie data op voor edit modal (AJAX)
+     */
+    public function edit(Prestatie $prestatie)
+    {
+        // Controleer of gebruiker eigenaar is
+        if ($prestatie->user_id !== auth()->id()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Geen toegang tot deze prestatie'
+            ], 403);
+        }
+        
+        $prestatie->load('klant', 'dienst');
+        
+        return response()->json([
+            'success' => true,
+            'prestatie' => $prestatie
+        ]);
+    }
+
+    /**
+     * Dupliceer een prestatie
+     */
+    public function duplicate(Prestatie $prestatie)
+    {
+        try {
+            // Controleer of gebruiker eigenaar is
+            if ($prestatie->user_id !== auth()->id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Geen toegang tot deze prestatie'
+                ], 403);
+            }
+            
+            // Maak een kopie van de prestatie
+            $nieuwePrestatie = $prestatie->replicate();
+            $nieuwePrestatie->datum_prestatie = now();
+            $nieuwePrestatie->is_uitgevoerd = false;
+            $nieuwePrestatie->save();
+            
+            \Log::info('Prestatie gedupliceerd', [
+                'origineel_id' => $prestatie->id,
+                'nieuwe_id' => $nieuwePrestatie->id,
+                'user_id' => auth()->id()
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Prestatie succesvol gedupliceerd',
+                'prestatie_id' => $nieuwePrestatie->id
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Prestatie dupliceren mislukt', [
+                'error' => $e->getMessage(),
+                'prestatie_id' => $prestatie->id
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Er ging iets mis bij het dupliceren'
+            ], 500);
+        }
+    }
+
+    /**
+     * Toggle is_uitgevoerd status via AJAX
      */
     public function toggleUitgevoerd(Request $request, Prestatie $prestatie)
     {
-        // Check of coach deze prestatie mag bewerken
-        if ($prestatie->user_id !== auth()->id() && !auth()->user()->is_admin) {
-            return response()->json(['success' => false, 'message' => 'Geen toegang'], 403);
+        try {
+            // Controleer of gebruiker eigenaar is
+            if ($prestatie->user_id !== auth()->id()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Geen toegang tot deze prestatie'
+                ], 403);
+            }
+            
+            $validated = $request->validate([
+                'is_uitgevoerd' => 'required|boolean'
+            ]);
+            
+            $prestatie->update([
+                'is_uitgevoerd' => $validated['is_uitgevoerd']
+            ]);
+            
+            \Log::info('Uitgevoerd status updated', [
+                'prestatie_id' => $prestatie->id,
+                'is_uitgevoerd' => $validated['is_uitgevoerd']
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Status bijgewerkt',
+                'is_uitgevoerd' => $prestatie->is_uitgevoerd
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Toggle uitgevoerd failed', [
+                'error' => $e->getMessage(),
+                'prestatie_id' => $prestatie->id
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Er ging iets mis: ' . $e->getMessage()
+            ], 500);
         }
-
-        $prestatie->is_uitgevoerd = $request->input('is_uitgevoerd', false);
-        $prestatie->save();
-
-        Log::info('Prestatie uitgevoerd status gewijzigd', [
-            'prestatie_id' => $prestatie->id,
-            'is_uitgevoerd' => $prestatie->is_uitgevoerd,
-            'user_id' => auth()->id(),
-        ]);
-
-        return response()->json(['success' => true]);
     }
 
     /**

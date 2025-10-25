@@ -253,18 +253,42 @@
                                     <td class="px-4 py-4 text-sm text-gray-500">
                                         {{ $prestatie->opmerkingen ?? '-' }}
                                     </td>
-                                    <td class="px-4 py-4 text-center">
-                                        <form method="POST" action="{{ route('prestaties.destroy', $prestatie) }}" 
-                                              onsubmit="return confirm('Weet je zeker dat je deze prestatie wilt verwijderen?')"
-                                              class="inline">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-500 hover:text-red-700" title="Verwijderen">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    <td class="px-4 py-4 whitespace-nowrap text-center">
+                                        <div class="action-buttons flex flex-row flex-nowrap items-center justify-center gap-2">
+                                            <button onclick="openEditModal({{ $prestatie->id }})" 
+                                                    aria-label="Bewerk" 
+                                                    class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" 
+                                                    title="Bewerk">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
                                                 </svg>
                                             </button>
-                                        </form>
+                                            
+                                            <button onclick="dupliceerPrestatie({{ $prestatie->id }})" 
+                                                    aria-label="Dupliceren" 
+                                                    class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" 
+                                                    title="Dupliceren">
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                                                </svg>
+                                            </button>
+                                            
+                                            <form method="POST" action="{{ route('prestaties.destroy', $prestatie) }}" 
+                                                  onsubmit="return confirm('Weet je zeker dat je deze prestatie wilt verwijderen?')"
+                                                  class="inline">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" 
+                                                        aria-label="Verwijderen" 
+                                                        class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-rose-100 text-rose-700" 
+                                                        style="margin-right:2px;">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001 1h8a1 1 0 001-1m-10 0V6a2 2 0 012-2h4a2 2 0 012 2v1"/>
+                                                    </svg>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -454,6 +478,120 @@
     </div>
 </div>
 
+{{-- Edit Prestatie Modal --}}
+<div id="edit-prestatie-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            {{-- Header --}}
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900">✏️ Prestatie Bewerken</h2>
+                    <p class="text-sm text-gray-600 mt-1">Wijzig de gegevens van deze prestatie</p>
+                </div>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            {{-- Edit Form --}}
+            <form id="edit-prestatie-form" method="POST">
+                @csrf
+                @method('PUT')
+                
+                {{-- Datum range --}}
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Startdatum</label>
+                        <input type="date" name="datum_prestatie" id="edit-datum" required
+                               class="w-full rounded border-gray-300 py-2 px-3">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Einddatum (optioneel)</label>
+                        <input type="date" name="einddatum_prestatie" id="edit-einddatum"
+                               class="w-full rounded border-gray-300 py-2 px-3">
+                    </div>
+                </div>
+                
+                {{-- Dienst & Prijs --}}
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Dienst</label>
+                        <select name="dienst_id" id="edit-dienst" required
+                                class="w-full rounded border-gray-300 py-2 px-3">
+                            <option value="">-- Kies dienst --</option>
+                            @foreach($beschikbareDiensten as $dienst)
+                                <option value="{{ $dienst->id }}" 
+                                        data-prijs="{{ $dienst->standaard_prijs }}"
+                                        data-commissie="{{ $dienst->commissie_percentage }}">
+                                    {{ $dienst->naam }}
+                                </option>
+                            @endforeach
+                            <option value="andere" data-prijs="0" data-commissie="0">Andere</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Prijs (incl. BTW)</label>
+                        <input type="number" name="prijs" id="edit-prijs" step="0.01" required
+                               class="w-full rounded border-gray-300 py-2 px-3">
+                    </div>
+                </div>
+                
+                {{-- Commissie preview --}}
+                <div class="mb-4 p-3 bg-blue-50 rounded">
+                    <div class="text-sm text-gray-600">Commissie</div>
+                    <div class="text-xl font-bold text-blue-600" id="edit-commissie-preview">€0,00</div>
+                </div>
+                
+                {{-- Klant --}}
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Klant (optioneel)</label>
+                    <input type="text" id="edit-klant-zoek" placeholder="Zoek klant..." 
+                           class="w-full rounded border-gray-300 py-2 px-3 mb-1">
+                    <select name="klant_id" id="edit-klant-select" class="w-full rounded border-gray-300 py-2 px-3" size="4">
+                        <option value="">-- Geen klant --</option>
+                        @foreach($klanten as $klant)
+                            <option value="{{ $klant['id'] }}" data-naam="{{ strtolower($klant['naam']) }}">{{ $klant['naam'] }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                
+                {{-- Opmerkingen --}}
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Opmerkingen</label>
+                    <textarea name="opmerkingen" id="edit-opmerkingen" rows="4" 
+                              class="w-full rounded border-gray-300 py-2 px-3"></textarea>
+                </div>
+                
+                {{-- Uitgevoerd checkbox --}}
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        <input type="checkbox" name="is_uitgevoerd" id="edit-uitgevoerd" value="1" 
+                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4">
+                        <span class="ml-2 text-sm text-gray-700">Dienst is uitgevoerd</span>
+                    </label>
+                </div>
+                
+                {{-- Buttons --}}
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeEditModal()" 
+                            class="px-6 py-2 rounded-lg font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition">
+                        Annuleren
+                    </button>
+                    <button type="submit" 
+                            class="px-6 py-2 rounded-lg font-medium text-gray-900 hover:opacity-90 transition"
+                            style="background-color: #c8e1eb;">
+                        Opslaan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
 // Commissie Info Modal functies
 function openCommissieInfoModal() {
@@ -636,5 +774,359 @@ function toggleUitgevoerd(prestatieId, isChecked) {
         location.reload();
     });
 }
+
+// Edit Prestatie Modal functies
+function openEditModal(prestatieId) {
+    // Reset form en modal staat
+    const form = document.getElementById('edit-prestatie-form');
+    form.reset();
+    document.getElementById('edit-commissie-preview').textContent = '€0,00';
+    form.action = `/prestaties/${prestatieId}`;
+    
+    // Haal prestatie gegevens op
+    fetch(`/prestaties/${prestatieId}/edit`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const prestatie = data.prestatie;
+                
+                // Vul form met gegevens
+                document.getElementById('edit-datum').value = prestatie.datum_prestatie.split('T')[0];
+                document.getElementById('edit-einddatum').value = prestatie.einddatum_prestatie ? prestatie.einddatum_prestatie.split('T')[0] : '';
+                document.getElementById('edit-prijs').value = prestatie.bruto_prijs;
+                document.getElementById('edit-opmerkingen').value = prestatie.opmerkingen || '';
+                document.getElementById('edit-uitgevoerd').checked = prestatie.is_uitgevoerd;
+                
+                // Dienst selecteren
+                const dienstSelect = document.getElementById('edit-dienst');
+                dienstSelect.value = prestatie.dienst_id;
+                
+                // Trigger change event om prijs en commissie te updaten
+                const event = new Event('change');
+                dienstSelect.dispatchEvent(event);
+                
+                // Klant selecteren
+                const klantSelect = document.getElementById('edit-klant-select');
+                klantSelect.value = prestatie.klant_id || '';
+                
+                // Trigger change event voor klant zoekfunctie
+                const klantZoek = document.getElementById('edit-klant-zoek');
+                if (prestatie.klant) {
+                    klantZoek.value = `${prestatie.klant.voornaam} ${prestatie.klant.naam}`;
+                } else {
+                    klantZoek.value = '';
+                }
+                
+                // Toon modal
+                document.getElementById('edit-prestatie-modal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                alert('Kon prestatie gegevens niet ophalen');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching prestatie:', error);
+            alert('Er ging iets mis bij het ophalen van de prestatiegegevens');
+        });
+}
+
+function closeEditModal() {
+    document.getElementById('edit-prestatie-modal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Dupliceer prestatie functie
+function dupliceerPrestatie(prestatieId) {
+    if (!confirm('Weet je zeker dat je deze prestatie wilt dupliceren?')) {
+        return;
+    }
+    
+    fetch(`/prestaties/${prestatieId}/duplicate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Prestatie succesvol gedupliceerd!');
+            location.reload();
+        } else {
+            alert('Er ging iets mis bij het dupliceren');
+        }
+    })
+    .catch(error => {
+        console.error('Error duplicating prestatie:', error);
+        alert('Er ging iets mis bij het dupliceren: ' + error.message);
+    });
+}
+
+// Sluit modal bij klikken buiten de modal
+document.getElementById('edit-prestatie-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEditModal();
+    }
+});
+
+// Sluit modal met Escape toets
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeEditModal();
+    }
+});
+
+// Klant zoekfunctie voor Edit modal
+const editKlantZoek = document.getElementById('edit-klant-zoek');
+const editKlantSelect = document.getElementById('edit-klant-select');
+
+// Filter klanten bij typen in zoekveld
+editKlantZoek.addEventListener('input', function() {
+    const zoekterm = this.value.toLowerCase();
+    const options = editKlantSelect.querySelectorAll('option');
+    
+    options.forEach(option => {
+        if (option.value === '') {
+            option.style.display = '';
+            return;
+        }
+        
+        const naam = option.getAttribute('data-naam') || '';
+        if (naam.includes(zoekterm)) {
+            option.style.display = '';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    // Auto-selecteer eerste zichtbare optie bij typen
+    if (zoekterm) {
+        const eersteZichtbaar = Array.from(options).find(opt => opt.style.display !== 'none' && opt.value !== '');
+        if (eersteZichtbaar) {
+            editKlantSelect.value = eersteZichtbaar.value;
+        }
+    }
+});
+
+// Wanneer klant geselecteerd wordt in dropdown, toon naam in zoekveld
+editKlantSelect.addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    
+    if (this.value && this.value !== '') {
+        editKlantZoek.value = selectedOption.textContent.trim();
+    } else {
+        editKlantZoek.value = '';
+    }
+});
+
+// Ook bij click op een optie
+editKlantSelect.addEventListener('click', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (this.value && this.value !== '') {
+        editKlantZoek.value = selectedOption.textContent.trim();
+    }
+});
+
+// Auto-fill prijs en commissie bij dienst selectie in Edit modal
+document.getElementById('edit-dienst').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const prijsInput = document.getElementById('edit-prijs');
+    const prijs = parseFloat(selectedOption.dataset.prijs || 0);
+    const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
+    
+    // Als "Andere" geselecteerd is, maak prijs input bewerkbaar
+    if (this.value === 'andere') {
+        prijsInput.removeAttribute('readonly');
+        prijsInput.focus();
+        
+        const huidigePrijs = parseFloat(prijsInput.value || 0);
+        const commissieBedrag = (huidigePrijs * commissiePercentage) / 100;
+        document.getElementById('edit-commissie-preview').textContent = 
+            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+    } else {
+        // Voor gewone diensten: auto-fill en readonly
+        prijsInput.setAttribute('readonly', 'readonly');
+        prijsInput.value = prijs.toFixed(2);
+        
+        const commissieBedrag = (prijs * commissiePercentage) / 100;
+        document.getElementById('edit-commissie-preview').textContent = 
+            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+    }
+});
+
+// Update commissie preview wanneer prijs handmatig wordt gewijzigd (bij "Andere") in Edit modal
+document.getElementById('edit-prijs').addEventListener('input', function() {
+    const dienstSelect = document.getElementById('edit-dienst');
+    const selectedOption = dienstSelect.options[dienstSelect.selectedIndex];
+    
+    if (dienstSelect.value === 'andere' || !dienstSelect.hasAttribute('readonly')) {
+        const prijs = parseFloat(this.value || 0);
+        const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
+        const commissieBedrag = (prijs * commissiePercentage) / 100;
+        
+        document.getElementById('edit-commissie-preview').textContent = 
+            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+    }
+});
+
+// Edit Prestatie Modal functies
+function openEditModal(prestatieId) {
+    // Reset form en modal staat
+    const form = document.getElementById('edit-prestatie-form');
+    form.reset();
+    document.getElementById('edit-commissie-preview').textContent = '€0,00';
+    
+    // Haal prestatie gegevens op
+    fetch(`/prestaties/${prestatieId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const prestatie = data.prestatie;
+                
+                // Vul form met gegevens
+                document.getElementById('edit-datum').value = prestatie.datum_prestatie.split('T')[0];
+                document.getElementById('edit-einddatum').value = prestatie.einddatum_prestatie ? prestatie.einddatum_prestatie.split('T')[0] : '';
+                document.getElementById('edit-prijs').value = prestatie.bruto_prijs;
+                document.getElementById('edit-opmerkingen').value = prestatie.opmerkingen;
+                document.getElementById('edit-uitgevoerd').checked = prestatie.is_uitgevoerd;
+                
+                // Dienst selecteren
+                const dienstSelect = document.getElementById('edit-dienst');
+                dienstSelect.value = prestatie.dienst_id;
+                
+                // Trigger change event om prijs en commissie te updaten
+                const event = new Event('change');
+                dienstSelect.dispatchEvent(event);
+                
+                // Klant selecteren
+                const klantSelect = document.getElementById('edit-klant-select');
+                klantSelect.value = prestatie.klant_id;
+                
+                // Trigger change event voor klant zoekfunctie
+                const klantZoek = document.getElementById('edit-klant-zoek');
+                klantZoek.value = prestatie.klant ? `${prestatie.klant.voornaam} ${prestatie.klant.naam}` : '';
+                
+                // Toon modal
+                document.getElementById('edit-prestatie-modal').classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            } else {
+                alert('Kon prestatie gegevens niet ophalen');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching prestatie:', error);
+            alert('Er ging iets mis bij het ophalen van de prestatiegegevens');
+        });
+}
+
+function closeEditModal() {
+    document.getElementById('edit-prestatie-modal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Sluit modal bij klikken buiten de modal
+document.getElementById('edit-prestatie-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEditModal();
+    }
+});
+
+// Sluit modal met Escape toets
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeEditModal();
+    }
+});
+
+// Klant zoekfunctie voor Edit modal
+const editKlantZoek = document.getElementById('edit-klant-zoek');
+const editKlantSelect = document.getElementById('edit-klant-select');
+
+// Filter klanten bij typen in zoekveld
+editKlantZoek.addEventListener('input', function() {
+    const zoekterm = this.value.toLowerCase();
+    const options = editKlantSelect.querySelectorAll('option');
+    
+    options.forEach(option => {
+        if (option.value === '') {
+            option.style.display = '';
+            return;
+        }
+        
+        const naam = option.getAttribute('data-naam') || '';
+        if (naam.includes(zoekterm)) {
+            option.style.display = '';
+        } else {
+            option.style.display = 'none';
+        }
+    });
+    
+    // Auto-selecteer eerste zichtbare optie bij typen
+    if (zoekterm) {
+        const eersteZichtbaar = Array.from(options).find(opt => opt.style.display !== 'none' && opt.value !== '');
+        if (eersteZichtbaar) {
+            editKlantSelect.value = eersteZichtbaar.value;
+        }
+    }
+});
+
+// Wanneer klant geselecteerd wordt in dropdown, toon naam in zoekveld
+editKlantSelect.addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    
+    if (this.value && this.value !== '') {
+        editKlantZoek.value = selectedOption.textContent.trim();
+    } else {
+        editKlantZoek.value = '';
+    }
+});
+
+// Ook bij click op een optie
+editKlantSelect.addEventListener('click', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (this.value && this.value !== '') {
+        editKlantZoek.value = selectedOption.textContent.trim();
+    }
+});
+
+// Auto-fill prijs en commissie bij dienst selectie in Edit modal
+document.getElementById('edit-dienst').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const prijsInput = document.getElementById('edit-prijs');
+    const prijs = parseFloat(selectedOption.dataset.prijs || 0);
+    const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
+    
+    // Als "Andere" geselecteerd is, maak prijs input bewerkbaar
+    if (this.value === 'andere') {
+        prijsInput.value = '';
+        prijsInput.removeAttribute('readonly');
+        prijsInput.focus();
+        document.getElementById('edit-commissie-preview').textContent = '€0,00';
+    } else {
+        // Voor gewone diensten: auto-fill en readonly
+        prijsInput.setAttribute('readonly', 'readonly');
+        prijsInput.value = prijs.toFixed(2);
+        
+        const commissieBedrag = (prijs * commissiePercentage) / 100;
+        document.getElementById('edit-commissie-preview').textContent = 
+            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+    }
+});
+
+// Update commissie preview wanneer prijs handmatig wordt gewijzigd (bij "Andere") in Edit modal
+document.getElementById('edit-prijs').addEventListener('input', function() {
+    const dienstSelect = document.getElementById('edit-dienst');
+    const selectedOption = dienstSelect.options[dienstSelect.selectedIndex];
+    
+    if (dienstSelect.value === 'andere') {
+        const prijs = parseFloat(this.value || 0);
+        const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
+        const commissieBedrag = (prijs * commissiePercentage) / 100;
+        
+        document.getElementById('edit-commissie-preview').textContent = 
+            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+    }
+});
 </script>
 @endsection

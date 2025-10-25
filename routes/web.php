@@ -1347,8 +1347,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('prestaties')->name('prestaties.')->group(function () {
         Route::get('/', [App\Http\Controllers\PrestatieController::class, 'index'])->name('index');
         Route::post('/', [App\Http\Controllers\PrestatieController::class, 'store'])->name('store');
+        Route::get('/{prestatie}/edit', [App\Http\Controllers\PrestatieController::class, 'edit'])->name('edit');
         Route::put('/{prestatie}', [App\Http\Controllers\PrestatieController::class, 'update'])->name('update');
         Route::delete('/{prestatie}', [App\Http\Controllers\PrestatieController::class, 'destroy'])->name('destroy');
+        Route::post('/{prestatie}/duplicate', [App\Http\Controllers\PrestatieController::class, 'duplicate'])->name('duplicate');
+        Route::post('/{prestatie}/toggle-uitgevoerd', [App\Http\Controllers\PrestatieController::class, 'toggleUitgevoerd'])->name('toggle-uitgevoerd');
     });
     
     // Admin Prestaties Routes (admin kan alles beheren)
