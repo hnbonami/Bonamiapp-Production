@@ -69,6 +69,10 @@
                                     <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="medewerker" checked>
                                     <span class="ml-2 text-sm text-gray-700">🏆 Top Medewerkers</span>
                                 </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="commissie" checked>
+                                    <span class="ml-2 text-sm text-gray-700">💰 Commissie Trend</span>
+                                </label>
                             </div>
                         </div>
                     </div>
@@ -171,6 +175,21 @@
             </div>
             <div class="chart-wrapper" style="height: 180px;">
                 <canvas id="medewerkerChart"></canvas>
+            </div>
+        </div>
+        
+        {{-- Commissie Trend - klein (standaard 1 kolom) --}}
+        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move col-span-1" draggable="true" data-chart-id="commissie" data-size="small">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900">💰 Commissie</h3>
+                <button onclick="toggleChartSize('commissie')" class="text-gray-400 hover:text-gray-600 transition-colors" title="Grootte aanpassen">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="chart-wrapper" style="height: 180px;">
+                <canvas id="commissieChart"></canvas>
             </div>
         </div>
     </div>
@@ -337,6 +356,60 @@ function updateCharts(data) {
             datasets: [{data: [data.prestatieStatus.uitgevoerd || 0, data.prestatieStatus.nietUitgevoerd || 0], backgroundColor: ['#10b981', '#ef4444']}]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' }}}
+    });
+    
+    // Commissie Trend Chart
+    if (charts.commissie) charts.commissie.destroy();
+    charts.commissie = new Chart(document.getElementById('commissieChart'), {
+        type: 'bar',
+        data: {
+            labels: data.commissieTrend.labels || [],
+            datasets: [{
+                label: 'Organisatie', 
+                data: data.commissieTrend.organisatie || [],
+                backgroundColor: '#f59e0b',
+                borderColor: '#d97706',
+                borderWidth: 1
+            }, {
+                label: 'Medewerkers', 
+                data: data.commissieTrend.medewerkers || [],
+                backgroundColor: '#10b981',
+                borderColor: '#059669',
+                borderWidth: 1
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += '€' + context.parsed.y.toLocaleString('nl-NL', {minimumFractionDigits: 2});
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: { stacked: false },
+                y: { 
+                    stacked: false,
+                    ticks: {
+                        callback: function(value) {
+                            return '€' + value.toLocaleString('nl-NL');
+                        }
+                    }
+                }
+            }
+        }
     });
 }
 

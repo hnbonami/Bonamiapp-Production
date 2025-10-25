@@ -47,6 +47,7 @@ class AnalyticsController extends Controller
                 'medewerkerPrestaties' => $this->berekenMedewerkerPrestaties($filter, $startDatum, $eindDatum),
                 'prestatieStatus' => $this->berekenPrestatieStatus($filter, $startDatum, $eindDatum),
                 'commissieVerdeling' => $this->berekenCommissieVerdeling($filter, $startDatum, $eindDatum),
+                'commissieTrend' => $this->berekenCommissieTrend($filter, $startDatum, $eindDatum),
                 'btwOverzicht' => $this->berekenBTWOverzicht($filter, $startDatum, $eindDatum),
             ];
             
@@ -217,5 +218,69 @@ class AnalyticsController extends Controller
         $excl = $prestaties->sum(fn($p) => $p->bruto_prijs / 1.21);
         
         return ['incl' => round($incl, 2), 'excl' => round($excl, 2), 'totaal' => round($incl - $excl, 2)];
+    }
+
+    private function berekenCommissieTrend($filter, $startDatum, $eindDatum)
+    {
+        try {
+            $prestaties = $this->pasFilterToe(Prestatie::whereBetween('datum_prestatie', [$startDatum, $eindDatum]), $filter)->get();
+            
+            \Log::info('💰 Commissie trend berekenen', [
+                'aantal_prestaties' => $prestaties->count(),
+                'filter_type' => $filter['type'] ?? 'onbekend',
+            ]);
+            
+            if ($prestaties->isEmpty()) {
+                return [
+                    'labels' => [],
+                    'organisatie' => [],
+                    'medewerkers' => [],
+                ];
+            }
+            
+            // Bepaal groepering op basis van periode lengte
+            $start = Carbon::parse($startDatum);
+            $eind = Carbon::parse($eindDatum);
+            $dagenVerschil = $start->diffInDays($eind);
+            
+            // Groepeer per dag als periode < 14 dagen, anders per week
+            if ($dagenVerschil <= 14) {
+                $gegroepeerd = $prestaties->groupBy(fn($p) => Carbon::parse($p->datum_prestatie)->format('d M'));
+            } else {
+                $gegroepeerd = $prestaties->groupBy(fn($p) => Carbon::parse($p->datum_prestatie)->startOfWeek()->format('d M'));
+            }
+            
+            \Log::info('✅ Commissie trend gegroepeerd', [
+                'aantal_groepen' => $gegroepeerd->count(),
+            ]);
+            
+            return [
+                'labels' => $gegroepeerd->keys()->toArray(),
+                'organisatie' => $gegroepeerd->map(function($items) {
+                    return round($items->sum(function($p) {
+                        $prijsExclBtw = $p->bruto_prijs / 1.21;
+                        return $prijsExclBtw * ($p->commissie_percentage / 100);
+                    }), 2);
+                })->values()->toArray(),
+                'medewerkers' => $gegroepeerd->map(function($items) {
+                    return round($items->sum(function($p) {
+                        $prijsExclBtw = $p->bruto_prijs / 1.21;
+                        $bonamiCommissie = $prijsExclBtw * ($p->commissie_percentage / 100);
+                        return $prijsExclBtw - $bonamiCommissie;
+                    }), 2);
+                })->values()->toArray(),
+            ];
+        } catch (\Exception $e) {
+            \Log::error('❌ Fout in berekenCommissieTrend', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+            ]);
+            
+            return [
+                'labels' => [],
+                'organisatie' => [],
+                'medewerkers' => [],
+            ];
+        }
     }
 }
