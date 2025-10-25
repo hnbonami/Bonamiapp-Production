@@ -135,8 +135,8 @@
                 <form id="prestatie-form" method="POST" action="{{ route('prestaties.store') }}">
                     @csrf
                     
-                    {{-- Datum range --}}
-                    <div class="grid grid-cols-2 gap-3 mb-4">
+                    {{-- Startdatum, Einddatum, Dienst & Prijs alle 4 naast elkaar --}}
+                    <div class="grid grid-cols-4 gap-3 mb-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Startdatum</label>
                             <input type="date" name="datum_prestatie" required
@@ -149,10 +149,7 @@
                             <input type="date" name="einddatum_prestatie"
                                    class="w-full rounded border-gray-300 py-2 px-3">
                         </div>
-                    </div>
-                    
-                    {{-- Dienst & Prijs naast elkaar --}}
-                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Dienst</label>
                             <select name="dienst_id" id="dienst-select" required
