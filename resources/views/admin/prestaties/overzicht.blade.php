@@ -184,8 +184,16 @@
                                     <span class="ml-2 text-sm text-gray-700">Prijs incl BTW</span>
                                 </label>
                                 <label class="flex items-center">
-                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="commissie" checked>
-                                    <span class="ml-2 text-sm text-gray-700">Commissie</span>
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="prijs-excl" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Prijs excl. BTW</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="inkomst" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Inkomst Medewerker</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="bonami-commissie">
+                                    <span class="ml-2 text-sm text-gray-700">Bonami Commissie</span>
                                 </label>
                                 <label class="flex items-center">
                                     <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="uitgevoerd" checked>
@@ -222,7 +230,9 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-medewerker">Medewerker</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-dienst">Dienst</th>
                         <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-prijs">Prijs incl BTW</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-commissie">Commissie</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-prijs-excl">Prijs excl. BTW</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-inkomst">Inkomst Medewerker</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-bonami-commissie">Bonami Commissie</th>
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider kolom-uitgevoerd">Uitgevoerd</th>
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider kolom-factuur">Factuur Klant</th>
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-startdatum">Startdatum</th>
@@ -274,9 +284,28 @@
                                 </span>
                             </td>
                             
-                            <td class="px-4 py-4 whitespace-nowrap text-right kolom-commissie">
+                            @php
+                                // Bereken prijs excl. BTW, inkomst medewerker en Bonami commissie
+                                $prijsExclBtw = $prestatie->bruto_prijs / 1.21;
+                                $bonamiCommissie = $prijsExclBtw * ($prestatie->commissie_percentage / 100);
+                                $inkomstMedewerker = $prijsExclBtw - $bonamiCommissie;
+                            @endphp
+                            
+                            <td class="px-4 py-4 whitespace-nowrap text-right kolom-prijs-excl">
+                                <span class="text-sm font-semibold text-gray-700">
+                                    €{{ number_format($prijsExclBtw, 2, ',', '.') }}
+                                </span>
+                            </td>
+                            
+                            <td class="px-4 py-4 whitespace-nowrap text-right kolom-inkomst">
                                 <span class="text-sm font-semibold text-green-600">
-                                    €{{ number_format($prestatie->commissie_bedrag, 2, ',', '.') }}
+                                    €{{ number_format($inkomstMedewerker, 2, ',', '.') }}
+                                </span>
+                            </td>
+                            
+                            <td class="px-4 py-4 whitespace-nowrap text-right kolom-bonami-commissie">
+                                <span class="text-sm font-semibold text-blue-600">
+                                    €{{ number_format($bonamiCommissie, 2, ',', '.') }}
                                 </span>
                             </td>
                             
@@ -332,6 +361,100 @@
                 </tbody>
             </table>
         </div>
+        
+        {{-- Berekeningensamenvatting onder de tabel --}}
+        @if($allePrestaties->count() > 0)
+            <div class="mt-4 mx-6 mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+                <h3 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                    </svg>
+                    Berekeningenoverzicht {{ $huidigKwartaal }} {{ $huidigJaar }}
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    {{-- Bruto Totaal (incl. BTW) --}}
+                    <div class="bg-white rounded-lg p-3 border-l-4 border-gray-500 shadow-sm">
+                        <div class="text-xs text-gray-600 mb-1 flex items-center gap-1">
+                            <span class="w-2 h-2 bg-gray-500 rounded-full"></span>
+                            Bruto Totaal (incl. BTW)
+                        </div>
+                        <div class="text-xl font-bold text-gray-900">
+                            €{{ number_format($allePrestaties->sum('bruto_prijs'), 2, ',', '.') }}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">{{ $allePrestaties->count() }} prestaties</div>
+                    </div>
+                    
+                    {{-- Totaal excl. BTW --}}
+                    <div class="bg-white rounded-lg p-3 border-l-4 border-blue-500 shadow-sm">
+                        <div class="text-xs text-gray-600 mb-1 flex items-center gap-1">
+                            <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+                            Totaal excl. BTW (÷ 1.21)
+                        </div>
+                        <div class="text-xl font-bold text-blue-700">
+                            @php
+                                $totalePrijsExclBtw = $allePrestaties->sum(function($p) {
+                                    return $p->bruto_prijs / 1.21;
+                                });
+                            @endphp
+                            €{{ number_format($totalePrijsExclBtw, 2, ',', '.') }}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">Basis voor commissieberekening</div>
+                    </div>
+                    
+                    {{-- Bonami Commissie --}}
+                    <div class="bg-white rounded-lg p-3 border-l-4 border-orange-500 shadow-sm">
+                        <div class="text-xs text-gray-600 mb-1 flex items-center gap-1">
+                            <span class="w-2 h-2 bg-orange-500 rounded-full"></span>
+                            Bonami Commissie
+                        </div>
+                        <div class="text-xl font-bold text-orange-600">
+                            @php
+                                $totaleBonamiCommissie = $allePrestaties->sum(function($p) {
+                                    $prijsExclBtw = $p->bruto_prijs / 1.21;
+                                    return $prijsExclBtw * ($p->commissie_percentage / 100);
+                                });
+                            @endphp
+                            €{{ number_format($totaleBonamiCommissie, 2, ',', '.') }}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">Gaat naar organisatie</div>
+                    </div>
+                    
+                    {{-- Totale Inkomst Medewerkers --}}
+                    <div class="bg-white rounded-lg p-3 border-l-4 border-green-500 shadow-sm">
+                        <div class="text-xs text-gray-600 mb-1 flex items-center gap-1">
+                            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                            Totale Inkomst Medewerkers
+                        </div>
+                        <div class="text-xl font-bold text-green-600">
+                            @php
+                                $totaleInkomstMedewerkers = $allePrestaties->sum(function($p) {
+                                    $prijsExclBtw = $p->bruto_prijs / 1.21;
+                                    $bonamiCommissie = $prijsExclBtw * ($p->commissie_percentage / 100);
+                                    return $prijsExclBtw - $bonamiCommissie;
+                                });
+                            @endphp
+                            €{{ number_format($totaleInkomstMedewerkers, 2, ',', '.') }}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">Excl. BTW - Commissie</div>
+                    </div>
+                </div>
+                
+                {{-- Berekeningsformule uitleg --}}
+                <div class="mt-3 p-3 bg-white rounded-lg border border-gray-200">
+                    <div class="text-xs text-gray-700 flex items-center gap-2 flex-wrap">
+                        <span class="font-semibold">Berekening:</span>
+                        <span class="px-2 py-1 bg-gray-100 rounded">€{{ number_format($allePrestaties->sum('bruto_prijs'), 2, ',', '.') }}</span>
+                        <span>÷ 1.21 =</span>
+                        <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded font-semibold">€{{ number_format($totalePrijsExclBtw, 2, ',', '.') }}</span>
+                        <span>−</span>
+                        <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded font-semibold">€{{ number_format($totaleBonamiCommissie, 2, ',', '.') }}</span>
+                        <span>=</span>
+                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded font-bold">€{{ number_format($totaleInkomstMedewerkers, 2, ',', '.') }}</span>
+                    </div>
+                </div>
+            </div>
+        @endif
     </div>
 
     {{-- Medewerkers Overzicht --}}

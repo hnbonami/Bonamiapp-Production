@@ -187,8 +187,8 @@ Route::middleware('auth')->group(function () {
     Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
     // Bikefit berekende resultaten en verslag generatie
     Route::get('bikefit/{bikefit}/results', [\App\Http\Controllers\BikefitResultsController::class, 'show'])->name('bikefit.results')->scopeBindings();
-    Route::post('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
-    Route::get('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview')->scopeBindings();
+    Route::post('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
+    Route::get('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview')->scopeBindings();
     // SAVE CUSTOM RESULTS ROUTE - ESSENTIAL FOR EDITABLE RESULTS FUNCTIONALITY
     Route::post('bikefit/{bikefit}/save-custom-results', [\App\Http\Controllers\BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results')->scopeBindings();
     // RESET TO CALCULATED ROUTE - ESSENTIAL FOR RESET FUNCTIONALITY
@@ -1413,3 +1413,11 @@ Route::get('/api/commissie-percentage', function(Request $request) {
     
     return response()->json(['commissie_percentage' => $commissiePercentage]);
 })->middleware('auth')->name('api.commissie-percentage');
+
+// Analytics Dashboard routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/analytics', [App\Http\Controllers\Admin\AnalyticsController::class, 'index'])
+        ->name('admin.analytics.index');
+    Route::get('/api/dashboard/analytics', [App\Http\Controllers\Admin\AnalyticsController::class, 'getData'])
+        ->name('api.analytics.data');
+});
