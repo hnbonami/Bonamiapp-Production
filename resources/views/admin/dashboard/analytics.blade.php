@@ -665,57 +665,67 @@ function updateCharts(data) {
     
     // Omzet per Organisatie Chart (alleen voor super admin)
     if (isSuperAdmin && data.omzetPerOrganisatie) {
-        if (charts['organisaties']) charts['organisaties'].destroy();
-        charts['organisaties'] = new Chart(document.getElementById('organisatiesChart'), {
-            type: 'bar',
-            data: {
-                labels: data.omzetPerOrganisatie.labels || [],
-                datasets: [{
-                    label: 'Bruto',
-                    data: data.omzetPerOrganisatie.bruto || [],
-                    backgroundColor: '#3b82f6',
-                    borderColor: '#2563eb',
-                    borderWidth: 1
-                }, {
-                    label: 'Netto',
-                    data: data.omzetPerOrganisatie.netto || [],
-                    backgroundColor: '#10b981',
-                    borderColor: '#059669',
-                    borderWidth: 1
-                }]
-            },
-            options: { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { 
-                    legend: { position: 'bottom' },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) {
-                                    label += ': ';
-                                }
-                                if (context.parsed.y !== null) {
-                                    label += '€' + context.parsed.y.toLocaleString('nl-NL', {minimumFractionDigits: 2});
-                                }
-                                return label;
-                            }
-                        }
-                    }
+        const organisatiesCanvas = document.getElementById('organisatiesChart');
+        if (organisatiesCanvas) {
+            if (charts['organisaties']) charts['organisaties'].destroy();
+            
+            console.log('🏢 Organisaties chart data:', data.omzetPerOrganisatie);
+            
+            charts['organisaties'] = new Chart(organisatiesCanvas, {
+                type: 'bar',
+                data: {
+                    labels: data.omzetPerOrganisatie.labels || [],
+                    datasets: [{
+                        label: 'Bruto',
+                        data: data.omzetPerOrganisatie.bruto || [],
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#2563eb',
+                        borderWidth: 1
+                    }, {
+                        label: 'Netto',
+                        data: data.omzetPerOrganisatie.netto || [],
+                        backgroundColor: '#10b981',
+                        borderColor: '#059669',
+                        borderWidth: 1
+                    }]
                 },
-                scales: { 
-                    y: { 
-                        beginAtZero: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '€' + value.toLocaleString('nl-NL');
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { position: 'bottom' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += '€' + context.parsed.y.toLocaleString('nl-NL', {minimumFractionDigits: 2});
+                                    }
+                                    return label;
+                                }
                             }
                         }
-                    } 
+                    },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '€' + value.toLocaleString('nl-NL');
+                                }
+                            }
+                        } 
+                    }
                 }
-            }
-        });
+            });
+            
+            console.log('✅ Organisaties chart succesvol aangemaakt');
+        } else {
+            console.warn('⚠️ Canvas element "organisatiesChart" niet gevonden');
+        }
     }
 }
 

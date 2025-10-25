@@ -125,14 +125,30 @@ class AnalyticsController extends Controller
             'model' => get_class($query->getModel())
         ]);
         
+        $modelClass = get_class($query->getModel());
+        
         // 🔒 PAS ORGANISATIE FILTER TOE
-        return match($filter['type']) {
-            'superadmin' => $query, // ✅ Alleen voor echte superadmin - GEEN filter, alle data!
-            'organisatie' => $query->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value'])),
-            'medewerker' => $query->where('user_id', $filter['value'])
-                                  ->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['organisatie_id'] ?? null)),
-            default => $query
-        };
+        if ($filter['type'] === 'superadmin') {
+            return $query; // ✅ Super admin ziet alles
+        }
+        
+        if ($filter['type'] === 'medewerker') {
+            // Filter op user_id
+            return $query->where('user_id', $filter['value']);
+        }
+        
+        if ($filter['type'] === 'organisatie') {
+            // Check of model direct user_id heeft of via relatie
+            if (in_array($modelClass, ['App\Models\Bikefit', 'App\Models\Inspanningstest'])) {
+                // Deze modellen hebben directe user_id, filter via whereHas
+                return $query->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
+            } else {
+                // Prestatie model
+                return $query->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
+            }
+        }
+        
+        return $query;
     }
 
     private function berekenKPIs($filter, $startDatum, $eindDatum)
@@ -318,35 +334,61 @@ class AnalyticsController extends Controller
     private function berekenBikefitStats($filter, $startDatum, $eindDatum)
     {
         try {
+            \Log::info('📊 Bikefit stats beginnen', [
+                'filter_type' => $filter['type'],
+                'filter_value' => $filter['value'] ?? null,
+            ]);
+            
             // Totaal aantal bikefits
-            $totaalBikefits = $this->pasFilterToe(
-                \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]),
-                $filter
-            )->count();
+            $bikefitQuery = \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]);
+            
+            // Pas filter toe op basis van type
+            if ($filter['type'] === 'organisatie') {
+                $bikefitQuery->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
+            } elseif ($filter['type'] === 'medewerker') {
+                $bikefitQuery->where('user_id', $filter['value']);
+            }
+            // superadmin: geen filter
+            
+            $totaalBikefits = $bikefitQuery->count();
+            
+            \Log::info('📊 Totaal bikefits geteld', ['totaal' => $totaalBikefits]);
             
             // Bikefits per medewerker
-            $bikefitsPerMedewerker = $this->pasFilterToe(
-                \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]),
-                $filter
-            )
-            ->with('user')
-            ->get()
-            ->groupBy('user_id')
-            ->map(function($items, $userId) {
-                $user = $items->first()->user;
-                return [
-                    'naam' => $user ? $user->name : 'Onbekend',
-                    'aantal' => $items->count()
-                ];
-            })
-            ->sortByDesc('aantal')
-            ->take(10);
+            $bikefitQuery2 = \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]);
+            
+            // Pas filter toe op basis van type
+            if ($filter['type'] === 'organisatie') {
+                $bikefitQuery2->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
+            } elseif ($filter['type'] === 'medewerker') {
+                $bikefitQuery2->where('user_id', $filter['value']);
+            }
+            
+            $bikefitsPerMedewerker = $bikefitQuery2
+                ->with('user')
+                ->get()
+                ->groupBy('user_id')
+                ->map(function($items, $userId) {
+                    $user = $items->first()->user;
+                    return [
+                        'naam' => $user ? $user->name : 'Onbekend',
+                        'aantal' => $items->count()
+                    ];
+                })
+                ->sortByDesc('aantal')
+                ->take(10);
             
             // Bikefits trend per week/dag
-            $bikefit = $this->pasFilterToe(
-                \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]),
-                $filter
-            )->get();
+            $bikefitQuery3 = \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]);
+            
+            // Pas filter toe op basis van type
+            if ($filter['type'] === 'organisatie') {
+                $bikefitQuery3->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
+            } elseif ($filter['type'] === 'medewerker') {
+                $bikefitQuery3->where('user_id', $filter['value']);
+            }
+            
+            $bikefit = $bikefitQuery3->get();
             
             $start = Carbon::parse($startDatum);
             $eind = Carbon::parse($eindDatum);
@@ -392,34 +434,52 @@ class AnalyticsController extends Controller
     {
         try {
             // Totaal aantal inspanningstesten
-            $totaalTesten = $this->pasFilterToe(
-                \App\Models\Inspanningstest::whereBetween('datum', [$startDatum, $eindDatum]),
-                $filter
-            )->count();
+            $testenQuery = \App\Models\Inspanningstest::whereBetween('datum', [$startDatum, $eindDatum]);
+            
+            // Pas filter toe op basis van type
+            if ($filter['type'] === 'organisatie') {
+                $testenQuery->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
+            } elseif ($filter['type'] === 'medewerker') {
+                $testenQuery->where('user_id', $filter['value']);
+            }
+            
+            $totaalTesten = $testenQuery->count();
             
             // Inspanningstesten per medewerker
-            $testenPerMedewerker = $this->pasFilterToe(
-                \App\Models\Inspanningstest::whereBetween('datum', [$startDatum, $eindDatum]),
-                $filter
-            )
-            ->with('user')
-            ->get()
-            ->groupBy('user_id')
-            ->map(function($items, $userId) {
-                $user = $items->first()->user;
-                return [
-                    'naam' => $user ? $user->name : 'Onbekend',
-                    'aantal' => $items->count()
-                ];
-            })
-            ->sortByDesc('aantal')
-            ->take(10);
+            $testenQuery2 = \App\Models\Inspanningstest::whereBetween('datum', [$startDatum, $eindDatum]);
+            
+            // Pas filter toe op basis van type
+            if ($filter['type'] === 'organisatie') {
+                $testenQuery2->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
+            } elseif ($filter['type'] === 'medewerker') {
+                $testenQuery2->where('user_id', $filter['value']);
+            }
+            
+            $testenPerMedewerker = $testenQuery2
+                ->with('user')
+                ->get()
+                ->groupBy('user_id')
+                ->map(function($items, $userId) {
+                    $user = $items->first()->user;
+                    return [
+                        'naam' => $user ? $user->name : 'Onbekend',
+                        'aantal' => $items->count()
+                    ];
+                })
+                ->sortByDesc('aantal')
+                ->take(10);
             
             // Inspanningstesten trend per week/dag
-            $testen = $this->pasFilterToe(
-                \App\Models\Inspanningstest::whereBetween('datum', [$startDatum, $eindDatum]),
-                $filter
-            )->get();
+            $testenQuery3 = \App\Models\Inspanningstest::whereBetween('datum', [$startDatum, $eindDatum]);
+            
+            // Pas filter toe op basis van type
+            if ($filter['type'] === 'organisatie') {
+                $testenQuery3->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
+            } elseif ($filter['type'] === 'medewerker') {
+                $testenQuery3->where('user_id', $filter['value']);
+            }
+            
+            $testen = $testenQuery3->get();
             
             $start = Carbon::parse($startDatum);
             $eind = Carbon::parse($eindDatum);
