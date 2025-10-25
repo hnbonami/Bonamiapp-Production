@@ -69,36 +69,64 @@ class AnalyticsController extends Controller
 
     private function bepaalDataFilter($user, $scope = 'auto')
     {
-        // 🔒 ORGANISATIE FILTER: Standaard altijd organisatie-gebonden, tenzij anders
+        // 🔒 VALIDATIE: Check super admin status
+        $isSuperAdmin = $user->is_super_admin || in_array($user->email, ['info@bonami-sportcoaching.be', 'admin@bonami-sportcoaching.be']);
+        
+        \Log::info('🔍 Filter bepalen', [
+            'scope' => $scope,
+            'user_id' => $user->id,
+            'is_super_admin' => $isSuperAdmin,
+            'organisatie_id' => $user->organisatie_id,
+        ]);
         
         // Als scope handmatig is ingesteld
         if ($scope !== 'auto') {
             if ($scope === 'all') {
-                // Alleen superadmin mag alles zien
-                return ['type' => 'superadmin', 'value' => null, 'label' => 'Alle Organisaties'];
+                // ✅ ALLEEN superadmin mag alles zien
+                if ($isSuperAdmin) {
+                    \Log::info('✅ Super admin scope: alle organisaties');
+                    return ['type' => 'superadmin', 'value' => null, 'label' => 'Alle Organisaties'];
+                }
+                \Log::warning('⚠️ Niet-superadmin probeerde "all" scope, terugvallen naar organisatie');
+                return ['type' => 'organisatie', 'value' => $user->organisatie_id, 'label' => 'Mijn Organisatie'];
             }
             if ($scope === 'organisatie' && $user->organisatie_id) {
+                \Log::info('✅ Organisatie scope geselecteerd');
                 return ['type' => 'organisatie', 'value' => $user->organisatie_id, 'label' => 'Mijn Organisatie'];
             }
             if ($scope === 'medewerker') {
+                \Log::info('✅ Medewerker scope geselecteerd');
                 return ['type' => 'medewerker', 'value' => $user->id, 'label' => 'Alleen Ik', 'organisatie_id' => $user->organisatie_id];
             }
         }
         
-        // Automatisch bepalen op basis van rol - ALTIJD gefilterd op organisatie
-        if (in_array($user->role, ['admin', 'organisatie_admin'])) {
+        // Automatisch bepalen op basis van rol
+        if ($isSuperAdmin) {
+            \Log::info('✅ Auto scope: super admin → alle organisaties');
+            return ['type' => 'superadmin', 'value' => null, 'label' => 'Alle Organisaties'];
+        }
+        
+        if (in_array($user->role, ['admin', 'organisatie_admin']) && $user->organisatie_id) {
+            \Log::info('✅ Auto scope: admin → organisatie');
             return ['type' => 'organisatie', 'value' => $user->organisatie_id, 'label' => 'Organisatie'];
         }
         
         // Medewerkers zien alleen hun eigen prestaties (binnen hun organisatie)
+        \Log::info('✅ Auto scope: medewerker → eigen prestaties');
         return ['type' => 'medewerker', 'value' => $user->id, 'label' => 'Mijn Prestaties', 'organisatie_id' => $user->organisatie_id];
     }
 
     private function pasFilterToe($query, $filter)
     {
+        \Log::info('🔍 Filter toepassen', [
+            'filter_type' => $filter['type'],
+            'filter_value' => $filter['value'] ?? null,
+            'model' => get_class($query->getModel())
+        ]);
+        
         // 🔒 PAS ORGANISATIE FILTER TOE
         return match($filter['type']) {
-            'superadmin' => $query, // Alleen voor echte superadmin - geen filter
+            'superadmin' => $query, // ✅ Alleen voor echte superadmin - GEEN filter, alle data!
             'organisatie' => $query->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value'])),
             'medewerker' => $query->where('user_id', $filter['value'])
                                   ->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['organisatie_id'] ?? null)),
