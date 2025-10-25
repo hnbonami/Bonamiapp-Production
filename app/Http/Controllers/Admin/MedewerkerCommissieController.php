@@ -26,13 +26,13 @@ class MedewerkerCommissieController extends Controller
             'organisatie_id' => $huidigGebruiker->organisatie_id,
         ]);
 
-        // 🔒 ORGANISATIE FILTER: Alleen medewerkers van eigen organisatie
+        // 🔒 ORGANISATIE FILTER: Alleen medewerkers van eigen organisatie (GEEN klanten)
         $medewerkers = User::with(['commissieFactoren' => function($query) {
             $query->algemeen()->actief();
         }])
         ->where('organisatie_id', $huidigGebruiker->organisatie_id) // ORGANISATIE FILTER
-        ->whereIn('role', ['medewerker', 'admin', 'super_admin', 'superadmin']) // Beide varianten van super admin
-        ->orderByRaw("FIELD(role, 'superadmin', 'super_admin', 'admin', 'medewerker')") // Super admin eerst
+        ->where('role', '!=', 'klant') // Alle roles BEHALVE klanten
+        ->orderByRaw("FIELD(role, 'superadmin', 'super_admin', 'organisatie_admin', 'admin', 'medewerker')") // Super admin eerst
         ->orderBy('name')
         ->get();
 
@@ -57,8 +57,8 @@ class MedewerkerCommissieController extends Controller
             \Log::warning('⚠️ WAARSCHUWING: Ingelogde gebruiker staat NIET in de medewerkers lijst!', [
                 'mogelijke_oorzaken' => [
                     'organisatie_id_mismatch' => $huidigGebruiker->organisatie_id,
-                    'role_niet_in_filter' => $huidigGebruiker->role,
-                    'is_role_in_array' => in_array($huidigGebruiker->role, ['medewerker', 'admin', 'super_admin'])
+                    'role' => $huidigGebruiker->role,
+                    'is_klant' => $huidigGebruiker->role === 'klant'
                 ]
             ]);
         }
@@ -140,6 +140,15 @@ class MedewerkerCommissieController extends Controller
      */
     public function updateDienstCommissie(Request $request, User $medewerker, Dienst $dienst)
     {
+        // 🔒 BEVEILIGING: Check of medewerker en dienst bij zelfde organisatie horen
+        if ($medewerker->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze medewerker');
+        }
+        
+        if ($dienst->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze dienst');
+        }
+        
         $validated = $request->validate([
             'custom_commissie_percentage' => 'nullable|numeric|min:0|max:100',
         ]);
