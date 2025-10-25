@@ -92,7 +92,7 @@
             <h2 class="text-lg font-semibold text-gray-900 mb-4">Alle Prestaties</h2>
             
             {{-- Zoek en Filter velden - op één rij --}}
-            <div class="flex flex-wrap gap-3">
+            <div class="flex flex-wrap gap-3 mb-3">
                 <div class="relative flex-1 min-w-[200px]">
                     <input type="text" id="zoek-klant" placeholder="Zoek klant..." 
                            class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -130,6 +130,65 @@
                     <option value="prijs-desc">Prijs hoog-laag</option>
                     <option value="prijs-asc">Prijs laag-hoog</option>
                 </select>
+                
+                {{-- Kolom visibility toggle --}}
+                <div class="relative">
+                    <button id="kolom-toggle-btn" type="button" 
+                            class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                        </svg>
+                        <span class="text-sm font-medium text-gray-700">Kolommen</span>
+                    </button>
+                    
+                    <div id="kolom-toggle-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                        <div class="p-3">
+                            <div class="text-sm font-semibold text-gray-700 mb-2">Toon kolommen:</div>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="klant" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Klant</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="medewerker" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Medewerker</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="dienst" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Dienst</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="prijs">
+                                    <span class="ml-2 text-sm text-gray-700">Prijs incl BTW</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="commissie" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Commissie</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="uitgevoerd" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Uitgevoerd</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="factuur" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Factuur Klant</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="startdatum" checked>
+                                    <span class="ml-2 text-sm text-gray-700">Startdatum</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="einddatum">
+                                    <span class="ml-2 text-sm text-gray-700">Einddatum</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="opmerkingen">
+                                    <span class="ml-2 text-sm text-gray-700">Opmerkingen</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -137,16 +196,16 @@
             <table class="w-full" id="alle-prestaties-tabel">
                 <thead class="bg-gray-50">
                     <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klant</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medewerker</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dienst</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Prijs incl BTW</th>
-                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Commissie</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Uitgevoerd</th>
-                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Factuur Klant</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Startdatum</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Einddatum</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Opmerkingen</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-klant">Klant</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-medewerker">Medewerker</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-dienst">Dienst</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-prijs">Prijs incl BTW</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-commissie">Commissie</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider kolom-uitgevoerd">Uitgevoerd</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider kolom-factuur">Factuur Klant</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-startdatum">Startdatum</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-einddatum">Einddatum</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-opmerkingen">Opmerkingen</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -169,33 +228,33 @@
                             data-datum="{{ $prestatie->datum_prestatie->format('Y-m-d') }}"
                             data-prijs="{{ $prestatie->bruto_prijs }}">
                             
-                            <td class="px-4 py-4 whitespace-nowrap">
+                            <td class="px-4 py-4 whitespace-nowrap kolom-klant">
                                 <div class="text-sm font-medium text-gray-900">
                                     {{ $prestatie->klant_naam ?? 'Geen klant' }}
                                 </div>
                             </td>
                             
-                            <td class="px-4 py-4 whitespace-nowrap">
+                            <td class="px-4 py-4 whitespace-nowrap kolom-medewerker">
                                 <div class="text-sm text-gray-900">{{ $prestatie->user->name ?? '-' }}</div>
                             </td>
                             
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 kolom-dienst">
                                 <div class="text-sm text-gray-900">{{ $prestatie->dienst->naam ?? 'Andere' }}</div>
                             </td>
                             
-                            <td class="px-4 py-4 whitespace-nowrap text-right">
+                            <td class="px-4 py-4 whitespace-nowrap text-right kolom-prijs">
                                 <span class="text-sm font-semibold text-gray-900">
                                     €{{ number_format($prestatie->bruto_prijs, 2, ',', '.') }}
                                 </span>
                             </td>
                             
-                            <td class="px-4 py-4 whitespace-nowrap text-right">
+                            <td class="px-4 py-4 whitespace-nowrap text-right kolom-commissie">
                                 <span class="text-sm font-semibold text-green-600">
                                     €{{ number_format($prestatie->commissie_bedrag, 2, ',', '.') }}
                                 </span>
                             </td>
                             
-                            <td class="px-4 py-4 text-center">
+                            <td class="px-4 py-4 text-center kolom-uitgevoerd">
                                 @if($prestatie->is_uitgevoerd)
                                     <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                                         ✓ Ja
@@ -207,7 +266,7 @@
                                 @endif
                             </td>
                             
-                            <td class="px-4 py-4 text-center">
+                            <td class="px-4 py-4 text-center kolom-factuur">
                                 <input type="checkbox" 
                                        class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
                                        {{ $prestatie->factuur_naar_klant ? 'checked' : '' }}
@@ -215,13 +274,13 @@
                                        title="Factuur naar klant verstuurd">
                             </td>
                             
-                            <td class="px-4 py-4 whitespace-nowrap">
+                            <td class="px-4 py-4 whitespace-nowrap kolom-startdatum">
                                 <span class="text-sm text-gray-900">
                                     {{ $prestatie->datum_prestatie ? $prestatie->datum_prestatie->format('d/m/Y') : '-' }}
                                 </span>
                             </td>
                             
-                            <td class="px-4 py-4 whitespace-nowrap">
+                            <td class="px-4 py-4 whitespace-nowrap kolom-einddatum">
                                 <span class="text-sm text-gray-900">
                                     @if($prestatie->einddatum_prestatie)
                                         {{ \Carbon\Carbon::parse($prestatie->einddatum_prestatie)->format('d/m/Y') }}
@@ -231,7 +290,7 @@
                                 </span>
                             </td>
                             
-                            <td class="px-4 py-4">
+                            <td class="px-4 py-4 kolom-opmerkingen">
                                 <div class="text-sm text-gray-500 max-w-xs truncate" title="{{ $prestatie->opmerkingen }}">
                                     {{ $prestatie->opmerkingen ?? '-' }}
                                 </div>
@@ -319,6 +378,65 @@
 </div>
 
 <script>
+// Kolom visibility toggle functionaliteit
+const kolomToggleBtn = document.getElementById('kolom-toggle-btn');
+const kolomToggleDropdown = document.getElementById('kolom-toggle-dropdown');
+const kolomToggles = document.querySelectorAll('.kolom-toggle');
+
+// Toggle dropdown
+kolomToggleBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    kolomToggleDropdown.classList.toggle('hidden');
+});
+
+// Sluit dropdown bij klik buiten
+document.addEventListener('click', function(e) {
+    if (!kolomToggleDropdown.contains(e.target) && e.target !== kolomToggleBtn) {
+        kolomToggleDropdown.classList.add('hidden');
+    }
+});
+
+// Laad opgeslagen kolom voorkeuren uit localStorage
+function laadKolomVoorkeuren() {
+    const voorkeuren = JSON.parse(localStorage.getItem('overzichtKolomVoorkeuren') || '{}');
+    
+    kolomToggles.forEach(toggle => {
+        const kolomNaam = toggle.dataset.kolom;
+        const isZichtbaar = voorkeuren[kolomNaam] !== undefined ? voorkeuren[kolomNaam] : toggle.checked;
+        
+        toggle.checked = isZichtbaar;
+        toggleKolom(kolomNaam, isZichtbaar);
+    });
+}
+
+// Toggle kolom zichtbaarheid
+function toggleKolom(kolomNaam, isZichtbaar) {
+    const headers = document.querySelectorAll(`.kolom-${kolomNaam}`);
+    headers.forEach(element => {
+        element.style.display = isZichtbaar ? '' : 'none';
+    });
+}
+
+// Sla kolom voorkeuren op
+function slaKolomVoorkeurenOp() {
+    const voorkeuren = {};
+    kolomToggles.forEach(toggle => {
+        voorkeuren[toggle.dataset.kolom] = toggle.checked;
+    });
+    localStorage.setItem('overzichtKolomVoorkeuren', JSON.stringify(voorkeuren));
+}
+
+// Event listeners voor kolom toggles
+kolomToggles.forEach(toggle => {
+    toggle.addEventListener('change', function() {
+        toggleKolom(this.dataset.kolom, this.checked);
+        slaKolomVoorkeurenOp();
+    });
+});
+
+// Laad voorkeuren bij pagina load
+laadKolomVoorkeuren();
+
 // Filter en zoek functionaliteit voor alle prestaties tabel
 const zoekKlant = document.getElementById('zoek-klant');
 const filterMedewerker = document.getElementById('filter-medewerker');

@@ -179,15 +179,90 @@
                 <div class="p-4 border-b">
                     <h2 class="text-lg font-bold mb-4">Prestaties {{ $huidigKwartaal }} {{ $huidigJaar }}</h2>
                     
-                    {{-- Zoekveld --}}
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                            </svg>
+                    {{-- Zoek en Filter velden - op één rij --}}
+                    <div class="flex flex-wrap gap-3 mb-3">
+                        <div class="relative flex-1 min-w-[200px]">
+                            <input type="text" id="prestatie-zoek" placeholder="Zoek op dienst, klant of opmerking..." 
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </div>
                         </div>
-                        <input type="text" id="prestatie-zoek" placeholder="Zoek op dienst, klant of opmerking..." 
-                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        
+                        <select id="filter-dienst" class="flex-1 min-w-[180px] border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Alle diensten</option>
+                            @foreach($beschikbareDiensten as $dienst)
+                                <option value="{{ $dienst->id }}">{{ $dienst->naam }}</option>
+                            @endforeach
+                        </select>
+                        
+                        <select id="filter-uitgevoerd" class="flex-1 min-w-[150px] border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Alle statussen</option>
+                            <option value="1">Uitgevoerd</option>
+                            <option value="0">Niet uitgevoerd</option>
+                        </select>
+                        
+                        <select id="sorteer" class="flex-1 min-w-[160px] border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="datum-desc">Nieuwste eerst</option>
+                            <option value="datum-asc">Oudste eerst</option>
+                            <option value="klant-asc">Klant A-Z</option>
+                            <option value="klant-desc">Klant Z-A</option>
+                            <option value="prijs-desc">Prijs hoog-laag</option>
+                            <option value="prijs-asc">Prijs laag-hoog</option>
+                        </select>
+                        
+                        {{-- Kolom visibility toggle --}}
+                        <div class="relative">
+                            <button id="kolom-toggle-btn" type="button" 
+                                    class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                                </svg>
+                                <span class="text-sm font-medium text-gray-700">Kolommen</span>
+                            </button>
+                            
+                            <div id="kolom-toggle-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                                <div class="p-3">
+                                    <div class="text-sm font-semibold text-gray-700 mb-2">Toon kolommen:</div>
+                                    <div class="space-y-2">
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="uitgevoerd" checked>
+                                            <span class="ml-2 text-sm text-gray-700">Uitgevoerd</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="datum" checked>
+                                            <span class="ml-2 text-sm text-gray-700">Datum</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="dienst" checked>
+                                            <span class="ml-2 text-sm text-gray-700">Dienst</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="klant" checked>
+                                            <span class="ml-2 text-sm text-gray-700">Klant</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="prijs">
+                                            <span class="ml-2 text-sm text-gray-700">Prijs</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="commissie">
+                                            <span class="ml-2 text-sm text-gray-700">Commissie</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="netto" checked>
+                                            <span class="ml-2 text-sm text-gray-700">Netto Inkomst</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="opmerkingen" checked>
+                                            <span class="ml-2 text-sm text-gray-700">Opmerkingen</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -195,28 +270,28 @@
                     <table class="min-w-full divide-y divide-gray-200" id="prestaties-tabel">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20 kolom-uitgevoerd">
                                     Uitgevoerd
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-datum">
                                     Datum
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-dienst">
                                     Dienst
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-klant">
                                     Klant
                                 </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-prijs">
                                     Prijs
                                 </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-commissie">
                                     Commissie
                                 </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-netto">
                                     Netto Inkomst
                                 </th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-opmerkingen">
                                     Opmerkingen
                                 </th>
                                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
@@ -226,40 +301,46 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($prestaties as $prestatie)
-                                <tr class="hover:bg-gray-50" data-searchable="{{ strtolower($prestatie->dienst->naam ?? '') }} {{ strtolower($prestatie->klant_naam ?? '') }} {{ strtolower($prestatie->opmerkingen ?? '') }}">
-                                    <td class="px-4 py-4 text-center">
+                                <tr class="hover:bg-gray-50 prestatie-row" 
+                                    data-searchable="{{ strtolower($prestatie->dienst->naam ?? '') }} {{ strtolower($prestatie->klant_naam ?? '') }} {{ strtolower($prestatie->opmerkingen ?? '') }}"
+                                    data-dienst="{{ $prestatie->dienst_id }}"
+                                    data-uitgevoerd="{{ $prestatie->is_uitgevoerd ? '1' : '0' }}"
+                                    data-datum="{{ $prestatie->datum_prestatie->format('Y-m-d') }}"
+                                    data-klant="{{ strtolower($prestatie->klant_naam ?? '') }}"
+                                    data-prijs="{{ $prestatie->bruto_prijs }}">
+                                    <td class="px-4 py-4 text-center kolom-uitgevoerd">
                                         <input type="checkbox" 
                                                class="rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4 cursor-pointer"
                                                {{ $prestatie->is_uitgevoerd ? 'checked' : '' }}
                                                onchange="toggleUitgevoerd({{ $prestatie->id }}, this.checked)"
                                                title="Dienst uitgevoerd">
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 kolom-datum">
                                         {{ $prestatie->datum_prestatie->format('d/m/Y') }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap">
+                                    <td class="px-4 py-4 whitespace-nowrap kolom-dienst">
                                         <div class="text-sm font-medium text-gray-900">{{ $prestatie->dienst->naam ?? 'Onbekend' }}</div>
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 kolom-klant">
                                         @if($prestatie->klant)
                                             {{ $prestatie->klant->voornaam }} {{ $prestatie->klant->naam }}
                                         @else
                                             <span class="text-gray-400">-</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right kolom-prijs">
                                         €{{ number_format($prestatie->bruto_prijs, 2, ',', '.') }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-600 text-right">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-600 text-right kolom-commissie">
                                         @php
                                             $commissie = ($prestatie->bruto_prijs / 1.21) * $prestatie->commissie_percentage / 100;
                                         @endphp
                                         €{{ number_format($commissie, 2, ',', '.') }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-blue-600 text-right">
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-blue-600 text-right kolom-netto">
                                         €{{ number_format($prestatie->bruto_prijs - $commissie, 2, ',', '.') }}
                                     </td>
-                                    <td class="px-4 py-4 text-sm text-gray-500">
+                                    <td class="px-4 py-4 text-sm text-gray-500 kolom-opmerkingen">
                                         {{ $prestatie->opmerkingen ?? '-' }}
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-center">
@@ -637,25 +718,132 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Prestatie zoekfunctie in tabel
+// Kolom visibility toggle functionaliteit
+const kolomToggleBtn = document.getElementById('kolom-toggle-btn');
+const kolomToggleDropdown = document.getElementById('kolom-toggle-dropdown');
+const kolomToggles = document.querySelectorAll('.kolom-toggle');
+
+// Toggle dropdown
+kolomToggleBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    kolomToggleDropdown.classList.toggle('hidden');
+});
+
+// Sluit dropdown bij klik buiten
+document.addEventListener('click', function(e) {
+    if (!kolomToggleDropdown.contains(e.target) && e.target !== kolomToggleBtn) {
+        kolomToggleDropdown.classList.add('hidden');
+    }
+});
+
+// Laad opgeslagen kolom voorkeuren uit localStorage
+function laadKolomVoorkeuren() {
+    const voorkeuren = JSON.parse(localStorage.getItem('prestatieKolomVoorkeuren') || '{}');
+    
+    kolomToggles.forEach(toggle => {
+        const kolomNaam = toggle.dataset.kolom;
+        const isZichtbaar = voorkeuren[kolomNaam] !== undefined ? voorkeuren[kolomNaam] : toggle.checked;
+        
+        toggle.checked = isZichtbaar;
+        toggleKolom(kolomNaam, isZichtbaar);
+    });
+}
+
+// Toggle kolom zichtbaarheid
+function toggleKolom(kolomNaam, isZichtbaar) {
+    const headers = document.querySelectorAll(`.kolom-${kolomNaam}`);
+    headers.forEach(element => {
+        element.style.display = isZichtbaar ? '' : 'none';
+    });
+}
+
+// Sla kolom voorkeuren op
+function slaKolomVoorkeurenOp() {
+    const voorkeuren = {};
+    kolomToggles.forEach(toggle => {
+        voorkeuren[toggle.dataset.kolom] = toggle.checked;
+    });
+    localStorage.setItem('prestatieKolomVoorkeuren', JSON.stringify(voorkeuren));
+}
+
+// Event listeners voor kolom toggles
+kolomToggles.forEach(toggle => {
+    toggle.addEventListener('change', function() {
+        toggleKolom(this.dataset.kolom, this.checked);
+        slaKolomVoorkeurenOp();
+    });
+});
+
+// Laad voorkeuren bij pagina load
+laadKolomVoorkeuren();
+
+// Prestatie zoek en filter functionaliteit
 const prestatieZoek = document.getElementById('prestatie-zoek');
+const filterDienst = document.getElementById('filter-dienst');
+const filterUitgevoerd = document.getElementById('filter-uitgevoerd');
+const sorteerSelect = document.getElementById('sorteer');
 const prestatieTabel = document.getElementById('prestaties-tabel');
 
-if (prestatieZoek && prestatieTabel) {
-    const rows = prestatieTabel.querySelectorAll('tbody tr[data-searchable]');
+function filterEnSorteerPrestaties() {
+    if (!prestatieTabel) return;
     
-    prestatieZoek.addEventListener('input', function() {
-        const zoekterm = this.value.toLowerCase();
+    const rows = prestatieTabel.querySelectorAll('tbody tr.prestatie-row');
+    const zoekterm = prestatieZoek.value.toLowerCase();
+    const dienstId = filterDienst.value;
+    const uitgevoerdStatus = filterUitgevoerd.value;
+    
+    // Filter rows
+    let zichtbareRows = Array.from(rows).filter(row => {
+        // Zoekfilter
+        const searchableText = row.getAttribute('data-searchable');
+        const matchZoek = searchableText.includes(zoekterm);
         
-        rows.forEach(row => {
-            const searchableText = row.getAttribute('data-searchable');
-            if (searchableText.includes(zoekterm)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
-        });
+        // Dienst filter
+        const rowDienst = row.getAttribute('data-dienst');
+        const matchDienst = !dienstId || rowDienst === dienstId;
+        
+        // Uitgevoerd filter
+        const rowUitgevoerd = row.getAttribute('data-uitgevoerd');
+        const matchUitgevoerd = !uitgevoerdStatus || rowUitgevoerd === uitgevoerdStatus;
+        
+        const isZichtbaar = matchZoek && matchDienst && matchUitgevoerd;
+        row.style.display = isZichtbaar ? '' : 'none';
+        
+        return isZichtbaar;
     });
+    
+    // Sorteer zichtbare rows
+    const sorteerWaarde = sorteerSelect.value;
+    zichtbareRows.sort((a, b) => {
+        switch(sorteerWaarde) {
+            case 'datum-desc':
+                return b.getAttribute('data-datum').localeCompare(a.getAttribute('data-datum'));
+            case 'datum-asc':
+                return a.getAttribute('data-datum').localeCompare(b.getAttribute('data-datum'));
+            case 'klant-asc':
+                return a.getAttribute('data-klant').localeCompare(b.getAttribute('data-klant'));
+            case 'klant-desc':
+                return b.getAttribute('data-klant').localeCompare(a.getAttribute('data-klant'));
+            case 'prijs-desc':
+                return parseFloat(b.getAttribute('data-prijs')) - parseFloat(a.getAttribute('data-prijs'));
+            case 'prijs-asc':
+                return parseFloat(a.getAttribute('data-prijs')) - parseFloat(b.getAttribute('data-prijs'));
+            default:
+                return 0;
+        }
+    });
+    
+    // Herorden de DOM
+    const tbody = prestatieTabel.querySelector('tbody');
+    zichtbareRows.forEach(row => tbody.appendChild(row));
+}
+
+// Event listeners voor filters
+if (prestatieZoek && filterDienst && filterUitgevoerd && sorteerSelect) {
+    prestatieZoek.addEventListener('input', filterEnSorteerPrestaties);
+    filterDienst.addEventListener('change', filterEnSorteerPrestaties);
+    filterUitgevoerd.addEventListener('change', filterEnSorteerPrestaties);
+    sorteerSelect.addEventListener('change', filterEnSorteerPrestaties);
 }
 
 // Klant zoekfunctie
