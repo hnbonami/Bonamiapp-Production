@@ -121,7 +121,13 @@
                 
                 <select id="filter-medewerker" class="flex-1 min-w-[180px] border border-gray-300 rounded-lg py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                     <option value="">Alle medewerkers</option>
-                    @foreach($medewerkerStats as $stat)
+                    @php
+                        $userOrganisatieId = auth()->user()->organisatie_id;
+                        $organisatieMedewerkerStats = $medewerkerStats->filter(function($stat) use ($userOrganisatieId) {
+                            return $stat->organisatie_id == $userOrganisatieId;
+                        });
+                    @endphp
+                    @foreach($organisatieMedewerkerStats as $stat)
                         <option value="{{ $stat->id }}">{{ $stat->name }}</option>
                     @endforeach
                 </select>
@@ -346,7 +352,13 @@
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($medewerkerStats as $stat)
+                    @php
+                        $userOrganisatieId = auth()->user()->organisatie_id;
+                        $organisatieMedewerkerStats = $medewerkerStats->filter(function($stat) use ($userOrganisatieId) {
+                            return $stat->organisatie_id == $userOrganisatieId;
+                        });
+                    @endphp
+                    @forelse($organisatieMedewerkerStats as $stat)
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
