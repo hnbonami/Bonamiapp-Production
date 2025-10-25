@@ -17,13 +17,19 @@ class CoachPrestatieController extends Controller
      */
     public function index()
     {
-        // Haal alle medewerkers op (coaches)
+        $userOrganisatieId = auth()->user()->organisatie_id;
+        
+        // Haal alle medewerkers op (coaches) van dezelfde organisatie
         $coaches = User::where('role', 'medewerker')
+            ->where('organisatie_id', $userOrganisatieId)
             ->with(['diensten'])
             ->orderBy('name')
             ->get();
 
-        $alleDiensten = Dienst::actief()->orderBy('sorteer_volgorde')->get();
+        $alleDiensten = Dienst::where('organisatie_id', $userOrganisatieId)
+            ->actief()
+            ->orderBy('sorteer_volgorde')
+            ->get();
 
         return view('admin.prestaties.coaches', compact('coaches', 'alleDiensten'));
     }
@@ -33,7 +39,15 @@ class CoachPrestatieController extends Controller
      */
     public function configure(User $user)
     {
-        $alleDiensten = Dienst::actief()->orderBy('sorteer_volgorde')->get();
+        // Check of de user bij dezelfde organisatie hoort
+        if ($user->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze coach.');
+        }
+        
+        $alleDiensten = Dienst::where('organisatie_id', auth()->user()->organisatie_id)
+            ->actief()
+            ->orderBy('sorteer_volgorde')
+            ->get();
         $coachDiensten = $user->diensten()->get();
 
         return view('admin.prestaties.coach-configure', compact('user', 'alleDiensten', 'coachDiensten'));
@@ -79,6 +93,8 @@ class CoachPrestatieController extends Controller
      */
     public function overzicht(Request $request)
     {
+        $userOrganisatieId = auth()->user()->organisatie_id;
+        
         // Haal jaar en kwartaal uit request, of gebruik huidige waarden
         $huidigJaar = $request->input('jaar', now()->year);
         $huidigKwartaal = $request->input('kwartaal', $this->getHuidigKwartaal());
@@ -89,6 +105,7 @@ class CoachPrestatieController extends Controller
         // Haal stats per medewerker op - met raw aggregaties die compatibel zijn met collectie
         $statsData = \DB::table('users')
             ->join('prestaties', 'users.id', '=', 'prestaties.user_id')
+            ->where('users.organisatie_id', $userOrganisatieId)
             ->whereBetween('prestaties.datum_prestatie', [$startDatum, $eindDatum])
             ->whereNull('prestaties.deleted_at')
             ->groupBy('users.id', 'users.name', 'users.email')
@@ -129,6 +146,8 @@ class CoachPrestatieController extends Controller
      */
     public function adminOverzicht(Request $request)
     {
+        $userOrganisatieId = auth()->user()->organisatie_id;
+        
         // Haal jaar en kwartaal uit request, of gebruik huidige waarden
         $huidigJaar = $request->input('jaar', now()->year);
         $huidigKwartaal = $request->input('kwartaal', $this->getHuidigKwartaal());
@@ -136,8 +155,9 @@ class CoachPrestatieController extends Controller
         // Bereken start en eind datum voor het kwartaal
         [$startDatum, $eindDatum] = $this->getKwartaalDatums($huidigJaar, $huidigKwartaal);
         
-        // Haal stats per medewerker op
+        // Haal stats per medewerker op - alleen van deze organisatie
         $medewerkerStats = User::select('users.id', 'users.name', 'users.email')
+            ->where('users.organisatie_id', $userOrganisatieId)
             ->join('prestaties', 'users.id', '=', 'prestaties.user_id')
             ->whereBetween('prestaties.datum_prestatie', [$startDatum, $eindDatum])
             ->groupBy('users.id', 'users.name', 'users.email')
@@ -148,9 +168,18 @@ class CoachPrestatieController extends Controller
             ')
             ->get();
         
-        // Bereken totalen
-        $totaalPrestaties = Prestatie::whereBetween('datum_prestatie', [$startDatum, $eindDatum])->count();
-        $totaleCommissie = Prestatie::whereBetween('datum_prestatie', [$startDatum, $eindDatum])->sum('commissie_bedrag');
+        // Bereken totalen - alleen voor deze organisatie
+        $totaalPrestaties = Prestatie::whereHas('user', function($query) use ($userOrganisatieId) {
+                $query->where('organisatie_id', $userOrganisatieId);
+            })
+            ->whereBetween('datum_prestatie', [$startDatum, $eindDatum])
+            ->count();
+            
+        $totaleCommissie = Prestatie::whereHas('user', function($query) use ($userOrganisatieId) {
+                $query->where('organisatie_id', $userOrganisatieId);
+            })
+            ->whereBetween('datum_prestatie', [$startDatum, $eindDatum])
+            ->sum('commissie_bedrag');
         
         return view('admin.prestaties.overzicht', compact(
             'medewerkerStats',
@@ -166,6 +195,11 @@ class CoachPrestatieController extends Controller
      */
     public function coachDetail(Request $request, User $user)
     {
+        // Check of de user bij dezelfde organisatie hoort
+        if ($user->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze coach.');
+        }
+        
         // Haal jaar en kwartaal uit request
         $huidigJaar = $request->input('jaar', now()->year);
         $huidigKwartaal = $request->input('kwartaal', $this->getHuidigKwartaal());
@@ -202,6 +236,14 @@ class CoachPrestatieController extends Controller
     public function toggleFactuur(Request $request, Prestatie $prestatie)
     {
         try {
+            // Check of de prestatie bij de juiste organisatie hoort
+            if ($prestatie->user->organisatie_id !== auth()->user()->organisatie_id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Geen toegang tot deze prestatie.'
+                ], 403);
+            }
+            
             $validated = $request->validate([
                 'factuur_naar_klant' => 'required|boolean'
             ]);

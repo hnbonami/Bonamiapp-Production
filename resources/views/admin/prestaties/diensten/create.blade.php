@@ -2,6 +2,11 @@
 
 @section('content')
 <div class="container mx-auto px-4 py-6">
+    {{-- Debug Info - verwijder later --}}
+    <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
+        <strong>Debug Info:</strong> Organisatie ID van ingelogde gebruiker: {{ auth()->user()->organisatie_id }}
+    </div>
+
     {{-- Header --}}
     <div class="flex justify-between items-center mb-6">
         <div>

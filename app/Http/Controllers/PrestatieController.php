@@ -17,6 +17,7 @@ class PrestatieController extends Controller
     public function index(Request $request)
     {
         $user = auth()->user();
+        $userOrganisatieId = $user->organisatie_id;
         
         // Huidige kwartaal bepalen
         $huidigJaar = $request->input('jaar', date('Y'));
@@ -31,12 +32,14 @@ class PrestatieController extends Controller
             ->get();
 
         // Haal beschikbare diensten op voor deze coach
-        $beschikbareDiensten = Dienst::where('is_actief', true)
+        $beschikbareDiensten = Dienst::where('organisatie_id', $userOrganisatieId)
+            ->where('is_actief', true)
             ->orderBy('naam')
             ->get();
 
         // Haal alle klanten op voor dropdown (alleen voornaam + naam)
-        $klanten = \App\Models\Klant::select('id', 'voornaam', 'naam')
+        $klanten = \App\Models\Klant::where('organisatie_id', $userOrganisatieId)
+            ->select('id', 'voornaam', 'naam')
             ->orderBy('naam')
             ->orderBy('voornaam')
             ->get()
@@ -98,7 +101,9 @@ class PrestatieController extends Controller
             // Voor "andere" dienst: gebruik standaard commissie percentage van gebruiker
             $commissiePercentage = 0; // Of een standaard percentage
         } else {
-            $dienst = Dienst::findOrFail($validated['dienst_id']);
+            $dienst = Dienst::where('id', $validated['dienst_id'])
+                ->where('organisatie_id', auth()->user()->organisatie_id)
+                ->firstOrFail();
             $dienstId = $dienst->id;
             
             // Haal het juiste commissie percentage op voor deze medewerker
@@ -141,7 +146,9 @@ class PrestatieController extends Controller
         // Haal klant naam op als klant_id is opgegeven
         $klantNaam = null;
         if (!empty($validated['klant_id'])) {
-            $klant = \App\Models\Klant::find($validated['klant_id']);
+            $klant = \App\Models\Klant::where('id', $validated['klant_id'])
+                ->where('organisatie_id', auth()->user()->organisatie_id)
+                ->first();
             if ($klant) {
                 $klantNaam = trim($klant->voornaam . ' ' . $klant->naam);
             }
