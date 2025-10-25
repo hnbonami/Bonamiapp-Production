@@ -75,10 +75,10 @@
         </div>
     </div>
 
-    {{-- Draggable Grafieken Grid - alle klein behalve waar anders aangegeven --}}
-    <div id="charts-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {{-- Diensten Verdeling - klein --}}
-        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move" draggable="true" data-chart-id="diensten" data-size="small">
+    {{-- Draggable Grafieken Grid - VASTE 4 kolommen op desktop --}}
+    <div id="charts-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+        {{-- Diensten Verdeling - klein (standaard 1 kolom) --}}
+        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move col-span-1" draggable="true" data-chart-id="diensten" data-size="small">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-sm font-semibold text-gray-900">🎯 Diensten</h3>
                 <button onclick="toggleChartSize('diensten')" class="text-gray-400 hover:text-gray-600 transition-colors" title="Grootte aanpassen">
@@ -92,8 +92,8 @@
             </div>
         </div>
 
-        {{-- Prestatie Status - klein --}}
-        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move" draggable="true" data-chart-id="status" data-size="small">
+        {{-- Prestatie Status - klein (standaard 1 kolom) --}}
+        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move col-span-1" draggable="true" data-chart-id="status" data-size="small">
             <div class="flex items-center justify-between mb-3">
                 <h3 class="text-sm font-semibold text-gray-900">✅ Status</h3>
                 <button onclick="toggleChartSize('status')" class="text-gray-400 hover:text-gray-600 transition-colors" title="Grootte aanpassen">
@@ -107,10 +107,10 @@
             </div>
         </div>
 
-        {{-- Omzet Trend - klein (maak groter met knop) --}}
-        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move" draggable="true" data-chart-id="omzet" data-size="small">
+        {{-- Omzet Trend - klein (standaard 1 kolom) --}}
+        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move col-span-1" draggable="true" data-chart-id="omzet" data-size="small">
             <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-semibold text-gray-900">📈 Omzet Trend</h3>
+                <h3 class="text-sm font-semibold text-gray-900">📈 Omzet</h3>
                 <button onclick="toggleChartSize('omzet')" class="text-gray-400 hover:text-gray-600 transition-colors" title="Grootte aanpassen">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
@@ -122,10 +122,10 @@
             </div>
         </div>
 
-        {{-- Top Medewerkers - klein (maak groter met knop) --}}
-        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move" draggable="true" data-chart-id="medewerker" data-size="small">
+        {{-- Top Medewerkers - klein (standaard 1 kolom) --}}
+        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move col-span-1" draggable="true" data-chart-id="medewerker" data-size="small">
             <div class="flex items-center justify-between mb-3">
-                <h3 class="text-sm font-semibold text-gray-900">🏆 Top Medewerkers</h3>
+                <h3 class="text-sm font-semibold text-gray-900">🏆 Medewerkers</h3>
                 <button onclick="toggleChartSize('medewerker')" class="text-gray-400 hover:text-gray-600 transition-colors" title="Grootte aanpassen">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
@@ -319,29 +319,24 @@ function toggleChartSize(chartId) {
     
     console.log('🔄 Toggle size voor', chartId, 'huidige grootte:', currentSize);
     
-    // Verwijder ALLE mogelijke col-span classes
-    card.classList.remove(
-        'sm:col-span-1', 'sm:col-span-2', 'sm:col-span-3', 'sm:col-span-4',
-        'md:col-span-1', 'md:col-span-2', 'md:col-span-3', 'md:col-span-4',
-        'lg:col-span-1', 'lg:col-span-2', 'lg:col-span-3', 'lg:col-span-4',
-        'xl:col-span-1', 'xl:col-span-2', 'xl:col-span-3', 'xl:col-span-4'
-    );
+    // Verwijder ALLE col-span classes (inclusief de standaard col-span-1!)
+    card.className = card.className.split(' ').filter(c => !c.includes('col-span')).join(' ');
     
     if (currentSize === 'small') {
-        // Klein → Medium (2 kolommen op alle schermen)
-        card.classList.add('sm:col-span-2', 'lg:col-span-2');
+        // Klein → Medium (2 kolommen)
+        card.classList.add('lg:col-span-2', 'md:col-span-2', 'sm:col-span-2', 'col-span-1');
         card.setAttribute('data-size', 'medium');
         wrapper.style.height = '250px';
         console.log('→ Van Klein naar Medium (2 kolommen)');
     } else if (currentSize === 'medium') {
-        // Medium → Groot (volle breedte)
-        card.classList.add('sm:col-span-2', 'lg:col-span-4');
+        // Medium → Groot (volle breedte = 4 kolommen)
+        card.classList.add('lg:col-span-4', 'md:col-span-3', 'sm:col-span-2', 'col-span-1');
         card.setAttribute('data-size', 'large');
         wrapper.style.height = '350px';
         console.log('→ Van Medium naar Groot (volle breedte)');
     } else {
         // Groot → Klein (terug naar 1 kolom)
-        card.classList.add('sm:col-span-1', 'lg:col-span-1');
+        card.classList.add('col-span-1');
         card.setAttribute('data-size', 'small');
         wrapper.style.height = '180px';
         console.log('→ Van Groot naar Klein (1 kolom)');
