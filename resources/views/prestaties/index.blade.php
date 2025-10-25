@@ -95,14 +95,14 @@
             <div class="text-xs text-gray-600 mb-1">Mijn Totale Inkomst</div>
             <div class="text-2xl font-bold text-green-600">
                 @php
-                    // Bereken totale netto inkomst voor medewerker
-                    $totaleNettoMedewerker = $prestaties->sum(function($p) {
-                        $prijsExclBtw = $p->bruto_prijs / 1.21; // Stap 1: BTW aftrekken
-                        $bonamiCommissie = $prijsExclBtw * ($p->commissie_percentage / 100); // Stap 2: Bonami commissie
-                        return $prijsExclBtw - $bonamiCommissie; // Stap 3: Netto voor medewerker
+                    // Totale Netto Inkomst = Σ(Excl BTW - Commissie)
+                    $totaleNettoInkomst = $prestaties->sum(function($p) {
+                        $prijsExclBtw = $p->bruto_prijs / 1.21;
+                        $commissieBedrag = $prijsExclBtw * ($p->commissie_percentage / 100);
+                        return $prijsExclBtw - $commissieBedrag;
                     });
                 @endphp
-                €{{ number_format($totaleNettoMedewerker, 2, ',', '.') }}
+                €{{ number_format($totaleNettoInkomst, 2, ',', '.') }}
             </div>
         </div>
         
@@ -111,12 +111,12 @@
             <div class="text-2xl font-bold text-gray-900">
                 @php
                     if ($prestaties->count() > 0) {
-                        $totaleNettoMedewerker = $prestaties->sum(function($p) {
+                        $totaleNettoInkomst = $prestaties->sum(function($p) {
                             $prijsExclBtw = $p->bruto_prijs / 1.21;
-                            $bonamiCommissie = $prijsExclBtw * ($p->commissie_percentage / 100);
-                            return $prijsExclBtw - $bonamiCommissie;
+                            $commissieBedrag = $prijsExclBtw * ($p->commissie_percentage / 100);
+                            return $prijsExclBtw - $commissieBedrag;
                         });
-                        $gemiddelde = $totaleNettoMedewerker / $prestaties->count();
+                        $gemiddelde = $totaleNettoInkomst / $prestaties->count();
                     } else {
                         $gemiddelde = 0;
                     }
@@ -176,10 +176,16 @@
                         </div>
                     </div>
                     
-                    {{-- Commissie preview --}}
-                    <div class="mb-4 p-3 bg-blue-50 rounded">
-                        <div class="text-sm text-gray-600">Commissie</div>
-                        <div class="text-xl font-bold text-blue-600" id="commissie-preview">€0,00</div>
+                    {{-- Bedrag excl. BTW en netto inkomst preview --}}
+                    <div class="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm text-gray-600">Bedrag excl. BTW:</span>
+                            <span id="bedrag-excl-btw-preview" class="text-lg font-bold text-gray-900">€0,00</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Jouw netto inkomst:</span>
+                            <span id="commissie-preview" class="text-lg font-bold text-green-600">€0,00</span>
+                        </div>
                     </div>
                     
                     {{-- Klant en Opmerkingen naast elkaar --}}
@@ -290,16 +296,20 @@
                                             <span class="ml-2 text-sm text-gray-700">Klant</span>
                                         </label>
                                         <label class="flex items-center">
-                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="prijs">
-                                            <span class="ml-2 text-sm text-gray-700">Prijs</span>
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="prijs" checked>
+                                            <span class="ml-2 text-sm text-gray-700">Bruto Prijs (incl. BTW)</span>
                                         </label>
                                         <label class="flex items-center">
-                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="commissie">
-                                            <span class="ml-2 text-sm text-gray-700">Commissie</span>
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="prijs-excl">
+                                            <span class="ml-2 text-sm text-gray-700">Prijs excl. BTW</span>
                                         </label>
                                         <label class="flex items-center">
                                             <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="netto" checked>
                                             <span class="ml-2 text-sm text-gray-700">Netto Inkomst</span>
+                                        </label>
+                                        <label class="flex items-center">
+                                            <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="commissie">
+                                            <span class="ml-2 text-sm text-gray-700">Bonami Commissie</span>
                                         </label>
                                         <label class="flex items-center">
                                             <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="opmerkingen" checked>
@@ -329,12 +339,15 @@
                                     Klant
                                 </th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-prijs">
-                                    Prijs
+                                    Bruto Prijs (incl. BTW)
                                 </th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-commissie">
-                                    Mijn Inkomst
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-prijs-excl">
+                                    Prijs excl. BTW
                                 </th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-netto">
+                                    Netto Inkomst
+                                </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-commissie">
                                     Bonami Commissie
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-opmerkingen">
@@ -377,20 +390,24 @@
                                     <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right kolom-prijs">
                                         €{{ number_format($prestatie->bruto_prijs, 2, ',', '.') }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-600 text-right kolom-commissie">
-                                        @php
-                                            // Stap 1: BTW aftrekken (prijs / 1.21)
-                                            $prijsExclBtw = $prestatie->bruto_prijs / 1.21;
-                                            // Stap 2: Medewerker inkomst (medewerker percentage × prijs excl BTW)
-                                            $medewerkerInkomst = $prijsExclBtw * ($prestatie->commissie_percentage / 100);
-                                        @endphp
-                                        €{{ number_format($medewerkerInkomst, 2, ',', '.') }}
+                                    @php
+                                        // CORRECTE BEREKENING:
+                                        // Stap 1: BTW aftrekken van bruto prijs
+                                        $prijsExclBtw = $prestatie->bruto_prijs / 1.21;
+                                        
+                                        // Stap 2: Bonami commissie berekenen van excl BTW bedrag
+                                        $bonamiCommissie = $prijsExclBtw * ($prestatie->commissie_percentage / 100);
+                                        
+                                        // Stap 3: Netto inkomst voor medewerker = Excl BTW - Bonami commissie
+                                        $nettoInkomstMedewerker = $prijsExclBtw - $bonamiCommissie;
+                                    @endphp
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-gray-700 text-right kolom-prijs-excl">
+                                        €{{ number_format($prijsExclBtw, 2, ',', '.') }}
                                     </td>
-                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-blue-600 text-right kolom-netto">
-                                        @php
-                                            // Stap 3: Bonami commissie = rest van prijs excl BTW
-                                            $bonamiCommissie = $prijsExclBtw - $medewerkerInkomst;
-                                        @endphp
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-600 text-right kolom-netto">
+                                        €{{ number_format($nettoInkomstMedewerker, 2, ',', '.') }}
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-blue-600 text-right kolom-commissie">
                                         €{{ number_format($bonamiCommissie, 2, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-500 kolom-opmerkingen">
@@ -436,7 +453,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                                    <td colspan="10" class="px-6 py-12 text-center text-gray-500">
                                         <div class="flex flex-col items-center">
                                             <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -449,32 +466,38 @@
                             @endforelse
                         </tbody>
                         @if($prestaties->count() > 0)
-            <tfoot class="bg-gray-50 font-semibold">
+                            <tfoot class="bg-gray-50 font-semibold">
                                 <tr>
                                     <td colspan="4" class="px-4 py-3 text-sm text-gray-900">Totaal</td>
                                     <td class="px-4 py-3 text-sm text-gray-900 text-right">
                                         €{{ number_format($prestaties->sum('bruto_prijs'), 2, ',', '.') }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-green-600 text-right">
+                                    <td class="px-4 py-3 text-sm text-gray-700 text-right">
                                         @php
-                                            // Bereken totale inkomst voor medewerker
-                                            $totaleMedewerkerInkomst = $prestaties->sum(function($p) {
-                                                $prijsExclBtw = $p->bruto_prijs / 1.21; // Stap 1: BTW aftrekken
-                                                return $prijsExclBtw * ($p->commissie_percentage / 100); // Stap 2: Medewerker inkomst
+                                            $totalePrijsExclBtw = $prestaties->sum(function($p) {
+                                                return $p->bruto_prijs / 1.21;
                                             });
                                         @endphp
-                                        €{{ number_format($totaleMedewerkerInkomst, 2, ',', '.') }}
+                                        €{{ number_format($totalePrijsExclBtw, 2, ',', '.') }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-green-600 text-right">
+                                        @php
+                                            $totaleNettoInkomst = $prestaties->sum(function($p) {
+                                                $prijsExclBtw = $p->bruto_prijs / 1.21;
+                                                $commissieBedrag = $prijsExclBtw * ($p->commissie_percentage / 100);
+                                                return $prijsExclBtw - $commissieBedrag;
+                                            });
+                                        @endphp
+                                        €{{ number_format($totaleNettoInkomst, 2, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-3 text-sm text-blue-600 text-right">
                                         @php
-                                            // Bereken totale Bonami commissie
-                                            $totaleBonamiCommissie = $prestaties->sum(function($p) {
-                                                $prijsExclBtw = $p->bruto_prijs / 1.21; // Stap 1: BTW aftrekken
-                                                $medewerkerInkomst = $prijsExclBtw * ($p->commissie_percentage / 100); // Stap 2: Medewerker inkomst
-                                                return $prijsExclBtw - $medewerkerInkomst; // Stap 3: Bonami commissie
+                                            $totaleCommissie = $prestaties->sum(function($p) {
+                                                $prijsExclBtw = $p->bruto_prijs / 1.21;
+                                                return $prijsExclBtw * ($p->commissie_percentage / 100);
                                             });
                                         @endphp
-                                        €{{ number_format($totaleBonamiCommissie, 2, ',', '.') }}
+                                        €{{ number_format($totaleCommissie, 2, ',', '.') }}
                                     </td>
                                     <td colspan="2" class="px-4 py-3 text-sm text-gray-500"></td>
                                 </tr>
@@ -701,10 +724,16 @@
                     </div>
                 </div>
                 
-                {{-- Commissie preview --}}
-                <div class="mb-4 p-3 bg-blue-50 rounded">
-                    <div class="text-sm text-gray-600">Commissie</div>
-                    <div class="text-xl font-bold text-blue-600" id="edit-commissie-preview">€0,00</div>
+                {{-- Bedrag excl. BTW en netto inkomst preview in Edit modal --}}
+                <div class="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm text-gray-600">Bedrag excl. BTW:</span>
+                        <span id="edit-bedrag-excl-btw-preview" class="text-lg font-bold text-gray-900">€0,00</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Jouw netto inkomst:</span>
+                        <span id="edit-commissie-preview" class="text-lg font-bold text-green-600">€0,00</span>
+                    </div>
                 </div>
                 
                 {{-- Klant --}}
@@ -1029,51 +1058,71 @@ document.getElementById('dienst-select').addEventListener('change', function() {
     const selectedOption = this.options[this.selectedIndex];
     const prijsInput = document.getElementById('prijs-input');
     const prijs = parseFloat(selectedOption.dataset.prijs || 0);
-    const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
+    const dienstId = this.value;
     
     // Als "Andere" geselecteerd is, maak prijs input bewerkbaar
     if (this.value === 'andere') {
         prijsInput.value = '';
         prijsInput.removeAttribute('readonly');
         prijsInput.focus();
+        document.getElementById('bedrag-excl-btw-preview').textContent = '€0,00';
         document.getElementById('commissie-preview').textContent = '€0,00';
     } else {
         // Voor gewone diensten: auto-fill en readonly
         prijsInput.setAttribute('readonly', 'readonly');
         prijsInput.value = prijs.toFixed(2);
         
-        // Bereken netto inkomst voor medewerker:
-        // Stap 1: BTW aftrekken (prijs / 1.21)
-        const prijsExclBtw = prijs / 1.21;
-        // Stap 2: Bonami commissie berekenen
-        const bonamiCommissie = prijsExclBtw * (commissiePercentage / 100);
-        // Stap 3: Netto inkomst = prijs excl BTW - Bonami commissie
-        const nettoInkomst = prijsExclBtw - bonamiCommissie;
-        
-        document.getElementById('commissie-preview').textContent = 
-            '€' + nettoInkomst.toFixed(2).replace('.', ',');
+        // Haal de JUISTE commissie voor deze medewerker op via AJAX
+        fetch(`/api/commissie-percentage?dienst_id=${dienstId}`)
+            .then(response => response.json())
+            .then(data => {
+                const commissiePercentage = data.commissie_percentage || 0;
+                
+                // Correcte berekening: Excl BTW - (Excl BTW × Commissie%)
+                const bedragExclBtw = prijs / 1.21;
+                const commissieBedrag = bedragExclBtw * (commissiePercentage / 100);
+                const nettoInkomst = bedragExclBtw - commissieBedrag;
+                
+                document.getElementById('bedrag-excl-btw-preview').textContent = 
+                    '€' + bedragExclBtw.toFixed(2).replace('.', ',');
+                document.getElementById('commissie-preview').textContent = 
+                    '€' + nettoInkomst.toFixed(2).replace('.', ',');
+            })
+            .catch(error => {
+                console.error('Error fetching commissie:', error);
+                // Fallback naar 0% commissie
+                const bedragExclBtw = prijs / 1.21;
+                document.getElementById('bedrag-excl-btw-preview').textContent = 
+                    '€' + bedragExclBtw.toFixed(2).replace('.', ',');
+                document.getElementById('commissie-preview').textContent = 
+                    '€' + bedragExclBtw.toFixed(2).replace('.', ',');
+            });
     }
 });
 
 // Update commissie preview wanneer prijs handmatig wordt gewijzigd (bij "Andere")
 document.getElementById('prijs-input').addEventListener('input', function() {
     const dienstSelect = document.getElementById('dienst-select');
-    const selectedOption = dienstSelect.options[dienstSelect.selectedIndex];
+    const dienstId = dienstSelect.value;
     
     if (dienstSelect.value === 'andere') {
         const prijs = parseFloat(this.value || 0);
-        const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
         
-        // Bereken netto inkomst voor medewerker:
-        // Stap 1: BTW aftrekken (prijs / 1.21)
-        const prijsExclBtw = prijs / 1.21;
-        // Stap 2: Bonami commissie berekenen
-        const bonamiCommissie = prijsExclBtw * (commissiePercentage / 100);
-        // Stap 3: Netto inkomst = prijs excl BTW - Bonami commissie
-        const nettoInkomst = prijsExclBtw - bonamiCommissie;
-        
-        document.getElementById('commissie-preview').textContent = 
-            '€' + nettoInkomst.toFixed(2).replace('.', ',');
+        // Haal commissie percentage op via AJAX
+        fetch(`/api/commissie-percentage?dienst_id=${dienstId}`)
+            .then(response => response.json())
+            .then(data => {
+                const commissiePercentage = data.commissie_percentage || 0;
+                
+                const bedragExclBtw = prijs / 1.21;
+                const commissieBedrag = bedragExclBtw * (commissiePercentage / 100);
+                const nettoInkomst = bedragExclBtw - commissieBedrag;
+                
+                document.getElementById('bedrag-excl-btw-preview').textContent = 
+                    '€' + bedragExclBtw.toFixed(2).replace('.', ',');
+                document.getElementById('commissie-preview').textContent = 
+                    '€' + nettoInkomst.toFixed(2).replace('.', ',');
+            });
     }
 });
 
@@ -1279,7 +1328,7 @@ document.getElementById('edit-dienst').addEventListener('change', function() {
     const selectedOption = this.options[this.selectedIndex];
     const prijsInput = document.getElementById('edit-prijs');
     const prijs = parseFloat(selectedOption.dataset.prijs || 0);
-    const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
+    const dienstId = this.value;
     
     // Als "Andere" geselecteerd is, maak prijs input bewerkbaar
     if (this.value === 'andere') {
@@ -1287,53 +1336,65 @@ document.getElementById('edit-dienst').addEventListener('change', function() {
         prijsInput.focus();
         
         const huidigePrijs = parseFloat(prijsInput.value || 0);
-        // Bereken netto inkomst voor medewerker:
-        // Stap 1: BTW aftrekken (prijs / 1.21)
-        const prijsExclBtw = huidigePrijs / 1.21;
-        // Stap 2: Bonami commissie berekenen
-        const bonamiCommissie = prijsExclBtw * (commissiePercentage / 100);
-        // Stap 3: Netto inkomst = prijs excl BTW - Bonami commissie
-        const nettoInkomst = prijsExclBtw - bonamiCommissie;
         
-        document.getElementById('edit-commissie-preview').textContent = 
-            '€' + nettoInkomst.toFixed(2).replace('.', ',');
+        // Haal commissie percentage op
+        fetch(`/api/commissie-percentage?dienst_id=${dienstId}`)
+            .then(response => response.json())
+            .then(data => {
+                const commissiePercentage = data.commissie_percentage || 0;
+                const bedragExclBtw = huidigePrijs / 1.21;
+                const commissieBedrag = bedragExclBtw * (commissiePercentage / 100);
+                const nettoInkomst = bedragExclBtw - commissieBedrag;
+                
+                document.getElementById('edit-bedrag-excl-btw-preview').textContent = 
+                    '€' + bedragExclBtw.toFixed(2).replace('.', ',');
+                document.getElementById('edit-commissie-preview').textContent = 
+                    '€' + nettoInkomst.toFixed(2).replace('.', ',');
+            });
     } else {
         // Voor gewone diensten: auto-fill en readonly
         prijsInput.setAttribute('readonly', 'readonly');
         prijsInput.value = prijs.toFixed(2);
         
-        // Bereken netto inkomst voor medewerker:
-        // Stap 1: BTW aftrekken (prijs / 1.21)
-        const prijsExclBtw = prijs / 1.21;
-        // Stap 2: Bonami commissie berekenen
-        const bonamiCommissie = prijsExclBtw * (commissiePercentage / 100);
-        // Stap 3: Netto inkomst = prijs excl BTW - Bonami commissie
-        const nettoInkomst = prijsExclBtw - bonamiCommissie;
-        
-        document.getElementById('edit-commissie-preview').textContent = 
-            '€' + nettoInkomst.toFixed(2).replace('.', ',');
+        // Haal de JUISTE commissie voor deze medewerker op
+        fetch(`/api/commissie-percentage?dienst_id=${dienstId}`)
+            .then(response => response.json())
+            .then(data => {
+                const commissiePercentage = data.commissie_percentage || 0;
+                const bedragExclBtw = prijs / 1.21;
+                const commissieBedrag = bedragExclBtw * (commissiePercentage / 100);
+                const nettoInkomst = bedragExclBtw - commissieBedrag;
+                
+                document.getElementById('edit-bedrag-excl-btw-preview').textContent = 
+                    '€' + bedragExclBtw.toFixed(2).replace('.', ',');
+                document.getElementById('edit-commissie-preview').textContent = 
+                    '€' + nettoInkomst.toFixed(2).replace('.', ',');
+            });
     }
 });
 
 // Update commissie preview wanneer prijs handmatig wordt gewijzigd (bij "Andere") in Edit modal
 document.getElementById('edit-prijs').addEventListener('input', function() {
     const dienstSelect = document.getElementById('edit-dienst');
-    const selectedOption = dienstSelect.options[dienstSelect.selectedIndex];
+    const dienstId = dienstSelect.value;
     
     if (dienstSelect.value === 'andere' || !dienstSelect.hasAttribute('readonly')) {
         const prijs = parseFloat(this.value || 0);
-        const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
         
-        // Bereken netto inkomst voor medewerker:
-        // Stap 1: BTW aftrekken (prijs / 1.21)
-        const prijsExclBtw = prijs / 1.21;
-        // Stap 2: Bonami commissie berekenen
-        const bonamiCommissie = prijsExclBtw * (commissiePercentage / 100);
-        // Stap 3: Netto inkomst = prijs excl BTW - Bonami commissie
-        const nettoInkomst = prijsExclBtw - bonamiCommissie;
-        
-        document.getElementById('edit-commissie-preview').textContent = 
-            '€' + nettoInkomst.toFixed(2).replace('.', ',');
+        // Haal commissie percentage op
+        fetch(`/api/commissie-percentage?dienst_id=${dienstId}`)
+            .then(response => response.json())
+            .then(data => {
+                const commissiePercentage = data.commissie_percentage || 0;
+                const bedragExclBtw = prijs / 1.21;
+                const commissieBedrag = bedragExclBtw * (commissiePercentage / 100);
+                const nettoInkomst = bedragExclBtw - commissieBedrag;
+                
+                document.getElementById('edit-bedrag-excl-btw-preview').textContent = 
+                    '€' + bedragExclBtw.toFixed(2).replace('.', ',');
+                document.getElementById('edit-commissie-preview').textContent = 
+                    '€' + nettoInkomst.toFixed(2).replace('.', ',');
+            });
     }
 });
 </script>
