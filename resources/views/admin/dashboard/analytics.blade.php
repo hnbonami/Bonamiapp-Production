@@ -36,10 +36,17 @@
                 <div class="flex items-center gap-2 flex-1 min-w-[180px]">
                     <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Filter:</label>
                     <select id="scope-filter" class="flex-1 border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="auto">Automatisch</option>
-                        <option value="organisatie">Mijn Organisatie</option>
-                        <option value="medewerker">Alleen Ik</option>
-                        <option value="all">Alle Organisaties</option>
+                        @if(auth()->user()->is_super_admin || (auth()->user()->email && in_array(auth()->user()->email, ['info@bonami-sportcoaching.be', 'admin@bonami-sportcoaching.be'])))
+                            <option value="auto">Automatisch</option>
+                            <option value="organisatie">Mijn Organisatie</option>
+                            <option value="medewerker">Alleen Ik</option>
+                            <option value="all">Alle Organisaties</option>
+                        @elseif(auth()->user()->organisatie_id && !auth()->user()->is_medewerker)
+                            <option value="organisatie" selected>Mijn Organisatie</option>
+                            <option value="medewerker">Alleen Ik</option>
+                        @else
+                            <option value="medewerker" selected>Alleen Ik</option>
+                        @endif
                     </select>
                 </div>
                 
@@ -333,6 +340,32 @@
 let charts = {};
 let chartLayouts = JSON.parse(localStorage.getItem('analyticsChartLayout') || '[]');
 
+// Gebruikersrol en permissions voor validatie
+const isSuperAdmin = {{ (auth()->user()->is_super_admin || in_array(auth()->user()->email, ['info@bonami-sportcoaching.be', 'admin@bonami-sportcoaching.be'])) ? 'true' : 'false' }};
+const heeftOrganisatie = {{ auth()->user()->organisatie_id ? 'true' : 'false' }};
+const isMedewerker = {{ auth()->user()->is_medewerker ? 'true' : 'false' }};
+
+// Valideer scope op basis van gebruikersrol
+function valideerScope(scope) {
+    // Super admin mag alles
+    if (isSuperAdmin) {
+        return scope;
+    }
+    
+    // Admin (heeft organisatie EN is geen medewerker) mag alleen organisatie en medewerker
+    if (heeftOrganisatie && !isMedewerker) {
+        if (scope === 'all' || scope === 'auto') {
+            console.warn('⚠️ Admin mag geen "Alle Organisaties" selecteren, terug naar "organisatie"');
+            return 'organisatie';
+        }
+        return scope;
+    }
+    
+    // Medewerker mag alleen medewerker scope
+    console.warn('⚠️ Medewerker mag alleen eigen data bekijken');
+    return 'medewerker';
+}
+
 // Draggable functionaliteit
 const container = document.getElementById('charts-container');
 new Sortable(container, {
@@ -349,9 +382,17 @@ new Sortable(container, {
 function laadAnalyticsData() {
     const start = document.getElementById('start-datum').value;
     const eind = document.getElementById('eind-datum').value;
-    const scope = document.getElementById('scope-filter').value;
+    let scope = document.getElementById('scope-filter').value;
     
-    console.log('🔄 Analytics data laden...', { start, eind, scope });
+    // Valideer en corrigeer scope indien nodig
+    scope = valideerScope(scope);
+    
+    // Update dropdown indien gecorrigeerd
+    if (document.getElementById('scope-filter').value !== scope) {
+        document.getElementById('scope-filter').value = scope;
+    }
+    
+    console.log('🔄 Analytics data laden...', { start, eind, scope, isSuperAdmin, heeftOrganisatie, isMedewerker });
     
     // Toon loading state
     document.getElementById('kpi-bruto').textContent = '...';
