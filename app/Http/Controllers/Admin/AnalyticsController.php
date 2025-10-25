@@ -121,7 +121,40 @@ class AnalyticsController extends Controller
     private function berekenOmzetTrend($filter, $startDatum, $eindDatum)
     {
         $prestaties = $this->pasFilterToe(Prestatie::whereBetween('datum_prestatie', [$startDatum, $eindDatum]), $filter)->get();
-        $gegroepeerd = $prestaties->groupBy(fn($p) => Carbon::parse($p->datum_prestatie)->startOfWeek()->format('d M'));
+        
+        \Log::info('📈 Omzet trend berekenen', [
+            'start' => $startDatum,
+            'eind' => $eindDatum,
+            'aantal_prestaties' => $prestaties->count(),
+            'eerste_datum' => $prestaties->first()->datum_prestatie ?? null,
+            'laatste_datum' => $prestaties->last()->datum_prestatie ?? null,
+        ]);
+        
+        if ($prestaties->isEmpty()) {
+            return [
+                'labels' => [],
+                'bruto' => [],
+                'netto' => [],
+            ];
+        }
+        
+        // Bepaal groepering op basis van periode lengte
+        $start = Carbon::parse($startDatum);
+        $eind = Carbon::parse($eindDatum);
+        $dagenVerschil = $start->diffInDays($eind);
+        
+        // Groepeer per dag als periode < 14 dagen, anders per week
+        if ($dagenVerschil <= 14) {
+            $gegroepeerd = $prestaties->groupBy(fn($p) => Carbon::parse($p->datum_prestatie)->format('d M'));
+        } else {
+            $gegroepeerd = $prestaties->groupBy(fn($p) => Carbon::parse($p->datum_prestatie)->startOfWeek()->format('d M'));
+        }
+        
+        \Log::info('✅ Omzet trend gegroepeerd', [
+            'groepering' => $dagenVerschil <= 14 ? 'per dag' : 'per week',
+            'aantal_groepen' => $gegroepeerd->count(),
+            'labels' => $gegroepeerd->keys()->toArray(),
+        ]);
         
         return [
             'labels' => $gegroepeerd->keys()->toArray(),

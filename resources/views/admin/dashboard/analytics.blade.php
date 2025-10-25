@@ -4,17 +4,17 @@
 <div class="container mx-auto px-4 py-6">
     {{-- Header met filters --}}
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div class="flex flex-col gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900">📊 Analytics Dashboard</h1>
                 <p class="text-sm text-gray-600 mt-1">Prestatie statistieken en trends</p>
             </div>
             
-            <div class="flex flex-col sm:flex-row gap-3">
-                {{-- Scope filter (alleen voor superadmin/admin) --}}
-                <div class="flex items-center gap-2">
+            {{-- Filters op één rij zoals overzicht --}}
+            <div class="flex flex-wrap gap-3">
+                <div class="flex items-center gap-2 flex-1 min-w-[180px]">
                     <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Filter:</label>
-                    <select id="scope-filter" class="border-gray-300 rounded-md text-sm min-w-[200px]">
+                    <select id="scope-filter" class="flex-1 border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         <option value="auto">Automatisch</option>
                         <option value="organisatie">Mijn Organisatie</option>
                         <option value="medewerker">Alleen Ik</option>
@@ -22,20 +22,57 @@
                     </select>
                 </div>
                 
-                {{-- Periode selectie --}}
-                <div class="flex items-center gap-2">
-                    <label class="text-sm font-medium text-gray-700">Van:</label>
-                    <input type="date" id="start-datum" class="border-gray-300 rounded-md text-sm" value="{{ now()->subDays(30)->format('Y-m-d') }}">
+                <div class="flex items-center gap-2 flex-1 min-w-[160px]">
+                    <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Van:</label>
+                    <input type="date" id="start-datum" class="flex-1 border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="{{ now()->subDays(30)->format('Y-m-d') }}">
                 </div>
                 
-                <div class="flex items-center gap-2">
-                    <label class="text-sm font-medium text-gray-700">Tot:</label>
-                    <input type="date" id="eind-datum" class="border-gray-300 rounded-md text-sm" value="{{ now()->format('Y-m-d') }}">
+                <div class="flex items-center gap-2 flex-1 min-w-[160px]">
+                    <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Tot:</label>
+                    <input type="date" id="eind-datum" class="flex-1 border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" value="{{ now()->format('Y-m-d') }}">
                 </div>
                 
-                <button onclick="laadAnalyticsData()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium whitespace-nowrap">
-                    📈 Vernieuwen
+                <button onclick="laadAnalyticsData()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                    Vernieuwen
                 </button>
+                
+                {{-- Grafiek visibility toggle --}}
+                <div class="relative">
+                    <button id="grafiek-toggle-btn" type="button" 
+                            class="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors">
+                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span class="text-sm font-medium text-gray-700">Grafieken</span>
+                    </button>
+                    
+                    <div id="grafiek-toggle-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                        <div class="p-3">
+                            <div class="text-sm font-semibold text-gray-700 mb-2">Toon grafieken:</div>
+                            <div class="space-y-2">
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="diensten" checked>
+                                    <span class="ml-2 text-sm text-gray-700">🎯 Diensten Verdeling</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="status" checked>
+                                    <span class="ml-2 text-sm text-gray-700">✅ Prestatie Status</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="omzet" checked>
+                                    <span class="ml-2 text-sm text-gray-700">📈 Omzet Trend</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="medewerker" checked>
+                                    <span class="ml-2 text-sm text-gray-700">🏆 Top Medewerkers</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -369,6 +406,70 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('eind-datum').addEventListener('change', function() {
         console.log('📅 Eind datum changed:', this.value);
     });
+    
+    // Grafiek visibility toggle functionaliteit
+    const grafiekToggleBtn = document.getElementById('grafiek-toggle-btn');
+    const grafiekToggleDropdown = document.getElementById('grafiek-toggle-dropdown');
+    const grafiekToggles = document.querySelectorAll('.grafiek-toggle');
+    
+    // Toggle dropdown
+    grafiekToggleBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        grafiekToggleDropdown.classList.toggle('hidden');
+    });
+    
+    // Sluit dropdown bij klik buiten
+    document.addEventListener('click', function(e) {
+        if (!grafiekToggleDropdown.contains(e.target) && e.target !== grafiekToggleBtn) {
+            grafiekToggleDropdown.classList.add('hidden');
+        }
+    });
+    
+    // Laad opgeslagen grafiek voorkeuren
+    function laadGrafiekVoorkeuren() {
+        const voorkeuren = JSON.parse(localStorage.getItem('analyticsGrafiekVoorkeuren') || '{}');
+        
+        grafiekToggles.forEach(toggle => {
+            const grafiekNaam = toggle.dataset.grafiek;
+            const isZichtbaar = voorkeuren[grafiekNaam] !== undefined ? voorkeuren[grafiekNaam] : toggle.checked;
+            
+            toggle.checked = isZichtbaar;
+            toggleGrafiek(grafiekNaam, isZichtbaar);
+        });
+    }
+    
+    // Toggle grafiek zichtbaarheid
+    function toggleGrafiek(grafiekNaam, isZichtbaar) {
+        const grafiekCard = document.querySelector(`[data-chart-id="${grafiekNaam}"]`);
+        if (grafiekCard) {
+            grafiekCard.style.display = isZichtbaar ? '' : 'none';
+            
+            // Resize chart na toggle
+            if (charts[grafiekNaam] && isZichtbaar) {
+                setTimeout(() => charts[grafiekNaam].resize(), 100);
+            }
+        }
+    }
+    
+    // Sla grafiek voorkeuren op
+    function slaGrafiekVoorkeurenOp() {
+        const voorkeuren = {};
+        grafiekToggles.forEach(toggle => {
+            voorkeuren[toggle.dataset.grafiek] = toggle.checked;
+        });
+        localStorage.setItem('analyticsGrafiekVoorkeuren', JSON.stringify(voorkeuren));
+    }
+    
+    // Event listeners voor grafiek toggles
+    grafiekToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            toggleGrafiek(this.dataset.grafiek, this.checked);
+            slaGrafiekVoorkeurenOp();
+        });
+    });
+    
+    // Laad voorkeuren bij pagina load
+    laadGrafiekVoorkeuren();
 });
 </script>
 @endsection
