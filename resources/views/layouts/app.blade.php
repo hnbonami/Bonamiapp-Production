@@ -336,6 +336,13 @@
                 Dashboard
             </a>
             
+            {{-- Analytics - alleen voor admin/medewerkers --}}
+            @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
+                <a href="/admin/analytics" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('admin/analytics*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                    Analytics
+                </a>
+            @endif
+            
             @if(Auth::user() && Auth::user()->role === 'klant')
                 {{-- Klanten gaan naar hun klant show pagina (profiel overzicht) --}}
                 @php
@@ -426,6 +433,17 @@
                         @endif
                     @endif
                 </a>
+            @endif
+            @endhasFeature
+            
+            {{-- Analytics - alleen tonen als feature actief is en voor admin/medewerkers, net boven Beheer --}}
+            @hasFeature('analytics')
+            @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
+                <div class="border-t border-gray-200 mt-2 pt-2">
+                    <a href="/admin/analytics" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('admin/analytics*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                        Analytics
+                    </a>
+                </div>
             @endif
             @endhasFeature
             
@@ -578,6 +596,22 @@
                 </a>
                 @endif
                 @endhasFeature
+                
+                {{-- Analytics - alleen tonen als feature actief is en net boven Beheer sectie --}}
+                @hasFeature('analytics')
+                @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
+                <div class="mt-6">
+                    <a href="/admin/analytics" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('admin/analytics*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('admin/analytics*') ? 'background:#f6fbfe' : '' }}">
+                        @if(request()->is('admin/analytics*'))
+                            <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
+                        @endif
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9bb3bd" stroke-width="1.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        <span class="font-medium text-[17px]">Analytics</span>
+                    </a>
+                </div>
+                @endif
+                @endhasFeature
+            
             <!-- Beheer-tabblad echt helemaal onderaan -->
             @if(Auth::user() && Auth::user()->isBeheerder())
                 <div class="mt-8">
