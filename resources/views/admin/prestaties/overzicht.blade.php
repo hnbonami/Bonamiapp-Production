@@ -42,6 +42,22 @@
     </div>
 
     {{-- Totaal Overzicht Cards --}}
+    @php
+        // Filter alles op basis van organisatie_id van ingelogde gebruiker
+        $userOrganisatieId = auth()->user()->organisatie_id;
+        
+        // Herbereken totalen alleen voor deze organisatie
+        $organisatiePrestaties = \App\Models\Prestatie::where('jaar', $huidigJaar)
+            ->where('kwartaal', $huidigKwartaal)
+            ->whereHas('user', function($query) use ($userOrganisatieId) {
+                $query->where('organisatie_id', $userOrganisatieId);
+            })
+            ->get();
+        
+        $totaalPrestaties = $organisatiePrestaties->count();
+        $totaleCommissie = $organisatiePrestaties->sum('commissie_bedrag');
+    @endphp
+    
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center justify-between">
@@ -210,10 +226,14 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @php
-                        // Haal alleen prestaties op van de ingelogde gebruiker
+                        // Haal prestaties op gefilterd op organisatie van de ingelogde gebruiker
+                        $userOrganisatieId = auth()->user()->organisatie_id;
+                        
                         $allePrestaties = \App\Models\Prestatie::where('jaar', $huidigJaar)
                             ->where('kwartaal', $huidigKwartaal)
-                            ->where('user_id', auth()->id()) // Filter op ingelogde gebruiker
+                            ->whereHas('user', function($query) use ($userOrganisatieId) {
+                                $query->where('organisatie_id', $userOrganisatieId);
+                            })
                             ->with(['user', 'dienst', 'klant'])
                             ->orderBy('datum_prestatie', 'desc')
                             ->get();
@@ -327,7 +347,6 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
                     @forelse($medewerkerStats as $stat)
-                        @if($stat->id === auth()->id())
                         <tr class="hover:bg-gray-50">
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <div class="flex items-center">
@@ -358,7 +377,6 @@
                                 </a>
                             </td>
                         </tr>
-                        @endif
                     @empty
                         <tr>
                             <td colspan="5" class="px-6 py-12 text-center">
