@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Prestatie extends Model
 {
@@ -124,5 +125,21 @@ class Prestatie extends Model
     public function scopeVoorCoach($query, int $userId)
     {
         return $query->where('user_id', $userId);
+    }
+    
+    /**
+     * Accessor voor commissie_bedrag - berekent inkomst medewerker
+     * Formule: (Prijs incl BTW / 1.21) * (100 - organisatie commissie%) / 100
+     */
+    protected function commissieBedrag(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+                $prijsExclBtw = $this->bruto_prijs / 1.21; // BTW 21% aftrekken
+                $medewerkerPercentage = 100 - $this->commissie_percentage; // 100% - organisatie commissie
+                return ($prijsExclBtw * $medewerkerPercentage) / 100;
+            }
+        );
     }
 }

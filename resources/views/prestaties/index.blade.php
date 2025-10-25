@@ -213,6 +213,9 @@
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Commissie
                                 </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Netto Inkomst
+                                </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Opmerkingen
                                 </th>
@@ -248,7 +251,13 @@
                                         €{{ number_format($prestatie->bruto_prijs, 2, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-green-600 text-right">
-                                        €{{ number_format($prestatie->commissie_bedrag, 2, ',', '.') }}
+                                        @php
+                                            $commissie = ($prestatie->bruto_prijs / 1.21) * $prestatie->commissie_percentage / 100;
+                                        @endphp
+                                        €{{ number_format($commissie, 2, ',', '.') }}
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm font-semibold text-blue-600 text-right">
+                                        €{{ number_format($prestatie->bruto_prijs - $commissie, 2, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-4 text-sm text-gray-500">
                                         {{ $prestatie->opmerkingen ?? '-' }}
@@ -293,7 +302,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
                                         <div class="flex flex-col items-center">
                                             <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -313,7 +322,17 @@
                                         €{{ number_format($prestaties->sum('bruto_prijs'), 2, ',', '.') }}
                                     </td>
                                     <td class="px-4 py-3 text-sm text-green-600 text-right">
+                                        @php
+                                            // Bereken totale commissie voor alle prestaties
+                                            $totaleCommissie = $prestaties->sum(function($p) {
+                                                $prijsExclBtw = $p->bruto_prijs / 1.21; // BTW aftrekken
+                                                return ($prijsExclBtw * $p->commissie_percentage) / 100; // Medewerker percentage
+                                            });
+                                        @endphp
                                         €{{ number_format($totaleCommissie, 2, ',', '.') }}
+                                    </td>
+                                    <td class="px-4 py-3 text-sm text-blue-600 text-right">
+                                        €{{ number_format($prestaties->sum('bruto_prijs') - $totaleCommissie, 2, ',', '.') }}
                                     </td>
                                     <td colspan="2" class="px-4 py-3 text-sm text-gray-500"></td>
                                 </tr>
@@ -449,7 +468,7 @@
                                         <div class="text-lg font-bold text-green-600">
                                             {{ number_format($medewerkerCommissie, 1) }}%
                                         </div>
-                                        <div class="text-xs text-gray-500">Jouw commissie</div>
+                                        <div class="text-xs text-gray-500">Jouw inkomst</div>
                                     @endif
                                 </div>
                             </div>
@@ -708,9 +727,13 @@ document.getElementById('dienst-select').addEventListener('change', function() {
         prijsInput.setAttribute('readonly', 'readonly');
         prijsInput.value = prijs.toFixed(2);
         
-        const commissieBedrag = (prijs * commissiePercentage) / 100;
+        // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+        const prijsExclBtw = prijs / 1.21;
+        const medewerkerPercentage = 100 - commissiePercentage;
+        const inkomst = (prijsExclBtw * medewerkerPercentage) / 100;
+        
         document.getElementById('commissie-preview').textContent = 
-            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+            '€' + inkomst.toFixed(2).replace('.', ',');
     }
 });
 
@@ -722,10 +745,14 @@ document.getElementById('prijs-input').addEventListener('input', function() {
     if (dienstSelect.value === 'andere') {
         const prijs = parseFloat(this.value || 0);
         const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
-        const commissieBedrag = (prijs * commissiePercentage) / 100;
+        
+        // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+        const prijsExclBtw = prijs / 1.21;
+        const medewerkerPercentage = 100 - commissiePercentage;
+        const inkomst = (prijsExclBtw * medewerkerPercentage) / 100;
         
         document.getElementById('commissie-preview').textContent = 
-            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+            '€' + inkomst.toFixed(2).replace('.', ',');
     }
 });
 
@@ -941,17 +968,25 @@ document.getElementById('edit-dienst').addEventListener('change', function() {
         prijsInput.focus();
         
         const huidigePrijs = parseFloat(prijsInput.value || 0);
-        const commissieBedrag = (huidigePrijs * commissiePercentage) / 100;
+        // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+        const prijsExclBtw = huidigePrijs / 1.21;
+        const medewerkerPercentage = 100 - commissiePercentage;
+        const inkomst = (prijsExclBtw * medewerkerPercentage) / 100;
+        
         document.getElementById('edit-commissie-preview').textContent = 
-            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+            '€' + inkomst.toFixed(2).replace('.', ',');
     } else {
         // Voor gewone diensten: auto-fill en readonly
         prijsInput.setAttribute('readonly', 'readonly');
         prijsInput.value = prijs.toFixed(2);
         
-        const commissieBedrag = (prijs * commissiePercentage) / 100;
+        // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+        const prijsExclBtw = prijs / 1.21;
+        const medewerkerPercentage = 100 - commissiePercentage;
+        const inkomst = (prijsExclBtw * medewerkerPercentage) / 100;
+        
         document.getElementById('edit-commissie-preview').textContent = 
-            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+            '€' + inkomst.toFixed(2).replace('.', ',');
     }
 });
 
@@ -963,10 +998,14 @@ document.getElementById('edit-prijs').addEventListener('input', function() {
     if (dienstSelect.value === 'andere' || !dienstSelect.hasAttribute('readonly')) {
         const prijs = parseFloat(this.value || 0);
         const commissiePercentage = parseFloat(selectedOption.dataset.commissie || 0);
-        const commissieBedrag = (prijs * commissiePercentage) / 100;
+        
+        // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+        const prijsExclBtw = prijs / 1.21;
+        const medewerkerPercentage = 100 - commissiePercentage;
+        const inkomst = (prijsExclBtw * medewerkerPercentage) / 100;
         
         document.getElementById('edit-commissie-preview').textContent = 
-            '€' + commissieBedrag.toFixed(2).replace('.', ',');
+            '€' + inkomst.toFixed(2).replace('.', ',');
     }
 });
 </script>
