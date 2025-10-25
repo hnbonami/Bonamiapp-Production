@@ -48,6 +48,8 @@ class AnalyticsController extends Controller
                 'prestatieStatus' => $this->berekenPrestatieStatus($filter, $startDatum, $eindDatum),
                 'commissieVerdeling' => $this->berekenCommissieVerdeling($filter, $startDatum, $eindDatum),
                 'commissieTrend' => $this->berekenCommissieTrend($filter, $startDatum, $eindDatum),
+                'bikefitStats' => $this->berekenBikefitStats($filter, $startDatum, $eindDatum),
+                'inspanningstestStats' => $this->berekenInspanningstestStats($filter, $startDatum, $eindDatum),
                 'btwOverzicht' => $this->berekenBTWOverzicht($filter, $startDatum, $eindDatum),
             ];
             
@@ -280,6 +282,152 @@ class AnalyticsController extends Controller
                 'labels' => [],
                 'organisatie' => [],
                 'medewerkers' => [],
+            ];
+        }
+    }
+    
+    private function berekenBikefitStats($filter, $startDatum, $eindDatum)
+    {
+        try {
+            // Totaal aantal bikefits
+            $totaalBikefits = $this->pasFilterToe(
+                \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]),
+                $filter
+            )->count();
+            
+            // Bikefits per medewerker
+            $bikefitsPerMedewerker = $this->pasFilterToe(
+                \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]),
+                $filter
+            )
+            ->with('user')
+            ->get()
+            ->groupBy('user_id')
+            ->map(function($items, $userId) {
+                $user = $items->first()->user;
+                return [
+                    'naam' => $user ? $user->name : 'Onbekend',
+                    'aantal' => $items->count()
+                ];
+            })
+            ->sortByDesc('aantal')
+            ->take(10);
+            
+            // Bikefits trend per week/dag
+            $bikefit = $this->pasFilterToe(
+                \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]),
+                $filter
+            )->get();
+            
+            $start = Carbon::parse($startDatum);
+            $eind = Carbon::parse($eindDatum);
+            $dagenVerschil = $start->diffInDays($eind);
+            
+            if ($dagenVerschil <= 14) {
+                $gegroepeerd = $bikefit->groupBy(fn($b) => Carbon::parse($b->datum)->format('d M'));
+            } else {
+                $gegroepeerd = $bikefit->groupBy(fn($b) => Carbon::parse($b->datum)->startOfWeek()->format('d M'));
+            }
+            
+            \Log::info('📊 Bikefit stats berekend', [
+                'totaal' => $totaalBikefits,
+                'per_medewerker' => $bikefitsPerMedewerker->count(),
+            ]);
+            
+            return [
+                'totaal' => $totaalBikefits,
+                'perMedewerker' => [
+                    'labels' => $bikefitsPerMedewerker->pluck('naam')->toArray(),
+                    'values' => $bikefitsPerMedewerker->pluck('aantal')->toArray(),
+                ],
+                'trend' => [
+                    'labels' => $gegroepeerd->keys()->toArray(),
+                    'values' => $gegroepeerd->map(fn($items) => $items->count())->values()->toArray(),
+                ],
+            ];
+        } catch (\Exception $e) {
+            \Log::error('❌ Fout in berekenBikefitStats', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+            ]);
+            
+            return [
+                'totaal' => 0,
+                'perMedewerker' => ['labels' => [], 'values' => []],
+                'trend' => ['labels' => [], 'values' => []],
+            ];
+        }
+    }
+    
+    private function berekenInspanningstestStats($filter, $startDatum, $eindDatum)
+    {
+        try {
+            // Totaal aantal inspanningstesten
+            $totaalTesten = $this->pasFilterToe(
+                \App\Models\Inspanningstest::whereBetween('datum', [$startDatum, $eindDatum]),
+                $filter
+            )->count();
+            
+            // Inspanningstesten per medewerker
+            $testenPerMedewerker = $this->pasFilterToe(
+                \App\Models\Inspanningstest::whereBetween('datum', [$startDatum, $eindDatum]),
+                $filter
+            )
+            ->with('user')
+            ->get()
+            ->groupBy('user_id')
+            ->map(function($items, $userId) {
+                $user = $items->first()->user;
+                return [
+                    'naam' => $user ? $user->name : 'Onbekend',
+                    'aantal' => $items->count()
+                ];
+            })
+            ->sortByDesc('aantal')
+            ->take(10);
+            
+            // Inspanningstesten trend per week/dag
+            $testen = $this->pasFilterToe(
+                \App\Models\Inspanningstest::whereBetween('datum', [$startDatum, $eindDatum]),
+                $filter
+            )->get();
+            
+            $start = Carbon::parse($startDatum);
+            $eind = Carbon::parse($eindDatum);
+            $dagenVerschil = $start->diffInDays($eind);
+            
+            if ($dagenVerschil <= 14) {
+                $gegroepeerd = $testen->groupBy(fn($t) => Carbon::parse($t->datum)->format('d M'));
+            } else {
+                $gegroepeerd = $testen->groupBy(fn($t) => Carbon::parse($t->datum)->startOfWeek()->format('d M'));
+            }
+            
+            \Log::info('🏃 Inspanningstesten stats berekend', [
+                'totaal' => $totaalTesten,
+                'per_medewerker' => $testenPerMedewerker->count(),
+            ]);
+            
+            return [
+                'totaal' => $totaalTesten,
+                'perMedewerker' => [
+                    'labels' => $testenPerMedewerker->pluck('naam')->toArray(),
+                    'values' => $testenPerMedewerker->pluck('aantal')->toArray(),
+                ],
+                'trend' => [
+                    'labels' => $gegroepeerd->keys()->toArray(),
+                    'values' => $gegroepeerd->map(fn($items) => $items->count())->values()->toArray(),
+                ],
+            ];
+        } catch (\Exception $e) {
+            \Log::error('❌ Fout in berekenInspanningstestStats', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+            ]);
+            
+            return [
+                'totaal' => 0,
+                'perMedewerker' => ['labels' => [], 'values' => []],
+                'trend' => ['labels' => [], 'values' => []],
             ];
         }
     }

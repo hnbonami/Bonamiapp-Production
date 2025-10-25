@@ -12,6 +12,27 @@
             
             {{-- Filters op één rij zoals overzicht --}}
             <div class="flex flex-wrap gap-3">
+                {{-- Periode snelkeuze --}}
+                <div class="flex items-center gap-2 flex-1 min-w-[160px]">
+                    <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Periode:</label>
+                    <select id="periode-filter" class="flex-1 border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="custom">Aangepast</option>
+                        <option value="vandaag">Vandaag</option>
+                        <option value="gisteren">Gisteren</option>
+                        <option value="deze-week">Deze week</option>
+                        <option value="vorige-week">Vorige week</option>
+                        <option value="deze-maand">Deze maand</option>
+                        <option value="vorige-maand">Vorige maand</option>
+                        <option value="dit-kwartaal">Dit kwartaal (Q{{ ceil(now()->month / 3) }})</option>
+                        <option value="vorig-kwartaal">Vorig kwartaal</option>
+                        <option value="dit-jaar">Dit jaar ({{ now()->year }})</option>
+                        <option value="vorig-jaar">Vorig jaar ({{ now()->year - 1 }})</option>
+                        <option value="laatste-7-dagen">Laatste 7 dagen</option>
+                        <option value="laatste-30-dagen" selected>Laatste 30 dagen</option>
+                        <option value="laatste-90-dagen">Laatste 90 dagen</option>
+                    </select>
+                </div>
+                
                 <div class="flex items-center gap-2 flex-1 min-w-[180px]">
                     <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Filter:</label>
                     <select id="scope-filter" class="flex-1 border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -72,6 +93,22 @@
                                 <label class="flex items-center">
                                     <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="commissie" checked>
                                     <span class="ml-2 text-sm text-gray-700">💰 Commissie Trend</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="bikefits-totaal" checked>
+                                    <span class="ml-2 text-sm text-gray-700">🚴 Totaal Bikefits</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="bikefits-medewerker" checked>
+                                    <span class="ml-2 text-sm text-gray-700">🚴 Bikefits per Medewerker</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="testen-totaal" checked>
+                                    <span class="ml-2 text-sm text-gray-700">🏃 Totaal Inspanningstesten</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="testen-medewerker" checked>
+                                    <span class="ml-2 text-sm text-gray-700">🏃 Testen per Medewerker</span>
                                 </label>
                             </div>
                         </div>
@@ -190,6 +227,66 @@
             </div>
             <div class="chart-wrapper" style="height: 180px;">
                 <canvas id="commissieChart"></canvas>
+            </div>
+        </div>
+        
+        {{-- Totaal Bikefits Trend - klein --}}
+        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move col-span-1" draggable="true" data-chart-id="bikefits-totaal" data-size="small">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900">🚴 Bikefits</h3>
+                <button onclick="toggleChartSize('bikefits-totaal')" class="text-gray-400 hover:text-gray-600 transition-colors" title="Grootte aanpassen">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="chart-wrapper" style="height: 180px;">
+                <canvas id="bikefitsTotaalChart"></canvas>
+            </div>
+        </div>
+        
+        {{-- Bikefits per Medewerker - klein --}}
+        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move col-span-1" draggable="true" data-chart-id="bikefits-medewerker" data-size="small">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900">🚴 Bikefits/Medewerker</h3>
+                <button onclick="toggleChartSize('bikefits-medewerker')" class="text-gray-400 hover:text-gray-600 transition-colors" title="Grootte aanpassen">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="chart-wrapper" style="height: 180px;">
+                <canvas id="bikefitsMedewerkerChart"></canvas>
+            </div>
+        </div>
+        
+        {{-- Totaal Inspanningstesten Trend - klein --}}
+        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move col-span-1" draggable="true" data-chart-id="testen-totaal" data-size="small">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900">🏃 Testen</h3>
+                <button onclick="toggleChartSize('testen-totaal')" class="text-gray-400 hover:text-gray-600 transition-colors" title="Grootte aanpassen">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="chart-wrapper" style="height: 180px;">
+                <canvas id="testenTotaalChart"></canvas>
+            </div>
+        </div>
+        
+        {{-- Inspanningstesten per Medewerker - klein --}}
+        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move col-span-1" draggable="true" data-chart-id="testen-medewerker" data-size="small">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900">🏃 Testen/Medewerker</h3>
+                <button onclick="toggleChartSize('testen-medewerker')" class="text-gray-400 hover:text-gray-600 transition-colors" title="Grootte aanpassen">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="chart-wrapper" style="height: 180px;">
+                <canvas id="testenMedewerkerChart"></canvas>
             </div>
         </div>
     </div>
@@ -411,6 +508,96 @@ function updateCharts(data) {
             }
         }
     });
+    
+    // Bikefits Totaal Trend Chart
+    if (charts['bikefits-totaal']) charts['bikefits-totaal'].destroy();
+    charts['bikefits-totaal'] = new Chart(document.getElementById('bikefitsTotaalChart'), {
+        type: 'line',
+        data: {
+            labels: data.bikefitStats.trend.labels || [],
+            datasets: [{
+                label: 'Bikefits',
+                data: data.bikefitStats.trend.values || [],
+                borderColor: '#8b5cf6',
+                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { display: false },
+                title: { display: true, text: `Totaal: ${data.bikefitStats.totaal}` }
+            }
+        }
+    });
+    
+    // Bikefits per Medewerker Chart
+    if (charts['bikefits-medewerker']) charts['bikefits-medewerker'].destroy();
+    charts['bikefits-medewerker'] = new Chart(document.getElementById('bikefitsMedewerkerChart'), {
+        type: 'bar',
+        data: {
+            labels: data.bikefitStats.perMedewerker.labels || [],
+            datasets: [{
+                label: 'Bikefits',
+                data: data.bikefitStats.perMedewerker.values || [],
+                backgroundColor: '#8b5cf6'
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+    
+    // Inspanningstesten Totaal Trend Chart
+    if (charts['testen-totaal']) charts['testen-totaal'].destroy();
+    charts['testen-totaal'] = new Chart(document.getElementById('testenTotaalChart'), {
+        type: 'line',
+        data: {
+            labels: data.inspanningstestStats.trend.labels || [],
+            datasets: [{
+                label: 'Testen',
+                data: data.inspanningstestStats.trend.values || [],
+                borderColor: '#ec4899',
+                backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { 
+                legend: { display: false },
+                title: { display: true, text: `Totaal: ${data.inspanningstestStats.totaal}` }
+            }
+        }
+    });
+    
+    // Inspanningstesten per Medewerker Chart
+    if (charts['testen-medewerker']) charts['testen-medewerker'].destroy();
+    charts['testen-medewerker'] = new Chart(document.getElementById('testenMedewerkerChart'), {
+        type: 'bar',
+        data: {
+            labels: data.inspanningstestStats.perMedewerker.labels || [],
+            datasets: [{
+                label: 'Testen',
+                data: data.inspanningstestStats.perMedewerker.values || [],
+                backgroundColor: '#ec4899'
+            }]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
 }
 
 function updateExtra(data) {
@@ -466,18 +653,102 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('📊 Analytics dashboard geladen');
     laadAnalyticsData();
     
-    // Event listeners voor filters
-    document.getElementById('scope-filter').addEventListener('change', function() {
-        console.log('🔄 Scope filter changed:', this.value);
-        laadAnalyticsData();
+    // Periode snelkeuze functionaliteit
+    const periodeFilter = document.getElementById('periode-filter');
+    const startDatum = document.getElementById('start-datum');
+    const eindDatum = document.getElementById('eind-datum');
+    
+    periodeFilter.addEventListener('change', function() {
+        const periode = this.value;
+        const vandaag = new Date();
+        let start, eind;
+        
+        switch(periode) {
+            case 'vandaag':
+                start = eind = vandaag;
+                break;
+            case 'gisteren':
+                start = eind = new Date(vandaag.setDate(vandaag.getDate() - 1));
+                break;
+            case 'deze-week':
+                start = new Date(vandaag.setDate(vandaag.getDate() - vandaag.getDay() + 1)); // Maandag
+                eind = new Date();
+                break;
+            case 'vorige-week':
+                eind = new Date(vandaag.setDate(vandaag.getDate() - vandaag.getDay())); // Zondag vorige week
+                start = new Date(eind.getTime() - 6 * 24 * 60 * 60 * 1000); // Maandag vorige week
+                break;
+            case 'deze-maand':
+                start = new Date(vandaag.getFullYear(), vandaag.getMonth(), 1);
+                eind = new Date();
+                break;
+            case 'vorige-maand':
+                start = new Date(vandaag.getFullYear(), vandaag.getMonth() - 1, 1);
+                eind = new Date(vandaag.getFullYear(), vandaag.getMonth(), 0);
+                break;
+            case 'dit-kwartaal':
+                const kwartaal = Math.floor(vandaag.getMonth() / 3);
+                start = new Date(vandaag.getFullYear(), kwartaal * 3, 1);
+                eind = new Date();
+                break;
+            case 'vorig-kwartaal':
+                const vorigKwartaal = Math.floor(vandaag.getMonth() / 3) - 1;
+                if (vorigKwartaal < 0) {
+                    start = new Date(vandaag.getFullYear() - 1, 9, 1); // Q4 vorig jaar
+                    eind = new Date(vandaag.getFullYear() - 1, 11, 31);
+                } else {
+                    start = new Date(vandaag.getFullYear(), vorigKwartaal * 3, 1);
+                    eind = new Date(vandaag.getFullYear(), vorigKwartaal * 3 + 3, 0);
+                }
+                break;
+            case 'dit-jaar':
+                start = new Date(vandaag.getFullYear(), 0, 1);
+                eind = new Date();
+                break;
+            case 'vorig-jaar':
+                start = new Date(vandaag.getFullYear() - 1, 0, 1);
+                eind = new Date(vandaag.getFullYear() - 1, 11, 31);
+                break;
+            case 'laatste-7-dagen':
+                eind = new Date();
+                start = new Date(vandaag.setDate(vandaag.getDate() - 7));
+                break;
+            case 'laatste-30-dagen':
+                eind = new Date();
+                start = new Date(vandaag.setDate(vandaag.getDate() - 30));
+                break;
+            case 'laatste-90-dagen':
+                eind = new Date();
+                start = new Date(vandaag.setDate(vandaag.getDate() - 90));
+                break;
+            case 'custom':
+                // Doe niets, gebruiker past handmatig aan
+                return;
+        }
+        
+        // Update datum velden
+        if (start && eind) {
+            startDatum.value = start.toISOString().split('T')[0];
+            eindDatum.value = eind.toISOString().split('T')[0];
+            laadAnalyticsData();
+        }
     });
     
-    document.getElementById('start-datum').addEventListener('change', function() {
+    // Als datums handmatig worden aangepast, zet periode naar "Aangepast"
+    startDatum.addEventListener('change', function() {
+        periodeFilter.value = 'custom';
         console.log('📅 Start datum changed:', this.value);
     });
     
-    document.getElementById('eind-datum').addEventListener('change', function() {
+    eindDatum.addEventListener('change', function() {
+        periodeFilter.value = 'custom';
         console.log('📅 Eind datum changed:', this.value);
+    });
+    
+    // Event listeners voor filters
+    document.getElementById('scope-filter').addEventListener('change', function() {
+        console.log('� Scope filter changed:', this.value);
+        laadAnalyticsData();
     });
     
     // Grafiek visibility toggle functionaliteit
