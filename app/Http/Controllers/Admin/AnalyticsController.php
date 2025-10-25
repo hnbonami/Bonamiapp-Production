@@ -337,67 +337,106 @@ class AnalyticsController extends Controller
             \Log::info('📊 Bikefit stats beginnen', [
                 'filter_type' => $filter['type'],
                 'filter_value' => $filter['value'] ?? null,
+                'start' => $startDatum,
+                'eind' => $eindDatum,
             ]);
             
-            // Totaal aantal bikefits
-            $bikefitQuery = \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]);
-            
-            // Pas filter toe op basis van type
+            // Gebruik DB::table om ALLE global scopes te omzeilen
             if ($filter['type'] === 'organisatie') {
-                $bikefitQuery->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
+                // Haal eerst alle user IDs op van deze organisatie
+                $userIds = \App\Models\User::where('organisatie_id', $filter['value'])->pluck('id')->toArray();
+                
+                \Log::info('📊 Filter: gebruikers van organisatie', [
+                    'organisatie_id' => $filter['value'],
+                    'user_ids' => $userIds,
+                    'aantal_users' => count($userIds)
+                ]);
+                
+                // Tel ALLE bikefits in deze periode
+                $alleBikefits = \DB::table('bikefits')
+                    ->whereBetween('datum', [$startDatum, $eindDatum])
+                    ->count();
+                
+                // Tel bikefits voor deze user IDs
+                $totaalBikefits = \DB::table('bikefits')
+                    ->whereBetween('datum', [$startDatum, $eindDatum])
+                    ->whereIn('user_id', $userIds)
+                    ->count();
+                
+                \Log::info('📊 Totaal bikefits geteld', [
+                    'totaal' => $totaalBikefits,
+                    'alle_bikefits_in_periode' => $alleBikefits,
+                    'user_ids' => $userIds
+                ]);
+                
+                // Haal data op voor per medewerker en trend
+                $bikefitsData = \DB::table('bikefits')
+                    ->join('users', 'bikefits.user_id', '=', 'users.id')
+                    ->whereBetween('bikefits.datum', [$startDatum, $eindDatum])
+                    ->whereIn('bikefits.user_id', $userIds)
+                    ->select('bikefits.id', 'bikefits.user_id', 'bikefits.datum', 'users.name as user_name', 'users.organisatie_id')
+                    ->get();
+                
+                \Log::info('📊 Bikefits data details', [
+                    'aantal_records' => $bikefitsData->count(),
+                    'user_ids_in_data' => $bikefitsData->pluck('user_id')->unique()->toArray(),
+                    'organisatie_ids_in_data' => $bikefitsData->pluck('organisatie_id')->unique()->toArray(),
+                ]);
+                
             } elseif ($filter['type'] === 'medewerker') {
-                $bikefitQuery->where('user_id', $filter['value']);
+                \Log::info('📊 Filter: specifieke medewerker', ['user_id' => $filter['value']]);
+                
+                $totaalBikefits = \DB::table('bikefits')
+                    ->whereBetween('datum', [$startDatum, $eindDatum])
+                    ->where('user_id', $filter['value'])
+                    ->count();
+                
+                $bikefitsData = \DB::table('bikefits')
+                    ->join('users', 'bikefits.user_id', '=', 'users.id')
+                    ->whereBetween('bikefits.datum', [$startDatum, $eindDatum])
+                    ->where('bikefits.user_id', $filter['value'])
+                    ->select('bikefits.*', 'users.name as user_name')
+                    ->get();
+                    
+            } else {
+                // Superadmin - geen filter
+                \Log::info('📊 Geen filter (superadmin)');
+                
+                $totaalBikefits = \DB::table('bikefits')
+                    ->whereBetween('datum', [$startDatum, $eindDatum])
+                    ->count();
+                
+                $bikefitsData = \DB::table('bikefits')
+                    ->join('users', 'bikefits.user_id', '=', 'users.id')
+                    ->whereBetween('bikefits.datum', [$startDatum, $eindDatum])
+                    ->select('bikefits.*', 'users.name as user_name')
+                    ->get();
             }
-            // superadmin: geen filter
             
-            $totaalBikefits = $bikefitQuery->count();
+            \Log::info('📊 Bikefits data opgehaald', ['aantal' => $bikefitsData->count()]);
             
-            \Log::info('📊 Totaal bikefits geteld', ['totaal' => $totaalBikefits]);
-            
-            // Bikefits per medewerker
-            $bikefitQuery2 = \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]);
-            
-            // Pas filter toe op basis van type
-            if ($filter['type'] === 'organisatie') {
-                $bikefitQuery2->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
-            } elseif ($filter['type'] === 'medewerker') {
-                $bikefitQuery2->where('user_id', $filter['value']);
-            }
-            
-            $bikefitsPerMedewerker = $bikefitQuery2
-                ->with('user')
-                ->get()
+            // Groepeer per medewerker
+            $bikefitsPerMedewerker = collect($bikefitsData)
                 ->groupBy('user_id')
                 ->map(function($items, $userId) {
-                    $user = $items->first()->user;
+                    $eerste = $items->first();
                     return [
-                        'naam' => $user ? $user->name : 'Onbekend',
+                        'naam' => $eerste->user_name ?? 'Onbekend',
                         'aantal' => $items->count()
                     ];
                 })
                 ->sortByDesc('aantal')
                 ->take(10);
             
-            // Bikefits trend per week/dag
-            $bikefitQuery3 = \App\Models\Bikefit::whereBetween('datum', [$startDatum, $eindDatum]);
-            
-            // Pas filter toe op basis van type
-            if ($filter['type'] === 'organisatie') {
-                $bikefitQuery3->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value']));
-            } elseif ($filter['type'] === 'medewerker') {
-                $bikefitQuery3->where('user_id', $filter['value']);
-            }
-            
-            $bikefit = $bikefitQuery3->get();
-            
+            // Groepeer per week/dag voor trend
             $start = Carbon::parse($startDatum);
             $eind = Carbon::parse($eindDatum);
             $dagenVerschil = $start->diffInDays($eind);
             
             if ($dagenVerschil <= 14) {
-                $gegroepeerd = $bikefit->groupBy(fn($b) => Carbon::parse($b->datum)->format('d M'));
+                $gegroepeerd = collect($bikefitsData)->groupBy(fn($b) => Carbon::parse($b->datum)->format('d M'));
             } else {
-                $gegroepeerd = $bikefit->groupBy(fn($b) => Carbon::parse($b->datum)->startOfWeek()->format('d M'));
+                $gegroepeerd = collect($bikefitsData)->groupBy(fn($b) => Carbon::parse($b->datum)->startOfWeek()->format('d M'));
             }
             
             \Log::info('📊 Bikefit stats berekend', [
@@ -420,6 +459,7 @@ class AnalyticsController extends Controller
             \Log::error('❌ Fout in berekenBikefitStats', [
                 'message' => $e->getMessage(),
                 'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
             ]);
             
             return [
