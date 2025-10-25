@@ -174,7 +174,7 @@
                     </div>
                     
                     {{-- Bedrag excl. BTW en netto inkomst preview --}}
-                    <div class="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                    <div class="mt-3 mb-6 p-3 bg-gray-50 rounded-md border border-gray-200">
                         <div class="flex justify-between items-center mb-2">
                             <span class="text-sm text-gray-600">Bedrag excl. BTW:</span>
                             <span id="bedrag-excl-btw-preview" class="text-lg font-bold text-gray-900">€0,00</span>
@@ -190,8 +190,8 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Klant (optioneel)</label>
                             <input type="text" id="klant-zoek" placeholder="Zoek klant..." 
-                                   class="w-full rounded border-gray-300 py-2 px-3 mb-1">
-                            <select name="klant_id" id="klant-select" class="w-full rounded border-gray-300 py-2 px-3" size="4">
+                                   class="w-full rounded border-gray-300 py-1 px-2 mb-1 text-sm">
+                            <select name="klant_id" id="klant-select" class="w-full rounded border-gray-300 py-1 px-2 text-sm" size="3">
                                 <option value="">-- Geen klant --</option>
                                 @foreach($klanten as $klant)
                                     <option value="{{ $klant['id'] }}" data-naam="{{ strtolower($klant['naam']) }}">{{ $klant['naam'] }}</option>
@@ -201,8 +201,8 @@
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Opmerkingen</label>
-                            <textarea name="opmerkingen" rows="6" 
-                                      class="w-full rounded border-gray-300 py-2 px-3"></textarea>
+                            <textarea name="opmerkingen" rows="4" 
+                                      class="w-full rounded border-gray-300 py-1 px-2 text-sm"></textarea>
                         </div>
                     </div>
                     
