@@ -51,6 +51,7 @@ class AnalyticsController extends Controller
                 'bikefitStats' => $this->berekenBikefitStats($filter, $startDatum, $eindDatum),
                 'inspanningstestStats' => $this->berekenInspanningstestStats($filter, $startDatum, $eindDatum),
                 'btwOverzicht' => $this->berekenBTWOverzicht($filter, $startDatum, $eindDatum),
+                'omzetPerOrganisatie' => $this->berekenOmzetPerOrganisatie($filter, $startDatum, $eindDatum),
             ];
             
             \Log::info('✅ Analytics data succesvol berekend', [
@@ -456,6 +457,60 @@ class AnalyticsController extends Controller
                 'totaal' => 0,
                 'perMedewerker' => ['labels' => [], 'values' => []],
                 'trend' => ['labels' => [], 'values' => []],
+            ];
+        }
+    }
+
+    private function berekenOmzetPerOrganisatie($filter, $startDatum, $eindDatum)
+    {
+        try {
+            // Alleen voor super admin
+            if ($filter['type'] !== 'superadmin') {
+                return [
+                    'labels' => [],
+                    'bruto' => [],
+                    'netto' => [],
+                ];
+            }
+            
+            // Haal alle prestaties op gegroepeerd per organisatie
+            $prestaties = Prestatie::whereBetween('datum_prestatie', [$startDatum, $eindDatum])
+                ->with('user.organisatie')
+                ->get()
+                ->filter(fn($p) => $p->user && $p->user->organisatie_id)
+                ->groupBy(fn($p) => $p->user->organisatie->naam ?? 'Onbekend');
+            
+            \Log::info('🏢 Omzet per organisatie berekenen', [
+                'aantal_organisaties' => $prestaties->count(),
+                'totaal_prestaties' => Prestatie::whereBetween('datum_prestatie', [$startDatum, $eindDatum])->count(),
+            ]);
+            
+            if ($prestaties->isEmpty()) {
+                return [
+                    'labels' => [],
+                    'bruto' => [],
+                    'netto' => [],
+                ];
+            }
+            
+            // Sorteer op bruto omzet (hoogste eerst)
+            $gesorteerd = $prestaties->sortByDesc(fn($items) => $items->sum('bruto_prijs'))->take(10);
+            
+            return [
+                'labels' => $gesorteerd->keys()->toArray(),
+                'bruto' => $gesorteerd->map(fn($items) => round($items->sum('bruto_prijs'), 2))->values()->toArray(),
+                'netto' => $gesorteerd->map(fn($items) => round($items->sum(fn($p) => $p->bruto_prijs / 1.21), 2))->values()->toArray(),
+            ];
+        } catch (\Exception $e) {
+            \Log::error('❌ Fout in berekenOmzetPerOrganisatie', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+            ]);
+            
+            return [
+                'labels' => [],
+                'bruto' => [],
+                'netto' => [],
             ];
         }
     }

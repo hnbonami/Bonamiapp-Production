@@ -117,6 +117,12 @@
                                     <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="testen-medewerker" checked>
                                     <span class="ml-2 text-sm text-gray-700">🏃 Testen per Medewerker</span>
                                 </label>
+                                @if(auth()->user()->is_super_admin || in_array(auth()->user()->email, ['info@bonami-sportcoaching.be', 'admin@bonami-sportcoaching.be']))
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="grafiek-toggle rounded border-gray-300 text-blue-600" data-grafiek="organisaties" checked>
+                                    <span class="ml-2 text-sm text-gray-700">🏢 Omzet per Organisatie</span>
+                                </label>
+                                @endif
                             </div>
                         </div>
                     </div>
@@ -296,6 +302,23 @@
                 <canvas id="testenMedewerkerChart"></canvas>
             </div>
         </div>
+        
+        @if(auth()->user()->is_super_admin || in_array(auth()->user()->email, ['info@bonami-sportcoaching.be', 'admin@bonami-sportcoaching.be']))
+        {{-- Omzet per Organisatie - alleen voor super admin --}}
+        <div class="chart-card bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-move col-span-1" draggable="true" data-chart-id="organisaties" data-size="small">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900">🏢 Omzet/Organisatie</h3>
+                <button onclick="toggleChartSize('organisaties')" class="text-gray-400 hover:text-gray-600 transition-colors" title="Grootte aanpassen">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="chart-wrapper" style="height: 180px;">
+                <canvas id="organisatiesChart"></canvas>
+            </div>
+        </div>
+        @endif
     </div>
 
     {{-- Extra statistieken --}}
@@ -639,6 +662,61 @@ function updateCharts(data) {
             scales: { y: { beginAtZero: true } }
         }
     });
+    
+    // Omzet per Organisatie Chart (alleen voor super admin)
+    if (isSuperAdmin && data.omzetPerOrganisatie) {
+        if (charts['organisaties']) charts['organisaties'].destroy();
+        charts['organisaties'] = new Chart(document.getElementById('organisatiesChart'), {
+            type: 'bar',
+            data: {
+                labels: data.omzetPerOrganisatie.labels || [],
+                datasets: [{
+                    label: 'Bruto',
+                    data: data.omzetPerOrganisatie.bruto || [],
+                    backgroundColor: '#3b82f6',
+                    borderColor: '#2563eb',
+                    borderWidth: 1
+                }, {
+                    label: 'Netto',
+                    data: data.omzetPerOrganisatie.netto || [],
+                    backgroundColor: '#10b981',
+                    borderColor: '#059669',
+                    borderWidth: 1
+                }]
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: false, 
+                plugins: { 
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += '€' + context.parsed.y.toLocaleString('nl-NL', {minimumFractionDigits: 2});
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: { 
+                    y: { 
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return '€' + value.toLocaleString('nl-NL');
+                            }
+                        }
+                    } 
+                }
+            }
+        });
+    }
 }
 
 function updateExtra(data) {
