@@ -20,8 +20,10 @@ class AnalyticsController extends Controller
         $user = auth()->user();
         $startDatum = $request->input('start', now()->subDays(30)->format('Y-m-d'));
         $eindDatum = $request->input('eind', now()->format('Y-m-d'));
+        $scope = $request->input('scope', 'auto'); // auto, organisatie, medewerker, all
         
-        $filter = $this->bepaalDataFilter($user);
+        // Bepaal filter op basis van scope en gebruikersrol
+        $filter = $this->bepaalDataFilter($user, $scope);
         
         try {
             return response()->json([
@@ -42,8 +44,22 @@ class AnalyticsController extends Controller
         }
     }
 
-    private function bepaalDataFilter($user)
+    private function bepaalDataFilter($user, $scope = 'auto')
     {
+        // Als scope handmatig is ingesteld
+        if ($scope !== 'auto') {
+            if ($scope === 'all' && ($user->role_id === 1 || $user->is_superadmin)) {
+                return ['type' => 'superadmin', 'value' => null, 'label' => 'Alle Organisaties'];
+            }
+            if ($scope === 'organisatie' && $user->organisatie_id) {
+                return ['type' => 'organisatie', 'value' => $user->organisatie_id, 'label' => 'Mijn Organisatie'];
+            }
+            if ($scope === 'medewerker') {
+                return ['type' => 'medewerker', 'value' => $user->id, 'label' => 'Alleen Ik'];
+            }
+        }
+        
+        // Automatisch bepalen op basis van rol
         if ($user->role_id === 1 || $user->is_superadmin) {
             return ['type' => 'superadmin', 'value' => null, 'label' => 'Alle Organisaties'];
         }
