@@ -27,6 +27,11 @@ Route::get('/commissie-percentage', function(Request $request) {
     return response()->json(['commissie_percentage' => $commissiePercentage]);
 })->middleware('web');
 
+// === ANALYTICS DASHBOARD ROUTES ===
+Route::get('/dashboard/analytics', [App\Http\Controllers\Admin\AnalyticsController::class, 'getData'])
+    ->middleware('web')
+    ->name('api.dashboard.analytics');
+
 // === INSPANNINGSTEST AI ROUTES ===
 Route::post('/inspanningstest/ai-complete-analysis', [App\Http\Controllers\InspanningstestController::class, 'generateCompleteAIAnalysis'])
     ->middleware('auth:sanctum')

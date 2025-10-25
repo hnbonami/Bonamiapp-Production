@@ -18,6 +18,14 @@ class AnalyticsController extends Controller
     public function getData(Request $request)
     {
         $user = auth()->user();
+        
+        \Log::info('📊 Analytics getData aangeroepen', [
+            'user_id' => $user->id,
+            'organisatie_id' => $user->organisatie_id,
+            'role' => $user->role,
+            'request_params' => $request->all()
+        ]);
+        
         $startDatum = $request->input('start', now()->subDays(30)->format('Y-m-d'));
         $eindDatum = $request->input('eind', now()->format('Y-m-d'));
         $scope = $request->input('scope', 'auto'); // auto, organisatie, medewerker, all
@@ -25,10 +33,13 @@ class AnalyticsController extends Controller
         // Bepaal filter op basis van scope en gebruikersrol
         $filter = $this->bepaalDataFilter($user, $scope);
         
+        \Log::info('🔍 Filter bepaald', ['filter' => $filter]);
+        
         try {
-            return response()->json([
+            $result = [
                 'success' => true,
                 'filter' => $filter,
+                'periode' => ['start' => $startDatum, 'eind' => $eindDatum],
                 'kpis' => $this->berekenKPIs($filter, $startDatum, $eindDatum),
                 'omzetTrend' => $this->berekenOmzetTrend($filter, $startDatum, $eindDatum),
                 'dienstenVerdeling' => $this->berekenDienstenVerdeling($filter, $startDatum, $eindDatum),
@@ -37,44 +48,57 @@ class AnalyticsController extends Controller
                 'prestatieStatus' => $this->berekenPrestatieStatus($filter, $startDatum, $eindDatum),
                 'commissieVerdeling' => $this->berekenCommissieVerdeling($filter, $startDatum, $eindDatum),
                 'btwOverzicht' => $this->berekenBTWOverzicht($filter, $startDatum, $eindDatum),
+            ];
+            
+            \Log::info('✅ Analytics data succesvol berekend', [
+                'kpi_bruto' => $result['kpis']['brutoOmzet'],
+                'aantal_prestaties' => $result['prestatieStatus']['uitgevoerd'] + $result['prestatieStatus']['nietUitgevoerd']
             ]);
+            
+            return response()->json($result);
         } catch (\Exception $e) {
-            \Log::error('Analytics fout: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Fout bij ophalen data'], 500);
+            \Log::error('❌ Analytics fout: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['success' => false, 'message' => 'Fout bij ophalen data: ' . $e->getMessage()], 500);
         }
     }
 
     private function bepaalDataFilter($user, $scope = 'auto')
     {
+        // 🔒 ORGANISATIE FILTER: Standaard altijd organisatie-gebonden, tenzij anders
+        
         // Als scope handmatig is ingesteld
         if ($scope !== 'auto') {
-            if ($scope === 'all' && ($user->role_id === 1 || $user->is_superadmin)) {
+            if ($scope === 'all') {
+                // Alleen superadmin mag alles zien
                 return ['type' => 'superadmin', 'value' => null, 'label' => 'Alle Organisaties'];
             }
             if ($scope === 'organisatie' && $user->organisatie_id) {
                 return ['type' => 'organisatie', 'value' => $user->organisatie_id, 'label' => 'Mijn Organisatie'];
             }
             if ($scope === 'medewerker') {
-                return ['type' => 'medewerker', 'value' => $user->id, 'label' => 'Alleen Ik'];
+                return ['type' => 'medewerker', 'value' => $user->id, 'label' => 'Alleen Ik', 'organisatie_id' => $user->organisatie_id];
             }
         }
         
-        // Automatisch bepalen op basis van rol
-        if ($user->role_id === 1 || $user->is_superadmin) {
-            return ['type' => 'superadmin', 'value' => null, 'label' => 'Alle Organisaties'];
-        }
-        if ($user->role_id === 2 || $user->is_admin) {
+        // Automatisch bepalen op basis van rol - ALTIJD gefilterd op organisatie
+        if (in_array($user->role, ['admin', 'organisatie_admin'])) {
             return ['type' => 'organisatie', 'value' => $user->organisatie_id, 'label' => 'Organisatie'];
         }
-        return ['type' => 'medewerker', 'value' => $user->id, 'label' => 'Mijn Prestaties'];
+        
+        // Medewerkers zien alleen hun eigen prestaties (binnen hun organisatie)
+        return ['type' => 'medewerker', 'value' => $user->id, 'label' => 'Mijn Prestaties', 'organisatie_id' => $user->organisatie_id];
     }
 
     private function pasFilterToe($query, $filter)
     {
+        // 🔒 PAS ORGANISATIE FILTER TOE
         return match($filter['type']) {
-            'superadmin' => $query,
+            'superadmin' => $query, // Alleen voor echte superadmin - geen filter
             'organisatie' => $query->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['value'])),
-            'medewerker' => $query->where('user_id', $filter['value']),
+            'medewerker' => $query->where('user_id', $filter['value'])
+                                  ->whereHas('user', fn($q) => $q->where('organisatie_id', $filter['organisatie_id'] ?? null)),
             default => $query
         };
     }
