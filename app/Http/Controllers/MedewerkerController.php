@@ -16,7 +16,12 @@ class MedewerkerController extends Controller
      */
     public function index(Request $request)
     {
-        \Log::info('🔍 Medewerkers index aangeroepen');
+        \Log::info('🔍 Medewerkers index aangeroepen', [
+            'user_id' => auth()->id(),
+            'organisatie_id' => auth()->user()->organisatie_id
+        ]);
+        
+        $userOrganisatieId = auth()->user()->organisatie_id;
         
         // Zoekfunctionaliteit
         $zoekterm = $request->input('zoek');
@@ -24,7 +29,9 @@ class MedewerkerController extends Controller
         if ($zoekterm) {
             \Log::info('🔎 Zoeken naar medewerkers', ['zoekterm' => $zoekterm]);
             
+            // 🔒 ORGANISATIE FILTER: Alleen medewerkers van eigen organisatie
             $medewerkers = User::where('role', '!=', 'klant')
+                ->where('organisatie_id', $userOrganisatieId)
                 ->where(function($query) use ($zoekterm) {
                     $query->where('name', 'like', '%' . $zoekterm . '%')
                           ->orWhere('voornaam', 'like', '%' . $zoekterm . '%')
@@ -35,15 +42,11 @@ class MedewerkerController extends Controller
             
             \Log::info('✅ Zoekresultaten gevonden', ['aantal' => $medewerkers->count()]);
         } else {
-            // Haal alle staff users op (geen klanten) gefilterd per organisatie
-            $query = User::where('role', '!=', 'klant');
-            
-            // Filter op organisatie (tenzij superadmin)
-            if (!auth()->user()->isSuperAdmin()) {
-                $query->where('organisatie_id', auth()->user()->organisatie_id);
-            }
-            
-            $medewerkers = $query->orderBy('created_at', 'desc')->get();
+            // 🔒 ORGANISATIE FILTER: Haal alleen medewerkers van eigen organisatie op
+            $medewerkers = User::where('role', '!=', 'klant')
+                ->where('organisatie_id', $userOrganisatieId)
+                ->orderBy('created_at', 'desc')
+                ->get();
         }
         
         return view('medewerkers.index', compact('medewerkers'));
@@ -200,6 +203,11 @@ class MedewerkerController extends Controller
             abort(404);
         }
         
+        // 🔒 Check of medewerker bij dezelfde organisatie hoort
+        if ($medewerker->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze medewerker.');
+        }
+        
         return view('medewerkers.show', compact('medewerker'));
     }
 
@@ -210,6 +218,11 @@ class MedewerkerController extends Controller
     {
         if ($medewerker->role === 'klant') {
             abort(404);
+        }
+        
+        // 🔒 Check of medewerker bij dezelfde organisatie hoort
+        if ($medewerker->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze medewerker.');
         }
         
         return view('medewerkers.edit', compact('medewerker'));
@@ -337,6 +350,11 @@ class MedewerkerController extends Controller
         if ($medewerker->role === 'klant') {
             abort(404);
         }
+        
+        // 🔒 Check of medewerker bij dezelfde organisatie hoort
+        if ($medewerker->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze medewerker.');
+        }
 
         try {
             $email = $medewerker->email;
@@ -367,6 +385,11 @@ class MedewerkerController extends Controller
     {
         if ($medewerker->role === 'klant') {
             abort(404);
+        }
+        
+        // 🔒 Check of medewerker bij dezelfde organisatie hoort
+        if ($medewerker->organisatie_id !== auth()->user()->organisatie_id) {
+            abort(403, 'Geen toegang tot deze medewerker.');
         }
 
         try {
