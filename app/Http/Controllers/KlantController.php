@@ -88,11 +88,9 @@ class KlantController extends Controller
             'auth_user_role' => auth()->user()->role
         ]);
 
-        $query = Klant::query();
-
-        // Filter op huidige organisatie
+        // Filter op huidige organisatie - DIRECT in query
         $orgId = auth()->user()->organisatie_id;
-        $query->where('organisatie_id', '=', $orgId);
+        $query = Klant::where('organisatie_id', $orgId);
 
         \Log::info('📊 Klanten Query', [
             'filtering_on_org_id' => $orgId,
@@ -199,6 +197,9 @@ class KlantController extends Controller
         
         // Refresh de klant zodat alle relaties up-to-date zijn
         $klant->refresh();
+        
+        // NIEUW: Maak automatisch user account aan voor de klant
+        $this->createUserAccountForKlant($klant);
 
         return redirect()->route('klanten.show', $klant->id)
             ->with('success', 'Klant succesvol toegevoegd!');
@@ -303,5 +304,55 @@ class KlantController extends Controller
     public function downloadTemplate()
     {
         return Excel::download(new KlantenTemplateExport, 'klanten_import_template.xlsx');
+    }
+    
+    /**
+     * Maak automatisch een user account aan voor een klant
+     */
+    private function createUserAccountForKlant(\App\Models\Klant $klant)
+    {
+        // Check of er al een user bestaat met dit email
+        $existingUser = \App\Models\User::where('email', $klant->email)->first();
+        
+        if ($existingUser) {
+            \Log::info('User bestaat al voor klant', [
+                'klant_id' => $klant->id,
+                'email' => $klant->email,
+                'existing_user_id' => $existingUser->id
+            ]);
+            return $existingUser;
+        }
+        
+        // Maak nieuwe user aan
+        try {
+            $user = \App\Models\User::create([
+                'name' => $klant->naam,
+                'email' => $klant->email,
+                'password' => \Hash::make(\Str::random(16)), // Random wachtwoord
+                'role' => 'klant',
+                'organisatie_id' => $klant->organisatie_id,
+                'status' => 'active',
+                'email_verified_at' => null, // Klant moet email verifiëren
+            ]);
+            
+            \Log::info('✅ User account aangemaakt voor geïmporteerde klant', [
+                'klant_id' => $klant->id,
+                'user_id' => $user->id,
+                'email' => $klant->email
+            ]);
+            
+            // Optioneel: stuur uitnodigingsmail (implementeer dit later indien gewenst)
+            // $user->sendEmailVerificationNotification();
+            
+            return $user;
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Fout bij aanmaken user account voor klant', [
+                'klant_id' => $klant->id,
+                'email' => $klant->email,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
     }
 }

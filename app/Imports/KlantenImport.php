@@ -3,6 +3,7 @@
 namespace App\Imports;
 
 use App\Models\Klant;
+use App\Models\User;
 use Maatwebsite\Excel\Concerns\ToModel;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
@@ -36,25 +37,74 @@ class KlantenImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
             }
         }
 
-        return new Klant([
-            'naam' => $row['naam'] ?? '',
-            'email' => $row['email'] ?? '',
-            'telefoon' => $row['telefoon'] ?? '',
-            'adres' => $row['adres'] ?? '',
-            'postcode' => $row['postcode'] ?? '',
-            'plaats' => $row['plaats'] ?? '',
-            'geboortedatum' => $geboortedatum,
-            'geslacht' => $row['geslacht'] ?? '',
-            'lengte_cm' => is_numeric($row['lengte_cm'] ?? null) ? $row['lengte_cm'] : null,
-            'gewicht_kg' => is_numeric($row['gewicht_kg'] ?? null) ? $row['gewicht_kg'] : null,
-            'sport' => $row['sport'] ?? '',
-            'niveau' => $row['niveau'] ?? '',
-            'doelen' => $row['doelen'] ?? '',
-            'medische_info' => $row['medische_info'] ?? '',
-            'opmerkingen' => $row['opmerkingen'] ?? '',
+        // Maak klant aan
+        $klant = Klant::create([
+            'organisatie_id' => auth()->user()->organisatie_id,
+            'naam' => $row['naam'],
+            'voornaam' => $row['voornaam'] ?? null,
+            'achternaam' => $row['achternaam'] ?? null,
+            'email' => $row['email'],
+            'telefoon' => $row['telefoon'] ?? null,
+            'adres' => $row['adres'] ?? null,
+            'postcode' => $row['postcode'] ?? null,
+            'woonplaats' => $row['woonplaats'] ?? null,
+            'geboortedatum' => isset($row['geboortedatum']) ? $this->parseDate($row['geboortedatum']) : null,
+            'notities' => $row['notities'] ?? null,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        
+        // NIEUW: Maak automatisch user account aan
+        $this->createUserAccountForKlant($klant);
+        
+        return $klant;
+    }
+
+    /**
+     * Maak automatisch een user account aan voor een geïmporteerde klant
+     */
+    private function createUserAccountForKlant(Klant $klant)
+    {
+        // Check of er al een user bestaat met dit email
+        $existingUser = User::where('email', $klant->email)->first();
+        
+        if ($existingUser) {
+            \Log::info('User bestaat al voor geïmporteerde klant', [
+                'klant_id' => $klant->id,
+                'email' => $klant->email,
+                'existing_user_id' => $existingUser->id
+            ]);
+            return $existingUser;
+        }
+        
+        // Maak nieuwe user aan
+        try {
+            $user = User::create([
+                'name' => $klant->naam,
+                'email' => $klant->email,
+                'password' => \Hash::make(\Str::random(16)), // Random wachtwoord
+                'role' => 'klant',
+                'organisatie_id' => $klant->organisatie_id,
+                'status' => 'active',
+                'email_verified_at' => null, // Klant moet email verifiëren
+            ]);
+            
+            \Log::info('✅ User account aangemaakt voor geïmporteerde klant', [
+                'klant_id' => $klant->id,
+                'user_id' => $user->id,
+                'email' => $klant->email
+            ]);
+            
+            return $user;
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Fout bij aanmaken user account voor geïmporteerde klant', [
+                'klant_id' => $klant->id,
+                'email' => $klant->email,
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
     }
 
     public function rules(): array
