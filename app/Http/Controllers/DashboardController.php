@@ -108,6 +108,64 @@ class DashboardController extends Controller
     }
 
     /**
+     * Toon edit form voor widget
+     */
+    public function edit(DashboardWidget $widget)
+    {
+        $user = Auth::user();
+        
+        // Check permissions
+        if ($widget->created_by !== $user->id && !in_array($user->role, ['admin', 'super_admin', 'superadmin'])) {
+            abort(403, 'Je mag alleen je eigen widgets bewerken');
+        }
+        
+        return view('dashboard.edit', compact('widget'));
+    }
+
+    /**
+     * Update widget
+     */
+    public function update(Request $request, DashboardWidget $widget)
+    {
+        $user = Auth::user();
+        
+        // Check permissions
+        if ($widget->created_by !== $user->id && !in_array($user->role, ['admin', 'super_admin', 'superadmin'])) {
+            abort(403, 'Je mag alleen je eigen widgets bewerken');
+        }
+
+        $validated = $request->validate([
+            'type' => 'required|in:chart,text,image,button,metric',
+            'title' => 'nullable|string|max:255',
+            'content' => 'nullable|string',
+            'chart_type' => 'nullable|string',
+            'chart_data' => 'nullable|json',
+            'button_text' => 'nullable|string|max:100',
+            'button_url' => 'nullable|string|max:255',
+            'background_color' => 'nullable|string|max:7',
+            'text_color' => 'nullable|string|max:7',
+            'grid_width' => 'required|integer|min:1|max:12',
+            'grid_height' => 'required|integer|min:1|max:12',
+            'visibility' => 'required|in:everyone,medewerkers,only_me',
+            'image' => 'nullable|image|max:2048',
+        ]);
+
+        // Upload nieuwe image als aanwezig
+        if ($request->hasFile('image')) {
+            // Verwijder oude image
+            if ($widget->image_path && Storage::disk('public')->exists($widget->image_path)) {
+                Storage::disk('public')->delete($widget->image_path);
+            }
+            $validated['image_path'] = $request->file('image')->store('dashboard/widgets', 'public');
+        }
+
+        $widget->update($validated);
+
+        return redirect()->route('dashboard.index')
+            ->with('success', 'Widget succesvol bijgewerkt!');
+    }
+
+    /**
      * Update widget layout
      */
     public function updateLayout(Request $request)

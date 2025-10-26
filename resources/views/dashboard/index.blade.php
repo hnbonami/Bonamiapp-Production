@@ -51,6 +51,15 @@
                         <div class="widget-header" style="display:flex;justify-content:space-between;align-items:center;padding:1em;border-bottom:1px solid rgba(0,0,0,0.1);">
                             <h3 style="font-weight:600;font-size:1.1em;margin:0;">{{ $widget->title }}</h3>
                             <div class="widget-controls" style="display:flex;gap:0.5em;">
+                                @if(auth()->user()->role !== 'klant' && ($widget->created_by === auth()->id() || in_array(auth()->user()->role, ['admin', 'super_admin', 'superadmin'])))
+                                <!-- Edit -->
+                                <a href="{{ route('dashboard.widgets.edit', $widget) }}" style="background:transparent;border:none;cursor:pointer;padding:0.3em;text-decoration:none;color:inherit;display:inline-flex;align-items:center;" title="Widget bewerken">
+                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </a>
+                                @endif
+                                
                                 <!-- Minimize/Maximize -->
                                 <button class="widget-toggle" style="background:transparent;border:none;cursor:pointer;padding:0.3em;">
                                     <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">

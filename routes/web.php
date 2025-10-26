@@ -96,6 +96,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/widgets/layout', [App\Http\Controllers\DashboardController::class, 'updateLayout'])->name('dashboard.widgets.updateLayout');
     Route::post('/dashboard/widgets/{widget}/toggle', [App\Http\Controllers\DashboardController::class, 'toggleVisibility'])->name('dashboard.widgets.toggle');
     Route::delete('/dashboard/widgets/{widget}', [App\Http\Controllers\DashboardController::class, 'destroy'])->name('dashboard.widgets.destroy');
+    Route::get('/dashboard/widgets/{widget}/edit', [App\Http\Controllers\DashboardController::class, 'edit'])->name('dashboard.widgets.edit');
+    Route::put('/dashboard/widgets/{widget}', [App\Http\Controllers\DashboardController::class, 'update'])->name('dashboard.widgets.update');
     
     // Live stats API endpoints
     Route::get('/dashboard/stats/live', [App\Http\Controllers\DashboardStatsController::class, 'getLiveStats'])->name('dashboard.stats.live');
@@ -198,7 +200,7 @@ Route::middleware('auth')->group(function () {
     Route::get('bikefit/{bikefit}/download-pdf', [\AppHttp\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
     // Bikefit berekende resultaten en verslag generatie
     Route::get('bikefit/{bikefit}/results', [\App\Http\Controllers\BikefitResultsController::class, 'show'])->name('bikefit.results')->scopeBindings();
-    Route::post('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
+    Route::post('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
     Route::get('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview')->scopeBindings();
     // SAVE CUSTOM RESULTS ROUTE - ESSENTIAL FOR EDITABLE RESULTS FUNCTIONALITY
     Route::post('bikefit/{bikefit}/save-custom-results', [\App\Http\Controllers\BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results')->scopeBindings();
