@@ -17,37 +17,71 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         
-        $widgets = DashboardWidget::where('is_active', true)
-            ->get()
-            ->filter(function($widget) use ($user) {
-                return $widget->canBeSeenBy($user);
-            });
-
-        $layouts = [];
-        foreach ($widgets as $widget) {
-            $layout = DashboardUserLayout::where('user_id', $user->id)
-                ->where('widget_id', $widget->id)
-                ->first();
-            
-            if (!$layout) {
-                $layout = DashboardUserLayout::create([
-                    'user_id' => $user->id,
-                    'widget_id' => $widget->id,
-                    'grid_x' => $widget->grid_x,
-                    'grid_y' => $widget->grid_y,
-                    'grid_width' => $widget->grid_width,
-                    'grid_height' => $widget->grid_height,
+        \Log::info('🏠 Dashboard geladen', [
+            'user_id' => $user->id,
+            'organisatie_id' => $user->organisatie_id,
+            'role' => $user->role,
+        ]);
+        
+        // 🔒 BEPAAL WELKE WIDGETS DE GEBRUIKER MAG ZIEN
+        $widgetsQuery = DashboardWidget::where('is_active', true);
+        
+        // Filter op basis van visibility EN organisatie
+        $widgetsQuery->where(function($q) use ($user) {
+            // Visibility: everyone (maar ALLEEN binnen eigen organisatie of geen organisatie)
+            $q->where(function($subQ) use ($user) {
+                $subQ->where('visibility', 'everyone');
+                
+                // Als user organisatie heeft, filter op organisatie van creator
+                if ($user->organisatie_id) {
+                    $subQ->whereHas('creator', fn($creatorQ) => 
+                        $creatorQ->where('organisatie_id', $user->organisatie_id)
+                    );
+                }
+            })
+            // OF visibility: medewerkers (binnen eigen organisatie)
+            ->orWhere(function($subQ) use ($user) {
+                $subQ->where('visibility', 'medewerkers');
+                
+                if ($user->organisatie_id) {
+                    $subQ->whereHas('creator', fn($creatorQ) => 
+                        $creatorQ->where('organisatie_id', $user->organisatie_id)
+                    );
+                }
+            })
+            // OF visibility: only_me (alleen eigen widgets)
+            ->orWhere(function($subQ) use ($user) {
+                $subQ->where('visibility', 'only_me')
+                     ->where('created_by', $user->id);
+            })
+            // OF eigen widgets (altijd zichtbaar)
+            ->orWhere('created_by', $user->id);
+        });
+        
+        $widgets = $widgetsQuery->with('creator')->get();
+        
+        \Log::info('📊 Widgets gefilterd', [
+            'totaal_widgets' => $widgets->count(),
+            'widget_ids' => $widgets->pluck('id')->toArray(),
+        ]);
+        
+        // Haal layouts op voor deze user
+        $layouts = $widgets->map(function($widget) use ($user) {
+            $layout = DashboardUserLayout::firstOrCreate(
+                ['user_id' => $user->id, 'widget_id' => $widget->id],
+                [
+                    'grid_x' => 0,
+                    'grid_y' => 0,
+                    'grid_width' => $widget->grid_width ?? 4,
+                    'grid_height' => $widget->grid_height ?? 3,
                     'is_visible' => true,
-                ]);
-            }
+                ]
+            );
             
-            $layouts[] = [
-                'widget' => $widget,
-                'layout' => $layout,
-            ];
-        }
-
-        return view('dashboard.index', compact('layouts', 'user'));
+            return ['widget' => $widget, 'layout' => $layout];
+        });
+        
+        return view('dashboard.index', compact('layouts'));
     }
 
     /**
