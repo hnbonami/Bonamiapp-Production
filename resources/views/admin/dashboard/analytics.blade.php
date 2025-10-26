@@ -131,36 +131,72 @@
         </div>
     </div>
 
-    {{-- KPI Cards - compacter --}}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg shadow-sm p-4 hover:shadow-md transition">
+    {{-- KPI Cards - Draggable --}}
+    <div id="kpi-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="kpi-card bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-lg shadow-sm p-4 hover:shadow-md transition cursor-move" draggable="true" data-kpi-id="bruto">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-medium text-gray-600 uppercase tracking-wide">Bruto Omzet</span>
-                <span class="text-xl">💰</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">💰</span>
+                    <button class="text-gray-400 hover:text-gray-600 transition-colors" title="Sleep om te verplaatsen">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="4" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/>
+                            <circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/>
+                            <circle cx="4" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="text-2xl font-bold text-gray-900" id="kpi-bruto">-</div>
         </div>
         
-        <div class="bg-gradient-to-br from-blue-50 to-white border border-blue-200 rounded-lg shadow-sm p-4 hover:shadow-md transition">
+        <div class="kpi-card bg-gradient-to-br from-blue-50 to-white border border-blue-200 rounded-lg shadow-sm p-4 hover:shadow-md transition cursor-move" draggable="true" data-kpi-id="netto">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-medium text-blue-600 uppercase tracking-wide">Netto Omzet</span>
-                <span class="text-xl">💵</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">💵</span>
+                    <button class="text-gray-400 hover:text-gray-600 transition-colors" title="Sleep om te verplaatsen">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="4" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/>
+                            <circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/>
+                            <circle cx="4" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="text-2xl font-bold text-blue-600" id="kpi-netto">-</div>
         </div>
         
-        <div class="bg-gradient-to-br from-orange-50 to-white border border-orange-200 rounded-lg shadow-sm p-4 hover:shadow-md transition">
+        <div class="kpi-card bg-gradient-to-br from-orange-50 to-white border border-orange-200 rounded-lg shadow-sm p-4 hover:shadow-md transition cursor-move" draggable="true" data-kpi-id="commissie">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-medium text-orange-600 uppercase tracking-wide">Commissie</span>
-                <span class="text-xl">🏢</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">🏢</span>
+                    <button class="text-gray-400 hover:text-gray-600 transition-colors" title="Sleep om te verplaatsen">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="4" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/>
+                            <circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/>
+                            <circle cx="4" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="text-2xl font-bold text-orange-600" id="kpi-commissie">-</div>
         </div>
         
-        <div class="bg-gradient-to-br from-green-50 to-white border border-green-200 rounded-lg shadow-sm p-4 hover:shadow-md transition">
+        <div class="kpi-card bg-gradient-to-br from-green-50 to-white border border-green-200 rounded-lg shadow-sm p-4 hover:shadow-md transition cursor-move" draggable="true" data-kpi-id="medewerker">
             <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-medium text-green-600 uppercase tracking-wide">Medewerkers</span>
-                <span class="text-xl">👥</span>
+                <div class="flex items-center gap-2">
+                    <span class="text-xl">👥</span>
+                    <button class="text-gray-400 hover:text-gray-600 transition-colors" title="Sleep om te verplaatsen">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                            <circle cx="4" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/>
+                            <circle cx="4" cy="8" r="1.5"/><circle cx="12" cy="8" r="1.5"/>
+                            <circle cx="4" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
             <div class="text-2xl font-bold text-green-600" id="kpi-medewerker">-</div>
         </div>
@@ -389,17 +425,53 @@ function valideerScope(scope) {
     return 'medewerker';
 }
 
-// Draggable functionaliteit
-const container = document.getElementById('charts-container');
-new Sortable(container, {
+// Draggable functionaliteit voor charts
+const chartsContainer = document.getElementById('charts-container');
+new Sortable(chartsContainer, {
     animation: 150,
     handle: '.chart-card',
     ghostClass: 'opacity-50',
     onEnd: function() {
-        const order = Array.from(container.children).map(el => el.dataset.chartId);
+        const order = Array.from(chartsContainer.children).map(el => el.dataset.chartId);
         localStorage.setItem('analyticsChartLayout', JSON.stringify(order));
+        console.log('💾 Charts layout opgeslagen:', order);
     }
 });
+
+// Draggable functionaliteit voor KPI cards
+const kpiContainer = document.getElementById('kpi-container');
+new Sortable(kpiContainer, {
+    animation: 150,
+    handle: '.kpi-card',
+    ghostClass: 'opacity-50',
+    onEnd: function() {
+        const order = Array.from(kpiContainer.children).map(el => el.dataset.kpiId);
+        localStorage.setItem('analyticsKpiLayout', JSON.stringify(order));
+        console.log('💾 KPI layout opgeslagen:', order);
+    }
+});
+
+// Laad opgeslagen KPI layout
+function loadKpiLayout() {
+    const saved = localStorage.getItem('analyticsKpiLayout');
+    if (saved) {
+        try {
+            const layout = JSON.parse(saved);
+            
+            // Sorteer KPI cards op basis van opgeslagen volgorde
+            layout.forEach(kpiId => {
+                const kpi = document.querySelector(`[data-kpi-id="${kpiId}"]`);
+                if (kpi) {
+                    kpiContainer.appendChild(kpi);
+                }
+            });
+            
+            console.log('✅ KPI layout geladen:', layout);
+        } catch (e) {
+            console.error('❌ Fout bij laden KPI layout:', e);
+        }
+    }
+}
 
 // Haal data op
 function laadAnalyticsData() {
@@ -780,6 +852,7 @@ function toggleChartSize(chartId) {
 // Laad data bij pagina load
 document.addEventListener('DOMContentLoaded', function() {
     console.log('📊 Analytics dashboard geladen');
+    loadKpiLayout(); // Laad KPI layout eerst
     laadAnalyticsData();
     
     // Periode snelkeuze functionaliteit
