@@ -273,7 +273,7 @@
                                     </svg>
                                 </div>
                             </label>
-                            <input type="file" name="avatar" id="avatarInput" accept="image/*" style="display:none;">
+                            <input type="file" name="avatar" id="avatarInput" accept="image/*" capture="environment" style="display:none;">
                         </div>
                         
                         <!-- File info -->
@@ -281,7 +281,7 @@
                             <span id="avatarFileName" class="text-sm text-gray-600">
                                 {{ $medewerker->avatar_path ? 'Huidige foto' : 'Geen foto' }}
                             </span>
-                            <p class="text-xs text-gray-500 mt-1">Klik op de avatar om een nieuwe foto te kiezen</p>
+                            <p class="text-xs text-gray-500 mt-1">Klik op de avatar om een nieuwe foto te maken of te kiezen</p>
                         </div>
                     </div>
                 </div>

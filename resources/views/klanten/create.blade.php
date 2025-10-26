@@ -203,13 +203,13 @@
                                     </svg>
                                 </div>
                             </label>
-                            <input type="file" name="avatar" id="avatarInput" accept="image/*" style="display:none;">
+                            <input type="file" name="avatar" id="avatarInput" accept="image/*" capture="environment" style="display:none;">
                         </div>
                         
                         <!-- File info -->
                         <div class="flex-1">
                             <span id="avatarFileName" class="text-sm text-gray-600">Geen bestand gekozen</span>
-                            <p class="text-xs text-gray-500 mt-1">Klik op de avatar om een foto te kiezen</p>
+                            <p class="text-xs text-gray-500 mt-1">Klik op de avatar om een foto te maken of te kiezen</p>
                         </div>
                     </div>
                 </div>
