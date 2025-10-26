@@ -117,31 +117,19 @@
                 <tbody class="bg-white divide-y divide-gray-200" id="medewerkersTableBody">
                     @forelse($medewerkers as $medewerker)
                         <tr class="hover:bg-gray-50 medewerker-row">
-                            <!-- Naam -->
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10">
-                                        @if($medewerker->avatar)
-                                            <img class="h-10 w-10 rounded-full object-cover" 
-                                                 src="{{ Storage::url($medewerker->avatar) }}" 
-                                                 alt="{{ $medewerker->name }}">
-                                        @else
-                                            <div class="h-10 w-10 rounded-full flex items-center justify-center text-white font-medium" 
-                                                 style="background-color: #c8e1eb; color: #1f2937;">
-                                                {{ strtoupper(substr($medewerker->voornaam ?? $medewerker->name, 0, 1)) }}
-                                            </div>
-                                        @endif
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900 medewerker-naam">
-                                            {{ $medewerker->name }}
+                            <!-- Naam met Avatar -->
+                            <td class="px-6 py-4 whitespace-nowrap text-gray-900">
+                                <div class="flex items-center gap-3">
+                                    @if($medewerker->avatar_path)
+                                        <img src="{{ asset('storage/' . $medewerker->avatar_path) }}" alt="Avatar" class="w-9 h-9 rounded-full object-cover flex-none" style="aspect-ratio:1/1;" />
+                                    @else
+                                        <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold flex-none" style="aspect-ratio:1/1;">
+                                            {{ strtoupper(substr($medewerker->voornaam ?? $medewerker->name, 0, 1)) }}
                                         </div>
-                                        @if($medewerker->telefoon)
-                                            <div class="text-sm text-gray-500">
-                                                📞 {{ $medewerker->telefoon }}
-                                            </div>
-                                        @endif
-                                    </div>
+                                    @endif
+                                    <a href="{{ route('medewerkers.show', $medewerker) }}" class="font-semibold text-blue-700 hover:underline medewerker-naam" title="Bekijk profiel">
+                                        {{ $medewerker->name }}
+                                    </a>
                                 </div>
                             </td>
 

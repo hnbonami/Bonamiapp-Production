@@ -69,6 +69,35 @@
                 </select>
             </div>
 
+            <!-- Profielfoto -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Profielfoto</label>
+                <div class="flex items-center gap-4">
+                    <!-- Avatar Preview -->
+                    <div class="relative flex-shrink-0" style="width:80px;height:80px;">
+                        <label for="avatarInput" style="cursor:pointer;display:block;position:relative;">
+                            <div id="avatarPreviewContainer" class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:80px;height:80px;font-size:32px;">
+                                ?
+                            </div>
+                            <!-- Camera overlay icon -->
+                            <div style="position:absolute;bottom:4px;right:4px;background:rgba(200,225,235,0.95);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                            </div>
+                        </label>
+                        <input type="file" name="avatar" id="avatarInput" accept="image/*" style="display:none;">
+                    </div>
+                    
+                    <!-- File info -->
+                    <div class="flex-1">
+                        <span id="avatarFileName" class="text-sm text-gray-600">Geen bestand gekozen</span>
+                        <p class="text-xs text-gray-500 mt-1">Klik op de avatar om een foto te kiezen</p>
+                    </div>
+                </div>
+            </div>
+
             <div class="flex justify-end space-x-4">
                 <a href="{{ route('medewerkers.index') }}" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">Annuleren</a>
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Aanmaken</button>
@@ -76,4 +105,46 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('avatarInput');
+    const nameEl = document.getElementById('avatarFileName');
+    const previewContainer = document.getElementById('avatarPreviewContainer');
+    const voornaamInput = document.getElementById('voornaam');
+    
+    // Update preview placeholder met voornaam
+    if (voornaamInput) {
+        voornaamInput.addEventListener('input', function() {
+            const voornaam = this.value.trim();
+            if (voornaam && !input.files.length) {
+                previewContainer.textContent = voornaam.charAt(0).toUpperCase();
+            }
+        });
+    }
+    
+    // Handle file selection
+    if (input) {
+        input.addEventListener('change', function() {
+            const file = this.files && this.files[0];
+            if (file) {
+                nameEl.textContent = file.name;
+                
+                // Show image preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewContainer.innerHTML = `<img src="${e.target.result}" alt="Preview" class="rounded-lg object-cover" style="width:80px;height:80px;" />`;
+                };
+                reader.readAsDataURL(file);
+            } else {
+                nameEl.textContent = 'Geen bestand gekozen';
+                const voornaam = voornaamInput ? voornaamInput.value.trim() : '';
+                previewContainer.innerHTML = voornaam ? voornaam.charAt(0).toUpperCase() : '?';
+                previewContainer.className = 'rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold';
+                previewContainer.style.cssText = 'width:80px;height:80px;font-size:32px;';
+            }
+        });
+    }
+});
+</script>
 @endsection

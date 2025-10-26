@@ -254,18 +254,35 @@
                 <!-- Profielfoto -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Profielfoto</label>
-                    <input type="file" name="avatar" id="avatarInput" accept="image/*" style="display:none">
-                    <div style="display:flex;align-items:center;gap:0.6em;margin-top:0.5em;">
-                        <button type="button" id="avatarCamBtn" aria-label="Maak foto" title="Maak foto" style="width:40px;height:40px;border-radius:9999px;background:#c8e1eb;border:none;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 3px #e0e7ff;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M7 7h2l1.2-1.6A2 2 0 0 1 12 4h0a2 2 0 0 1 1.8 1.4L15 7h2a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3Z" stroke="#111" stroke-width="1.5"/>
-                                <circle cx="12" cy="13" r="3.5" stroke="#111" stroke-width="1.5"/>
-                                <path d="M19 5v4M17 7h4" stroke="#111" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                        <button type="button" id="avatarBtn" style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;border:none;">+ Profielfoto kiezen</button>
-                        <span id="avatarFileName" style="color:#6b7280;font-size:0.9em;">Geen bestand gekozen</span>
-                        <img id="avatarPreview" src="" alt="Voorbeeld" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:none;" />
+                    <div class="flex items-center gap-4">
+                        <!-- Avatar Preview met bestaande foto -->
+                        <div class="relative flex-shrink-0" style="width:80px;height:80px;">
+                            <label for="avatarInput" style="cursor:pointer;display:block;position:relative;">
+                                @if($medewerker->avatar_path)
+                                    <img id="avatarPreviewImg" src="{{ asset('storage/' . $medewerker->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover" style="width:80px;height:80px;" />
+                                @else
+                                    <div id="avatarPreviewContainer" class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:80px;height:80px;font-size:32px;">
+                                        {{ strtoupper(substr($medewerker->voornaam ?? '?', 0, 1)) }}
+                                    </div>
+                                @endif
+                                <!-- Camera overlay icon -->
+                                <div style="position:absolute;bottom:4px;right:4px;background:rgba(200,225,235,0.95);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2">
+                                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                        <circle cx="12" cy="13" r="4"></circle>
+                                    </svg>
+                                </div>
+                            </label>
+                            <input type="file" name="avatar" id="avatarInput" accept="image/*" style="display:none;">
+                        </div>
+                        
+                        <!-- File info -->
+                        <div class="flex-1">
+                            <span id="avatarFileName" class="text-sm text-gray-600">
+                                {{ $medewerker->avatar_path ? 'Huidige foto' : 'Geen foto' }}
+                            </span>
+                            <p class="text-xs text-gray-500 mt-1">Klik op de avatar om een nieuwe foto te kiezen</p>
+                        </div>
                     </div>
                 </div>
 
@@ -290,38 +307,39 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('avatarInput');
-    const btn = document.getElementById('avatarBtn');
-    const camBtn = document.getElementById('avatarCamBtn');
     const nameEl = document.getElementById('avatarFileName');
-    const preview = document.getElementById('avatarPreview');
+    const voornaamInput = document.getElementById('voornaam');
     
-    if (btn && input) {
-        btn.addEventListener('click', function(){
-            input.removeAttribute('capture');
-            input.click();
+    // Handle file selection
+    if (input) {
+        input.addEventListener('change', function() {
+            const file = this.files && this.files[0];
+            if (file) {
+                nameEl.textContent = file.name;
+                
+                // Show image preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Verwijder oude preview
+                    const oldPreview = document.getElementById('avatarPreviewImg') || document.getElementById('avatarPreviewContainer');
+                    if (oldPreview && oldPreview.parentElement) {
+                        oldPreview.parentElement.innerHTML = `
+                            <img id="avatarPreviewImg" src="${e.target.result}" alt="Preview" class="rounded-lg object-cover" style="width:80px;height:80px;" />
+                            <div style="position:absolute;bottom:4px;right:4px;background:rgba(200,225,235,0.95);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                                    <circle cx="12" cy="13" r="4"></circle>
+                                </svg>
+                            </div>
+                        `;
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                nameEl.textContent = '{{ $medewerker->avatar_path ? "Huidige foto" : "Geen foto" }}';
+            }
         });
     }
-    
-    if (camBtn && input) {
-        camBtn.addEventListener('click', function(){
-            input.setAttribute('capture', 'environment');
-            input.click();
-        });
-    }
-    
-    input?.addEventListener('change', function(){
-        const file = input.files && input.files[0];
-        if (file) {
-            nameEl.textContent = file.name;
-            const url = URL.createObjectURL(file);
-            preview.src = url;
-            preview.style.display = 'inline-block';
-        } else {
-            nameEl.textContent = 'Geen bestand gekozen';
-            preview.src = '';
-            preview.style.display = 'none';
-        }
-    });
 
     // Postcode automatische invulling
     const postcodeInput = document.getElementById('postcode');
