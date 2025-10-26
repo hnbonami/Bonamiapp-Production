@@ -184,7 +184,7 @@ Route::middleware('auth')->group(function () {
     // Alternatieve print route via BikefitResultsController
     Route::get('bikefit/{bikefit}/print-direct', [\App\Http\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
     // Direct PDF download route voor bikefit rapport
-    Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
+    Route::get('bikefit/{bikefit}/download-pdf', [\AppHttp\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
     // Bikefit berekende resultaten en verslag generatie
     Route::get('bikefit/{bikefit}/results', [\App\Http\Controllers\BikefitResultsController::class, 'show'])->name('bikefit.results')->scopeBindings();
     Route::post('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
@@ -1420,4 +1420,16 @@ Route::middleware(['auth'])->group(function () {
         ->name('admin.analytics.index');
     Route::get('/api/dashboard/analytics', [App\Http\Controllers\Admin\AnalyticsController::class, 'getData'])
         ->name('api.analytics.data');
+});
+
+// Admin routes - gebruikersbeheer
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    // ...existing code...
+    
+    // Rollen beheer
+    Route::get('/users/roles', [\App\Http\Controllers\UserController::class, 'roles'])->name('users.roles');
+    Route::post('/roles/{roleKey}/features/{featureId}/toggle', [\App\Http\Controllers\UserController::class, 'toggleRoleFeature'])
+        ->name('roles.features.toggle');
+    
+    // ...existing code...
 });

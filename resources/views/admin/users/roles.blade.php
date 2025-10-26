@@ -3,6 +3,53 @@
 @section('title', 'Rollen Beheer - Bonami Sportcoaching')
 
 @section('content')
+<style>
+    /* Toggle switch styling - identiek aan organisaties */
+    .toggle-switch {
+        position: relative;
+        display: inline-block;
+        width: 48px;
+        height: 24px;
+    }
+
+    .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #cbd5e0;
+        transition: .3s;
+        border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+        background-color: #3b82f6;
+    }
+
+    input:checked + .toggle-slider:before {
+        transform: translateX(24px);
+    }
+</style>
 <div class="container mx-auto px-4 py-8">
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
@@ -84,7 +131,14 @@
     <!-- Roles Overview -->
     <div class="bg-white rounded-lg shadow">
         <div class="p-6 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Beschikbare Rollen</h2>
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-gray-900">Beschikbare Rollen</h2>
+                @if(auth()->user()->role !== 'superadmin')
+                    <span class="text-sm text-gray-500 bg-blue-50 px-3 py-1 rounded-full">
+                        {{ $totalFeatures ?? 0 }} features beschikbaar voor uw organisatie
+                    </span>
+                @endif
+            </div>
         </div>
         
         <div class="overflow-x-auto">
@@ -95,6 +149,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beschrijving</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rechten</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aantal Gebruikers</th>
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -117,11 +172,214 @@
                             <td class="px-6 py-4 whitespace-nowrap">
                                 <span class="text-sm font-semibold text-gray-900">{{ $roleStats[$role['key']] ?? 0 }}</span>
                             </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-center">
+                                <button 
+                                    onclick="openFeatureModal('{{ $role['key'] }}', '{{ $role['name'] }}')"
+                                    class="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                                    </svg>
+                                    Features Beheren
+                                </button>
+                            </td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
     </div>
+
+    {{-- Feature Management Modal --}}
+    <div id="featureModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-lg bg-white">
+            <div class="flex justify-between items-center mb-4 pb-3 border-b">
+                <h3 class="text-xl font-semibold text-gray-900">
+                    Features beheren voor: <span id="modalRoleName" class="text-blue-600"></span>
+                </h3>
+                <button onclick="closeFeatureModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="mb-4">
+                <p class="text-sm text-gray-600">
+                    Selecteer welke features beschikbaar zijn voor gebruikers met deze rol.
+                </p>
+            </div>
+
+            <div id="featureList" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                {{-- Features worden hier dynamisch geladen --}}
+            </div>
+
+            <div class="mt-6 flex justify-end gap-3 pt-3 border-t">
+                <button onclick="closeFeatureModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg transition">
+                    Sluiten
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+// CSRF Token
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+let currentRole = null;
+
+// Features data - gefilterd op organisatie voor admins
+const featuresData = @json($features ?? []);
+
+// Haal role features mapping op
+const roleFeatures = @json($roleFeatures ?? []);
+
+// Open feature modal
+function openFeatureModal(roleKey, roleName) {
+    console.log('🔓 Opening modal for role:', roleKey);
+    currentRole = roleKey;
+    
+    document.getElementById('modalRoleName').textContent = roleName;
+    document.getElementById('featureModal').classList.remove('hidden');
+    
+    loadFeaturesForRole(roleKey);
+}
+
+// Sluit modal
+function closeFeatureModal() {
+    console.log('🔒 Closing modal');
+    document.getElementById('featureModal').classList.add('hidden');
+    currentRole = null;
+}
+
+// Laad features voor specifieke rol
+function loadFeaturesForRole(roleKey) {
+    const featureList = document.getElementById('featureList');
+    featureList.innerHTML = '';
+    
+    console.log('📋 Loading features for role:', roleKey);
+    console.log('Available features:', featuresData);
+    console.log('Role features mapping:', roleFeatures);
+    
+    featuresData.forEach(feature => {
+        // Check of deze rol deze feature heeft
+        const isEnabled = roleFeatures[roleKey] && roleFeatures[roleKey].includes(feature.id);
+        
+        console.log(`Feature ${feature.naam}: ${isEnabled ? 'enabled' : 'disabled'}`);
+        
+        const featureCard = `
+            <div class="border rounded-lg p-4 ${isEnabled ? 'bg-blue-50 border-blue-200' : 'bg-gray-50 border-gray-200'}">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <svg class="w-5 h-5 ${isEnabled ? 'text-blue-600' : 'text-gray-400'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <h4 class="font-medium ${isEnabled ? 'text-blue-900' : 'text-gray-700'}">
+                                ${feature.naam}
+                            </h4>
+                            ${feature.is_premium ? '<span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Premium</span>' : ''}
+                        </div>
+                        
+                        <p class="text-sm ${isEnabled ? 'text-blue-700' : 'text-gray-500'} mb-2">
+                            ${feature.beschrijving}
+                        </p>
+                        
+                        <div class="flex items-center gap-3 text-xs">
+                            <span class="text-gray-500">
+                                <span class="font-medium">Categorie:</span> ${feature.categorie.charAt(0).toUpperCase() + feature.categorie.slice(1)}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="ml-4">
+                        <label class="toggle-switch">
+                            <input 
+                                type="checkbox" 
+                                class="role-feature-toggle"
+                                data-feature-id="${feature.id}"
+                                data-role-key="${roleKey}"
+                                ${isEnabled ? 'checked' : ''}
+                                onchange="toggleRoleFeature(this)"
+                            >
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        featureList.innerHTML += featureCard;
+    });
+}
+
+// Toggle feature voor rol
+function toggleRoleFeature(toggle) {
+    const featureId = toggle.dataset.featureId;
+    const roleKey = toggle.dataset.roleKey;
+    const isActive = toggle.checked;
+    
+    console.log(`🔄 Toggling feature ${featureId} for role ${roleKey}: ${isActive}`);
+    
+    // Verstuur POST request
+    fetch(`/admin/roles/${roleKey}/features/${featureId}/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            is_active: isActive
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('✅ Response:', data);
+        if (data.success) {
+            console.log('✅ Role feature updated successfully!');
+            
+            // Update de roleFeatures mapping in geheugen
+            if (!roleFeatures[roleKey]) {
+                roleFeatures[roleKey] = [];
+            }
+            
+            if (isActive) {
+                if (!roleFeatures[roleKey].includes(parseInt(featureId))) {
+                    roleFeatures[roleKey].push(parseInt(featureId));
+                }
+            } else {
+                roleFeatures[roleKey] = roleFeatures[roleKey].filter(id => id !== parseInt(featureId));
+            }
+            
+            // Update de UI styling
+            const card = toggle.closest('.border');
+            if (isActive) {
+                card.classList.remove('bg-gray-50', 'border-gray-200');
+                card.classList.add('bg-blue-50', 'border-blue-200');
+            } else {
+                card.classList.remove('bg-blue-50', 'border-blue-200');
+                card.classList.add('bg-gray-50', 'border-gray-200');
+            }
+            
+        } else {
+            console.error('❌ Error:', data.message);
+            toggle.checked = !isActive;
+            alert('Fout: ' + (data.message || 'Er ging iets mis'));
+        }
+    })
+    .catch(error => {
+        console.error('❌ Network error:', error);
+        toggle.checked = !isActive;
+        alert('Er is een fout opgetreden: ' + error.message);
+    });
+}
+
+// Sluit modal bij klik buiten
+window.onclick = function(event) {
+    const modal = document.getElementById('featureModal');
+    if (event.target === modal) {
+        closeFeatureModal();
+    }
+}
+</script>
 @endsection
