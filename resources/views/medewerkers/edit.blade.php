@@ -79,9 +79,9 @@
                                 id="geslacht" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">Selecteer geslacht</option>
-                            <option value="Man" {{ old('geslacht', $medewerker->geslacht) == 'Man' ? 'selected' : '' }}>Man</option>
-                            <option value="Vrouw" {{ old('geslacht', $medewerker->geslacht) == 'Vrouw' ? 'selected' : '' }}>Vrouw</option>
-                            <option value="Anders" {{ old('geslacht', $medewerker->geslacht) == 'Anders' ? 'selected' : '' }}>Anders</option>
+                            <option value="Man" {{ strtolower(old('geslacht', $medewerker->geslacht ?? '')) == 'man' ? 'selected' : '' }}>Man</option>
+                            <option value="Vrouw" {{ strtolower(old('geslacht', $medewerker->geslacht ?? '')) == 'vrouw' ? 'selected' : '' }}>Vrouw</option>
+                            <option value="Anders" {{ strtolower(old('geslacht', $medewerker->geslacht ?? '')) == 'anders' ? 'selected' : '' }}>Anders</option>
                         </select>
                     </div>
                 </div>

@@ -53,9 +53,9 @@
                 <label for="geslacht" class="block text-sm font-medium text-gray-700">Geslacht</label>
                 <select id="geslacht" name="geslacht" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     <option value="">Selecteer geslacht...</option>
-                    <option value="Man" {{ old('geslacht') === 'Man' ? 'selected' : '' }}>Man</option>
-                    <option value="Vrouw" {{ old('geslacht') === 'Vrouw' ? 'selected' : '' }}>Vrouw</option>
-                    <option value="Anders" {{ old('geslacht') === 'Anders' ? 'selected' : '' }}>Anders</option>
+                    <option value="Man" {{ strtolower(old('geslacht', '')) === 'man' ? 'selected' : '' }}>Man</option>
+                    <option value="Vrouw" {{ strtolower(old('geslacht', '')) === 'vrouw' ? 'selected' : '' }}>Vrouw</option>
+                    <option value="Anders" {{ strtolower(old('geslacht', '')) === 'anders' ? 'selected' : '' }}>Anders</option>
                 </select>
             </div>
 

@@ -26,28 +26,23 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'organisatie_id',
         'telefoonnummer',
         'geboortedatum',
-        'geslacht',
-        'avatar_path',
-        // Adresgegevens
+        'geslacht',  // Zorg dat dit hier staat
         'straatnaam',
         'huisnummer',
         'postcode',
         'stad',
-        // Werkgerelateerde informatie
         'functie',
         'startdatum',
         'contract_type',
         'status',
-        // Rechten
         'bikefit',
         'inspanningstest',
         'upload_documenten',
-        // Notities
         'notities',
-        'email_verified_at',
-        'organisatie_id',
+        'avatar_path',
     ];
 
     /**

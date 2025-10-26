@@ -67,6 +67,7 @@ class MedewerkerController extends Controller
     {
         \Log::info('🚨 MedewerkerController@store CALLED', [
             'all_input' => $request->all(),
+            'geslacht_raw' => $request->input('geslacht'),
             'user_org_id' => auth()->user()->organisatie_id
         ]);
 
@@ -95,7 +96,10 @@ class MedewerkerController extends Controller
                 'avatar' => 'nullable|image|max:2048'
             ]);
 
-            \Log::info('✅ Validation passed', ['validated' => $validated]);
+            \Log::info('✅ Validation passed', [
+                'validated' => $validated,
+                'geslacht_in_validated' => isset($validated['geslacht']) ? $validated['geslacht'] : 'NIET AANWEZIG'
+            ]);
 
             // Check of email al bestaat binnen de organisatie (voor alle roles)
             $existingUserInOrg = User::where('email', $validated['email'])
@@ -162,11 +166,15 @@ class MedewerkerController extends Controller
                 'avatar_path' => $avatarPath,
             ]);
             
+            // Refresh het model om zeker te zijn dat we de database waarde hebben
+            $medewerker->refresh();
+            
             \Log::info('✅ Medewerker aangemaakt', [
                 'user_id' => $medewerker->id,
                 'email' => $medewerker->email,
                 'organisatie_id' => $medewerker->organisatie_id,
-                'geslacht' => $medewerker->geslacht,
+                'geslacht_in_validated' => $validated['geslacht'] ?? 'NULL in validated',
+                'geslacht_in_db' => $medewerker->geslacht ?? 'NULL in database',
                 'telefoonnummer' => $medewerker->telefoonnummer
             ]);
 
@@ -274,6 +282,8 @@ class MedewerkerController extends Controller
             'medewerker_id' => $medewerker->id,
             'current_email' => $medewerker->email,
             'new_email' => $request->email,
+            'geslacht_raw' => $request->input('geslacht'),
+            'current_geslacht' => $medewerker->geslacht,
             'organisatie_id' => auth()->user()->organisatie_id
         ]);
 
@@ -330,7 +340,7 @@ class MedewerkerController extends Controller
                 \Log::info('✅ Avatar updated', ['path' => $avatarPath]);
             }
 
-            $medewerker->update([
+            $updateData = [
                 'name' => $validated['voornaam'] . ' ' . $validated['achternaam'],
                 'voornaam' => $validated['voornaam'],
                 'achternaam' => $validated['achternaam'],
@@ -352,12 +362,22 @@ class MedewerkerController extends Controller
                 'upload_documenten' => $request->has('upload_documenten') ? 1 : 0,
                 'notities' => $validated['notities'] ?? null,
                 'avatar_path' => $avatarPath,
+            ];
+
+            \Log::info('🔍 Data voor update', [
+                'geslacht_in_updateData' => $updateData['geslacht'] ?? 'NULL'
             ]);
+
+            $medewerker->update($updateData);
+            
+            // Refresh model om database waarde te controleren
+            $medewerker->refresh();
 
             \Log::info('✅ Employee updated successfully', [
                 'user_id' => $medewerker->id,
                 'email' => $medewerker->email,
-                'role' => $medewerker->role
+                'role' => $medewerker->role,
+                'geslacht_na_update' => $medewerker->geslacht ?? 'NULL in database'
             ]);
 
             return redirect()->route('medewerkers.index')
