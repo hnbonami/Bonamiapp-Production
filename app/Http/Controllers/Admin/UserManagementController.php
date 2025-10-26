@@ -13,47 +13,8 @@ class UserManagementController extends Controller
      */
     public function index(Request $request)
     {
-        // DEBUG: Schrijf naar apart bestand
-        $debugFile = storage_path('logs/users-klanten-debug.txt');
-        file_put_contents($debugFile, "=== DEBUG START: " . now() . " ===\n");
-        file_put_contents($debugFile, "Controller aangeroepen!\n", FILE_APPEND);
-        
-        // Log debug info om te zien wat er gebeurt
-        \Log::info('🔍 UserManagementController index called', [
-            'request_params' => $request->all(),
-            'user_role' => auth()->user()->role ?? 'not_authenticated',
-            'user_org_id' => auth()->user()->organisatie_id ?? 'not_authenticated'
-        ]);
-
         // Filter op huidige organisatie
         $organisatieId = auth()->user()->organisatie_id;
-        
-        // DEBUG: Tel klanten vs users
-        $totalKlanten = \App\Models\Klant::where('organisatie_id', $organisatieId)->count();
-        $totalKlantUsers = \App\Models\User::where('organisatie_id', $organisatieId)
-            ->where('role', 'klant')
-            ->count();
-        
-        file_put_contents($debugFile, "Organisatie ID: {$organisatieId}\n", FILE_APPEND);
-        file_put_contents($debugFile, "Total Klanten (klanten table): {$totalKlanten}\n", FILE_APPEND);
-        file_put_contents($debugFile, "Total Users met role=klant: {$totalKlantUsers}\n", FILE_APPEND);
-        file_put_contents($debugFile, "VERSCHIL: " . ($totalKlanten - $totalKlantUsers) . "\n\n", FILE_APPEND);
-        
-        // Zoek klanten zonder user account
-        $klantenZonderUser = \App\Models\Klant::where('organisatie_id', $organisatieId)
-            ->whereNotIn('email', function($query) {
-                $query->select('email')->from('users');
-            })
-            ->get();
-        
-        file_put_contents($debugFile, "Klanten zonder user account: " . $klantenZonderUser->count() . "\n", FILE_APPEND);
-        
-        if ($klantenZonderUser->count() > 0) {
-            file_put_contents($debugFile, "\nVoorbeelden:\n", FILE_APPEND);
-            foreach ($klantenZonderUser->take(5) as $klant) {
-                file_put_contents($debugFile, "  - {$klant->naam} ({$klant->email})\n", FILE_APPEND);
-            }
-        }
 
                 // Calculate statistics - FILTER OP ORGANISATIE
         $organisatieId = auth()->user()->organisatie_id;
@@ -213,10 +174,11 @@ public function roles()
     $organisatieId = auth()->user()->organisatie_id;
     $users = \App\Models\User::where('organisatie_id', $organisatieId)->get();
     $roleStats = [
+        'total' => $users->count(),
+        'superadmin' => $users->where('role', 'superadmin')->count(),
         'admin' => $users->where('role', 'admin')->count(),
         'medewerker' => $users->where('role', 'medewerker')->count(),
         'klant' => $users->where('role', 'klant')->count(),
-        'total' => $users->count()
     ];
 
     return view('admin.users.roles', compact('roles', 'roleStats'));

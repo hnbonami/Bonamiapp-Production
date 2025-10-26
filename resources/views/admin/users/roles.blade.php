@@ -19,7 +19,7 @@
     </div>
 
     <!-- Statistics Cards -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <div class="bg-white rounded-xl shadow-lg p-4">
             <div class="flex items-center">
                 <div class="bg-blue-100 p-2 rounded-lg mr-3">
@@ -30,6 +30,20 @@
                 <div>
                     <p class="text-xs font-medium text-gray-500 uppercase">Totaal</p>
                     <p class="text-xl font-bold text-gray-900">{{ $roleStats['total'] ?? 0 }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg p-4">
+            <div class="flex items-center">
+                <div class="bg-red-100 p-2 rounded-lg mr-3">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-gray-500 uppercase">Superadmin</p>
+                    <p class="text-xl font-bold text-gray-900">{{ $roleStats['superadmin'] ?? 0 }}</p>
                 </div>
             </div>
         </div>
