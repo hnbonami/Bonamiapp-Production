@@ -51,21 +51,14 @@ class DashboardController extends Controller
     }
 
     /**
-     * Toon widget create form
+     * Toon create form voor widget
      */
-    public function create()
+    public function create(Request $request)
     {
-        $user = Auth::user();
-        $allowedRoles = ['medewerker', 'admin', 'super_admin', 'superadmin'];
+        $type = $request->input('type', 'chart'); // Default naar chart
         
-        if (!in_array($user->role, $allowedRoles)) {
-            abort(403, 'Geen toegang');
-        }
-        
-        return view('dashboard.create');
-    }
-
-    /**
+        return view('dashboard.create', compact('type'));
+    }    /**
      * Sla nieuwe widget op
      */
     public function store(Request $request)
@@ -82,7 +75,8 @@ class DashboardController extends Controller
             'title' => 'nullable|string|max:255',
             'content' => 'nullable|string',
             'chart_type' => 'nullable|string',
-            'chart_data' => 'nullable|json',
+            'chart_scope' => 'nullable|string',
+            'chart_periode' => 'nullable|string',
             'button_text' => 'nullable|string|max:100',
             'button_url' => 'nullable|string|max:255',
             'background_color' => 'nullable|string|max:7',
@@ -92,6 +86,15 @@ class DashboardController extends Controller
             'visibility' => 'required|in:everyone,medewerkers,only_me',
             'image' => 'nullable|image|max:2048',
         ]);
+
+        // Voor chart widgets: sla chart config op
+        if ($validated['type'] === 'chart') {
+            $validated['chart_data'] = json_encode([
+                'chart_type' => $request->input('chart_type'),
+                'scope' => $request->input('chart_scope', 'auto'),
+                'periode' => $request->input('chart_periode', 'laatste-30-dagen'),
+            ]);
+        }
 
         if ($request->hasFile('image')) {
             $validated['image_path'] = $request->file('image')->store('dashboard/widgets', 'public');
@@ -139,7 +142,8 @@ class DashboardController extends Controller
             'title' => 'nullable|string|max:255',
             'content' => 'nullable|string',
             'chart_type' => 'nullable|string',
-            'chart_data' => 'nullable|json',
+            'chart_scope' => 'nullable|string',
+            'chart_periode' => 'nullable|string',
             'button_text' => 'nullable|string|max:100',
             'button_url' => 'nullable|string|max:255',
             'background_color' => 'nullable|string|max:7',
@@ -157,6 +161,15 @@ class DashboardController extends Controller
                 Storage::disk('public')->delete($widget->image_path);
             }
             $validated['image_path'] = $request->file('image')->store('dashboard/widgets', 'public');
+        }
+
+        // Voor chart widgets: sla chart config op
+        if ($validated['type'] === 'chart') {
+            $validated['chart_data'] = json_encode([
+                'chart_type' => $request->input('chart_type'),
+                'scope' => $request->input('chart_scope', 'auto'),
+                'periode' => $request->input('chart_periode', 'laatste-30-dagen'),
+            ]);
         }
 
         $widget->update($validated);

@@ -130,13 +130,205 @@
                             @elseif($widget->type === 'chart')
                                 <canvas id="chart-{{ $widget->id }}" width="400" height="200"></canvas>
                                 <script>
-                                    // Chart.js initialisatie komt hier
+                                    // Laad chart data via analytics API
                                     document.addEventListener('DOMContentLoaded', function() {
                                         const ctx = document.getElementById('chart-{{ $widget->id }}');
-                                        if (ctx) {
-                                            new Chart(ctx, {!! json_encode($widget->chart_data) !!});
-                                        }
+                                        if (!ctx) return;
+                                        
+                                        const config = @json(json_decode($widget->chart_data, true));
+                                        console.log('📊 Chart config:', config);
+                                        
+                                        laadChartData{{ $widget->id }}(config);
                                     });
+                                    
+                                    function laadChartData{{ $widget->id }}(config) {
+                                        const chartType = config.chart_type;
+                                        const scope = config.scope || 'auto';
+                                        const periode = config.periode || 'laatste-30-dagen';
+                                        
+                                        // Bereken datum range op basis van periode
+                                        const { start, eind } = berekenPeriode(periode);
+                                        
+                                        console.log('🔄 Loading chart data...', { chartType, scope, start, eind });
+                                        
+                                        fetch(`/api/dashboard/analytics?start=${start}&eind=${eind}&scope=${scope}`)
+                                            .then(r => r.json())
+                                            .then(data => {
+                                                if (!data.success) {
+                                                    console.error('❌ Chart data laden mislukt:', data.message);
+                                                    return;
+                                                }
+                                                
+                                                renderChart{{ $widget->id }}(chartType, data);
+                                            })
+                                            .catch(err => console.error('❌ Fout bij laden chart:', err));
+                                    }
+                                    
+                                    function berekenPeriode(periode) {
+                                        const vandaag = new Date();
+                                        let start, eind = vandaag.toISOString().split('T')[0];
+                                        
+                                        switch(periode) {
+                                            case 'laatste-7-dagen':
+                                                start = new Date(vandaag.setDate(vandaag.getDate() - 7)).toISOString().split('T')[0];
+                                                break;
+                                            case 'laatste-30-dagen':
+                                                start = new Date(vandaag.setDate(vandaag.getDate() - 30)).toISOString().split('T')[0];
+                                                break;
+                                            case 'laatste-90-dagen':
+                                                start = new Date(vandaag.setDate(vandaag.getDate() - 90)).toISOString().split('T')[0];
+                                                break;
+                                            case 'deze-week':
+                                                start = new Date(vandaag.setDate(vandaag.getDate() - vandaag.getDay() + 1)).toISOString().split('T')[0];
+                                                break;
+                                            case 'deze-maand':
+                                                start = new Date(vandaag.getFullYear(), vandaag.getMonth(), 1).toISOString().split('T')[0];
+                                                break;
+                                            case 'dit-kwartaal':
+                                                const kwartaal = Math.floor(vandaag.getMonth() / 3);
+                                                start = new Date(vandaag.getFullYear(), kwartaal * 3, 1).toISOString().split('T')[0];
+                                                break;
+                                            case 'dit-jaar':
+                                                start = new Date(vandaag.getFullYear(), 0, 1).toISOString().split('T')[0];
+                                                break;
+                                            default:
+                                                start = new Date(vandaag.setDate(vandaag.getDate() - 30)).toISOString().split('T')[0];
+                                        }
+                                        
+                                        return { start, eind };
+                                    }
+                                    
+                                    function renderChart{{ $widget->id }}(type, data) {
+                                        const ctx = document.getElementById('chart-{{ $widget->id }}');
+                                        
+                                        let chartConfig = {};
+                                        
+                                        switch(type) {
+                                            case 'diensten':
+                                                chartConfig = {
+                                                    type: 'doughnut',
+                                                    data: {
+                                                        labels: data.dienstenVerdeling.labels,
+                                                        datasets: [{data: data.dienstenVerdeling.values, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']}]
+                                                    },
+                                                    options: { responsive: true, maintainAspectRatio: false }
+                                                };
+                                                break;
+                                            case 'status':
+                                                chartConfig = {
+                                                    type: 'doughnut',
+                                                    data: {
+                                                        labels: ['Uitgevoerd', 'Niet uitgevoerd'],
+                                                        datasets: [{data: [data.prestatieStatus.uitgevoerd, data.prestatieStatus.nietUitgevoerd], backgroundColor: ['#10b981', '#ef4444']}]
+                                                    },
+                                                    options: { responsive: true, maintainAspectRatio: false }
+                                                };
+                                                break;
+                                            case 'omzet':
+                                                chartConfig = {
+                                                    type: 'line',
+                                                    data: {
+                                                        labels: data.omzetTrend.labels,
+                                                        datasets: [{
+                                                            label: 'Bruto', data: data.omzetTrend.bruto,
+                                                            borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', tension: 0.4, fill: true
+                                                        }, {
+                                                            label: 'Netto', data: data.omzetTrend.netto,
+                                                            borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', tension: 0.4, fill: true
+                                                        }]
+                                                    },
+                                                    options: { responsive: true, maintainAspectRatio: false }
+                                                };
+                                                break;
+                                            case 'medewerker':
+                                                chartConfig = {
+                                                    type: 'bar',
+                                                    data: {
+                                                        labels: data.medewerkerPrestaties.labels,
+                                                        datasets: [{label: 'Prestaties', data: data.medewerkerPrestaties.values, backgroundColor: '#3b82f6'}]
+                                                    },
+                                                    options: { responsive: true, maintainAspectRatio: false }
+                                                };
+                                                break;
+                                            case 'commissie':
+                                                chartConfig = {
+                                                    type: 'bar',
+                                                    data: {
+                                                        labels: data.commissieTrend.labels,
+                                                        datasets: [{
+                                                            label: 'Organisatie', data: data.commissieTrend.organisatie, backgroundColor: '#f59e0b'
+                                                        }, {
+                                                            label: 'Medewerkers', data: data.commissieTrend.medewerkers, backgroundColor: '#10b981'
+                                                        }]
+                                                    },
+                                                    options: { responsive: true, maintainAspectRatio: false }
+                                                };
+                                                break;
+                                            case 'bikefits-totaal':
+                                                chartConfig = {
+                                                    type: 'line',
+                                                    data: {
+                                                        labels: data.bikefitStats.trend.labels,
+                                                        datasets: [{
+                                                            label: 'Bikefits', data: data.bikefitStats.trend.values,
+                                                            borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', tension: 0.4, fill: true
+                                                        }]
+                                                    },
+                                                    options: { responsive: true, maintainAspectRatio: false }
+                                                };
+                                                break;
+                                            case 'bikefits-medewerker':
+                                                chartConfig = {
+                                                    type: 'bar',
+                                                    data: {
+                                                        labels: data.bikefitStats.perMedewerker.labels,
+                                                        datasets: [{label: 'Bikefits', data: data.bikefitStats.perMedewerker.values, backgroundColor: '#8b5cf6'}]
+                                                    },
+                                                    options: { responsive: true, maintainAspectRatio: false }
+                                                };
+                                                break;
+                                            case 'testen-totaal':
+                                                chartConfig = {
+                                                    type: 'line',
+                                                    data: {
+                                                        labels: data.inspanningstestStats.trend.labels,
+                                                        datasets: [{
+                                                            label: 'Testen', data: data.inspanningstestStats.trend.values,
+                                                            borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.1)', tension: 0.4, fill: true
+                                                        }]
+                                                    },
+                                                    options: { responsive: true, maintainAspectRatio: false }
+                                                };
+                                                break;
+                                            case 'testen-medewerker':
+                                                chartConfig = {
+                                                    type: 'bar',
+                                                    data: {
+                                                        labels: data.inspanningstestStats.perMedewerker.labels,
+                                                        datasets: [{label: 'Testen', data: data.inspanningstestStats.perMedewerker.values, backgroundColor: '#ec4899'}]
+                                                    },
+                                                    options: { responsive: true, maintainAspectRatio: false }
+                                                };
+                                                break;
+                                            case 'organisaties':
+                                                chartConfig = {
+                                                    type: 'bar',
+                                                    data: {
+                                                        labels: data.omzetPerOrganisatie.labels,
+                                                        datasets: [{
+                                                            label: 'Bruto', data: data.omzetPerOrganisatie.bruto, backgroundColor: '#3b82f6'
+                                                        }, {
+                                                            label: 'Netto', data: data.omzetPerOrganisatie.netto, backgroundColor: '#10b981'
+                                                        }]
+                                                    },
+                                                    options: { responsive: true, maintainAspectRatio: false }
+                                                };
+                                                break;
+                                        }
+                                        
+                                        new Chart(ctx, chartConfig);
+                                        console.log('✅ Chart rendered:', type);
+                                    }
                                 </script>
                             @endif
                         </div>

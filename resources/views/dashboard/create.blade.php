@@ -71,16 +71,62 @@
                 </div>
 
                 <!-- Chart Type (voor chart type) -->
-                <div id="chart-fields" class="mb-6" style="display:none;">
-                    <label for="chart_type" class="block text-sm font-medium text-gray-700 mb-2">Grafiek Type</label>
-                    <select name="chart_type" id="chart_type" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="line">Lijn grafiek</option>
-                        <option value="bar">Staaf grafiek</option>
-                        <option value="pie">Taart grafiek</option>
-                        <option value="doughnut">Donut grafiek</option>
-                    </select>
-                    <p class="mt-2 text-sm text-gray-500">💡 Tip: Grafiek data wordt automatisch ingevuld op basis van je statistieken</p>
-                </div>
+                        @if($type === 'chart')
+        <!-- Grafiek Type selectie -->
+        <div style="margin-bottom:1.5em;">
+            <label style="display:block;font-weight:600;margin-bottom:0.5em;">📊 Grafiek Type *</label>
+            <select name="chart_type" id="chart_type" required style="width:100%;padding:0.8em;border:1px solid #ddd;border-radius:7px;">
+                <option value="">-- Selecteer grafiek type --</option>
+                <option value="diensten">🎯 Diensten Verdeling</option>
+                <option value="status">✅ Prestatie Status</option>
+                <option value="omzet">📈 Omzet Trend</option>
+                <option value="medewerker">🏆 Top Medewerkers</option>
+                <option value="commissie">💰 Commissie Trend</option>
+                <option value="bikefits-totaal">🚴 Totaal Bikefits</option>
+                <option value="bikefits-medewerker">🚴 Bikefits per Medewerker</option>
+                <option value="testen-totaal">🏃 Totaal Inspanningstesten</option>
+                <option value="testen-medewerker">🏃 Testen per Medewerker</option>
+                @if(auth()->user()->is_super_admin || in_array(auth()->user()->email, ['info@bonami-sportcoaching.be', 'admin@bonami-sportcoaching.be']))
+                <option value="organisaties">🏢 Omzet per Organisatie</option>
+                @endif
+            </select>
+            <small style="color:#666;display:block;margin-top:0.5em;">💡 Tip: De grafiek toont realtime data op basis van je permissies</small>
+        </div>
+
+        <!-- Data scope selectie -->
+        <div style="margin-bottom:1.5em;">
+            <label style="display:block;font-weight:600;margin-bottom:0.5em;">🔍 Data Scope *</label>
+            <select name="chart_scope" id="chart_scope" required style="width:100%;padding:0.8em;border:1px solid #ddd;border-radius:7px;">
+                @if(auth()->user()->is_super_admin || in_array(auth()->user()->email, ['info@bonami-sportcoaching.be', 'admin@bonami-sportcoaching.be']))
+                    <option value="auto">Automatisch</option>
+                    <option value="organisatie">Mijn Organisatie</option>
+                    <option value="medewerker">Alleen Ik</option>
+                    <option value="all">Alle Organisaties</option>
+                @elseif(auth()->user()->organisatie_id && !auth()->user()->is_medewerker)
+                    <option value="organisatie" selected>Mijn Organisatie</option>
+                    <option value="medewerker">Alleen Ik</option>
+                @else
+                    <option value="medewerker" selected>Alleen Ik</option>
+                @endif
+            </select>
+            <small style="color:#666;display:block;margin-top:0.5em;">📊 Bepaalt welke data getoond wordt in de grafiek</small>
+        </div>
+
+        <!-- Periode selectie -->
+        <div style="margin-bottom:1.5em;">
+            <label style="display:block;font-weight:600;margin-bottom:0.5em;">� Standaard Periode *</label>
+            <select name="chart_periode" id="chart_periode" required style="width:100%;padding:0.8em;border:1px solid #ddd;border-radius:7px;">
+                <option value="laatste-7-dagen">Laatste 7 dagen</option>
+                <option value="laatste-30-dagen" selected>Laatste 30 dagen</option>
+                <option value="laatste-90-dagen">Laatste 90 dagen</option>
+                <option value="deze-week">Deze week</option>
+                <option value="deze-maand">Deze maand</option>
+                <option value="dit-kwartaal">Dit kwartaal</option>
+                <option value="dit-jaar">Dit jaar</option>
+            </select>
+            <small style="color:#666;display:block;margin-top:0.5em;">⏱️ Data wordt automatisch ververst</small>
+        </div>
+        @endif
 
                 <!-- Kleuren -->
                 <h3 class="text-lg font-semibold mt-8 mb-4">Styling</h3>
