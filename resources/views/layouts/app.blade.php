@@ -332,7 +332,7 @@
     <!-- Mobile nav dropdown onder de bovenbalk (vast onder de header) -->
     <div id="mobile-nav" class="md:hidden hidden fixed left-0 right-0 z-30 bg-white border-b border-gray-200 shadow-lg overflow-y-auto" style="top: 56px; max-height: calc(100vh - 56px);">
         <div class="py-2">
-            <a href="{{ route('dashboard') }}" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ str_starts_with($routeName, 'dashboard') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+            <a href="{{ route('dashboard.index') }}" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ str_starts_with($routeName, 'dashboard') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
                 Dashboard
             </a>
             
@@ -476,7 +476,7 @@
         <!-- Sidebar (desktop) -->
     <aside class="hidden md:flex md:flex-col bg-white border-r border-gray-200 fixed left-0 right-auto z-50 overflow-y-auto pointer-events-auto" style="top:56px; bottom:0; width:240px;">
             <nav class="flex-1 px-0 pt-0 pb-1 space-y-6">
-                <a href="{{ route('dashboard') }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('dashboard*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="margin-top:24px;padding-left:48px;{{ request()->is('dashboard*') ? 'background:#f6fbfe' : '' }}">
+                <a href="{{ route('dashboard.index') }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('dashboard*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="margin-top:24px;padding-left:48px;{{ request()->is('dashboard*') ? 'background:#f6fbfe' : '' }}">
                     @if(request()->is('dashboard*'))
                         <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
                     @endif

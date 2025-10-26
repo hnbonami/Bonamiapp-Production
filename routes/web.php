@@ -88,9 +88,20 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/dashboard', [App\Http\Controllers\DashboardContentController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+// Dashboard Widget Systeem - Nieuw
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.index');
+    Route::get('/dashboard/widgets/create', [App\Http\Controllers\DashboardController::class, 'create'])->name('dashboard.widgets.create');
+    Route::post('/dashboard/widgets', [App\Http\Controllers\DashboardController::class, 'store'])->name('dashboard.widgets.store');
+    Route::post('/dashboard/widgets/layout', [App\Http\Controllers\DashboardController::class, 'updateLayout'])->name('dashboard.widgets.updateLayout');
+    Route::post('/dashboard/widgets/{widget}/toggle', [App\Http\Controllers\DashboardController::class, 'toggleVisibility'])->name('dashboard.widgets.toggle');
+    Route::delete('/dashboard/widgets/{widget}', [App\Http\Controllers\DashboardController::class, 'destroy'])->name('dashboard.widgets.destroy');
+    
+    // Live stats API endpoints
+    Route::get('/dashboard/stats/live', [App\Http\Controllers\DashboardStatsController::class, 'getLiveStats'])->name('dashboard.stats.live');
+    Route::get('/dashboard/stats/widget', [App\Http\Controllers\DashboardStatsController::class, 'getWidgetData'])->name('dashboard.stats.widget');
+});
+
 // (debug route verwijderd)
 
 // Nieuwsbrief pagina (placeholder)
@@ -188,7 +199,7 @@ Route::middleware('auth')->group(function () {
     // Bikefit berekende resultaten en verslag generatie
     Route::get('bikefit/{bikefit}/results', [\App\Http\Controllers\BikefitResultsController::class, 'show'])->name('bikefit.results')->scopeBindings();
     Route::post('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
-    Route::get('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview')->scopeBindings();
+    Route::get('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview')->scopeBindings();
     // SAVE CUSTOM RESULTS ROUTE - ESSENTIAL FOR EDITABLE RESULTS FUNCTIONALITY
     Route::post('bikefit/{bikefit}/save-custom-results', [\App\Http\Controllers\BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results')->scopeBindings();
     // RESET TO CALCULATED ROUTE - ESSENTIAL FOR RESET FUNCTIONALITY
@@ -1424,12 +1435,8 @@ Route::middleware(['auth'])->group(function () {
 
 // Admin routes - gebruikersbeheer
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    // ...existing code...
-    
     // Rollen beheer
     Route::get('/users/roles', [\App\Http\Controllers\UserController::class, 'roles'])->name('users.roles');
     Route::post('/roles/{roleKey}/features/{featureId}/toggle', [\App\Http\Controllers\UserController::class, 'toggleRoleFeature'])
         ->name('roles.features.toggle');
-    
-    // ...existing code...
 });
