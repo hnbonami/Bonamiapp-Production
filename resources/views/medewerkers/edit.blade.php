@@ -83,7 +83,6 @@
                             <option value="Vrouw" {{ old('geslacht', $medewerker->geslacht) == 'Vrouw' ? 'selected' : '' }}>Vrouw</option>
                             <option value="Anders" {{ old('geslacht', $medewerker->geslacht) == 'Anders' ? 'selected' : '' }}>Anders</option>
                         </select>
-                    </div>select>
                     </div>
                 </div>
 

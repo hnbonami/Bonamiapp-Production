@@ -79,8 +79,20 @@ class MedewerkerController extends Controller
                 'telefoonnummer' => 'nullable|string|max:20',
                 'geboortedatum' => 'nullable|date',
                 'geslacht' => 'nullable|in:Man,Vrouw,Anders',
-                'rol' => 'nullable|string|in:admin,medewerker,organisatie_admin',
+                'straatnaam' => 'nullable|string|max:255',
+                'huisnummer' => 'nullable|string|max:20',
+                'postcode' => 'nullable|string|max:10',
+                'stad' => 'nullable|string|max:255',
+                'functie' => 'nullable|string|max:255',
+                'rol' => 'nullable|string|in:admin,manager,medewerker,stagiair,organisatie_admin',
+                'startdatum' => 'nullable|date',
+                'contract_type' => 'nullable|in:Vast,Tijdelijk,Freelance,Stage',
                 'status' => 'nullable|string|in:Actief,Inactief,Verlof,Ziek',
+                'bikefit' => 'nullable|boolean',
+                'inspanningstest' => 'nullable|boolean',
+                'upload_documenten' => 'nullable|boolean',
+                'notities' => 'nullable|string',
+                'avatar' => 'nullable|image|max:2048'
             ]);
 
             \Log::info('✅ Validation passed', ['validated' => $validated]);
@@ -114,6 +126,13 @@ class MedewerkerController extends Controller
                 ]);
             }
 
+            // Handle avatar upload
+            $avatarPath = null;
+            if ($request->hasFile('avatar')) {
+                $avatarPath = $request->file('avatar')->store('avatars', 'public');
+                \Log::info('✅ Avatar uploaded', ['path' => $avatarPath]);
+            }
+
             // Maak een nieuwe medewerker (User) aan met een tijdelijk wachtwoord
             $temporaryPassword = \Str::random(12);
             
@@ -128,13 +147,27 @@ class MedewerkerController extends Controller
                 'telefoonnummer' => $validated['telefoonnummer'] ?? null,
                 'geboortedatum' => $validated['geboortedatum'] ?? null,
                 'geslacht' => $validated['geslacht'] ?? null,
+                'straatnaam' => $validated['straatnaam'] ?? null,
+                'huisnummer' => $validated['huisnummer'] ?? null,
+                'postcode' => $validated['postcode'] ?? null,
+                'stad' => $validated['stad'] ?? null,
+                'functie' => $validated['functie'] ?? null,
+                'startdatum' => $validated['startdatum'] ?? null,
+                'contract_type' => $validated['contract_type'] ?? null,
                 'status' => $validated['status'] ?? 'Actief',
+                'bikefit' => $request->has('bikefit') ? 1 : 0,
+                'inspanningstest' => $request->has('inspanningstest') ? 1 : 0,
+                'upload_documenten' => $request->has('upload_documenten') ? 1 : 0,
+                'notities' => $validated['notities'] ?? null,
+                'avatar_path' => $avatarPath,
             ]);
             
             \Log::info('✅ Medewerker aangemaakt', [
                 'user_id' => $medewerker->id,
                 'email' => $medewerker->email,
-                'organisatie_id' => $medewerker->organisatie_id
+                'organisatie_id' => $medewerker->organisatie_id,
+                'geslacht' => $medewerker->geslacht,
+                'telefoonnummer' => $medewerker->telefoonnummer
             ]);
 
             // Maak InvitationToken aan met wachtwoord (zoals bij klanten!)

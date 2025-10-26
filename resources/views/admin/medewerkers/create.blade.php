@@ -50,6 +50,16 @@
             </div>
 
             <div>
+                <label for="geslacht" class="block text-sm font-medium text-gray-700">Geslacht</label>
+                <select id="geslacht" name="geslacht" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                    <option value="">Selecteer geslacht...</option>
+                    <option value="Man" {{ old('geslacht') === 'Man' ? 'selected' : '' }}>Man</option>
+                    <option value="Vrouw" {{ old('geslacht') === 'Vrouw' ? 'selected' : '' }}>Vrouw</option>
+                    <option value="Anders" {{ old('geslacht') === 'Anders' ? 'selected' : '' }}>Anders</option>
+                </select>
+            </div>
+
+            <div>
                 <label for="rol" class="block text-sm font-medium text-gray-700">Rol *</label>
                 <select id="rol" name="rol" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     <option value="">Selecteer rol...</option>
