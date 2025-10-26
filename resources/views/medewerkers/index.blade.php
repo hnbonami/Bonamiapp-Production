@@ -44,30 +44,61 @@
         </div>
     @endif
 
-    <!-- Search Bar - compact zoals klanten -->
+    <!-- Filters - exact zoals klanten -->
     <div style="display:flex;gap:0.7em;align-items:center;margin:1.2em 0;">
         <input 
             type="text" 
             id="searchMedewerkers" 
             placeholder="Zoek medewerker..." 
-            value="{{ request('zoek') }}"
             style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:180px;box-shadow:0 1px 3px #f3f4f6;margin-left:auto;" 
             autocomplete="off"
         />
-    </div>
-    
-    <script>
-    // Simple search - gewoon client-side filtering
-    document.getElementById('searchMedewerkers').addEventListener('input', function(e) {
-        const zoekterm = e.target.value.toLowerCase();
-        const rijen = document.querySelectorAll('#medewerkersTableBody tr');
         
-        rijen.forEach(rij => {
-            const tekst = rij.textContent.toLowerCase();
-            rij.style.display = tekst.includes(zoekterm) ? '' : 'none';
-        });
-    });
-    </script>
+        {{-- Kolom visibility toggle --}}
+        <div style="position:relative;">
+            <button type="button" id="kolom-toggle-btn" 
+                    style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;background:#fff;cursor:pointer;display:flex;align-items:center;gap:0.5em;box-shadow:0 1px 3px #f3f4f6;">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 0v10m0-10a2 2 0 012 2v6a2 2 0 01-2 2m0 0a2 2 0 01-2-2"/>
+                </svg>
+                <span>Kolommen</span>
+            </button>
+            
+            <div id="kolom-toggle-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 0.5em);background:#fff;border:1px solid #d1d5db;border-radius:7px;padding:0.8em;min-width:200px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:10;">
+                <div style="font-weight:600;font-size:0.9em;margin-bottom:0.6em;color:#374151;">Toon kolommen:</div>
+                <div style="display:flex;flex-direction:column;gap:0.5em;">
+                    <label style="display:flex;align-items:center;gap:0.5em;cursor:pointer;font-size:0.9em;">
+                        <input type="checkbox" class="kolom-toggle" data-kolom="naam" checked style="cursor:pointer;">
+                        <span>Naam</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5em;cursor:pointer;font-size:0.9em;">
+                        <input type="checkbox" class="kolom-toggle" data-kolom="email" checked style="cursor:pointer;">
+                        <span>Email</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5em;cursor:pointer;font-size:0.9em;">
+                        <input type="checkbox" class="kolom-toggle" data-kolom="rol" checked style="cursor:pointer;">
+                        <span>Rol</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5em;cursor:pointer;font-size:0.9em;">
+                        <input type="checkbox" class="kolom-toggle" data-kolom="organisatie" checked style="cursor:pointer;">
+                        <span>Organisatie</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5em;cursor:pointer;font-size:0.9em;">
+                        <input type="checkbox" class="kolom-toggle" data-kolom="prestaties" checked style="cursor:pointer;">
+                        <span>Prestaties</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5em;cursor:pointer;font-size:0.9em;">
+                        <input type="checkbox" class="kolom-toggle" data-kolom="laatst" checked style="cursor:pointer;">
+                        <span>Laatst ingelogd</span>
+                    </label>
+                    <label style="display:flex;align-items:center;gap:0.5em;cursor:pointer;font-size:0.9em;">
+                        <input type="checkbox" class="kolom-toggle" data-kolom="acties" checked style="cursor:pointer;">
+                        <span>Acties</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Medewerkers Table -->
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
@@ -238,46 +269,107 @@
     </div>
 </div>
 
-<!-- JavaScript voor zoekfunctionaliteit - exact zoals klanten -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const zoekInput = document.getElementById('zoekInputMedewerkers');
-    const zoekForm = document.getElementById('zoekFormMedewerkers');
-    let timeout = null;
-    
-    console.log('🔍 Medewerkers zoekfunctie actief', {
-        input: zoekInput ? 'found' : 'NOT FOUND',
-        form: zoekForm ? 'found' : 'NOT FOUND',
-        formAction: zoekForm ? zoekForm.action : 'N/A'
-    });
-    
-    if (zoekInput && zoekForm) {
-        zoekInput.addEventListener('input', function(e) {
-            clearTimeout(timeout);
-            const zoekwaarde = this.value.trim();
-            console.log('⌨️ Input event fired:', zoekwaarde);
-            
-            timeout = setTimeout(function() {
-                console.log('📤 Submitting form to:', zoekForm.action);
-                console.log('📝 Form method:', zoekForm.method);
-                console.log('🔑 Search value:', zoekwaarde);
-                
-                // Force submit
-                zoekForm.submit();
-                console.log('✅ Submit called');
-            }, 400);
-        });
-        
-        // Test om te zien of form submit überhaupt werkt
-        zoekForm.addEventListener('submit', function(e) {
-            console.log('🚀 Form submit event triggered!');
-        });
-    } else {
-        console.error('❌ Zoek elementen niet gevonden!', {
-            inputExists: !!zoekInput,
-            formExists: !!zoekForm
-        });
+// Kolom visibility toggle functionaliteit
+const kolomToggleBtn = document.getElementById('kolom-toggle-btn');
+const kolomToggleDropdown = document.getElementById('kolom-toggle-dropdown');
+const kolomToggles = document.querySelectorAll('.kolom-toggle');
+
+// Toggle dropdown
+kolomToggleBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    const isHidden = kolomToggleDropdown.style.display === 'none';
+    kolomToggleDropdown.style.display = isHidden ? 'block' : 'none';
+});
+
+// Sluit dropdown bij klik buiten
+document.addEventListener('click', function(e) {
+    if (!kolomToggleBtn.contains(e.target) && !kolomToggleDropdown.contains(e.target)) {
+        kolomToggleDropdown.style.display = 'none';
     }
+});
+
+// Laad opgeslagen kolom voorkeuren uit localStorage
+function laadKolomVoorkeuren() {
+    const voorkeuren = JSON.parse(localStorage.getItem('medewerkersKolomVoorkeuren') || '{}');
+    
+    kolomToggles.forEach(toggle => {
+        const kolomNaam = toggle.dataset.kolom;
+        const isZichtbaar = voorkeuren[kolomNaam] !== undefined ? voorkeuren[kolomNaam] : toggle.checked;
+        
+        toggle.checked = isZichtbaar;
+        toggleKolom(kolomNaam, isZichtbaar);
+    });
+}
+
+// Toggle kolom zichtbaarheid
+function toggleKolom(kolomNaam, isZichtbaar) {
+    const table = document.querySelector('table');
+    if (!table) return;
+    
+    const kolomIndex = getKolomIndex(kolomNaam);
+    if (kolomIndex === -1) return;
+    
+    // Toggle header
+    const headers = table.querySelectorAll('thead th');
+    if (headers[kolomIndex]) {
+        headers[kolomIndex].style.display = isZichtbaar ? '' : 'none';
+    }
+    
+    // Toggle cells in alle rijen
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells[kolomIndex]) {
+            cells[kolomIndex].style.display = isZichtbaar ? '' : 'none';
+        }
+    });
+}
+
+// Helper functie om kolom index te krijgen
+function getKolomIndex(kolomNaam) {
+    const mapping = {
+        'naam': 0,
+        'email': 1,
+        'rol': 2,
+        'organisatie': 3,
+        'prestaties': 4,
+        'laatst': 5,
+        'acties': 6
+    };
+    return mapping[kolomNaam] ?? -1;
+}
+
+// Sla kolom voorkeuren op
+function slaKolomVoorkeurenOp() {
+    const voorkeuren = {};
+    kolomToggles.forEach(toggle => {
+        voorkeuren[toggle.dataset.kolom] = toggle.checked;
+    });
+    localStorage.setItem('medewerkersKolomVoorkeuren', JSON.stringify(voorkeuren));
+}
+
+// Event listeners voor kolom toggles
+kolomToggles.forEach(toggle => {
+    toggle.addEventListener('change', function() {
+        toggleKolom(this.dataset.kolom, this.checked);
+        slaKolomVoorkeurenOp();
+    });
+});
+
+// Laad voorkeuren bij pagina load
+laadKolomVoorkeuren();
+
+// Zoekfunctie - client-side filtering
+document.getElementById('searchMedewerkers').addEventListener('input', function(e) {
+    const zoekterm = e.target.value.toLowerCase();
+    const tbody = document.querySelector('tbody');
+    const rijen = tbody.querySelectorAll('tr');
+    
+    rijen.forEach(rij => {
+        const tekst = rij.textContent.toLowerCase();
+        rij.style.display = tekst.includes(zoekterm) ? '' : 'none';
+    });
 });
 </script>
 @endsection

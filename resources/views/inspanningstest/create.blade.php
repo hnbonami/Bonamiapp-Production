@@ -421,7 +421,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div id="testresultaten-table" class="mb-6">
                         <table class="w-full border border-gray-300 mb-4">
                             <thead id="testresultaten-header">
-                                <!-- Headers worden dynamisch gegenereerd -->
+                                <!-- Headers worden dynamisch tegengeeregend -->
                             </thead>
                             <tbody id="testresultaten-body">
                                 <!-- Rijen worden dynamisch gegenereerd -->
