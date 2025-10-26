@@ -27,21 +27,9 @@
                     @csrf
                     <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
                         @php
-                            // EXACT dezelfde logica als topbar in app.blade.php
-                            // Voor ingelogde klant: gebruik auth()->user()->avatar_path
-                            // Voor andere klanten: gebruik klant->user->avatar_path of klant->avatar_path
-                            $avatarPath = null;
-                            
-                            if (Auth::check() && Auth::user()->email === $klant->email) {
-                                // Ingelogde klant bekijkt eigen profiel
-                                $avatarPath = Auth::user()->avatar_path;
-                            } elseif ($klant->user && $klant->user->avatar_path) {
-                                // Andere klant met gekoppelde user
-                                $avatarPath = $klant->user->avatar_path;
-                            } elseif ($klant->avatar_path) {
-                                // Fallback naar klant avatar
-                                $avatarPath = $klant->avatar_path;
-                            }
+                            // CONSISTENTE avatar logica: altijd klant->avatar_path gebruiken
+                            // De avatar wordt opgeslagen in klanten tabel, NIET in users tabel
+                            $avatarPath = $klant->avatar_path;
                         @endphp
                         
                         @if($avatarPath)

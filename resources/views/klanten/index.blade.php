@@ -12,11 +12,14 @@
         {{ session('error') }}
     </div>
 @endif
-<!-- Topbar trimmed: Sjablonen buttons removed. The actions are rendered below the stats tile. -->
-<h2 class="text-2xl font-bold mb-1">Klantenlijst</h2>
-<div style="background:#fff;border-radius:18px;box-shadow:0 2px 8px #e5e7eb;padding:1.1em 1.2em 0.7em 1.2em;display:flex;flex-direction:column;align-items:flex-start;min-width:180px;max-width:240px;margin-bottom:2em;">
-    <div style="display:flex;align-items:center;gap:0.5em;">
-        <span style="background:#fef3e2;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+
+<!-- Header met titel en tegel -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2em;">
+    <h2 class="text-2xl font-bold">Klantenlijst</h2>
+    
+    <!-- Aantal klanten tegel -->
+    <div style="background:#fff;border-radius:18px;box-shadow:0 2px 8px #e5e7eb;padding:1.1em 1.2em;display:flex;align-items:center;gap:0.6em;">
+        <span style="background:#fef3e2;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
             <svg width="22" height="22" fill="none" viewBox="0 0 16 16">
                 <circle cx="8" cy="8" r="8" fill="#fef3e2"/>
                 <g>
@@ -27,17 +30,23 @@
                 </g>
             </svg>
         </span>
-    <div style="display:flex;align-items:baseline;gap:0.5em;flex-wrap:nowrap;white-space:nowrap;">
-            <div style="color:#6b7280;font-size:0.95em;font-weight:600;">Aantal klanten</div>
-            <div style="color:#222;font-size:1.05em;font-weight:700;letter-spacing:-0.2px;line-height:1.1;">{{ $klanten->count() }}</div>
-        </div>
+        <div style="color:#222;font-size:1.5em;font-weight:700;letter-spacing:-0.5px;line-height:1;">{{ $klanten->count() }}</div>
     </div>
 </div>
+
 <!-- Actions: moved here from topbar -->
 <div style="display:flex;gap:0.7em;align-items:center;margin:1.2em 0;">
     <a href="{{ route('klanten.create') }}" style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;">+ Klant toevoegen</a>
-    <a href="{{ route('klanten.export') }}" aria-label="Export Excel" title="Export Excel" class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 text-emerald-800" style="margin-right:0.2rem;text-decoration:none;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10l5 5 5-5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15V3"/></svg>
+    <a href="{{ route('klanten.export') }}" 
+       class="inline-flex items-center justify-center" 
+       style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;text-decoration:none;"
+       aria-label="Export Excel" 
+       title="Export Excel">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10l5 5 5-5"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15V3"/>
+        </svg>
     </a>
     <select 
         id="sorteerKlanten" 
@@ -118,8 +127,18 @@
             <tr>
                 <td class="px-6 py-4 whitespace-nowrap text-gray-900">
                     <div class="flex items-center gap-3">
-                        @if($klant->avatar_path)
-                            <img src="{{ asset('storage/'.$klant->avatar_path) }}" alt="Avatar" class="w-9 h-9 rounded-full object-cover flex-none" style="aspect-ratio:1/1;" />
+                        @php
+                            // Gebruik avatar_path van klant zelf of van gekoppelde user
+                            $avatarPath = null;
+                            if ($klant->avatar_path) {
+                                $avatarPath = $klant->avatar_path;
+                            } elseif ($klant->user && $klant->user->avatar_path) {
+                                $avatarPath = $klant->user->avatar_path;
+                            }
+                        @endphp
+                        
+                        @if($avatarPath)
+                            <img src="{{ asset('storage/' . $avatarPath) }}" alt="Avatar" class="w-9 h-9 rounded-full object-cover flex-none" style="aspect-ratio:1/1;" />
                         @else
                             <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold flex-none" style="aspect-ratio:1/1;">
                                 {{ strtoupper(substr($klant->voornaam,0,1)) }}

@@ -13,10 +13,13 @@
     </div>
 @endif
 
-<h2 class="text-2xl font-bold mb-1">Medewerkerslijst</h2>
-<div style="background:#fff;border-radius:18px;box-shadow:0 2px 8px #e5e7eb;padding:1.1em 1.2em 0.7em 1.2em;display:flex;flex-direction:column;align-items:flex-start;min-width:180px;max-width:240px;margin-bottom:2em;">
-    <div style="display:flex;align-items:center;gap:0.5em;">
-        <span style="background:#e0f2fe;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
+<!-- Header met titel en tegel -->
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2em;">
+    <h2 class="text-2xl font-bold">Medewerkerslijst</h2>
+    
+    <!-- Aantal medewerkers tegel -->
+    <div style="background:#fff;border-radius:18px;box-shadow:0 2px 8px #e5e7eb;padding:1.1em 1.2em;display:flex;align-items:center;gap:0.6em;">
+        <span style="background:#e0f2fe;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
             <svg width="22" height="22" fill="none" viewBox="0 0 16 16">
                 <circle cx="8" cy="8" r="8" fill="#e0f2fe"/>
                 <g>
@@ -27,10 +30,7 @@
                 </g>
             </svg>
         </span>
-        <div style="display:flex;align-items:baseline;gap:0.5em;flex-wrap:nowrap;white-space:nowrap;">
-            <div style="color:#6b7280;font-size:0.95em;font-weight:600;">Aantal medewerkers</div>
-            <div style="color:#222;font-size:1.05em;font-weight:700;letter-spacing:-0.2px;line-height:1.1;">{{ $medewerkers->count() }}</div>
-        </div>
+        <div style="color:#222;font-size:1.5em;font-weight:700;letter-spacing:-0.5px;line-height:1;">{{ $medewerkers->count() }}</div>
     </div>
 </div>
 
