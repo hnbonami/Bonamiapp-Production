@@ -51,13 +51,36 @@
                         <div class="widget-header" style="display:flex;justify-content:space-between;align-items:center;padding:1em;border-bottom:1px solid rgba(0,0,0,0.1);">
                             <h3 style="font-weight:600;font-size:1.1em;margin:0;">{{ $widget->title }}</h3>
                             <div class="widget-controls" style="display:flex;gap:0.5em;">
-                                @if(auth()->user()->role !== 'klant' && ($widget->created_by === auth()->id() || in_array(auth()->user()->role, ['admin', 'super_admin', 'superadmin'])))
-                                <!-- Edit -->
-                                <a href="{{ route('dashboard.widgets.edit', $widget) }}" style="background:transparent;border:none;cursor:pointer;padding:0.3em;text-decoration:none;color:inherit;display:inline-flex;align-items:center;" title="Widget bewerken">
-                                    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                </a>
+                                @if(auth()->user()->role !== 'klant')
+                                    @php
+                                        $canEdit = false;
+                                        $userRole = auth()->user()->role;
+                                        $userId = auth()->id();
+                                        $userOrgId = auth()->user()->organisatie_id;
+                                        $widgetCreatorOrgId = $widget->creator->organisatie_id ?? null;
+                                        
+                                        // Super admin mag alles bewerken
+                                        if (in_array($userRole, ['super_admin', 'superadmin'])) {
+                                            $canEdit = true;
+                                        }
+                                        // Admin (organisatie_admin OF admin) mag alles binnen eigen organisatie bewerken
+                                        elseif (in_array($userRole, ['admin', 'organisatie_admin']) && $userOrgId && $widgetCreatorOrgId === $userOrgId) {
+                                            $canEdit = true;
+                                        }
+                                        // Medewerker mag alleen eigen widgets bewerken
+                                        elseif ($userRole === 'medewerker' && $widget->created_by === $userId) {
+                                            $canEdit = true;
+                                        }
+                                    @endphp
+                                    
+                                    @if($canEdit)
+                                    <!-- Edit -->
+                                    <a href="{{ route('dashboard.widgets.edit', $widget) }}" style="background:transparent;border:none;cursor:pointer;padding:0.3em;text-decoration:none;color:inherit;display:inline-flex;align-items:center;" title="Widget bewerken">
+                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                    </a>
+                                    @endif
                                 @endif
                                 
                                 <!-- Minimize/Maximize -->
@@ -71,17 +94,20 @@
                                     @php
                                         $canDelete = false;
                                         $userRole = auth()->user()->role;
+                                        $userId = auth()->id();
+                                        $userOrgId = auth()->user()->organisatie_id;
+                                        $widgetCreatorOrgId = $widget->creator->organisatie_id ?? null;
                                         
-                                        // Super admin (beide spellingen)
+                                        // Super admin mag alles verwijderen
                                         if (in_array($userRole, ['super_admin', 'superadmin'])) {
                                             $canDelete = true;
                                         }
-                                        // Admin mag alles binnen organisatie
-                                        elseif ($userRole === 'admin') {
+                                        // Admin (organisatie_admin OF admin) mag alles binnen eigen organisatie verwijderen
+                                        elseif (in_array($userRole, ['admin', 'organisatie_admin']) && $userOrgId && $widgetCreatorOrgId === $userOrgId) {
                                             $canDelete = true;
                                         }
-                                        // Medewerker mag alleen eigen widgets
-                                        elseif ($userRole === 'medewerker' && $widget->created_by === auth()->id()) {
+                                        // Medewerker mag alleen eigen widgets verwijderen
+                                        elseif ($userRole === 'medewerker' && $widget->created_by === $userId) {
                                             $canDelete = true;
                                         }
                                     @endphp
@@ -343,7 +369,7 @@
 <div id="addWidgetModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
     <div style="background:#fff;border-radius:12px;padding:2em;max-width:500px;width:90%;">
         <h2 style="font-size:1.5em;font-weight:700;margin-bottom:1em;">Widget toevoegen</h2>
-        <a href="{{ route('dashboard.widgets.create') }}" class="block" style="padding:1em;background:#f3f4f6;border-radius:8px;text-decoration:none;color:#111;margin-bottom:0.5em;transition:background 0.2s;">
+        <a href="{{ route('dashboard.widgets.create') }}?type=chart" class="block" style="padding:1em;background:#f3f4f6;border-radius:8px;text-decoration:none;color:#111;margin-bottom:0.5em;transition:background 0.2s;">
             <div style="font-weight:600;">📊 Grafiek</div>
             <div style="font-size:0.9em;opacity:0.7;">Voeg een grafiek toe met data visualisatie</div>
         </a>

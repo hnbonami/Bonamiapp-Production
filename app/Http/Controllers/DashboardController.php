@@ -19,12 +19,13 @@ class DashboardController extends Controller
         
         \Log::info('🏠 Dashboard geladen', [
             'user_id' => $user->id,
+            'user_name' => $user->name,
             'organisatie_id' => $user->organisatie_id,
             'role' => $user->role,
         ]);
         
         // 🔒 BEPAAL WELKE WIDGETS DE GEBRUIKER MAG ZIEN
-        $widgetsQuery = DashboardWidget::where('is_active', true);
+        $widgetsQuery = DashboardWidget::where('is_active', true)->with('creator');
         
         // Filter op basis van visibility EN organisatie
         $widgetsQuery->where(function($q) use ($user) {
@@ -34,9 +35,9 @@ class DashboardController extends Controller
                 
                 // Als user organisatie heeft, filter op organisatie van creator
                 if ($user->organisatie_id) {
-                    $subQ->whereHas('creator', fn($creatorQ) => 
-                        $creatorQ->where('organisatie_id', $user->organisatie_id)
-                    );
+                    $subQ->whereHas('creator', function($creatorQ) use ($user) {
+                        $creatorQ->where('organisatie_id', $user->organisatie_id);
+                    });
                 }
             })
             // OF visibility: medewerkers (binnen eigen organisatie)
@@ -44,9 +45,9 @@ class DashboardController extends Controller
                 $subQ->where('visibility', 'medewerkers');
                 
                 if ($user->organisatie_id) {
-                    $subQ->whereHas('creator', fn($creatorQ) => 
-                        $creatorQ->where('organisatie_id', $user->organisatie_id)
-                    );
+                    $subQ->whereHas('creator', function($creatorQ) use ($user) {
+                        $creatorQ->where('organisatie_id', $user->organisatie_id);
+                    });
                 }
             })
             // OF visibility: only_me (alleen eigen widgets)
@@ -58,11 +59,19 @@ class DashboardController extends Controller
             ->orWhere('created_by', $user->id);
         });
         
-        $widgets = $widgetsQuery->with('creator')->get();
+        $widgets = $widgetsQuery->get();
         
-        \Log::info('📊 Widgets gefilterd', [
+        \Log::info('📊 Widgets gefilterd - DETAILS', [
             'totaal_widgets' => $widgets->count(),
             'widget_ids' => $widgets->pluck('id')->toArray(),
+            'widget_details' => $widgets->map(fn($w) => [
+                'id' => $w->id,
+                'title' => $w->title,
+                'created_by' => $w->created_by,
+                'creator_name' => $w->creator->name ?? 'Unknown',
+                'creator_org_id' => $w->creator->organisatie_id ?? 'NULL',
+                'visibility' => $w->visibility,
+            ])->toArray(),
         ]);
         
         // Haal layouts op voor deze user
@@ -166,11 +175,30 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         
-        // Check permissions
-        if ($widget->created_by !== $user->id && !in_array($user->role, ['admin', 'super_admin', 'superadmin'])) {
-            abort(403, 'Je mag alleen je eigen widgets bewerken');
+        // 🔒 AUTHORIZATION CHECK - INCLUSIEF organisatie_admin
+        $canEdit = false;
+        
+        if (in_array($user->role, ['super_admin', 'superadmin'])) {
+            $canEdit = true;
+        } elseif (in_array($user->role, ['admin', 'organisatie_admin']) && $user->organisatie_id && $widget->creator->organisatie_id === $user->organisatie_id) {
+            $canEdit = true;
+        } elseif ($user->role === 'medewerker' && $widget->created_by === $user->id) {
+            $canEdit = true;
         }
-
+        
+        \Log::info('✏️ Widget update authorization check', [
+            'user_id' => $user->id,
+            'user_role' => $user->role,
+            'user_org' => $user->organisatie_id,
+            'widget_id' => $widget->id,
+            'widget_creator_org' => $widget->creator->organisatie_id ?? null,
+            'can_edit' => $canEdit,
+        ]);
+        
+        if (!$canEdit) {
+            abort(403, 'Je hebt geen rechten om deze widget te bewerken');
+        }
+        
         $validated = $request->validate([
             'type' => 'required|in:chart,text,image,button,metric',
             'title' => 'nullable|string|max:255',
@@ -281,25 +309,34 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         
+        // 🔒 AUTHORIZATION CHECK - INCLUSIEF organisatie_admin
+        $canDelete = false;
+        
         if (in_array($user->role, ['super_admin', 'superadmin'])) {
-            // OK
-        } elseif ($user->role === 'admin') {
-            // OK
-        } elseif ($user->role === 'medewerker') {
-            if ($widget->created_by !== $user->id) {
-                abort(403, 'Je mag alleen je eigen widgets verwijderen');
-            }
-        } else {
-            abort(403, 'Geen toegang');
+            $canDelete = true;
+        } elseif (in_array($user->role, ['admin', 'organisatie_admin']) && $user->organisatie_id && $widget->creator->organisatie_id === $user->organisatie_id) {
+            $canDelete = true;
+        } elseif ($user->role === 'medewerker' && $widget->created_by === $user->id) {
+            $canDelete = true;
         }
-
-        if ($widget->image_path && Storage::disk('public')->exists($widget->image_path)) {
-            Storage::disk('public')->delete($widget->image_path);
+        
+        \Log::info('🗑️ Widget delete authorization check', [
+            'user_id' => $user->id,
+            'user_role' => $user->role,
+            'user_org' => $user->organisatie_id,
+            'widget_id' => $widget->id,
+            'widget_creator_org' => $widget->creator->organisatie_id ?? null,
+            'can_delete' => $canDelete,
+        ]);
+        
+        if (!$canDelete) {
+            abort(403, 'Je hebt geen rechten om deze widget te verwijderen');
         }
-
+        
+        // Verwijder widget en gerelateerde layouts
+        DashboardUserLayout::where('widget_id', $widget->id)->delete();
         $widget->delete();
-
-        return redirect()->route('dashboard.index')
-            ->with('success', 'Widget succesvol verwijderd!');
+        
+        return redirect()->route('dashboard.index')->with('success', 'Widget succesvol verwijderd!');
     }
 }
