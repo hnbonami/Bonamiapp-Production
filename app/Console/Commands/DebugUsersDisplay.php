@@ -29,7 +29,7 @@ class DebugUsersDisplay extends Command
             $this->info('📊 All users in database:');
             $allUsers = User::all();
             foreach ($allUsers as $user) {
-                $roleIcon = $user->role === 'admin' ? '👑' : ($user->role === 'medewerker' ? '👤' : '🧑‍💼');
+                $roleIcon = $user->role === 'admin' ? '👑' : (in_array($user->role, ['medewerker', 'stagiair']) ? '👤' : '🧑‍💼');
                 $this->line("{$roleIcon} ID: {$user->id} | Email: {$user->email} | Role: {$user->role} | Name: {$user->name}");
             }
 
@@ -56,7 +56,7 @@ class DebugUsersDisplay extends Command
             
             $this->info('Users in eerste pagina:');
             foreach ($users as $user) {
-                $roleIcon = $user->role === 'admin' ? '👑' : ($user->role === 'medewerker' ? '👤' : '🧑‍💼');
+                $roleIcon = $user->role === 'admin' ? '👑' : (in_array($user->role, ['medewerker', 'stagiair']) ? '👤' : '🧑‍💼');
                 $this->line("  {$roleIcon} {$user->email} ({$user->role}) - {$user->name}");
             }
 

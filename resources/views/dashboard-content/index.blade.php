@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-extrabold text-gray-900 ml-8">Welkom {{ auth()->user()->voornaam ?? auth()->user()->name }}</h1>
+        {{-- Dashboard voor staff members (admin, medewerker, stagiair) --}}
         @if(auth()->user()->role !== 'klant')
             <div class="flex gap-3">
                 <a href="{{ route('dashboard-content.archived') }}" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">

@@ -150,7 +150,6 @@
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">Selecteer rol</option>
                             <option value="admin" {{ old('rol', $medewerker->role) == 'admin' ? 'selected' : '' }}>Administrator</option>
-                            <option value="manager" {{ old('rol', $medewerker->role) == 'manager' ? 'selected' : '' }}>Manager</option>
                             <option value="medewerker" {{ old('rol', $medewerker->role) == 'medewerker' ? 'selected' : '' }}>Medewerker</option>
                             <option value="stagiair" {{ old('rol', $medewerker->role) == 'stagiair' ? 'selected' : '' }}>Stagiair</option>
                         </select>

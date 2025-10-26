@@ -64,6 +64,7 @@
                 <select id="rol" name="rol" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                     <option value="">Selecteer rol...</option>
                     <option value="medewerker" {{ old('rol') === 'medewerker' ? 'selected' : '' }}>Medewerker</option>
+                    <option value="stagiair" {{ old('rol') === 'stagiair' ? 'selected' : '' }}>Stagiair</option>
                     <option value="admin" {{ old('rol') === 'admin' ? 'selected' : '' }}>Administrator</option>
                 </select>
             </div>

@@ -40,6 +40,8 @@ class LinkUsersToKlantenAndMedewerkersSeeder extends Seeder
                 $klant->update(['user_id' => $user->id]);
                 
                 // Update user role if needed
+                // Check of deze user een staff member is (niet klant)
+                // Medewerkers en stagiairs worden behandeld als staff
                 if ($user->role !== 'klant') {
                     $user->update(['role' => 'klant']);
                 }
