@@ -35,15 +35,27 @@
             @php
                 $widget = $item['widget'];
                 $layout = $item['layout'];
+                
+                // Debug logging
+                \Log::debug('Rendering widget', [
+                    'widget_id' => $widget->id,
+                    'title' => $widget->title,
+                    'layout_width' => $layout->grid_width,
+                    'layout_height' => $layout->grid_height,
+                    'layout_x' => $layout->grid_x,
+                    'layout_y' => $layout->grid_y
+                ]);
             @endphp
             
             @if($layout->is_visible)
                 <div class="grid-stack-item" 
-                     data-gs-x="{{ $layout->grid_x }}" 
-                     data-gs-y="{{ $layout->grid_y }}" 
-                     data-gs-width="{{ $layout->grid_width }}" 
-                     data-gs-height="{{ $layout->grid_height }}"
-                     data-widget-id="{{ $widget->id }}">
+                     data-gs-x="{{ $layout->grid_x ?? 0 }}" 
+                     data-gs-y="{{ $layout->grid_y ?? 0 }}" 
+                     data-gs-width="{{ $layout->grid_width ?? 4 }}" 
+                     data-gs-height="{{ $layout->grid_height ?? 3 }}"
+                     data-widget-id="{{ $widget->id }}"
+                     style="outline: 2px solid red;">
+                    <!-- DEBUG: Width={{ $layout->grid_width }}, Height={{ $layout->grid_height }} -->
                     <div class="grid-stack-item-content dashboard-widget" 
                          style="background:{{ $widget->background_color }};color:{{ $widget->text_color }};border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;">
                         
@@ -190,10 +202,21 @@ document.addEventListener('DOMContentLoaded', function() {
         @endif
     });
 
-    // Save layout on change
+    // Save layout on change (zowel move als resize)
     grid.on('change', function(event, items) {
+        if (!items || items.length === 0) return;
+        
         items.forEach(item => {
             const widgetId = item.el.getAttribute('data-widget-id');
+            
+            // Log voor debugging
+            console.log('Widget changed:', {
+                id: widgetId,
+                x: item.x,
+                y: item.y,
+                width: item.w,
+                height: item.h
+            });
             
             fetch('{{ route("dashboard.widgets.updateLayout") }}', {
                 method: 'POST',
@@ -211,10 +234,10 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Layout opgeslagen', data);
+                console.log('Layout opgeslagen:', data);
             })
             .catch(error => {
-                console.error('Error:', error);
+                console.error('Error bij opslaan layout:', error);
             });
         });
     });
