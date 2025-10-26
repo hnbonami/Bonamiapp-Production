@@ -35,16 +35,6 @@
             @php
                 $widget = $item['widget'];
                 $layout = $item['layout'];
-                
-                // Debug logging
-                \Log::debug('Rendering widget', [
-                    'widget_id' => $widget->id,
-                    'title' => $widget->title,
-                    'layout_width' => $layout->grid_width,
-                    'layout_height' => $layout->grid_height,
-                    'layout_x' => $layout->grid_x,
-                    'layout_y' => $layout->grid_y
-                ]);
             @endphp
             
             @if($layout->is_visible)
@@ -53,9 +43,7 @@
                      data-gs-y="{{ $layout->grid_y ?? 0 }}" 
                      data-gs-width="{{ $layout->grid_width ?? 4 }}" 
                      data-gs-height="{{ $layout->grid_height ?? 3 }}"
-                     data-widget-id="{{ $widget->id }}"
-                     style="outline: 2px solid red;">
-                    <!-- DEBUG: Width={{ $layout->grid_width }}, Height={{ $layout->grid_height }} -->
+                     data-widget-id="{{ $widget->id }}">
                     <div class="grid-stack-item-content dashboard-widget" 
                          style="background:{{ $widget->background_color }};color:{{ $widget->text_color }};border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;">
                         
@@ -191,16 +179,48 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialiseer Gridstack
+    const userRole = '{{ auth()->user()->role }}';
+    
+    // Initialize Gridstack ZONDER animation
     const grid = GridStack.init({
-        column: 12,
         cellHeight: 80,
-        animate: true,
+        column: 12,
         float: true,
-        @if(auth()->user()->role === 'klant')
-        disableResize: true, // Klanten mogen niet resizen
-        @endif
+        animate: false, // Uit tijdens load!
+        resizable: {
+            handles: userRole !== 'klant' ? 'e, se, s, sw, w' : false
+        },
+        draggable: {
+            handle: '.widget-header'
+        }
     });
+
+    // ⚡ FIX: Force correcte groottes NA initialisatie
+    setTimeout(() => {
+        console.log('🔧 Fixing widget sizes from database...');
+        
+        const items = document.querySelectorAll('.grid-stack-item');
+        items.forEach(item => {
+            const w = parseInt(item.getAttribute('data-gs-width')) || 4;
+            const h = parseInt(item.getAttribute('data-gs-height')) || 3;
+            const x = parseInt(item.getAttribute('data-gs-x')) || 0;
+            const y = parseInt(item.getAttribute('data-gs-y')) || 0;
+            
+            console.log(`Widget ${item.dataset.widgetId}: Forcing ${w}x${h} at (${x},${y})`);
+            
+            // Update via Gridstack API
+            grid.update(item, {
+                x: x,
+                y: y,
+                w: w,
+                h: h
+            });
+        });
+        
+        // Enable animation weer
+        grid.opts.animate = true;
+        console.log('✅ All widgets resized!');
+    }, 100);
 
     // Save layout on change (zowel move als resize)
     grid.on('change', function(event, items) {
