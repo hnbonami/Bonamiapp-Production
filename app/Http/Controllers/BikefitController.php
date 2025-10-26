@@ -1786,16 +1786,24 @@ const fs = require('fs');
 
         // Check of er een file is (de form gebruikt 'excel_file' als naam)
         if (!$request->hasFile('excel_file')) {
-            return redirect()->back()->with('error', 'Geen bestand geselecteerd. Upload een SQL bestand.');
+            return redirect()->back()->with('error', 'Geen bestand geselecteerd. Upload een Excel of SQL bestand.');
         }
 
         // Valideer het bestand
         $request->validate([
-            'excel_file' => 'required|file|max:10240' // Max 10MB
+            'excel_file' => 'required|file|mimes:xlsx,xls,csv,sql,txt|max:10240' // Max 10MB
         ]);
 
         try {
             $organisatieId = auth()->user()->organisatie_id;
+            
+            // Check of organisatie_id aanwezig is
+            if (!$organisatieId) {
+                \Log::error('❌ Geen organisatie_id gevonden voor gebruiker', [
+                    'user_id' => auth()->id()
+                ]);
+                return redirect()->back()->with('error', 'Geen organisatie gekoppeld aan je account. Neem contact op met een administrator.');
+            }
             
             // Haal het geüploade bestand op
             $file = $request->file('excel_file');
@@ -1810,20 +1818,28 @@ const fs = require('fs');
             
             // Check bestandstype
             if (in_array($extension, ['xlsx', 'xls', 'csv'])) {
+                \Log::info('📊 Excel/CSV import gestart');
+                
                 // INLINE Excel/CSV import met fallback
                 try {
                     if (class_exists('\PhpOffice\PhpSpreadsheet\IOFactory')) {
                         // PhpSpreadsheet beschikbaar
+                        \Log::info('✅ PhpSpreadsheet gevonden, laden bestand...');
                         $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($file->getRealPath());
                         $worksheet = $spreadsheet->getActiveSheet();
                         $rows = $worksheet->toArray();
+                        \Log::info('📊 Excel gelezen, aantal rijen: ' . count($rows));
                     } else {
                         // Fallback: converteer naar CSV en lees met PHP
+                        \Log::error('❌ PhpSpreadsheet niet gevonden');
                         return redirect()->back()->with('error', 
                             'PhpSpreadsheet niet geïnstalleerd. Installeer met: composer require phpoffice/phpspreadsheet');
                     }
                 } catch (\Exception $e) {
-                    \Log::error('Excel read failed', ['error' => $e->getMessage()]);
+                    \Log::error('❌ Excel read failed', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
                     return redirect()->back()->with('error', 
                         'Excel bestand kon niet gelezen worden: ' . $e->getMessage());
                 }
@@ -1836,13 +1852,17 @@ const fs = require('fs');
                 
                 foreach ($rows as $index => $row) {
                     try {
-                        if (empty(array_filter($row))) continue;
+                        // Skip lege rijen
+                        if (empty(array_filter($row))) {
+                            \Log::info("⏭️ Rij " . ($index + 2) . " is leeg, overslaan");
+                            continue;
+                        }
                         
                         // Zoek klant op basis van email (kolom 0) of naam (kolom 1)
                         $klantEmail = trim($row[0] ?? '');
                         $klantNaam = trim($row[1] ?? '');
                         
-                        \Log::info('Zoek klant', [
+                        \Log::info('🔍 Zoek klant', [
                             'row' => $index + 2,
                             'email' => $klantEmail,
                             'naam' => $klantNaam,
@@ -1850,49 +1870,70 @@ const fs = require('fs');
                         ]);
                         
                         $klant = null;
+                        
+                        // Zoek eerst op email als aanwezig
                         if ($klantEmail) {
                             $klant = \App\Models\Klant::where('email', $klantEmail)
                                 ->where('organisatie_id', $organisatieId)
                                 ->first();
-                            \Log::info('Email zoekresultaat', ['found' => $klant ? 'ja' : 'nee']);
+                            \Log::info('📧 Email zoekresultaat', [
+                                'found' => $klant ? 'ja' : 'nee',
+                                'klant_id' => $klant ? $klant->id : null
+                            ]);
                         }
                         
+                        // Als niet gevonden op email, probeer op naam
                         if (!$klant && $klantNaam) {
                             $klant = \App\Models\Klant::where('naam', $klantNaam)
                                 ->where('organisatie_id', $organisatieId)
                                 ->first();
-                            \Log::info('Naam zoekresultaat', ['found' => $klant ? 'ja' : 'nee']);
+                            \Log::info('👤 Naam zoekresultaat', [
+                                'found' => $klant ? 'ja' : 'nee',
+                                'klant_id' => $klant ? $klant->id : null
+                            ]);
                         }
                         
                         if (!$klant) {
-                            // Toon beschikbare klanten in foutmelding
+                            // Toon beschikbare klanten in foutmelding (max 5)
                             $beschikbareKlanten = \App\Models\Klant::where('organisatie_id', $organisatieId)
                                 ->take(5)
                                 ->get(['naam', 'email'])
                                 ->map(fn($k) => "{$k->naam} ({$k->email})")
                                 ->implode(', ');
                             
-                            $errors[] = "Rij " . ($index + 2) . ": Klant '{$klantNaam}' (email: '{$klantEmail}') niet gevonden in organisatie ID{$organisatieId}. Beschikbare klanten: {$beschikbareKlanten}";
+                            $error = "Rij " . ($index + 2) . ": Klant '{$klantNaam}' (email: '{$klantEmail}') niet gevonden in organisatie ID{$organisatieId}.";
+                            if ($beschikbareKlanten) {
+                                $error .= " Voorbeelden: {$beschikbareKlanten}";
+                            }
+                            
+                            $errors[] = $error;
+                            \Log::warning('⚠️ ' . $error);
                             continue;
                         }
                         
-                        // Map alle Excel kolommen naar bikefit velden
+                        // Map alle Excel kolommen naar bikefit velden (met veilige datum parsing)
                         $bikefitData = [
                             'organisatie_id' => $organisatieId,
                             'klant_id' => $klant->id,
-                            'datum' => $row[2] ?? now(), // Kolom C
-                            'testtype' => $row[3] ?? null,
+                            'datum' => $this->parseExcelDate($row[2] ?? null), // Kolom C
+                            'testtype' => !empty($row[3]) ? $row[3] : 'standaard bikefit',
                             'type_fitting' => $row[4] ?? null,
                             'fietsmerk' => $row[5] ?? null,
                             'kadermaat' => $row[6] ?? null,
-                            'bouwjaar' => $row[7] ?? null,
+                            'bouwjaar' => !empty($row[7]) && is_numeric($row[7]) ? (int)$row[7] : null,
                             'frametype' => $row[8] ?? null,
-                            'lengte_cm' => $row[9] ?? null,
-                            'binnenbeenlengte_cm' => $row[10] ?? null,
+                            'lengte_cm' => !empty($row[9]) && is_numeric($row[9]) ? (float)$row[9] : null,
+                            'binnenbeenlengte_cm' => !empty($row[10]) && is_numeric($row[10]) ? (float)$row[10] : null,
                             'user_id' => auth()->id(),
                             'created_at' => now(),
                             'updated_at' => now(),
                         ];
+                        
+                        \Log::info('💾 Bikefit data voorbereid', [
+                            'klant_id' => $bikefitData['klant_id'],
+                            'testtype' => $bikefitData['testtype'],
+                            'datum' => $bikefitData['datum']
+                        ]);
                         
                         $bikefit = \App\Models\Bikefit::create($bikefitData);
                         $imported++;
@@ -1905,11 +1946,13 @@ const fs = require('fs');
                             'testtype' => $bikefitData['testtype']
                         ]);
                     } catch (\Exception $e) {
-                        $errors[] = "Rij " . ($index + 2) . ": " . $e->getMessage();
-                        \Log::warning('Import rij fout', [
+                        $errorMsg = "Rij " . ($index + 2) . ": " . $e->getMessage();
+                        $errors[] = $errorMsg;
+                        \Log::error('❌ Import rij fout', [
                             'row' => $index + 2,
-                            'data' => array_slice($row, 0, 5),
-                            'error' => $e->getMessage()
+                            'data' => array_slice($row, 0, 11),
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString()
                         ]);
                     }
                 }
