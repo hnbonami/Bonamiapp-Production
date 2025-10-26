@@ -85,7 +85,7 @@ class MedewerkerController extends Controller
                 'postcode' => 'nullable|string|max:10',
                 'stad' => 'nullable|string|max:255',
                 'functie' => 'nullable|string|max:255',
-                'rol' => 'nullable|string|in:admin,manager,medewerker,stagiair,organisatie_admin',
+                'rol' => 'nullable|string|in:admin,medewerker,stagiair,organisatie_admin',
                 'startdatum' => 'nullable|date',
                 'contract_type' => 'nullable|in:Vast,Tijdelijk,Freelance,Stage',
                 'status' => 'nullable|string|in:Actief,Inactief,Verlof,Ziek',
@@ -222,9 +222,7 @@ class MedewerkerController extends Controller
             }
                 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            \Log::warning('⚠️ Validation failed', [
-                'errors' => $e->errors()
-            ]);
+            \Log::warning('⚠️ Validation failed', ['errors' => $e->errors()]);
             throw $e;
         } catch (\Exception $e) {
             \Log::error('❌ Fout bij aanmaken medewerker', [
@@ -299,7 +297,7 @@ class MedewerkerController extends Controller
             'postcode' => 'nullable|string|max:10',
             'stad' => 'nullable|string|max:255',
             'functie' => 'nullable|string|max:255',
-            'rol' => 'nullable|in:admin,manager,medewerker,stagiair,organisatie_admin',
+            'rol' => 'nullable|in:admin,medewerker,stagiair,organisatie_admin',
             'startdatum' => 'nullable|date',
             'contract_type' => 'nullable|in:Vast,Tijdelijk,Freelance,Stage',
             'status' => 'required|in:Actief,Inactief,Verlof,Ziek',

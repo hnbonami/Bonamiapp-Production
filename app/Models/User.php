@@ -453,4 +453,14 @@ class User extends Authenticatable
     {
         return $this->commissieFactoren()->actief()->exists();
     }
+
+    /**
+     * Check of gebruiker een medewerker of stagiair is
+     * Beide rollen hebben dezelfde rechten en mogelijkheden
+     */
+    public function isMedewerkerOfStagiair(): bool
+    {
+        return in_array($this->role, ['medewerker', 'stagiair']);
+    }
 }
+// End of User class
