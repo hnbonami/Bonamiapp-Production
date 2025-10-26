@@ -1562,14 +1562,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Event listener voor testtype wijzigingen
-    testtypeSelect.addEventListener('change', updateProtocolFields);
-    
-    // Event listener voor analyse methode
-    const analyseMethodeSelect = document.getElementById('analyse_methode');
-    analyseMethodeSelect.addEventListener('change', handleAnalyseMethodeChange);
-    
-    // Event listener voor D-max Modified drempelwaarde wijziging
+        // Event listener voor testtype wijzigingen
+        testtypeSelect.addEventListener('change', updateProtocolFields);
+        
+        // Event listener voor analyse methode
+        const analyseMethodeSelect = document.getElementById('analyse_methode');
+        if (analyseMethodeSelect) {
+            analyseMethodeSelect.addEventListener('change', handleAnalyseMethodeChange);
+        }    // Event listener voor D-max Modified drempelwaarde wijziging
     const dmaxThresholdInput = document.getElementById('dmax_modified_threshold');
     if (dmaxThresholdInput) {
         dmaxThresholdInput.addEventListener('input', function() {
