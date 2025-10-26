@@ -24,6 +24,36 @@ class Klant extends Model
                 $klant->organisatie_id = auth()->user()->organisatie_id;
             }
         });
+        
+        // CASCADE DELETE: verwijder gerelateerde data bij klant delete
+        static::deleting(function ($klant) {
+            \Log::info('🗑️ Klant wordt verwijderd (soft delete), cleanup gerelateerde data', [
+                'klant_id' => $klant->id,
+                'klant_naam' => $klant->naam,
+                'klant_email' => $klant->email
+            ]);
+            
+            // Verwijder gerelateerde bikefits
+            $bikefitsCount = $klant->bikefits()->count();
+            if ($bikefitsCount > 0) {
+                $klant->bikefits()->delete();
+                \Log::info("✅ {$bikefitsCount} bikefits verwijderd voor klant {$klant->id}");
+            }
+            
+            // Verwijder gerelateerde inspanningstesten
+            $testenCount = $klant->inspanningstesten()->count();
+            if ($testenCount > 0) {
+                $klant->inspanningstesten()->delete();
+                \Log::info("✅ {$testenCount} inspanningstesten verwijderd voor klant {$klant->id}");
+            }
+            
+            // Verwijder gekoppelde user account (optioneel - voor GDPR compliance)
+            $user = \App\Models\User::where('email', $klant->email)->first();
+            if ($user && $user->role === 'klant') {
+                $user->delete();
+                \Log::info("✅ User account verwijderd voor klant {$klant->email}");
+            }
+        });
     }
 
     protected $fillable = [
