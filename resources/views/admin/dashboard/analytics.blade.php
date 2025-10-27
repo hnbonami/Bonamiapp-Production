@@ -41,10 +41,11 @@
                             <option value="organisatie">Mijn Organisatie</option>
                             <option value="medewerker">Alleen Ik</option>
                             <option value="all">Alle Organisaties</option>
-                        @elseif(auth()->user()->organisatie_id && !auth()->user()->is_medewerker)
+                        @elseif(in_array(auth()->user()->role, ['admin', 'organisatie_admin']))
                             <option value="organisatie" selected>Mijn Organisatie</option>
                             <option value="medewerker">Alleen Ik</option>
                         @else
+                            {{-- Medewerkers zien alleen "Alleen Ik" --}}
                             <option value="medewerker" selected>Alleen Ik</option>
                         @endif
                     </select>

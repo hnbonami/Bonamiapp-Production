@@ -115,11 +115,33 @@ class DashboardWidget extends Model
     {
         // Super admin ziet alleen widgets van organisatie 1
         if (in_array($user->role, ['super_admin', 'superadmin'])) {
-            return $query->where('organisatie_id', 1);
+            return $query->where('organisatie_id', 1)
+                ->where(function($q) use ($user) {
+                    $q->where('visibility', '!=', 'only_me')
+                      ->orWhere('created_by', $user->id);
+                });
         }
 
-        // Anderen zien alleen widgets van hun eigen organisatie
-        return $query->where('organisatie_id', $user->organisatie_id);
+        // Basis query: widgets van eigen organisatie
+        $query->where('organisatie_id', $user->organisatie_id);
+
+        // Klanten zien alleen 'everyone' widgets
+        if ($user->role === 'klant') {
+            return $query->where('visibility', 'everyone');
+        }
+
+        // Medewerkers en admins zien:
+        // - everyone widgets
+        // - medewerkers widgets
+        // - only_me widgets die ze zelf hebben gemaakt
+        return $query->where(function($q) use ($user) {
+            $q->where('visibility', 'everyone')
+              ->orWhere('visibility', 'medewerkers')
+              ->orWhere(function($subQ) use ($user) {
+                  $subQ->where('visibility', 'only_me')
+                       ->where('created_by', $user->id);
+              });
+        });
     }
 
     public function scopeActive($query)

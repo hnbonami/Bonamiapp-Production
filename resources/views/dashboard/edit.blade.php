@@ -108,10 +108,22 @@
         <div style="margin-bottom:1.5em;">
             <label for="visibility" style="display:block;font-weight:600;margin-bottom:0.5em;">Zichtbaarheid</label>
             <select name="visibility" id="visibility" required style="width:100%;padding:0.8em;border:1px solid #d1d5db;border-radius:7px;">
-                <option value="everyone" {{ old('visibility', $widget->visibility) === 'everyone' ? 'selected' : '' }}>Iedereen</option>
-                <option value="medewerkers" {{ old('visibility', $widget->visibility) === 'medewerkers' ? 'selected' : '' }}>Alleen Medewerkers</option>
-                <option value="only_me" {{ old('visibility', $widget->visibility) === 'only_me' ? 'selected' : '' }}>Alleen Ik</option>
+                @if(in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin', 'super_admin']))
+                    <option value="everyone" {{ old('visibility', $widget->visibility) === 'everyone' ? 'selected' : '' }}>👥 Iedereen (incl. klanten)</option>
+                    <option value="medewerkers" {{ old('visibility', $widget->visibility) === 'medewerkers' ? 'selected' : '' }}>👔 Alleen Medewerkers</option>
+                    <option value="only_me" {{ old('visibility', $widget->visibility) === 'only_me' ? 'selected' : '' }}>🔒 Alleen Ik</option>
+                @else
+                    <option value="medewerkers" {{ old('visibility', $widget->visibility) === 'medewerkers' ? 'selected' : '' }}>👔 Alleen Medewerkers</option>
+                    <option value="only_me" {{ old('visibility', $widget->visibility) === 'only_me' ? 'selected' : '' }}>🔒 Alleen Ik</option>
+                @endif
             </select>
+            <small style="color:#6b7280;display:block;margin-top:0.5em;">
+                @if(in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin', 'super_admin']))
+                    Als admin kan je kiezen wie de widget kan zien
+                @else
+                    Als medewerker kan je de widget delen met collega's of privé houden
+                @endif
+            </small>
         </div>
 
         <!-- Submit -->

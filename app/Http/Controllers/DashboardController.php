@@ -98,6 +98,15 @@ class DashboardController extends Controller
             'visibility' => 'required|in:everyone,medewerkers,only_me',
         ]);
 
+        // Medewerkers mogen geen 'everyone' visibility instellen (alleen admin)
+        if ($user->role === 'medewerker' && $validated['visibility'] === 'everyone') {
+            $validated['visibility'] = 'medewerkers';
+            Log::warning('Medewerker probeerde everyone visibility in te stellen', [
+                'user_id' => $user->id,
+                'forced_to' => 'medewerkers'
+            ]);
+        }
+
         // Voor chart widgets: zorg dat chart_data altijd valid JSON is
         if ($validated['type'] === 'chart' && !empty($validated['chart_type'])) {
             $validated['chart_data'] = json_encode([
@@ -166,6 +175,16 @@ class DashboardController extends Controller
             'text_color' => 'nullable|string',
             'visibility' => 'required|in:everyone,medewerkers,only_me',
         ]);
+
+        // Medewerkers mogen geen 'everyone' visibility instellen (alleen admin)
+        if (auth()->user()->role === 'medewerker' && $validated['visibility'] === 'everyone') {
+            $validated['visibility'] = 'medewerkers';
+            Log::warning('Medewerker probeerde everyone visibility in te stellen', [
+                'user_id' => auth()->id(),
+                'widget_id' => $widget->id,
+                'forced_to' => 'medewerkers'
+            ]);
+        }
 
         // Voor chart widgets: update chart_data indien chart_type is gewijzigd
         if ($widget->type === 'chart' && !empty($validated['chart_type'])) {
