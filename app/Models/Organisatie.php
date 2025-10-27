@@ -21,6 +21,13 @@ class Organisatie extends Model
         'plaats',
         'btw_nummer',
         'logo_path',
+        'favicon_path',
+        'primary_color',
+        'secondary_color',
+        'sidebar_color',
+        'text_color',
+        'custom_css',
+        'branding_enabled',
         'status',
         'trial_eindigt_op',
         'maandelijkse_prijs',
@@ -182,5 +189,50 @@ class Organisatie extends Model
                 $query->whereNull('organisatie_features.expires_at')
                       ->orWhere('organisatie_features.expires_at', '>', now());
             });
+    }
+    
+    /**
+     * Geef logo URL terug (of fallback)
+     */
+    public function getLogoUrlAttribute()
+    {
+        if ($this->logo_path && $this->branding_enabled) {
+            return asset('storage/' . $this->logo_path);
+        }
+        return asset('images/bonami-logo.png'); // Fallback naar default Bonami logo
+    }
+    
+    /**
+     * Geef favicon URL terug (of fallback)
+     */
+    public function getFaviconUrlAttribute()
+    {
+        if ($this->favicon_path && $this->branding_enabled) {
+            return asset('storage/' . $this->favicon_path);
+        }
+        return asset('favicon.ico'); // Fallback
+    }
+    
+    /**
+     * Haal actieve themakleuren op
+     */
+    public function getThemeColorsAttribute()
+    {
+        if (!$this->branding_enabled) {
+            // Return default Bonami kleuren
+            return [
+                'primary' => '#3b82f6',
+                'secondary' => '#c8e1eb',
+                'sidebar' => '#1e293b',
+                'text' => '#111111',
+            ];
+        }
+        
+        return [
+            'primary' => $this->primary_color,
+            'secondary' => $this->secondary_color,
+            'sidebar' => $this->sidebar_color,
+            'text' => $this->text_color,
+        ];
     }
 }
