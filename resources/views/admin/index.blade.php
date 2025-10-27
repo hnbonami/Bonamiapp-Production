@@ -149,9 +149,24 @@
         </div>
         @endhasFeature
 
-        {{-- Custom Branding - alleen voor organisatie admins als feature actief is --}}
-        @feature('custom_branding')
-        @if(auth()->user()->organisatie_id && auth()->user()->isAdminOfOrganisatie(auth()->user()->organisatie_id))
+        {{-- Custom Branding - alleen tonen als feature ACTIEF is voor deze organisatie EN user is admin --}}
+        @php
+            $user = auth()->user();
+            $showCustomBranding = false;
+            
+            if ($user && $user->organisatie_id && $user->organisatie) {
+                // Check of feature actief is via pivot tabel
+                $featurePivot = $user->organisatie->features()
+                    ->where('key', 'custom_branding')
+                    ->wherePivot('is_actief', true)
+                    ->first();
+                
+                // Toon alleen als feature actief is EN user is admin
+                $showCustomBranding = $featurePivot && $user->isAdminOfOrganisatie($user->organisatie_id);
+            }
+        @endphp
+        
+        @if($showCustomBranding)
         <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="p-3 rounded-lg" style="background-color: #c8e1eb;">
@@ -170,7 +185,6 @@
             </a>
         </div>
         @endif
-        @endfeature
 
         {{-- Branding & Layout - alleen voor organisatie admins als feature actief is --}}
         @hasFeature('branding_layout')
