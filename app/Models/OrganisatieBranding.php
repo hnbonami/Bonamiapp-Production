@@ -32,7 +32,16 @@ class OrganisatieBranding extends Model
         'navbar_tekst_kleur',
         'is_actief',
         'custom_css',
-        // Kolom 'bedrijfsnaam' bestaat NIET, 'tagline' bestaat NIET, 'rapport_header' bestaat NIET
+        // Sidebar kleuren
+        'sidebar_achtergrond',
+        'sidebar_tekst_kleur',
+        'sidebar_actief_achtergrond',
+        'sidebar_actief_lijn',
+        // Dark mode kleuren
+        'dark_achtergrond',
+        'dark_tekst',
+        'dark_navbar_achtergrond',
+        'dark_sidebar_achtergrond',
     ];
     
     protected $casts = [
