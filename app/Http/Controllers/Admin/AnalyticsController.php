@@ -15,6 +15,47 @@ class AnalyticsController extends Controller
         return view('admin.dashboard.analytics');
     }
 
+    /**
+     * Dashboard widgets data (gebruikt door dashboard homepage)
+     */
+    public function getWidgetsData(Request $request)
+    {
+        $user = auth()->user();
+        
+        \Log::info('🏠 Dashboard widgets data ophalen', [
+            'user_id' => $user->id,
+            'organisatie_id' => $user->organisatie_id,
+        ]);
+        
+        // Gebruik laatste 30 dagen als standaard
+        $startDatum = now()->subDays(30)->format('Y-m-d');
+        $eindDatum = now()->format('Y-m-d');
+        $scope = 'auto';
+        
+        // Bepaal filter op basis van gebruiker
+        $filter = $this->bepaalDataFilter($user, $scope);
+        
+        try {
+            // Bereken KPIs voor widgets
+            $kpis = $this->berekenKPIs($filter, $startDatum, $eindDatum);
+            
+            \Log::info('✅ Dashboard widgets data berekend', [
+                'bruto' => $kpis['brutoOmzet'],
+                'netto' => $kpis['nettoOmzet'],
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'kpis' => $kpis,
+                'filter' => $filter,
+                'periode' => ['start' => $startDatum, 'eind' => $eindDatum],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('❌ Dashboard widgets fout: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
     public function getData(Request $request)
     {
         $user = auth()->user();

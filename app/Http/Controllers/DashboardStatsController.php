@@ -19,6 +19,16 @@ class DashboardStatsController extends Controller
     {
         $user = auth()->user();
         
+        \Log::info('📊 Dashboard getLiveStats aangeroepen', [
+            'user_id' => $user->id,
+            'role' => $user->role,
+            'organisatie_id' => $user->organisatie_id
+        ]);
+        
+        // ✅ GEBRUIK ANALYTICS LOGICA VOOR OMZET
+        $startDatumMaand = now()->startOfMonth()->format('Y-m-d');
+        $eindDatumMaand = now()->endOfMonth()->format('Y-m-d');
+        
         // Basis statistieken
         $stats = [
             'total_klanten' => Klant::count(),
@@ -46,6 +56,44 @@ class DashboardStatsController extends Controller
         if (in_array($user->role, ['admin', 'super_admin'])) {
             $stats['total_medewerkers'] = User::where('role', 'medewerker')->count();
             $stats['actieve_medewerkers'] = User::where('role', 'medewerker')->where('status', 'Actief')->count();
+        }
+        
+        // ✅ OMZET STATISTIEKEN (CORRECTE BEREKENING)
+        if ($user->isMedewerker() || $user->isBeheerder()) {
+            // Medewerker omzet deze maand (netto - commissie)
+            $prestatiesMedewerkerMaand = Prestatie::where('user_id', $user->id)
+                ->whereBetween('datum_prestatie', [$startDatumMaand, $eindDatumMaand])
+                ->where('is_uitgevoerd', true)
+                ->get();
+            
+            $nettoBedrag = $prestatiesMedewerkerMaand->sum(fn($p) => $p->bruto_prijs / 1.21);
+            $commissieBedrag = $prestatiesMedewerkerMaand->sum(fn($p) => ($p->bruto_prijs / 1.21) * ($p->commissie_percentage / 100));
+            
+            $stats['mijn_omzet_maand'] = $nettoBedrag - $commissieBedrag;
+            
+            \Log::info('💰 Dashboard: Mijn Omzet Maand', [
+                'aantal_prestaties' => $prestatiesMedewerkerMaand->count(),
+                'netto' => $nettoBedrag,
+                'commissie' => $commissieBedrag,
+                'medewerker_krijgt' => $nettoBedrag - $commissieBedrag
+            ]);
+        }
+        
+        if ($user->isBeheerder()) {
+            // Organisatie omzet deze maand (bruto totaal)
+            $prestatiesOrganisatieMaand = Prestatie::whereHas('user', function($q) use ($user) {
+                $q->where('organisatie_id', $user->organisatie_id);
+            })
+            ->whereBetween('datum_prestatie', [$startDatumMaand, $eindDatumMaand])
+            ->where('is_uitgevoerd', true)
+            ->get();
+            
+            $stats['omzet_organisatie_maand'] = $prestatiesOrganisatieMaand->sum('bruto_prijs');
+            
+            \Log::info('💰 Dashboard: Organisatie Omzet Maand', [
+                'aantal_prestaties' => $prestatiesOrganisatieMaand->count(),
+                'bruto_totaal' => $stats['omzet_organisatie_maand']
+            ]);
         }
 
         // Chart data voor trends
@@ -301,6 +349,13 @@ class DashboardStatsController extends Controller
         $metricType = $request->input('metric_type');
         $user = auth()->user();
         
+        \Log::info('📊 Dashboard Metric Berekening', [
+            'metric_type' => $metricType,
+            'user_id' => $user->id,
+            'organisatie_id' => $user->organisatie_id,
+            'role' => $user->role
+        ]);
+        
         // Security check: Medewerkers mogen alleen hun eigen metrics ophalen
         $adminOnlyMetrics = [
             'totaal_klanten',
@@ -329,10 +384,12 @@ class DashboardStatsController extends Controller
             // Medewerker metrics
             case 'mijn_bikefits':
                 $value = Bikefit::where('user_id', $user->id)->count();
+                \Log::info('✅ Mijn Bikefits', ['waarde' => $value]);
                 break;
                 
             case 'mijn_inspanningstests':
                 $value = Inspanningstest::where('user_id', $user->id)->count();
+                \Log::info('✅ Mijn Inspanningstests', ['waarde' => $value]);
                 break;
                 
             case 'mijn_klanten':
@@ -342,30 +399,82 @@ class DashboardStatsController extends Controller
                 })->orWhereHas('inspanningstests', function($q) use ($user) {
                     $q->where('user_id', $user->id);
                 })->distinct()->count();
+                \Log::info('✅ Mijn Klanten', ['waarde' => $value]);
                 break;
                 
             case 'mijn_omzet_maand':
                 if ($user->isMedewerker() || $user->isBeheerder()) {
-                    $value = Prestatie::where('user_id', $user->id)
-                        ->whereYear('startdatum', now()->year)
-                        ->whereMonth('startdatum', now()->month)
-                        ->where('dienst_uitgevoerd', true)
-                        ->sum(DB::raw('CAST(REPLACE(REPLACE(prijs, "€", ""), ",", ".") AS DECIMAL(10,2))'));
+                    // ✅ GEFIXTE BEREKENING - exact zoals Analytics
+                    $startDatum = now()->startOfMonth()->format('Y-m-d');
+                    $eindDatum = now()->endOfMonth()->format('Y-m-d');
+                    
+                    $prestaties = Prestatie::where('user_id', $user->id)
+                        ->whereBetween('datum_prestatie', [$startDatum, $eindDatum])
+                        ->where('is_uitgevoerd', true)
+                        ->get();
+                    
+                    // Bereken NETTO omzet (excl BTW) - commissie voor medewerker
+                    $brutoBedrag = $prestaties->sum('bruto_prijs');
+                    $nettoBedrag = $prestaties->sum(function($p) {
+                        return $p->bruto_prijs / 1.21; // Excl BTW
+                    });
+                    $commissieBedrag = $prestaties->sum(function($p) {
+                        $prijsExclBtw = $p->bruto_prijs / 1.21;
+                        return $prijsExclBtw * ($p->commissie_percentage / 100);
+                    });
+                    
+                    // Medewerker krijgt: netto - commissie
+                    $value = $nettoBedrag - $commissieBedrag;
                     $prefix = '€';
                     $value = number_format($value, 2, ',', '.');
+                    
+                    \Log::info('💰 Mijn Omzet Maand', [
+                        'periode' => $startDatum . ' tot ' . $eindDatum,
+                        'aantal_prestaties' => $prestaties->count(),
+                        'bruto' => $brutoBedrag,
+                        'netto' => $nettoBedrag,
+                        'commissie' => $commissieBedrag,
+                        'medewerker_krijgt' => $nettoBedrag - $commissieBedrag
+                    ]);
                 }
                 break;
                 
             case 'mijn_omzet_kwartaal':
                 if ($user->isMedewerker() || $user->isBeheerder()) {
-                    $kwartaal = 'Q' . now()->quarter;
-                    $value = Prestatie::where('user_id', $user->id)
-                        ->where('jaar', now()->year)
-                        ->where('kwartaal', $kwartaal)
-                        ->where('dienst_uitgevoerd', true)
-                        ->sum(DB::raw('CAST(REPLACE(REPLACE(prijs, "€", ""), ",", ".") AS DECIMAL(10,2))'));
+                    // ✅ GEFIXTE BEREKENING - exact zoals Analytics
+                    $kwartaal = now()->quarter;
+                    $startDatum = now()->startOfQuarter()->format('Y-m-d');
+                    $eindDatum = now()->endOfQuarter()->format('Y-m-d');
+                    
+                    $prestaties = Prestatie::where('user_id', $user->id)
+                        ->whereBetween('datum_prestatie', [$startDatum, $eindDatum])
+                        ->where('is_uitgevoerd', true)
+                        ->get();
+                    
+                    // Bereken NETTO omzet (excl BTW) - commissie voor medewerker
+                    $brutoBedrag = $prestaties->sum('bruto_prijs');
+                    $nettoBedrag = $prestaties->sum(function($p) {
+                        return $p->bruto_prijs / 1.21; // Excl BTW
+                    });
+                    $commissieBedrag = $prestaties->sum(function($p) {
+                        $prijsExclBtw = $p->bruto_prijs / 1.21;
+                        return $prijsExclBtw * ($p->commissie_percentage / 100);
+                    });
+                    
+                    // Medewerker krijgt: netto - commissie
+                    $value = $nettoBedrag - $commissieBedrag;
                     $prefix = '€';
                     $value = number_format($value, 2, ',', '.');
+                    
+                    \Log::info('💰 Mijn Omzet Kwartaal', [
+                        'kwartaal' => 'Q' . $kwartaal,
+                        'periode' => $startDatum . ' tot ' . $eindDatum,
+                        'aantal_prestaties' => $prestaties->count(),
+                        'bruto' => $brutoBedrag,
+                        'netto' => $nettoBedrag,
+                        'commissie' => $commissieBedrag,
+                        'medewerker_krijgt' => $nettoBedrag - $commissieBedrag
+                    ]);
                 }
                 break;
                 
@@ -373,14 +482,23 @@ class DashboardStatsController extends Controller
             case 'totaal_klanten':
                 if ($user->isBeheerder()) {
                     $value = Klant::where('organisatie_id', $user->organisatie_id)->count();
+                    \Log::info('✅ Totaal Klanten', ['waarde' => $value]);
                 }
                 break;
                 
             case 'totaal_bikefits':
                 if ($user->isBeheerder()) {
-                    $value = Bikefit::whereHas('klant', function($q) use ($user) {
-                        $q->where('organisatie_id', $user->organisatie_id);
-                    })->count();
+                    // ✅ GEFIXTE QUERY - gebruik DB::table zoals Analytics
+                    $userIds = \App\Models\User::where('organisatie_id', $user->organisatie_id)->pluck('id')->toArray();
+                    $value = \DB::table('bikefits')
+                        ->whereIn('user_id', $userIds)
+                        ->count();
+                    
+                    \Log::info('✅ Totaal Bikefits', [
+                        'waarde' => $value,
+                        'organisatie_id' => $user->organisatie_id,
+                        'user_ids' => $userIds
+                    ]);
                 }
                 break;
                 
@@ -390,35 +508,65 @@ class DashboardStatsController extends Controller
                         ->whereYear('created_at', now()->year)
                         ->whereMonth('created_at', now()->month)
                         ->count();
+                    \Log::info('✅ Nieuwe Klanten Maand', ['waarde' => $value]);
                 }
                 break;
                 
             case 'omzet_organisatie_maand':
                 if ($user->isBeheerder()) {
-                    $value = Prestatie::whereHas('user', function($q) use ($user) {
+                    // ✅ GEFIXTE BEREKENING - exact zoals Analytics
+                    $startDatum = now()->startOfMonth()->format('Y-m-d');
+                    $eindDatum = now()->endOfMonth()->format('Y-m-d');
+                    
+                    $prestaties = Prestatie::whereHas('user', function($q) use ($user) {
                         $q->where('organisatie_id', $user->organisatie_id);
                     })
-                    ->whereYear('startdatum', now()->year)
-                    ->whereMonth('startdatum', now()->month)
-                    ->where('dienst_uitgevoerd', true)
-                    ->sum(DB::raw('CAST(REPLACE(REPLACE(prijs, "€", ""), ",", ".") AS DECIMAL(10,2))'));
+                    ->whereBetween('datum_prestatie', [$startDatum, $eindDatum])
+                    ->where('is_uitgevoerd', true)
+                    ->get();
+                    
+                    // Bereken BRUTO omzet (incl BTW) voor organisatie totaal
+                    $brutoBedrag = $prestaties->sum('bruto_prijs');
+                    $value = $brutoBedrag;
                     $prefix = '€';
                     $value = number_format($value, 2, ',', '.');
+                    
+                    \Log::info('💰 Organisatie Omzet Maand', [
+                        'periode' => $startDatum . ' tot ' . $eindDatum,
+                        'aantal_prestaties' => $prestaties->count(),
+                        'bruto_totaal' => $brutoBedrag,
+                        'organisatie_id' => $user->organisatie_id
+                    ]);
                 }
                 break;
                 
             case 'omzet_organisatie_kwartaal':
                 if ($user->isBeheerder()) {
-                    $kwartaal = 'Q' . now()->quarter;
-                    $value = Prestatie::whereHas('user', function($q) use ($user) {
+                    // ✅ GEFIXTE BEREKENING - exact zoals Analytics
+                    $kwartaal = now()->quarter;
+                    $startDatum = now()->startOfQuarter()->format('Y-m-d');
+                    $eindDatum = now()->endOfQuarter()->format('Y-m-d');
+                    
+                    $prestaties = Prestatie::whereHas('user', function($q) use ($user) {
                         $q->where('organisatie_id', $user->organisatie_id);
                     })
-                    ->where('jaar', now()->year)
-                    ->where('kwartaal', $kwartaal)
-                    ->where('dienst_uitgevoerd', true)
-                    ->sum(DB::raw('CAST(REPLACE(REPLACE(prijs, "€", ""), ",", ".") AS DECIMAL(10,2))'));
+                    ->whereBetween('datum_prestatie', [$startDatum, $eindDatum])
+                    ->where('is_uitgevoerd', true)
+                    ->get();
+                    
+                    // Bereken BRUTO omzet (incl BTW) voor organisatie totaal
+                    $brutoBedrag = $prestaties->sum('bruto_prijs');
+                    $value = $brutoBedrag;
                     $prefix = '€';
                     $value = number_format($value, 2, ',', '.');
+                    
+                    \Log::info('💰 Organisatie Omzet Kwartaal', [
+                        'kwartaal' => 'Q' . $kwartaal,
+                        'periode' => $startDatum . ' tot ' . $eindDatum,
+                        'aantal_prestaties' => $prestaties->count(),
+                        'bruto_totaal' => $brutoBedrag,
+                        'organisatie_id' => $user->organisatie_id
+                    ]);
                 }
                 break;
                 
@@ -428,11 +576,13 @@ class DashboardStatsController extends Controller
                         ->where('role', '!=', 'klant')
                         ->whereNotNull('email_verified_at')
                         ->count();
+                    \Log::info('✅ Actieve Medewerkers', ['waarde' => $value]);
                 }
                 break;
                 
             default:
                 // Custom waarde - wordt niet automatisch berekend
+                \Log::info('⚠️ Onbekende metric type', ['type' => $metricType]);
                 break;
         }
         

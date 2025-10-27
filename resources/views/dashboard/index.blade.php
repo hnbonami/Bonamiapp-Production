@@ -91,13 +91,68 @@
                             
                             @elseif($widget->type === 'metric')
                                 <div style="text-align:center;">
-                                    <div style="font-size:3em;font-weight:700;margin-bottom:0.2em;">
-                                        {{ $widget->content }}
+                                    <div style="font-size:3em;font-weight:700;margin-bottom:0.2em;" id="metric-{{ $widget->id }}">
+                                        <span style="font-size:0.5em;opacity:0.5;">⏳</span>
                                     </div>
                                     <div style="font-size:0.9em;opacity:0.7;">
                                         {{ $widget->title }}
                                     </div>
                                 </div>
+                                <script>
+                                    // Laad live metric data
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        const metricEl = document.getElementById('metric-{{ $widget->id }}');
+                                        if (!metricEl) return;
+                                        
+                                        // Parse widget config voor metric type
+                                        let config = @json(json_decode($widget->chart_data, true) ?? []);
+                                        const metricType = config.metric_type || 'bruto'; // bruto, netto, commissie, medewerker
+                                        const scope = config.scope || 'auto';
+                                        const periode = config.periode || 'laatste-30-dagen';
+                                        
+                                        // Bereken datum range
+                                        const { start, eind } = berekenPeriode(periode);
+                                        
+                                        console.log('📊 Loading metric {{ $widget->id }}:', { metricType, scope, start, eind });
+                                        
+                                        // Haal live data op
+                                        fetch(`/api/dashboard/analytics?start=${start}&eind=${eind}&scope=${scope}`)
+                                            .then(r => r.json())
+                                            .then(data => {
+                                                if (!data.success) {
+                                                    console.error('❌ Metric data laden mislukt:', data.message);
+                                                    metricEl.textContent = '€0,00';
+                                                    return;
+                                                }
+                                                
+                                                // Toon juiste KPI
+                                                let waarde = 0;
+                                                switch(metricType) {
+                                                    case 'bruto':
+                                                        waarde = data.kpis.brutoOmzet || 0;
+                                                        break;
+                                                    case 'netto':
+                                                        waarde = data.kpis.nettoOmzet || 0;
+                                                        break;
+                                                    case 'commissie':
+                                                        waarde = data.kpis.commissie || 0;
+                                                        break;
+                                                    case 'medewerker':
+                                                        waarde = data.kpis.medewerkerInkomsten || 0;
+                                                        break;
+                                                    default:
+                                                        waarde = data.kpis.brutoOmzet || 0;
+                                                }
+                                                
+                                                metricEl.textContent = '€' + Number(waarde).toLocaleString('nl-NL', {minimumFractionDigits: 2});
+                                                console.log('✅ Metric {{ $widget->id }} updated:', waarde);
+                                            })
+                                            .catch(err => {
+                                                console.error('❌ Fout bij laden metric:', err);
+                                                metricEl.textContent = '€0,00';
+                                            });
+                                    });
+                                </script>
                             
                             @elseif($widget->type === 'image' && $widget->image_path)
                                 <img src="{{ asset('storage/' . $widget->image_path) }}" alt="{{ $widget->title }}" style="width:100%;height:auto;border-radius:8px;">
