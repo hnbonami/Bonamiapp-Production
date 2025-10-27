@@ -736,9 +736,9 @@
             @endif
             
             <!-- Footer Logo onderaan sidebar - VAST (niet wijzigbaar) -->
-            <div class="mt-auto pt-2 pb-2 px-7 border-t border-gray-200">
-                <div class="flex items-center justify-center">
-                    <img src="{{ asset('images/sidebar-footer-logo.png') }}" alt="Footer Logo" style="max-width: 180px; width: 100%; height: auto; opacity: 0.7;">
+            <div class="mt-auto pt-2 pb-2 px-7 border-t border-gray-200" style="background: transparent;">
+                <div class="flex items-center justify-center" style="position: relative; z-index: 10;">
+                    <img src="{{ asset('images/sidebar-footer-logo.png') }}" alt="Footer Logo" style="max-width: 180px; width: 100%; height: auto; opacity: 0.7; position: relative; z-index: 10;">
                 </div>
             </div>
             </nav>
