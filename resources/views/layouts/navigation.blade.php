@@ -6,7 +6,13 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <img src="/logo_bonami.png" alt="Logo" class="block h-9 w-auto" style="height:2.2em;">
+                        @if(isset($organisatieBranding) && $organisatieBranding->logo_path)
+                            {{-- Custom organisatie logo --}}
+                            <img src="{{ $organisatieBranding->logo_url }}" alt="Logo" class="block h-9 w-auto">
+                        @else
+                            {{-- Default Bonami logo --}}
+                            <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
+                        @endif
                     </a>
                 </div>
 

@@ -56,6 +56,14 @@ class Organisatie extends Model
     }
 
     /**
+     * Relatie naar branding configuratie
+     */
+    public function branding()
+    {
+        return $this->hasOne(OrganisatieBranding::class);
+    }
+
+    /**
      * Check of organisatie actief is
      */
     public function isActief(): bool
@@ -124,6 +132,26 @@ class Organisatie extends Model
         ]);
 
         return $hasFeature;
+    }
+
+    /**
+     * Check of custom branding feature actief is
+     */
+    public function hasCustomBrandingFeature()
+    {
+        return $this->hasFeature('custom_branding');
+    }
+
+    /**
+     * Haal branding configuratie op (of maak default aan als feature actief is)
+     */
+    public function getBrandingConfig()
+    {
+        if (!$this->hasCustomBrandingFeature()) {
+            return null; // Feature niet actief
+        }
+        
+        return $this->branding ?? OrganisatieBranding::getOrCreateForOrganisatie($this->id);
     }
 
     /**

@@ -828,6 +828,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/instellingen/deactivate', [App\Http\Controllers\ProfileSettingsController::class, 'deactivateAccount'])->name('profile.deactivate');
 });
 
+// Custom Branding Routes (alleen voor admins met custom branding feature)
+Route::middleware(['auth', 'verified'])->prefix('branding')->name('branding.')->group(function () {
+    Route::get('/', [App\Http\Controllers\BrandingController::class, 'index'])->name('index');
+    Route::post('/update', [App\Http\Controllers\BrandingController::class, 'update'])->name('update');
+    Route::post('/delete-file', [App\Http\Controllers\BrandingController::class, 'deleteFile'])->name('delete-file');
+    Route::post('/reset', [App\Http\Controllers\BrandingController::class, 'reset'])->name('reset');
+});
+
 
 // Direct route to admin database tools (bypassing view conflicts)
 Route::middleware(['auth', 'verified'])->group(function() {

@@ -56,6 +56,59 @@
             <p class="text-gray-600 mt-2">{{ $organisatie->email }}</p>
         </div>
 
+        {{-- Custom Branding Feature Card --}}
+        @if($organisatie->hasFeature('custom_branding'))
+        <div class="bg-white rounded-lg shadow-sm p-6 border-l-4 border-purple-500">
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-2">
+                        <h3 class="text-lg font-semibold text-gray-900">🎨 Custom Branding</h3>
+                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full font-semibold">
+                            ACTIEF
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">
+                        Personaliseer logo's, kleuren en huisstijl voor rapporten en emails.
+                    </p>
+                    
+                    {{-- Toon branding info als deze bestaat --}}
+                    @php
+                        $branding = $organisatie->branding;
+                    @endphp
+                    
+                    @if($branding)
+                        <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                            <div>
+                                <span class="text-gray-500">Logo:</span>
+                                <span class="font-medium">{{ $branding->logo_path ? '✅ Ingesteld' : '❌ Standaard' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Kleuren:</span>
+                                <div class="flex gap-1 mt-1">
+                                    <div class="w-6 h-6 rounded border" style="background-color: {{ $branding->primary_color }}" title="Primary"></div>
+                                    <div class="w-6 h-6 rounded border" style="background-color: {{ $branding->secondary_color }}" title="Secondary"></div>
+                                    <div class="w-6 h-6 rounded border" style="background-color: {{ $branding->accent_color }}" title="Accent"></div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    
+                    {{-- Admin kan instellingen wijzigen --}}
+                    @if(auth()->user()->isAdminOfOrganisatie($organisatie->id))
+                        <a href="{{ route('branding.index') }}" class="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition">
+                            <span>⚙️</span>
+                            <span>Branding Beheren</span>
+                        </a>
+                    @else
+                        <p class="text-xs text-gray-500 italic">
+                            Alleen organisatie admins kunnen branding wijzigen.
+                        </p>
+                    @endif
+                </div>
+            </div>
+        </div>
+        @endif
+
         <!-- Beschikbare Features -->
                 {{-- NIEUWE SECTIE: Features Beheer --}}
         <div class="bg-white rounded-lg shadow-sm p-6 mt-6">

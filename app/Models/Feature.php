@@ -72,3 +72,5 @@ class Feature extends Model
             ->groupBy('categorie');
     }
 }
+
+// Check of Feature model bestaat

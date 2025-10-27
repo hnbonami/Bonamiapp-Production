@@ -503,7 +503,7 @@
                     @if(request()->is('klanten/' . $ingelogdeKlant->id))
                         <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
                     @endif
-                    <svg width="22" height="22" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#9bb3bd" stroke-width="1.5"/><path d="M3 17c0-2.5 3-4 7-4s7 1.5 7 4" stroke="#9bb3bd" stroke-width="1.5"/></svg>
+                    <svg width="22" height="22" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#9bb3bd" stroke-width="1.5"/><path d="M3 17c0-2.5 3-4 7-4s7 1.5 7 4v1a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1z" stroke="#9bb3bd" stroke-width="1.5"/></svg>
                     <span class="font-medium text-[17px]">Mijn Profiel</span>
                 </a>
                 @endif

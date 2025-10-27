@@ -1,0 +1,228 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Organisatie;
+use App\Models\OrganisatieBranding;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+
+class BrandingController extends Controller
+{
+    /**
+     * Toon branding instellingen pagina
+     */
+    public function index()
+    {
+        $user = auth()->user();
+        
+        // Check of gebruiker een organisatie heeft
+        if (!$user->organisatie_id) {
+            abort(403, 'Geen organisatie gekoppeld aan je account.');
+        }
+        
+        $organisatie = Organisatie::findOrFail($user->organisatie_id);
+        
+        // Check of organisatie de custom branding feature heeft
+        if (!$organisatie->hasCustomBrandingFeature()) {
+            abort(403, 'Custom Branding feature is niet actief voor je organisatie.');
+        }
+        
+        // Check of gebruiker admin is van deze organisatie
+        if (!$user->isAdminOfOrganisatie($organisatie->id)) {
+            abort(403, 'Alleen organisatie admins kunnen branding wijzigen.');
+        }
+        
+        // Haal branding configuratie op of maak aan
+        $branding = OrganisatieBranding::getOrCreateForOrganisatie($organisatie->id);
+        
+        return view('branding.index', compact('organisatie', 'branding'));
+    }
+    
+    /**
+     * Update branding configuratie
+     */
+    public function update(Request $request)
+    {
+        $user = auth()->user();
+        
+        if (!$user->organisatie_id) {
+            return back()->with('error', 'Geen organisatie gekoppeld.');
+        }
+        
+        $organisatie = Organisatie::findOrFail($user->organisatie_id);
+        
+        // Verificatie checks
+        if (!$organisatie->hasCustomBrandingFeature()) {
+            return back()->with('error', 'Custom Branding feature is niet actief.');
+        }
+        
+        if (!$user->isAdminOfOrganisatie($organisatie->id)) {
+            return back()->with('error', 'Alleen organisatie admins kunnen branding wijzigen.');
+        }
+        
+        $validated = $request->validate([
+            // Kleuren
+            'primaire_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'primaire_kleur_hover' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'primaire_kleur_licht' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'secundaire_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'accent_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'tekst_kleur_primair' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'tekst_kleur_secundair' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'achtergrond_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'kaart_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            
+            // Bedrijfsinfo
+            'bedrijfsnaam' => 'nullable|string|max:255',
+            'tagline' => 'nullable|string|max:255',
+            
+            // Rapport teksten
+            'rapport_header' => 'nullable|string|max:1000',
+            'rapport_footer' => 'nullable|string|max:1000',
+            
+            // File uploads
+            'logo' => 'nullable|image|max:2048',
+            'logo_klein' => 'nullable|image|max:1024',
+            'rapport_logo' => 'nullable|image|max:2048',
+        ]);
+        
+        $branding = OrganisatieBranding::getOrCreateForOrganisatie($organisatie->id);
+        
+        // Handle file uploads
+        if ($request->hasFile('logo')) {
+            $this->deleteOldFile($branding->logo_pad);
+            $validated['logo_pad'] = $request->file('logo')->store('branding/logos', 'public');
+        }
+        
+        if ($request->hasFile('logo_klein')) {
+            $this->deleteOldFile($branding->logo_klein_pad);
+            $validated['logo_klein_pad'] = $request->file('logo_klein')->store('branding/logos', 'public');
+        }
+        
+        if ($request->hasFile('rapport_logo')) {
+            $this->deleteOldFile($branding->rapport_logo_pad);
+            $validated['rapport_logo_pad'] = $request->file('rapport_logo')->store('branding/rapporten', 'public');
+        }
+        
+        $branding->update($validated);
+        
+        Log::info('Branding configuratie bijgewerkt', [
+            'organisatie_id' => $organisatie->id,
+            'user_id' => $user->id,
+        ]);
+        
+        return back()->with('success', 'Branding instellingen succesvol bijgewerkt!');
+    }
+    
+    /**
+     * Verwijder een specifiek branding bestand
+     */
+    public function deleteFile(Request $request)
+    {
+        $user = auth()->user();
+        
+        if (!$user->organisatie_id) {
+            return response()->json(['success' => false, 'message' => 'Geen organisatie gekoppeld.'], 403);
+        }
+        
+        $organisatie = Organisatie::findOrFail($user->organisatie_id);
+        
+        if (!$organisatie->hasCustomBrandingFeature() || !$user->isAdminOfOrganisatie($organisatie->id)) {
+            return response()->json(['success' => false, 'message' => 'Geen toegang.'], 403);
+        }
+        
+        $validated = $request->validate([
+            'field' => 'required|in:logo_pad,logo_klein_pad,rapport_logo_pad'
+        ]);
+        
+        $branding = OrganisatieBranding::where('organisatie_id', $organisatie->id)->first();
+        
+        if (!$branding) {
+            return response()->json(['success' => false, 'message' => 'Geen branding configuratie gevonden.'], 404);
+        }
+        
+        $field = $validated['field'];
+        $filePath = $branding->$field;
+        
+        if ($filePath) {
+            $this->deleteOldFile($filePath);
+            $branding->update([$field => null]);
+            
+            Log::info('Branding bestand verwijderd', [
+                'organisatie_id' => $organisatie->id,
+                'field' => $field,
+                'file_path' => $filePath,
+            ]);
+            
+            return response()->json(['success' => true, 'message' => 'Bestand succesvol verwijderd.']);
+        }
+        
+        return response()->json(['success' => false, 'message' => 'Geen bestand gevonden.'], 404);
+    }
+    
+    /**
+     * Reset branding naar defaults
+     */
+    public function reset()
+    {
+        $user = auth()->user();
+        
+        if (!$user->organisatie_id) {
+            return back()->with('error', 'Geen organisatie gekoppeld.');
+        }
+        
+        $organisatie = Organisatie::findOrFail($user->organisatie_id);
+        
+        if (!$organisatie->hasCustomBrandingFeature() || !$user->isAdminOfOrganisatie($organisatie->id)) {
+            return back()->with('error', 'Geen toegang.');
+        }
+        
+        $branding = OrganisatieBranding::where('organisatie_id', $organisatie->id)->first();
+        
+        if ($branding) {
+            // Verwijder alle uploads
+            $this->deleteOldFile($branding->logo_pad);
+            $this->deleteOldFile($branding->logo_klein_pad);
+            $this->deleteOldFile($branding->rapport_logo_pad);
+            
+            // Reset naar defaults
+            $branding->update([
+                'logo_pad' => null,
+                'logo_klein_pad' => null,
+                'rapport_logo_pad' => null,
+                'primaire_kleur' => '#3B82F6',
+                'primaire_kleur_hover' => '#2563EB',
+                'primaire_kleur_licht' => '#DBEAFE',
+                'secundaire_kleur' => '#1E40AF',
+                'accent_kleur' => '#10B981',
+                'tekst_kleur_primair' => '#1F2937',
+                'tekst_kleur_secundair' => '#6B7280',
+                'achtergrond_kleur' => '#FFFFFF',
+                'kaart_achtergrond' => '#F9FAFB',
+                'bedrijfsnaam' => null,
+                'tagline' => null,
+                'rapport_header' => null,
+                'rapport_footer' => null,
+            ]);
+            
+            Log::info('Branding gereset naar defaults', [
+                'organisatie_id' => $organisatie->id,
+                'user_id' => $user->id,
+            ]);
+        }
+        
+        return back()->with('success', 'Branding instellingen gereset naar standaard waarden.');
+    }
+    
+    /**
+     * Helper: verwijder oud bestand van storage
+     */
+    private function deleteOldFile($path)
+    {
+        if ($path && Storage::disk('public')->exists($path)) {
+            Storage::disk('public')->delete($path);
+        }
+    }
+}

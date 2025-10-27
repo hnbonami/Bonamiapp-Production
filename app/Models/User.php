@@ -462,5 +462,42 @@ class User extends Authenticatable
     {
         return in_array($this->role, ['medewerker', 'stagiair']);
     }
+    
+    /**
+     * Check of gebruiker admin is van een specifieke organisatie
+     */
+    public function isAdminOfOrganisatie($organisatieId)
+    {
+        // Superadmin heeft altijd toegang
+        if ($this->isSuperAdmin()) {
+            return true;
+        }
+        
+        // Check of gebruiker bij deze organisatie hoort
+        if ($this->organisatie_id != $organisatieId) {
+            return false;
+        }
+        
+        // Check of gebruiker admin role heeft
+        return $this->hasRole('admin') || ($this->is_admin ?? false);
+    }
+    
+    /**
+     * Haal branding configuratie van gebruiker's organisatie op
+     */
+    public function getBranding()
+    {
+        if (!$this->organisatie_id) {
+            return null;
+        }
+        
+        $organisatie = $this->organisatie;
+        
+        if (!$organisatie || !$organisatie->hasCustomBrandingFeature()) {
+            return null;
+        }
+        
+        return $organisatie->getBrandingConfig();
+    }
 }
 // End of User class

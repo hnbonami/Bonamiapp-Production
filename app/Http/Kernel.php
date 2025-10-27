@@ -37,6 +37,7 @@ class Kernel extends HttpKernel
     protected $middlewareGroups = [
         'web' => [
             // ...existing middleware...
+            \App\Http\Middleware\ApplyOrganisatieBranding::class,
         ],
 
         'api' => [
