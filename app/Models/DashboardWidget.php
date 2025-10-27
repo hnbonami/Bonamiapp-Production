@@ -28,6 +28,7 @@ class DashboardWidget extends Model
         'grid_height',
         'visibility',
         'created_by',
+        'organisatie_id', // ⚡ TOEGEVOEGD
         'is_active',
     ];
 
@@ -55,6 +56,14 @@ class DashboardWidget extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Organisatie eigenaar van dit widget
+     */
+    public function organisatie(): BelongsTo
+    {
+        return $this->belongsTo(Organisatie::class, 'organisatie_id');
     }
 
     /**
@@ -94,5 +103,112 @@ class DashboardWidget extends Model
     public function getLayoutForUser(User $user)
     {
         return $this->userLayouts()->where('user_id', $user->id)->first();
+    }
+
+    // Scopes
+    public function scopeForOrganisatie($query, $organisatieId)
+    {
+        return $query->where('organisatie_id', $organisatieId);
+    }
+
+    public function scopeVisibleFor($query, User $user)
+    {
+        // Super admin ziet alleen widgets van organisatie 1
+        if (in_array($user->role, ['super_admin', 'superadmin'])) {
+            return $query->where('organisatie_id', 1);
+        }
+
+        // Anderen zien alleen widgets van hun eigen organisatie
+        return $query->where('organisatie_id', $user->organisatie_id);
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    // Helper methods
+    public function canBeViewedBy(User $user)
+    {
+        // Super admin mag alleen widgets van organisatie 1 zien
+        if (in_array($user->role, ['super_admin', 'superadmin'])) {
+            return $this->organisatie_id === 1;
+        }
+
+        // Anderen zien alleen widgets van hun eigen organisatie
+        return $this->organisatie_id === $user->organisatie_id;
+    }
+
+    public function canBeEditedBy(User $user)
+    {
+        // Super admin mag alleen widgets van organisatie 1 bewerken
+        if (in_array($user->role, ['super_admin', 'superadmin'])) {
+            return $this->organisatie_id === 1;
+        }
+
+        // Klanten mogen nooit bewerken
+        if ($user->role === 'klant') {
+            return false;
+        }
+
+        // Check organisatie
+        if ($this->organisatie_id !== $user->organisatie_id) {
+            return false;
+        }
+
+        // Admin mag alles binnen eigen organisatie
+        if (in_array($user->role, ['admin', 'organisatie_admin'])) {
+            return true;
+        }
+
+        // Medewerker mag alleen eigen widgets
+        return $this->created_by === $user->id;
+    }
+
+    public function canBeDeletedBy(User $user)
+    {
+        return $this->canBeEditedBy($user);
+    }
+
+    public function canBeDraggedBy(User $user)
+    {
+        // Super admin mag alleen widgets van organisatie 1 verplaatsen
+        if (in_array($user->role, ['super_admin', 'superadmin'])) {
+            return $this->organisatie_id === 1;
+        }
+
+        // Check organisatie
+        if ($this->organisatie_id !== $user->organisatie_id) {
+            return false;
+        }
+
+        // Iedereen binnen eigen organisatie mag drag & droppen
+        return true;
+    }
+
+    public function canBeResizedBy(User $user)
+    {
+        // Super admin mag alleen widgets van organisatie 1 resizen
+        if (in_array($user->role, ['super_admin', 'superadmin'])) {
+            return $this->organisatie_id === 1;
+        }
+
+        // Klanten mogen niet resizen
+        if ($user->role === 'klant') {
+            return false;
+        }
+
+        // Check organisatie
+        if ($this->organisatie_id !== $user->organisatie_id) {
+            return false;
+        }
+
+        // Admin mag alles binnen eigen organisatie
+        if (in_array($user->role, ['admin', 'organisatie_admin'])) {
+            return true;
+        }
+
+        // Medewerker mag alleen eigen widgets
+        return $this->created_by === $user->id;
     }
 }

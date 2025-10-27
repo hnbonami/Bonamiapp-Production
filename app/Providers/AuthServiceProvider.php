@@ -3,6 +3,8 @@ namespace App\Providers;
 
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use App\Models\DashboardWidget;
+use App\Policies\DashboardWidgetPolicy;
 
 class AuthServiceProvider extends ServiceProvider
 {
@@ -13,6 +15,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         \App\Models\NewsItem::class => \App\Policies\NewsItemPolicy::class,
+        DashboardWidget::class => DashboardWidgetPolicy::class,
     ];
 
     /**

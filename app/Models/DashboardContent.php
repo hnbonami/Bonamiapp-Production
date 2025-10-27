@@ -142,17 +142,28 @@ class StaffNote extends Model
      */
     public function canEdit($user)
     {
-        // Superadmin kan alles
-        if ($user->role === 'superadmin') {
+        // Superadmin mag alleen content van organisatie 1 bewerken
+        if (in_array($user->role, ['super_admin', 'superadmin'])) {
+            return $this->organisatie_id === 1;
+        }
+        
+        // Klanten mogen nooit bewerken
+        if ($user->role === 'klant') {
+            return false;
+        }
+        
+        // Check organisatie
+        if ($this->organisatie_id !== $user->organisatie_id) {
+            return false;
+        }
+        
+        // Admin mag alles binnen eigen organisatie
+        if (in_array($user->role, ['admin', 'organisatie_admin'])) {
             return true;
         }
         
-        // Admin/medewerker kunnen alleen content van hun organisatie bewerken
-        if (in_array($user->role, ['admin', 'medewerker', 'organisatie_admin'])) {
-            return $this->organisatie_id === $user->organisatie_id;
-        }
-        
-        return false;
+        // Medewerker mag alleen eigen content
+        return $this->user_id === $user->id;
     }
 
     /**
@@ -160,7 +171,18 @@ class StaffNote extends Model
      */
     public function canDrag($user)
     {
-        return $this->canEdit($user);
+        // Superadmin mag alleen content van organisatie 1 verplaatsen
+        if (in_array($user->role, ['super_admin', 'superadmin'])) {
+            return $this->organisatie_id === 1;
+        }
+        
+        // Check organisatie
+        if ($this->organisatie_id !== $user->organisatie_id) {
+            return false;
+        }
+        
+        // Iedereen binnen eigen organisatie mag drag & droppen
+        return true;
     }
 
     public function getImageUrl()

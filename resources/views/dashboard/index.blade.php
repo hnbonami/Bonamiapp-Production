@@ -51,37 +51,14 @@
                         <div class="widget-header" style="display:flex;justify-content:space-between;align-items:center;padding:1em;border-bottom:1px solid rgba(0,0,0,0.1);">
                             <h3 style="font-weight:600;font-size:1.1em;margin:0;">{{ $widget->title }}</h3>
                             <div class="widget-controls" style="display:flex;gap:0.5em;">
-                                @if(auth()->user()->role !== 'klant')
-                                    @php
-                                        $canEdit = false;
-                                        $userRole = auth()->user()->role;
-                                        $userId = auth()->id();
-                                        $userOrgId = auth()->user()->organisatie_id;
-                                        $widgetCreatorOrgId = $widget->creator->organisatie_id ?? null;
-                                        
-                                        // Super admin mag alles bewerken
-                                        if (in_array($userRole, ['super_admin', 'superadmin'])) {
-                                            $canEdit = true;
-                                        }
-                                        // Admin (organisatie_admin OF admin) mag alles binnen eigen organisatie bewerken
-                                        elseif (in_array($userRole, ['admin', 'organisatie_admin']) && $userOrgId && $widgetCreatorOrgId === $userOrgId) {
-                                            $canEdit = true;
-                                        }
-                                        // Medewerker mag alleen eigen widgets bewerken
-                                        elseif ($userRole === 'medewerker' && $widget->created_by === $userId) {
-                                            $canEdit = true;
-                                        }
-                                    @endphp
-                                    
-                                    @if($canEdit)
+                                @can('update', $widget)
                                     <!-- Edit -->
                                     <a href="{{ route('dashboard.widgets.edit', $widget) }}" style="background:transparent;border:none;cursor:pointer;padding:0.3em;text-decoration:none;color:inherit;display:inline-flex;align-items:center;" title="Widget bewerken">
                                         <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                         </svg>
                                     </a>
-                                    @endif
-                                @endif
+                                @endcan
                                 
                                 <!-- Minimize/Maximize -->
                                 <button class="widget-toggle" style="background:transparent;border:none;cursor:pointer;padding:0.3em;">
@@ -90,29 +67,7 @@
                                     </svg>
                                 </button>
                                 
-                                @if(auth()->user()->role !== 'klant')
-                                    @php
-                                        $canDelete = false;
-                                        $userRole = auth()->user()->role;
-                                        $userId = auth()->id();
-                                        $userOrgId = auth()->user()->organisatie_id;
-                                        $widgetCreatorOrgId = $widget->creator->organisatie_id ?? null;
-                                        
-                                        // Super admin mag alles verwijderen
-                                        if (in_array($userRole, ['super_admin', 'superadmin'])) {
-                                            $canDelete = true;
-                                        }
-                                        // Admin (organisatie_admin OF admin) mag alles binnen eigen organisatie verwijderen
-                                        elseif (in_array($userRole, ['admin', 'organisatie_admin']) && $userOrgId && $widgetCreatorOrgId === $userOrgId) {
-                                            $canDelete = true;
-                                        }
-                                        // Medewerker mag alleen eigen widgets verwijderen
-                                        elseif ($userRole === 'medewerker' && $widget->created_by === $userId) {
-                                            $canDelete = true;
-                                        }
-                                    @endphp
-                                    
-                                    @if($canDelete)
+                                @can('delete', $widget)
                                     <!-- Delete -->
                                     <form action="{{ route('dashboard.widgets.destroy', $widget) }}" method="POST" style="display:inline;">
                                         @csrf
@@ -123,8 +78,7 @@
                                             </svg>
                                         </button>
                                     </form>
-                                    @endif
-                                @endif
+                                @endcan
                             </div>
                         </div>
 
@@ -161,7 +115,18 @@
                                         const ctx = document.getElementById('chart-{{ $widget->id }}');
                                         if (!ctx) return;
                                         
-                                        const config = @json(json_decode($widget->chart_data, true));
+                                        let config = @json(json_decode($widget->chart_data, true));
+                                        
+                                        // Fallback voor null of lege config
+                                        if (!config || !config.chart_type) {
+                                            config = {
+                                                chart_type: 'diensten',
+                                                scope: 'auto',
+                                                periode: 'laatste-30-dagen'
+                                            };
+                                            console.warn('⚠️ Chart {{ $widget->id }} heeft geen config, gebruik fallback:', config);
+                                        }
+                                        
                                         console.log('📊 Chart config:', config);
                                         
                                         laadChartData{{ $widget->id }}(config);
@@ -408,6 +373,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     const userRole = '{{ auth()->user()->role }}';
     
+    // ⚡ Bepaal per widget of deze resizable is
+    const widgets = @json($layouts->map(function($item) {
+        return [
+            'id' => $item['widget']->id,
+            'canResize' => $item['widget']->canBeResizedBy(auth()->user()),
+            'canDrag' => $item['widget']->canBeDraggedBy(auth()->user())
+        ];
+    }));
+    
+    console.log('🔐 Widget permissions:', widgets);
+    
     // Initialize Gridstack ZONDER animation
     const grid = GridStack.init({
         cellHeight: 80,
@@ -415,38 +391,44 @@ document.addEventListener('DOMContentLoaded', function() {
         float: true,
         animate: false, // Uit tijdens load!
         resizable: {
-            handles: userRole !== 'klant' ? 'e, se, s, sw, w' : false
+            handles: 'e, se, s, sw, w' // Standaard handles
         },
         draggable: {
             handle: '.widget-header'
         }
     });
 
-    // ⚡ FIX: Force correcte groottes NA initialisatie
+    // ⚡ FIX: Force correcte groottes NA initialisatie + zet per-widget rechten
     setTimeout(() => {
         console.log('🔧 Fixing widget sizes from database...');
         
         const items = document.querySelectorAll('.grid-stack-item');
         items.forEach(item => {
+            const widgetId = parseInt(item.getAttribute('data-widget-id'));
             const w = parseInt(item.getAttribute('data-gs-width')) || 4;
             const h = parseInt(item.getAttribute('data-gs-height')) || 3;
             const x = parseInt(item.getAttribute('data-gs-x')) || 0;
             const y = parseInt(item.getAttribute('data-gs-y')) || 0;
             
-            console.log(`Widget ${item.dataset.widgetId}: Forcing ${w}x${h} at (${x},${y})`);
+            // Zoek widget permissions
+            const widgetPerms = widgets.find(w => w.id === widgetId);
             
-            // Update via Gridstack API
+            console.log(`Widget ${widgetId}: Forcing ${w}x${h} at (${x},${y})`, widgetPerms);
+            
+            // Update via Gridstack API met juiste rechten
             grid.update(item, {
                 x: x,
                 y: y,
                 w: w,
-                h: h
+                h: h,
+                noResize: !widgetPerms?.canResize, // ⚡ Disable resize als user geen rechten heeft
+                noMove: !widgetPerms?.canDrag, // ⚡ Disable drag als user geen rechten heeft
             });
         });
         
         // Enable animation weer
         grid.opts.animate = true;
-        console.log('✅ All widgets resized!');
+        console.log('✅ All widgets configured with correct permissions!');
     }, 100);
 
     // Save layout on change (zowel move als resize)

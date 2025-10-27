@@ -5,282 +5,247 @@ namespace App\Http\Controllers;
 use App\Models\DashboardWidget;
 use App\Models\DashboardUserLayout;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class DashboardController extends Controller
 {
+    use AuthorizesRequests;
     /**
-     * Toon dashboard met widgets
+     * Toon het dashboard met widgets
      */
     public function index()
     {
-        $user = Auth::user();
+        $user = auth()->user();
         
-        \Log::info('🏠 Dashboard geladen', [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'organisatie_id' => $user->organisatie_id,
-            'role' => $user->role,
-        ]);
-        
-        // 🔒 BEPAAL WELKE WIDGETS DE GEBRUIKER MAG ZIEN
-        $widgetsQuery = DashboardWidget::where('is_active', true)->with('creator');
-        
-        // Filter op basis van visibility EN organisatie
-        $widgetsQuery->where(function($q) use ($user) {
-            // Visibility: everyone (maar ALLEEN binnen eigen organisatie of geen organisatie)
-            $q->where(function($subQ) use ($user) {
-                $subQ->where('visibility', 'everyone');
-                
-                // Als user organisatie heeft, filter op organisatie van creator
-                if ($user->organisatie_id) {
-                    $subQ->whereHas('creator', function($creatorQ) use ($user) {
-                        $creatorQ->where('organisatie_id', $user->organisatie_id);
-                    });
-                }
-            })
-            // OF visibility: medewerkers (binnen eigen organisatie)
-            ->orWhere(function($subQ) use ($user) {
-                $subQ->where('visibility', 'medewerkers');
-                
-                if ($user->organisatie_id) {
-                    $subQ->whereHas('creator', function($creatorQ) use ($user) {
-                        $creatorQ->where('organisatie_id', $user->organisatie_id);
-                    });
-                }
-            })
-            // OF visibility: only_me (alleen eigen widgets)
-            ->orWhere(function($subQ) use ($user) {
-                $subQ->where('visibility', 'only_me')
-                     ->where('created_by', $user->id);
-            })
-            // OF eigen widgets (altijd zichtbaar)
-            ->orWhere('created_by', $user->id);
-        });
-        
-        $widgets = $widgetsQuery->get();
-        
-        \Log::info('📊 Widgets gefilterd - DETAILS', [
-            'totaal_widgets' => $widgets->count(),
-            'widget_ids' => $widgets->pluck('id')->toArray(),
-            'widget_details' => $widgets->map(fn($w) => [
-                'id' => $w->id,
-                'title' => $w->title,
-                'created_by' => $w->created_by,
-                'creator_name' => $w->creator->name ?? 'Unknown',
-                'creator_org_id' => $w->creator->organisatie_id ?? 'NULL',
-                'visibility' => $w->visibility,
-            ])->toArray(),
-        ]);
-        
-        // Haal layouts op voor deze user
-        $layouts = $widgets->map(function($widget) use ($user) {
+        // Haal widgets op op basis van rol en organisatie
+        $widgets = DashboardWidget::visibleFor($user)
+            ->active()
+            ->with('creator')
+            ->get();
+
+        // Haal user-specific layouts op, of maak defaults aan
+        $layouts = $widgets->map(function ($widget) use ($user) {
             $layout = DashboardUserLayout::firstOrCreate(
-                ['user_id' => $user->id, 'widget_id' => $widget->id],
                 [
-                    'grid_x' => 0,
-                    'grid_y' => 0,
+                    'user_id' => $user->id,
+                    'widget_id' => $widget->id,
+                ],
+                [
+                    'grid_x' => $widget->grid_x ?? 0,
+                    'grid_y' => $widget->grid_y ?? 0,
                     'grid_width' => $widget->grid_width ?? 4,
                     'grid_height' => $widget->grid_height ?? 3,
                     'is_visible' => true,
                 ]
             );
-            
-            return ['widget' => $widget, 'layout' => $layout];
+
+            return [
+                'widget' => $widget,
+                'layout' => $layout,
+            ];
         });
-        
+
+        Log::info('Dashboard geladen voor user', [
+            'user_id' => $user->id,
+            'role' => $user->role,
+            'organisatie_id' => $user->organisatie_id,
+            'widgets_count' => $widgets->count()
+        ]);
+
         return view('dashboard.index', compact('layouts'));
     }
 
     /**
-     * Toon create form voor widget
+     * Toon formulier voor nieuwe widget
      */
     public function create(Request $request)
     {
-        $type = $request->input('type', 'chart'); // Default naar chart
+        $user = auth()->user();
         
+        // Check autorisatie via policy
+        $this->authorize('create', DashboardWidget::class);
+
+        $type = $request->get('type', 'text');
+
         return view('dashboard.create', compact('type'));
-    }    /**
+    }
+
+    /**
      * Sla nieuwe widget op
      */
     public function store(Request $request)
     {
-        $user = Auth::user();
-        $allowedRoles = ['medewerker', 'admin', 'super_admin', 'superadmin'];
+        $user = auth()->user();
         
-        if (!in_array($user->role, $allowedRoles)) {
-            abort(403, 'Geen toegang');
-        }
+        // Check autorisatie via policy
+        $this->authorize('create', DashboardWidget::class);
 
         $validated = $request->validate([
-            'type' => 'required|in:chart,text,image,button,metric',
-            'title' => 'nullable|string|max:255',
+            'type' => 'required|in:text,metric,image,button,chart',
+            'title' => 'required|string|max:255',
             'content' => 'nullable|string',
             'chart_type' => 'nullable|string',
-            'chart_scope' => 'nullable|string',
-            'chart_periode' => 'nullable|string',
-            'button_text' => 'nullable|string|max:100',
-            'button_url' => 'nullable|string|max:255',
-            'background_color' => 'nullable|string|max:7',
-            'text_color' => 'nullable|string|max:7',
-            'grid_width' => 'required|integer|min:1|max:12',
-            'grid_height' => 'required|integer|min:1|max:12',
-            'visibility' => 'required|in:everyone,medewerkers,only_me',
+            'chart_data' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
+            'button_text' => 'nullable|string|max:255',
+            'button_url' => 'nullable|string|max:255',
+            'background_color' => 'nullable|string',
+            'text_color' => 'nullable|string',
+            'grid_width' => 'nullable|integer|min:1|max:12',
+            'grid_height' => 'nullable|integer|min:1|max:10',
+            'visibility' => 'required|in:everyone,medewerkers,only_me',
         ]);
 
-        // Voor chart widgets: sla chart config op
-        if ($validated['type'] === 'chart') {
+        // Voor chart widgets: zorg dat chart_data altijd valid JSON is
+        if ($validated['type'] === 'chart' && !empty($validated['chart_type'])) {
             $validated['chart_data'] = json_encode([
-                'chart_type' => $request->input('chart_type'),
-                'scope' => $request->input('chart_scope', 'auto'),
-                'periode' => $request->input('chart_periode', 'laatste-30-dagen'),
+                'chart_type' => $validated['chart_type'],
+                'scope' => 'auto',
+                'periode' => 'laatste-30-dagen'
             ]);
         }
 
+        // Upload afbeelding indien aanwezig
         if ($request->hasFile('image')) {
-            $validated['image_path'] = $request->file('image')->store('dashboard/widgets', 'public');
+            $validated['image_path'] = $request->file('image')->store('widgets', 'public');
         }
 
+        // Zet creator en organisatie
         $validated['created_by'] = $user->id;
-        $validated['grid_x'] = 0;
-        $validated['grid_y'] = 0;
+        $validated['organisatie_id'] = $user->organisatie_id;
+        $validated['is_active'] = true;
+
+        // Standaard posities en groottes
+        $validated['grid_x'] = $validated['grid_x'] ?? 0;
+        $validated['grid_y'] = $validated['grid_y'] ?? 0;
+        $validated['grid_width'] = $validated['grid_width'] ?? 4;
+        $validated['grid_height'] = $validated['grid_height'] ?? 3;
 
         $widget = DashboardWidget::create($validated);
 
-        return redirect()->route('dashboard.index')
-            ->with('success', 'Widget succesvol aangemaakt!');
+        Log::info('Widget aangemaakt', [
+            'widget_id' => $widget->id,
+            'type' => $widget->type,
+            'user_id' => $user->id,
+            'organisatie_id' => $widget->organisatie_id
+        ]);
+
+        return redirect()
+            ->route('dashboard.index')
+            ->with('success', 'Widget succesvol toegevoegd!');
     }
 
     /**
-     * Toon edit form voor widget
+     * Toon formulier voor widget bewerken
      */
     public function edit(DashboardWidget $widget)
     {
-        $user = Auth::user();
-        
-        // Check permissions
-        if ($widget->created_by !== $user->id && !in_array($user->role, ['admin', 'super_admin', 'superadmin'])) {
-            abort(403, 'Je mag alleen je eigen widgets bewerken');
-        }
-        
+        $this->authorize('update', $widget);
+
         return view('dashboard.edit', compact('widget'));
     }
 
     /**
-     * Update widget
+     * Update een widget
      */
     public function update(Request $request, DashboardWidget $widget)
     {
-        $user = Auth::user();
-        
-        // 🔒 AUTHORIZATION CHECK - INCLUSIEF organisatie_admin
-        $canEdit = false;
-        
-        if (in_array($user->role, ['super_admin', 'superadmin'])) {
-            $canEdit = true;
-        } elseif (in_array($user->role, ['admin', 'organisatie_admin']) && $user->organisatie_id && $widget->creator->organisatie_id === $user->organisatie_id) {
-            $canEdit = true;
-        } elseif ($user->role === 'medewerker' && $widget->created_by === $user->id) {
-            $canEdit = true;
-        }
-        
-        \Log::info('✏️ Widget update authorization check', [
-            'user_id' => $user->id,
-            'user_role' => $user->role,
-            'user_org' => $user->organisatie_id,
-            'widget_id' => $widget->id,
-            'widget_creator_org' => $widget->creator->organisatie_id ?? null,
-            'can_edit' => $canEdit,
-        ]);
-        
-        if (!$canEdit) {
-            abort(403, 'Je hebt geen rechten om deze widget te bewerken');
-        }
-        
+        $this->authorize('update', $widget);
+
         $validated = $request->validate([
-            'type' => 'required|in:chart,text,image,button,metric',
-            'title' => 'nullable|string|max:255',
+            'title' => 'required|string|max:255',
             'content' => 'nullable|string',
             'chart_type' => 'nullable|string',
-            'chart_scope' => 'nullable|string',
-            'chart_periode' => 'nullable|string',
-            'button_text' => 'nullable|string|max:100',
-            'button_url' => 'nullable|string|max:255',
-            'background_color' => 'nullable|string|max:7',
-            'text_color' => 'nullable|string|max:7',
-            'grid_width' => 'required|integer|min:1|max:12',
-            'grid_height' => 'required|integer|min:1|max:12',
-            'visibility' => 'required|in:everyone,medewerkers,only_me',
+            'chart_data' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
+            'button_text' => 'nullable|string|max:255',
+            'button_url' => 'nullable|string|max:255',
+            'background_color' => 'nullable|string',
+            'text_color' => 'nullable|string',
+            'visibility' => 'required|in:everyone,medewerkers,only_me',
         ]);
 
-        // Upload nieuwe image als aanwezig
-        if ($request->hasFile('image')) {
-            // Verwijder oude image
-            if ($widget->image_path && Storage::disk('public')->exists($widget->image_path)) {
-                Storage::disk('public')->delete($widget->image_path);
-            }
-            $validated['image_path'] = $request->file('image')->store('dashboard/widgets', 'public');
+        // Voor chart widgets: update chart_data indien chart_type is gewijzigd
+        if ($widget->type === 'chart' && !empty($validated['chart_type'])) {
+            $validated['chart_data'] = json_encode([
+                'chart_type' => $validated['chart_type'],
+                'scope' => 'auto',
+                'periode' => 'laatste-30-dagen'
+            ]);
         }
 
-        // Voor chart widgets: sla chart config op
-        if ($validated['type'] === 'chart') {
-            $validated['chart_data'] = json_encode([
-                'chart_type' => $request->input('chart_type'),
-                'scope' => $request->input('chart_scope', 'auto'),
-                'periode' => $request->input('chart_periode', 'laatste-30-dagen'),
-            ]);
+        // Upload nieuwe afbeelding indien aanwezig
+        if ($request->hasFile('image')) {
+            // Verwijder oude afbeelding
+            if ($widget->image_path) {
+                Storage::disk('public')->delete($widget->image_path);
+            }
+            $validated['image_path'] = $request->file('image')->store('widgets', 'public');
         }
 
         $widget->update($validated);
 
-        return redirect()->route('dashboard.index')
+        Log::info('Widget bijgewerkt', [
+            'widget_id' => $widget->id,
+            'user_id' => auth()->id()
+        ]);
+
+        return redirect()
+            ->route('dashboard.index')
             ->with('success', 'Widget succesvol bijgewerkt!');
     }
 
     /**
-     * Update widget layout
+     * Update widget layout (positie en grootte)
      */
     public function updateLayout(Request $request)
     {
+        $user = auth()->user();
+
         $validated = $request->validate([
             'widget_id' => 'required|exists:dashboard_widgets,id',
             'grid_x' => 'required|integer|min:0',
             'grid_y' => 'required|integer|min:0',
             'grid_width' => 'required|integer|min:1|max:12',
-            'grid_height' => 'required|integer|min:1|max:12',
+            'grid_height' => 'required|integer|min:1|max:10',
         ]);
 
-        $user = Auth::user();
-        $widgetId = $validated['widget_id'];
+        $widget = DashboardWidget::findOrFail($validated['widget_id']);
 
-        $layout = DashboardUserLayout::firstOrCreate(
+        // Check of user deze widget mag verplaatsen/resizen
+        if (!$widget->canBeDraggedBy($user)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Je hebt geen toestemming om deze widget te verplaatsen.'
+            ], 403);
+        }
+
+        // Update of create user layout
+        $layout = DashboardUserLayout::updateOrCreate(
             [
                 'user_id' => $user->id,
-                'widget_id' => $widgetId,
+                'widget_id' => $widget->id,
             ],
             [
                 'grid_x' => $validated['grid_x'],
                 'grid_y' => $validated['grid_y'],
                 'grid_width' => $validated['grid_width'],
                 'grid_height' => $validated['grid_height'],
-                'is_visible' => true,
             ]
         );
 
-        $layout->update([
-            'grid_x' => $validated['grid_x'],
-            'grid_y' => $validated['grid_y'],
-            'grid_width' => $validated['grid_width'],
-            'grid_height' => $validated['grid_height'],
+        Log::info('Widget layout bijgewerkt', [
+            'widget_id' => $widget->id,
+            'user_id' => $user->id,
+            'position' => "{$validated['grid_x']},{$validated['grid_y']}",
+            'size' => "{$validated['grid_width']}x{$validated['grid_height']}"
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Layout opgeslagen',
-            'layout' => $layout
+            'message' => 'Layout opgeslagen!',
         ]);
     }
 
@@ -289,54 +254,48 @@ class DashboardController extends Controller
      */
     public function toggleVisibility(DashboardWidget $widget)
     {
-        $user = Auth::user();
-        
+        $this->authorize('view', $widget);
+
+        $user = auth()->user();
+
         $layout = DashboardUserLayout::where('user_id', $user->id)
             ->where('widget_id', $widget->id)
-            ->first();
+            ->firstOrFail();
 
-        if ($layout) {
-            $layout->update(['is_visible' => !$layout->is_visible]);
-        }
+        $layout->update([
+            'is_visible' => !$layout->is_visible,
+        ]);
 
-        return redirect()->back()->with('success', 'Widget zichtbaarheid aangepast');
+        return response()->json([
+            'success' => true,
+            'is_visible' => $layout->is_visible,
+        ]);
     }
 
     /**
-     * Verwijder widget
+     * Verwijder een widget
      */
     public function destroy(DashboardWidget $widget)
     {
-        $user = Auth::user();
-        
-        // 🔒 AUTHORIZATION CHECK - INCLUSIEF organisatie_admin
-        $canDelete = false;
-        
-        if (in_array($user->role, ['super_admin', 'superadmin'])) {
-            $canDelete = true;
-        } elseif (in_array($user->role, ['admin', 'organisatie_admin']) && $user->organisatie_id && $widget->creator->organisatie_id === $user->organisatie_id) {
-            $canDelete = true;
-        } elseif ($user->role === 'medewerker' && $widget->created_by === $user->id) {
-            $canDelete = true;
+        $this->authorize('delete', $widget);
+
+        // Verwijder afbeelding indien aanwezig
+        if ($widget->image_path) {
+            Storage::disk('public')->delete($widget->image_path);
         }
-        
-        \Log::info('🗑️ Widget delete authorization check', [
-            'user_id' => $user->id,
-            'user_role' => $user->role,
-            'user_org' => $user->organisatie_id,
+
+        // Verwijder alle user layouts
+        $widget->userLayouts()->delete();
+
+        Log::info('Widget verwijderd', [
             'widget_id' => $widget->id,
-            'widget_creator_org' => $widget->creator->organisatie_id ?? null,
-            'can_delete' => $canDelete,
+            'user_id' => auth()->id()
         ]);
-        
-        if (!$canDelete) {
-            abort(403, 'Je hebt geen rechten om deze widget te verwijderen');
-        }
-        
-        // Verwijder widget en gerelateerde layouts
-        DashboardUserLayout::where('widget_id', $widget->id)->delete();
+
         $widget->delete();
-        
-        return redirect()->route('dashboard.index')->with('success', 'Widget succesvol verwijderd!');
+
+        return redirect()
+            ->route('dashboard.index')
+            ->with('success', 'Widget succesvol verwijderd!');
     }
 }
