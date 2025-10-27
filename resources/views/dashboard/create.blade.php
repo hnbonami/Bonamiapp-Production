@@ -268,11 +268,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const metricPreviewValue = document.getElementById('metric-preview-value');
     
     // Toon juiste metrics op basis van user rol
-    @if(auth()->user()->isMedewerker() || auth()->user()->isBeheerder())
+    @if(auth()->user()->isMedewerker() && !auth()->user()->isBeheerder())
+        // Medewerker (geen admin) - alleen eigen statistieken
         document.getElementById('medewerker-metrics').style.display = 'block';
-    @endif
-    
-    @if(auth()->user()->isBeheerder())
+        document.getElementById('admin-metrics').style.display = 'none';
+    @elseif(auth()->user()->isBeheerder())
+        // Admin - beide groepen zichtbaar
+        document.getElementById('medewerker-metrics').style.display = 'block';
         document.getElementById('admin-metrics').style.display = 'block';
     @endif
     

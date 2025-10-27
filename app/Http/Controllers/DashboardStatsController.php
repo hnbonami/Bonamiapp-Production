@@ -301,6 +301,26 @@ class DashboardStatsController extends Controller
         $metricType = $request->input('metric_type');
         $user = auth()->user();
         
+        // Security check: Medewerkers mogen alleen hun eigen metrics ophalen
+        $adminOnlyMetrics = [
+            'totaal_klanten',
+            'totaal_bikefits',
+            'nieuwe_klanten_maand',
+            'omzet_organisatie_maand',
+            'omzet_organisatie_kwartaal',
+            'actieve_medewerkers'
+        ];
+        
+        if (in_array($metricType, $adminOnlyMetrics) && !$user->isBeheerder()) {
+            return response()->json([
+                'error' => 'Geen toegang tot deze metric',
+                'value' => 0,
+                'prefix' => '',
+                'suffix' => '',
+                'formatted' => 'Geen toegang'
+            ], 403);
+        }
+        
         $value = 0;
         $prefix = '';
         $suffix = '';

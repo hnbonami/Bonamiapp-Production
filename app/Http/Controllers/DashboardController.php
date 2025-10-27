@@ -133,14 +133,28 @@ class DashboardController extends Controller
         $validated['grid_width'] = $validated['grid_width'] ?? 4;
         $validated['grid_height'] = $validated['grid_height'] ?? 3;
 
-        // Als metric_type is ingesteld en niet 'custom', haal live data op
-        if ($validated['type'] === 'metric' && isset($validated['metric_type']) && $validated['metric_type'] !== 'custom') {
-            // Bereken de metric waarde
-            $metricValue = $this->calculateMetricValue($validated['metric_type']);
-            $validated['content'] = $metricValue['formatted'];
+    // Als metric_type is ingesteld en niet 'custom', haal live data op
+    if ($validated['type'] === 'metric' && isset($validated['metric_type']) && $validated['metric_type'] !== 'custom') {
+        // Security check: Medewerkers mogen alleen hun eigen metrics gebruiken
+        $adminOnlyMetrics = [
+            'totaal_klanten',
+            'totaal_bikefits',
+            'nieuwe_klanten_maand',
+            'omzet_organisatie_maand',
+            'omzet_organisatie_kwartaal',
+            'actieve_medewerkers'
+        ];
+        
+        if (in_array($validated['metric_type'], $adminOnlyMetrics) && !auth()->user()->isBeheerder()) {
+            return redirect()->back()
+                ->withErrors(['metric_type' => 'Je hebt geen toegang tot deze metric type.'])
+                ->withInput();
         }
-
-        $widget = DashboardWidget::create($validated);
+        
+        // Bereken de metric waarde
+        $metricValue = $this->calculateMetricValue($validated['metric_type']);
+        $validated['content'] = $metricValue['formatted'];
+    }        $widget = DashboardWidget::create($validated);
 
         Log::info('Widget aangemaakt', [
             'widget_id' => $widget->id,
