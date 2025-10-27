@@ -53,7 +53,10 @@
     <div class="bg-white rounded-lg shadow-lg p-6">
         <div class="mb-6">
             <h1 class="text-3xl font-bold">{{ $organisatie->naam }}</h1>
-            <p class="text-gray-600 mt-2">{{ $organisatie->email }}</p>
+                        <p class="text-gray-600 mt-2">{{ $organisatie->email }}</p>
+        </div>
+
+        <!-- Beschikbare Features -->
         </div>
 
         {{-- Custom Branding Feature Card --}}
@@ -146,7 +149,7 @@
                                     {{ $feature->beschrijving }}
                                 </p>
                                 
-                                <div class="flex items-center gap-3 text-xs">
+                                <div class="flex items-center gap-3 text-xs mb-3">
                                     <span class="text-gray-500">
                                         <span class="font-medium">Categorie:</span> {{ ucfirst($feature->categorie) }}
                                     </span>
@@ -156,6 +159,14 @@
                                         </span>
                                     @endif
                                 </div>
+                                
+                                {{-- EXTRA: Custom Branding beheer knop --}}
+                                @if($feature->key === 'custom_branding' && $isEnabled && auth()->user()->isAdminOfOrganisatie($organisatie->id))
+                                    <a href="{{ route('branding.index') }}" class="inline-flex items-center gap-1 text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg font-medium transition">
+                                        <span>⚙️</span>
+                                        <span>Branding Beheren</span>
+                                    </a>
+                                @endif
                             </div>
 
                             {{-- Toggle Switch --}}

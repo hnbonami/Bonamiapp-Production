@@ -149,6 +149,29 @@
         </div>
         @endhasFeature
 
+        {{-- Custom Branding - alleen voor organisatie admins als feature actief is --}}
+        @feature('custom_branding')
+        @if(auth()->user()->organisatie_id && auth()->user()->isAdminOfOrganisatie(auth()->user()->organisatie_id))
+        <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="p-3 rounded-lg" style="background-color: #c8e1eb;">
+                    <svg class="w-6 h-6" style="color: #111;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 ml-3">🎨 Custom Branding</h3>
+            </div>
+            <p class="text-gray-600 mb-4">Personaliseer logo's, kleuren en huisstijl voor rapporten en emails. Maak de app helemaal van jou!</p>
+            <a href="{{ route('branding.index') }}" class="inline-flex items-center font-medium" style="color: #111;">
+                Branding Beheren
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+        @endif
+        @endfeature
+
         {{-- Branding & Layout - alleen voor organisatie admins als feature actief is --}}
         @hasFeature('branding_layout')
         @if(auth()->user()->organisatie_id && in_array(auth()->user()->role, ['admin', 'organisatie_admin']))
