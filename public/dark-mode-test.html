@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Mode Test - Bonami Sportcoaching</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 2rem;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+        
+        .card h3 {
+            color: var(--bonami-blue);
+            margin-bottom: 1rem;
+        }
+        
+        input, textarea, select, button {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        
+        button {
+            background-color: var(--bonami-blue);
+            color: #111;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            margin-top: 1rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        table th,
+        table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        table tbody tr:hover {
+            background-color: var(--bg-secondary);
+        }
+    </style>
+    
+    <link rel="stylesheet" href="css/darkmode.css">
+    <script src="js/darkmode.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🌙 Dark Mode Test</h1>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+                    Test alle componenten in light en dark mode
+                </p>
+            </div>
+            
+            <button id="dark-mode-toggle" style="width: auto; padding: 0.75rem 1.5rem;">
+                Toggle Dark Mode
+            </button>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>📝 Text Elementen</h3>
+                <p style="color: var(--text-primary);">Primary text color</p>
+                <p style="color: var(--text-secondary);">Secondary text color</p>
+                <p style="color: var(--bonami-blue);">Bonami brand color</p>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Status Card</h3>
+                <h2 style="font-size: 2rem; color: var(--bonami-blue);">€1,234.56</h2>
+                <p style="color: var(--text-secondary);">Totale omzet</p>
+                <div class="status">✅ Actief</div>
+            </div>
+            
+            <div class="card">
+                <h3>🎨 Bonami Colors</h3>
+                <div style="background: var(--bonami-blue); padding: 1rem; border-radius: 4px; color: #111; margin-top: 1rem;">
+                    Bonami Blue Background
+                </div>
+                <div style="background: var(--bg-secondary); padding: 1rem; border-radius: 4px; margin-top: 0.5rem;">
+                    Secondary Background
+                </div>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>📋 Form Elementen</h3>
+                <label style="color: var(--text-secondary);">Naam:</label>
+                <input type="text" placeholder="Typ hier...">
+                
+                <label style="color: var(--text-secondary); display: block; margin-top: 1rem;">Categorie:</label>
+                <select>
+                    <option>Optie 1</option>
+                    <option>Optie 2</option>
+                    <option>Optie 3</option>
+                </select>
+                
+                <label style="color: var(--text-secondary); display: block; margin-top: 1rem;">Omschrijving:</label>
+                <textarea rows="3" placeholder="Typ hier..."></textarea>
+                
+                <button style="margin-top: 1rem;">Opslaan</button>
+            </div>
+            
+            <div class="card">
+                <h3>📊 Tabel</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Naam</th>
+                            <th>Status</th>
+                            <th>Waarde</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Item 1</td>
+                            <td>✅ Actief</td>
+                            <td>€100</td>
+                        </tr>
+                        <tr>
+                            <td>Item 2</td>
+                            <td>⏸️ Pauze</td>
+                            <td>€200</td>
+                        </tr>
+                        <tr>
+                            <td>Item 3</td>
+                            <td>✅ Actief</td>
+                            <td>€300</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="card">
+                <h3>🔘 Buttons</h3>
+                <button>Primary Button</button>
+                <button style="background: var(--bg-secondary); color: var(--text-primary); margin-top: 0.5rem;">
+                    Secondary Button
+                </button>
+                <button style="background: #ef4444; color: white; margin-top: 0.5rem;">
+                    Danger Button
+                </button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>ℹ️ Test Instructies</h3>
+            <ul style="padding-left: 1.5rem; color: var(--text-secondary); line-height: 1.8;">
+                <li>Klik op "Toggle Dark Mode" button bovenaan</li>
+                <li>Of gebruik keyboard shortcut: <code style="background: var(--bg-secondary); padding: 0.25rem 0.5rem; border-radius: 3px;">Ctrl + Shift + D</code></li>
+                <li>Check of alle elementen correct worden gestyled</li>
+                <li>Refresh de pagina - mode moet blijven staan</li>
+                <li>Test hover states op buttons en table rows</li>
+                <li>Check contrast voor leesbaarheid</li>
+            </ul>
+            
+            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 4px;">
+                <strong>✅ Test Checklist:</strong>
+                <ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: var(--text-secondary);">
+                    <li>[ ] Text is leesbaar in beide modes</li>
+                    <li>[ ] Borders zijn zichtbaar</li>
+                    <li>[ ] Forms zijn bruikbaar</li>
+                    <li>[ ] Bonami blue is herkenbaar</li>
+                    <li>[ ] Hover states werken</li>
+                    <li>[ ] Transitions zijn smooth</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div style="margin-top: 2rem; padding: 1rem; text-align: center; color: var(--text-secondary); border-top: 1px solid var(--border-color);">
+            <p>🌓 Dark Mode Test Page voor Bonami Sportcoaching</p>
+            <p style="margin-top: 0.5rem;">Druk op F12 voor DevTools → Check <code>html</code> element voor <code>.dark</code> class</p>
+        </div>
+    </div>
+</body>
+</html>

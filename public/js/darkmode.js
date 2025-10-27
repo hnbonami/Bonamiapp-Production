@@ -1,256 +1,103 @@
-// Dark Mode Toggle Systeem voor Bonami Dashboard
-// Plaats dit bestand in: public/js/darkmode.js
+/**
+ * Dark Mode Script voor Bonami Sportcoaching
+ * Systeem-preference detectie + manual toggle
+ */
 
-class DarkModeManager {
-    constructor() {
-        this.darkMode = this.getSavedPreference();
-        this.init();
-    }
-
-    init() {
-        // Apply dark mode on load
-        if (this.darkMode) {
-            this.enable();
-        }
-
-        // Listen voor toggle events
-        document.addEventListener('DOMContentLoaded', () => {
-            this.setupToggleButton();
-            this.setupAutoDetect();
-        });
-    }
-
-    getSavedPreference() {
-        const saved = localStorage.getItem('bonami_dark_mode');
-        if (saved !== null) {
-            return saved === 'true';
+(function() {
+    'use strict';
+    
+    // Check opgeslagen preference of system preference
+    function getDarkModePreference() {
+        const stored = localStorage.getItem('darkMode');
+        
+        if (stored !== null) {
+            return stored === 'true';
         }
         
-        // Auto-detect system preference
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return true;
+        // Fallback naar system preference
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    
+    // Apply dark mode
+    function applyDarkMode(isDark) {
+        const html = document.documentElement;
+        
+        if (isDark) {
+            html.classList.add('dark');
+            console.log('🌙 Dark mode geactiveerd');
+        } else {
+            html.classList.remove('dark');
+            console.log('☀️ Light mode geactiveerd');
         }
         
-        return false;
+        // Update toggle button icon
+        updateToggleIcon(isDark);
+        
+        // Sla preference op
+        localStorage.setItem('darkMode', isDark);
     }
-
-    enable() {
-        document.documentElement.classList.add('dark-mode');
-        document.body.classList.add('dark-mode');
-        this.darkMode = true;
-        localStorage.setItem('bonami_dark_mode', 'true');
-        this.updateToggleButton();
-        this.applyDarkModeStyles();
-    }
-
-    disable() {
-        document.documentElement.classList.remove('dark-mode');
-        document.body.classList.remove('dark-mode');
-        this.darkMode = false;
-        localStorage.setItem('bonami_dark_mode', 'false');
-        this.updateToggleButton();
-        this.removeDarkModeStyles();
-    }
-
-    toggle() {
-        if (this.darkMode) {
-            this.disable();
+    
+    // Update toggle button icon
+    function updateToggleIcon(isDark) {
+        const toggle = document.getElementById('dark-mode-toggle');
+        if (!toggle) return;
+        
+        const svg = toggle.querySelector('svg');
+        if (!svg) return;
+        
+        if (isDark) {
+            // Toon zon icon (voor light mode)
+            svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>';
         } else {
-            this.enable();
+            // Toon maan icon (voor dark mode)
+            svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>';
         }
     }
-
-    setupToggleButton() {
-        const toggleBtn = document.getElementById('dark-mode-toggle');
-        if (!toggleBtn) {
-            console.warn('Dark mode toggle button not found');
-            return;
-        }
-
-        toggleBtn.addEventListener('click', () => {
-            this.toggle();
-        });
-
-        this.updateToggleButton();
-    }
-
-    updateToggleButton() {
-        const toggleBtn = document.getElementById('dark-mode-toggle');
-        if (!toggleBtn) return;
-
-        const icon = toggleBtn.querySelector('svg');
-        if (!icon) return;
-
-        if (this.darkMode) {
-            // Sun icon (om terug naar light mode te gaan)
-            icon.innerHTML = `
-                <circle cx="12" cy="12" r="5" fill="currentColor"/>
-                <line x1="12" y1="1" x2="12" y2="3" stroke="currentColor" stroke-width="2"/>
-                <line x1="12" y1="21" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="currentColor" stroke-width="2"/>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="2"/>
-                <line x1="1" y1="12" x2="3" y2="12" stroke="currentColor" stroke-width="2"/>
-                <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="currentColor" stroke-width="2"/>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="2"/>
-            `;
-            toggleBtn.setAttribute('title', 'Light mode');
-        } else {
-            // Moon icon (om naar dark mode te gaan)
-            icon.innerHTML = `
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" fill="currentColor"/>
-            `;
-            toggleBtn.setAttribute('title', 'Dark mode');
-        }
-    }
-
-    applyDarkModeStyles() {
-        // Inject dark mode CSS if not already present
-        if (!document.getElementById('dark-mode-styles')) {
-            const style = document.createElement('style');
-            style.id = 'dark-mode-styles';
-            style.textContent = `
-                .dark-mode {
-                    background-color: #1a202c !important;
-                    color: #e2e8f0 !important;
-                }
-
-                .dark-mode .bg-white,
-                .dark-mode .bg-white\\/80 {
-                    background-color: #2d3748 !important;
-                }
-
-                .dark-mode .bg-gray-50 {
-                    background-color: #374151 !important;
-                }
-
-                .dark-mode .bg-gray-100 {
-                    background-color: #4b5563 !important;
-                }
-
-                .dark-mode .text-gray-900 {
-                    color: #f9fafb !important;
-                }
-
-                .dark-mode .text-gray-700 {
-                    color: #d1d5db !important;
-                }
-
-                .dark-mode .text-gray-600 {
-                    color: #9ca3af !important;
-                }
-
-                .dark-mode .border-gray-100,
-                .dark-mode .border-gray-200 {
-                    border-color: #4b5563 !important;
-                }
-
-                .dark-mode .divide-gray-100,
-                .dark-mode .divide-gray-200 {
-                    border-color: #4b5563 !important;
-                }
-
-                /* Dashboard widgets */
-                .dark-mode .dashboard-widget {
-                    background-color: #2d3748 !important;
-                    color: #e2e8f0 !important;
-                }
-
-                .dark-mode .widget-header {
-                    border-bottom-color: #4b5563 !important;
-                }
-
-                /* Forms */
-                .dark-mode input,
-                .dark-mode select,
-                .dark-mode textarea {
-                    background-color: #374151 !important;
-                    border-color: #4b5563 !important;
-                    color: #e2e8f0 !important;
-                }
-
-                .dark-mode input::placeholder {
-                    color: #9ca3af !important;
-                }
-
-                /* Buttons - behoud Bonami kleuren */
-                .dark-mode .bg-orange-100 {
-                    background-color: #ea580c !important;
-                }
-
-                .dark-mode .bg-blue-100 {
-                    background-color: #3b82f6 !important;
-                }
-
-                .dark-mode .bg-emerald-100 {
-                    background-color: #10b981 !important;
-                }
-
-                .dark-mode .bg-rose-100 {
-                    background-color: #ef4444 !important;
-                }
-
-                /* Shadows */
-                .dark-mode .shadow,
-                .dark-mode .shadow-xl {
-                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 
-                                0 4px 6px -2px rgba(0, 0, 0, 0.2) !important;
-                }
-
-                /* Tables */
-                .dark-mode table {
-                    color: #e2e8f0 !important;
-                }
-
-                .dark-mode thead {
-                    background-color: #374151 !important;
-                }
-
-                .dark-mode tbody tr:hover {
-                    background-color: #374151 !important;
-                }
-
-                /* Gridstack */
-                .dark-mode .grid-stack-item-content {
-                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
-                }
-
-                /* Smooth transition */
-                * {
-                    transition: background-color 0.3s ease, 
-                                color 0.3s ease, 
-                                border-color 0.3s ease !important;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }
-
-    removeDarkModeStyles() {
-        // Styles blijven, alleen classes worden verwijderd
-        // CSS doet de rest automatisch
-    }
-
-    setupAutoDetect() {
-        // Listen voor system preference changes
+    
+    // Initialize dark mode op pagina load
+    function initDarkMode() {
+        const isDark = getDarkModePreference();
+        applyDarkMode(isDark);
+        
+        // Luister naar system preference changes
         if (window.matchMedia) {
-            const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            darkModeMediaQuery.addEventListener('change', (e) => {
-                // Alleen auto-switchen als gebruiker geen handmatige voorkeur heeft
-                if (localStorage.getItem('bonami_dark_mode') === null) {
-                    if (e.matches) {
-                        this.enable();
-                    } else {
-                        this.disable();
-                    }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                // Alleen updaten als er geen manual preference is
+                if (localStorage.getItem('darkMode') === null) {
+                    applyDarkMode(e.matches);
                 }
             });
         }
     }
-}
-
-// Initialize
-const darkModeManager = new DarkModeManager();
-
-// Export voor gebruik in andere scripts
-window.darkModeManager = darkModeManager;
+    
+    // Toggle functie (public)
+    window.toggleDarkMode = function() {
+        const html = document.documentElement;
+        const isDark = html.classList.contains('dark');
+        applyDarkMode(!isDark);
+    };
+    
+    // Initialize meteen (voor snelle load)
+    initDarkMode();
+    
+    // Setup toggle button na DOM load
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('dark-mode-toggle');
+        
+        if (toggle) {
+            toggle.addEventListener('click', window.toggleDarkMode);
+            console.log('✅ Dark mode toggle button geregistreerd');
+        }
+        
+        // Keyboard shortcut: Ctrl/Cmd + Shift + D
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'D') {
+                e.preventDefault();
+                window.toggleDarkMode();
+                console.log('⌨️ Dark mode toggle via keyboard');
+            }
+        });
+    });
+    
+    console.log('🌓 Dark mode systeem geladen');
+})();

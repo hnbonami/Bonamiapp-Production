@@ -1,0 +1,275 @@
+/* Dark Mode Variabelen en Styles */
+
+:root {
+    /* Light mode colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f9fafb;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --bonami-blue: #c8e1eb;
+    --shadow: rgba(0, 0, 0, 0.1);
+}
+
+.dark {
+    /* Dark mode colors */
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --border-color: #374151;
+    --bonami-blue: #89b4c3;
+    --shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* Smooth transitions */
+* {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Base styles met dark mode support */
+body {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Cards, containers */
+.bg-white {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+.dark .bg-white {
+    background-color: var(--bg-primary) !important;
+}
+
+/* Text colors */
+.text-gray-900 {
+    color: var(--text-primary) !important;
+}
+
+.text-gray-600,
+.text-gray-700 {
+    color: var(--text-secondary) !important;
+}
+
+/* Borders */
+.border-gray-200,
+.border-gray-300 {
+    border-color: var(--border-color) !important;
+}
+
+/* Inputs & Forms */
+input,
+textarea,
+select {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+    color: var(--text-secondary);
+}
+
+/* Buttons */
+button:not(.btn-primary) {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.dark button:hover:not(.btn-primary) {
+    background-color: var(--bg-primary);
+}
+
+/* Bonami brand button */
+.btn-primary,
+button[style*="background:#c8e1eb"],
+button[style*="background: #c8e1eb"] {
+    background: var(--bonami-blue) !important;
+    color: #111 !important;
+}
+
+/* Shadows */
+.shadow,
+.shadow-sm,
+.shadow-md,
+.shadow-lg {
+    box-shadow: 0 2px 8px var(--shadow) !important;
+}
+
+/* Tables */
+.dark table {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.dark table th,
+.dark table td {
+    border-color: var(--border-color);
+}
+
+.dark table tbody tr:hover {
+    background-color: var(--bg-secondary);
+}
+
+/* Dropdown menus */
+.dark .dropdown-menu {
+    background-color: var(--bg-primary);
+    border-color: var(--border-color);
+}
+
+/* Dashboard Widgets */
+.dark .widget {
+    background-color: var(--bg-primary);
+    border-color: var(--border-color);
+}
+
+.dark .widget-header {
+    background-color: #3a3a3a !important; /* Lichter dan bg-secondary voor betere leesbaarheid */
+    color: #f9fafb !important; /* Witte tekst voor contrast */
+}
+
+/* Widget titels */
+.dark .widget h3,
+.dark .widget h4,
+.dark .widget .widget-title {
+    color: #f9fafb !important; /* Witte tekst voor titels */
+}
+
+/* Widget content */
+.dark .widget-content {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Widget footer / bottom section */
+.dark .widget-footer,
+.dark .widget [style*="background:#c8e1eb"],
+.dark .widget [style*="background: #c8e1eb"],
+.dark .widget [style*="background:rgb(200, 225, 235)"],
+.dark .widget [class*="bg-blue"] {
+    background-color: rgba(137, 180, 195, 0.15) !important; /* Donkere Bonami blue tint */
+    color: var(--text-primary) !important;
+}
+
+/* Gridstack widgets specifiek */
+.dark .grid-stack-item-content {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Charts */
+.dark canvas {
+    filter: brightness(0.9);
+}
+
+/* Modals */
+.dark .modal-content {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* Sidebar/Navigation */
+.dark nav,
+.dark .sidebar,
+.dark aside {
+    background-color: var(--bg-primary);
+    border-color: var(--border-color);
+}
+
+.dark nav a,
+.dark .sidebar a,
+.dark aside a {
+    color: #e5e7eb !important; /* Lichte grijze tekst voor goede leesbaarheid */
+}
+
+.dark nav a:hover,
+.dark .sidebar a:hover,
+.dark aside a:hover {
+    background-color: var(--bg-secondary);
+    color: #f9fafb !important; /* Nog lichter bij hover */
+}
+
+/* Active/Selected state in sidebar */
+.dark nav a.text-gray-900,
+.dark aside a.text-gray-900 {
+    color: #ffffff !important; /* Pure wit voor maximaal contrast */
+    font-weight: 700; /* Extra bold voor duidelijkheid */
+    background-color: rgba(137, 180, 195, 0.2) !important; /* Subtiele Bonami blue tint (#89b4c3 met alpha) */
+}
+
+/* Active state background color override */
+.dark aside a[style*="background:#f6fbfe"],
+.dark nav a[style*="background:#f6fbfe"] {
+    background: rgba(137, 180, 195, 0.2) !important; /* Donkere Bonami blue achtergrond */
+}
+
+/* Active state indicator bar */
+.dark aside a span[style*="background:#c1dfeb"],
+.dark nav a span[style*="background:#c1dfeb"] {
+    background: #89b4c3 !important; /* Bonami blue indicator voor zichtbaarheid */
+}
+
+/* Sidebar SVG icons */
+.dark aside svg path,
+.dark aside svg circle,
+.dark aside svg rect {
+    stroke: #9ca3af; /* Lichte grijze iconen */
+}
+
+.dark aside a:hover svg path,
+.dark aside a:hover svg circle,
+.dark aside a:hover svg rect {
+    stroke: #d1d5db; /* Nog lichter bij hover */
+}
+
+/* Active item icons */
+.dark aside a.text-gray-900 svg path,
+.dark aside a.text-gray-900 svg circle,
+.dark aside a.text-gray-900 svg rect {
+    stroke: #b3d4e0 !important; /* Lichte Bonami blue voor actieve items */
+}
+
+/* Code blocks */
+.dark pre,
+.dark code {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Links */
+.dark a {
+    color: var(--bonami-blue);
+}
+
+.dark a:hover {
+    color: #a0c9d6;
+}
+
+/* Alerts */
+.dark .alert {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color);
+}
+
+/* Badges */
+.dark .badge {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* Scrollbar dark mode */
+.dark ::-webkit-scrollbar-track {
+    background-color: var(--bg-secondary);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-secondary);
+}

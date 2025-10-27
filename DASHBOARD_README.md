@@ -232,8 +232,25 @@ Mini grafieken voor snelle statistiek overzicht.
 - ✅ Custom kleuren
 - ✅ Responsive
 
-### 🌙 Dark Mode
-Volledig dark mode systeem met auto-detect.
+### 🌙 Dark Mode ✨ **GEÏMPLEMENTEERD**
+Volledig dark mode systeem voor de hele applicatie!
+
+**Features:**
+- ✅ Automatische system preference detectie
+- ✅ Manual toggle button in navbar
+- ✅ LocalStorage persistentie
+- ✅ Keyboard shortcut (Ctrl/Cmd + Shift + D)
+- ✅ Smooth transitions
+- ✅ Werkt op ALLE pagina's
+- ✅ Bonami brand colors aangepast voor dark mode
+- ✅ Charts, widgets, forms volledig supported
+
+**Installatie:** Zie `DARK_MODE_INSTALL.md` voor volledige instructies.
+
+**Quick start:**
+1. Dark mode files zijn al aangemaakt
+2. Voeg `<x-dark-mode-toggle />` toe aan je navbar
+3. Klaar! Test met maan-icon of `Ctrl+Shift+D`
 
 **Features:**
 - ✅ Toggle button in navbar

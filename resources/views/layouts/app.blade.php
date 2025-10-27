@@ -20,6 +20,12 @@
             <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
+    <!-- Dark Mode CSS -->
+    <link rel="stylesheet" href="{{ asset('css/darkmode.css') }}">
+    
+    <!-- Dark Mode Script (load meteen voor flicker-free) -->
+    <script src="{{ asset('js/darkmode.js') }}"></script>
+    
     <!-- Testzadels specific fixes for ALL testzadels pages -->
     @if(request()->is('testzadels*'))
         <link rel="stylesheet" href="{{ asset('css/testzadels.css') }}">
@@ -278,6 +284,10 @@
                         $isStaff = Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']);
                         $unreadNotes = $isStaff ? \App\Models\StaffNote::where('is_new', true)->count() : 0;
                     @endphp
+                    
+                    <!-- Dark Mode Toggle -->
+                    <x-dark-mode-toggle />
+                    
                     <div class="relative">
                         <button id="user-menu-button" class="flex items-center gap-2">
                             <!-- Avatar -->
