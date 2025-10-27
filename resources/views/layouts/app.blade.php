@@ -2,6 +2,14 @@
     if (!isset($route)) {
         $route = request()->path();
     }
+    
+    // Haal branding op voor ingelogde gebruiker
+    $organisatieBranding = null;
+    if (auth()->check() && auth()->user()->organisatie_id) {
+        $organisatieBranding = \App\Models\OrganisatieBranding::where('organisatie_id', auth()->user()->organisatie_id)
+            ->where('is_actief', true)
+            ->first();
+    }
 @endphp
 <!DOCTYPE html>
 <html lang="nl">
@@ -25,6 +33,38 @@
     
     <!-- Dark Mode Script (load meteen voor flicker-free) -->
     <script src="{{ asset('js/darkmode.js') }}"></script>
+    
+    {{-- Custom Branding CSS Variabelen --}}
+    @if(isset($organisatieBranding) && $organisatieBranding)
+        <style>
+            :root {
+                @foreach($organisatieBranding->getCssVariables() as $var => $value)
+                    {{ $var }}: {{ $value }};
+                @endforeach
+            }
+            
+            /* Pas topbar achtergrond aan met branding kleur */
+            #topbar {
+                background: {{ $organisatieBranding->navbar_achtergrond ?? '#c8e1eb' }} !important;
+            }
+            
+            /* Pas navbar tekst kleur aan */
+            #topbar .topbar-grid,
+            #topbar #nav-toggle,
+            #topbar #user-menu-button {
+                color: {{ $organisatieBranding->navbar_tekst_kleur ?? '#000000' }} !important;
+            }
+            
+            /* Pas sidebar active state aan met primaire kleur */
+            aside a[style*="background:#f6fbfe"] {
+                background: {{ $organisatieBranding->primaire_kleur_licht ?? '#f6fbfe' }} !important;
+            }
+            
+            aside a span[style*="background:#c1dfeb"] {
+                background: {{ $organisatieBranding->primaire_kleur_licht ?? '#c1dfeb' }} !important;
+            }
+        </style>
+    @endif
     
     <!-- Testzadels specific fixes for ALL testzadels pages -->
     @if(request()->is('testzadels*'))
@@ -259,11 +299,11 @@
 <body>
     <!-- Bovenste strook met logo, hamburger (mobile) en profielknop rechts -->
     @php $routeName = optional(request()->route())->getName() ?? ''; @endphp
-    <div id="topbar" class="w-full fixed top-0 left-0 right-0 z-40" style="background:#c8e1eb;">
-        <div class="topbar-grid">
+    <div id="topbar" class="w-full fixed top-0 left-0 right-0 z-40" style="background:{{ $organisatieBranding->navbar_achtergrond ?? '#c8e1eb' }};">
+        <div class="topbar-grid" style="color:{{ $organisatieBranding->navbar_tekst_kleur ?? '#000000' }};">
             <!-- Left: Hamburger (mobile only) -->
             <div class="flex items-center">
-                <button id="nav-toggle" class="md:hidden text-gray-800 focus:outline-none" aria-label="Menu">
+                <button id="nav-toggle" class="md:hidden focus:outline-none" aria-label="Menu" style="color:{{ $organisatieBranding->navbar_tekst_kleur ?? '#374151' }};">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
@@ -272,7 +312,11 @@
             
             <!-- Center: Logo -->
             <div class="topbar-logo">
-                <img src="/logo_bonami.png" alt="Logo" style="height:35px;" />
+                @if(isset($organisatieBranding) && $organisatieBranding && $organisatieBranding->logo_pad)
+                    <img src="{{ asset('storage/' . $organisatieBranding->logo_pad) }}" alt="Logo" style="height:35px;" />
+                @else
+                    <img src="/logo_bonami.png" alt="Logo" style="height:35px;" />
+                @endif
             </div>
             
             <!-- Right: User menu -->

@@ -45,23 +45,10 @@ class BrandingController extends Controller
      */
     public function update(Request $request)
     {
-        $user = auth()->user();
+        // Haal branding op of maak nieuwe aan
+        $branding = OrganisatieBranding::getOrCreateForOrganisatie(auth()->user()->organisatie_id);
         
-        if (!$user->organisatie_id) {
-            return back()->with('error', 'Geen organisatie gekoppeld.');
-        }
-        
-        $organisatie = Organisatie::findOrFail($user->organisatie_id);
-        
-        // Verificatie checks
-        if (!$organisatie->hasCustomBrandingFeature()) {
-            return back()->with('error', 'Custom Branding feature is niet actief.');
-        }
-        
-        if (!$user->isAdminOfOrganisatie($organisatie->id)) {
-            return back()->with('error', 'Alleen organisatie admins kunnen branding wijzigen.');
-        }
-        
+        // Validatie met ALLE bestaande database kolommen
         $validated = $request->validate([
             // Kleuren
             'primaire_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -73,22 +60,26 @@ class BrandingController extends Controller
             'tekst_kleur_secundair' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'achtergrond_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'kaart_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'navbar_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'navbar_tekst_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'rapport_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             
-            // Bedrijfsinfo
-            'bedrijfsnaam' => 'nullable|string|max:255',
-            'tagline' => 'nullable|string|max:255',
+            // Typografie
+            'font_familie' => 'nullable|string|max:100',
+            'font_grootte_basis' => 'nullable|integer|min:10|max:24',
             
-            // Rapport teksten
-            'rapport_header' => 'nullable|string|max:1000',
-            'rapport_footer' => 'nullable|string|max:1000',
+            // Rapport instellingen
+            'rapport_footer_tekst' => 'nullable|string|max:1000',
+            'toon_logo_in_rapporten' => 'boolean',
+            
+            // Status
+            'is_actief' => 'boolean',
             
             // File uploads
             'logo' => 'nullable|image|max:2048',
             'logo_klein' => 'nullable|image|max:1024',
             'rapport_logo' => 'nullable|image|max:2048',
         ]);
-        
-        $branding = OrganisatieBranding::getOrCreateForOrganisatie($organisatie->id);
         
         // Handle file uploads
         if ($request->hasFile('logo')) {
@@ -106,14 +97,11 @@ class BrandingController extends Controller
             $validated['rapport_logo_pad'] = $request->file('rapport_logo')->store('branding/rapporten', 'public');
         }
         
+        // Update branding
         $branding->update($validated);
         
-        Log::info('Branding configuratie bijgewerkt', [
-            'organisatie_id' => $organisatie->id,
-            'user_id' => $user->id,
-        ]);
-        
-        return back()->with('success', 'Branding instellingen succesvol bijgewerkt!');
+        return redirect()->route('branding.index')
+            ->with('success', 'Branding instellingen succesvol opgeslagen!');
     }
     
     /**
@@ -187,7 +175,7 @@ class BrandingController extends Controller
             $this->deleteOldFile($branding->logo_klein_pad);
             $this->deleteOldFile($branding->rapport_logo_pad);
             
-            // Reset naar defaults
+            // Reset naar defaults met ALLE database kolommen
             $branding->update([
                 'logo_pad' => null,
                 'logo_klein_pad' => null,
@@ -201,10 +189,14 @@ class BrandingController extends Controller
                 'tekst_kleur_secundair' => '#6B7280',
                 'achtergrond_kleur' => '#FFFFFF',
                 'kaart_achtergrond' => '#F9FAFB',
-                'bedrijfsnaam' => null,
-                'tagline' => null,
-                'rapport_header' => null,
-                'rapport_footer' => null,
+                'navbar_achtergrond' => '#1E293B',
+                'navbar_tekst_kleur' => '#FFFFFF',
+                'rapport_achtergrond' => '#FFFFFF',
+                'rapport_footer_tekst' => null,
+                'font_familie' => 'Inter',
+                'font_grootte_basis' => 16,
+                'toon_logo_in_rapporten' => true,
+                'is_actief' => true,
             ]);
             
             Log::info('Branding gereset naar defaults', [

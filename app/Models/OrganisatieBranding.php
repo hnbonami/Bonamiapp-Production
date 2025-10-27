@@ -23,14 +23,22 @@ class OrganisatieBranding extends Model
         'kaart_achtergrond',
         'tekst_kleur_primair',
         'tekst_kleur_secundair',
-        'rapport_header',
-        'rapport_footer',
-        'bedrijfsnaam',
-        'tagline',
+        'font_familie',
+        'font_grootte_basis',
+        'rapport_achtergrond',
+        'rapport_footer_tekst',
+        'toon_logo_in_rapporten',
+        'navbar_achtergrond',
+        'navbar_tekst_kleur',
+        'is_actief',
+        'custom_css',
+        // Kolom 'bedrijfsnaam' bestaat NIET, 'tagline' bestaat NIET, 'rapport_header' bestaat NIET
     ];
     
     protected $casts = [
         'custom_css' => 'array',
+        'is_actief' => 'boolean',
+        'toon_logo_in_rapporten' => 'boolean',
     ];
     
     /**
@@ -152,24 +160,40 @@ class OrganisatieBranding extends Model
         return $this->achtergrond_kleur;
     }
     
-    public function getCompanyNameAttribute()
-    {
-        return $this->bedrijfsnaam;
-    }
-    
     public function getLogoPathAttribute()
     {
         return $this->logo_pad;
     }
     
-    // Font accessors (hardcoded omdat deze kolommen niet in DB zitten)
+    // Accessors voor niet-bestaande kolommen (backwards compatibility)
+    public function getCompanyNameAttribute()
+    {
+        return null; // Kolom 'bedrijfsnaam' bestaat niet in DB
+    }
+    
+    public function getTaglineAttribute()
+    {
+        return null; // Kolom bestaat niet
+    }
+    
+    public function getRapportHeaderAttribute()
+    {
+        return $this->rapport_footer_tekst; // Gebruik footer tekst als header fallback
+    }
+    
+    public function getRapportFooterAttribute()
+    {
+        return $this->rapport_footer_tekst;
+    }
+    
+    // Font accessors (gebruik echte database kolommen)
     public function getHeadingFontAttribute()
     {
-        return 'Inter'; // Standaard font
+        return $this->font_familie ?? 'Inter';
     }
     
     public function getBodyFontAttribute()
     {
-        return 'Inter'; // Standaard font
+        return $this->font_familie ?? 'Inter';
     }
 }
