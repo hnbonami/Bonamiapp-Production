@@ -15,6 +15,10 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/dashboard/widgets/{widget}', [DashboardController::class, 'destroy'])->name('dashboard.widgets.destroy');
     Route::get('/dashboard/stats/live', [DashboardStatsController::class, 'getLiveStats'])->name('dashboard.stats.live');
     Route::get('/dashboard/stats/widget', [DashboardStatsController::class, 'getWidgetData'])->name('dashboard.stats.widget');
+    
+    // Metric endpoints
+    Route::get('/dashboard/stats/metrics/available', [DashboardStatsController::class, 'getAvailableMetrics'])->name('dashboard.metrics.available');
+    Route::post('/dashboard/stats/metric', [DashboardStatsController::class, 'calculateMetric'])->name('dashboard.metrics.calculate');
 });
 
 // SJABLOON-MANAGER ROUTE - NAAR TEMPLATES INDEX BLADE!
@@ -119,6 +123,10 @@ Route::middleware(['auth'])->group(function () {
     // Live stats API endpoints
     Route::get('/dashboard/stats/live', [App\Http\Controllers\DashboardStatsController::class, 'getLiveStats'])->name('dashboard.stats.live');
     Route::get('/dashboard/stats/widget', [App\Http\Controllers\DashboardStatsController::class, 'getWidgetData'])->name('dashboard.stats.widget');
+    
+    // Metric endpoints
+    Route::get('/dashboard/stats/metrics/available', [DashboardStatsController::class, 'getAvailableMetrics'])->name('dashboard.metrics.available');
+    Route::post('/dashboard/stats/metric', [DashboardStatsController::class, 'calculateMetric'])->name('dashboard.metrics.calculate');
 });
 
 // (debug route verwijderd)
@@ -794,8 +802,8 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard-content')->name('dash
     
     // SPECIFIEKE ROUTES EERST (voor wildcard routes)
     Route::get('/create', [App\Http\Controllers\DashboardContentController::class, 'create'])->name('create');
-    Route::get('/archived', [App\Http\Controllers\DashboardContentController::class, 'archived'])->name('archived');
-    Route::post('/update-order', [App\Http\Controllers\DashboardContentController::class, 'updateOrder'])->name('update-order');
+    Route::get('/archived', [AppHttp\Controllers\DashboardContentController::class, 'archived'])->name('archived');
+    Route::post('/update-order', [AppHttp\Controllers\DashboardContentController::class, 'updateOrder'])->name('update-order');
     
     // WILDCARD ROUTES LAATST
     Route::get('/{dashboardContent}', [AppHttp\Controllers\DashboardContentController::class, 'show'])->name('show');
@@ -1343,15 +1351,15 @@ Route::post('medewerkers/{medewerker}/send-invitation', [\App\Http\Controllers\M
 
 // Klanten Import/Export routes
 Route::get('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
-Route::post('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+Route::post('/import/klanten', [\AppHttp\Controllers\KlantenController::class, 'import'])->name('klanten.import');
 Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');
 
 // Bikefit Import/Export routes  
 Route::get('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
 Route::post('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
-Route::get('/import/bikefits/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
-Route::get('/bikefit/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
+Route::get('/import/bikefits/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
+Route::get('/bikefit/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
 
 // Inspanningstesten Import/Export routes
 Route::get('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'showImport'])->name('inspanningstesten.import.form');

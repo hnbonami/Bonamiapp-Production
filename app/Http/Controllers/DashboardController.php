@@ -83,7 +83,7 @@ class DashboardController extends Controller
         $this->authorize('create', DashboardWidget::class);
 
         $validated = $request->validate([
-            'type' => 'required|in:text,metric,image,button,chart',
+            'type' => 'required|in:text,metric,chart,image,button',
             'title' => 'required|string|max:255',
             'content' => 'nullable|string',
             'chart_type' => 'nullable|string',
@@ -96,6 +96,7 @@ class DashboardController extends Controller
             'grid_width' => 'nullable|integer|min:1|max:12',
             'grid_height' => 'nullable|integer|min:1|max:10',
             'visibility' => 'required|in:everyone,medewerkers,only_me',
+            'metric_type' => 'nullable|string', // NIEUW: Valideer metric type
         ]);
 
         // Medewerkers mogen geen 'everyone' visibility instellen (alleen admin)
@@ -132,6 +133,13 @@ class DashboardController extends Controller
         $validated['grid_width'] = $validated['grid_width'] ?? 4;
         $validated['grid_height'] = $validated['grid_height'] ?? 3;
 
+        // Als metric_type is ingesteld en niet 'custom', haal live data op
+        if ($validated['type'] === 'metric' && isset($validated['metric_type']) && $validated['metric_type'] !== 'custom') {
+            // Bereken de metric waarde
+            $metricValue = $this->calculateMetricValue($validated['metric_type']);
+            $validated['content'] = $metricValue['formatted'];
+        }
+
         $widget = DashboardWidget::create($validated);
 
         Log::info('Widget aangemaakt', [
@@ -144,6 +152,18 @@ class DashboardController extends Controller
         return redirect()
             ->route('dashboard.index')
             ->with('success', 'Widget succesvol toegevoegd!');
+    }
+
+    /**
+     * Bereken metric waarde (helper method)
+     */
+    private function calculateMetricValue($metricType)
+    {
+        $controller = new DashboardStatsController();
+        $request = new Request(['metric_type' => $metricType]);
+        $response = $controller->calculateMetric($request);
+        
+        return json_decode($response->getContent(), true);
     }
 
     /**

@@ -52,12 +52,55 @@
             </div>
         </div>
 
-        <!-- Metric Fields -->
-        <div id="metric-fields" style="display:none;">
-            <div style="margin-bottom:1.5em;">
-                <label for="metric-content" style="display:block;font-weight:600;margin-bottom:0.5em;">Waarde *</label>
-                <input type="text" name="content" id="metric-content" value="{{ old('content') }}" style="width:100%;padding:0.8em;border:1px solid #d1d5db;border-radius:7px;" placeholder="Bijvoorbeeld: 150">
-                <small style="color:#6b7280;display:block;margin-top:0.5em;">Tip: Deze waarde kan je later dynamisch maken</small>
+        {{-- Metric Widget Specifieke Velden --}}
+        <div id="metric-fields" class="space-y-4" style="display: none;">
+            <div>
+                <label for="metric_type" class="block text-sm font-medium text-gray-700 mb-2">
+                    Metric Type *
+                </label>
+                <select name="metric_type" id="metric_type" class="w-full border-gray-300 rounded-lg">
+                    <option value="custom">🔢 Custom Waarde (Typ zelf in)</option>
+                    <optgroup label="📊 Mijn Statistieken" id="medewerker-metrics" style="display: none;">
+                        <option value="mijn_bikefits">🚴 Mijn Bikefits</option>
+                        <option value="mijn_inspanningstests">💪 Mijn Inspanningstests</option>
+                        <option value="mijn_klanten">👥 Mijn Klanten</option>
+                        <option value="mijn_omzet_maand">💰 Mijn Omzet (Deze Maand)</option>
+                        <option value="mijn_omzet_kwartaal">📊 Mijn Omzet (Dit Kwartaal)</option>
+                    </optgroup>
+                    <optgroup label="🏢 Organisatie Statistieken" id="admin-metrics" style="display: none;">
+                        <option value="totaal_klanten">👥 Totaal Klanten</option>
+                        <option value="totaal_bikefits">🚴 Totaal Bikefits</option>
+                        <option value="nieuwe_klanten_maand">✨ Nieuwe Klanten (Deze Maand)</option>
+                        <option value="omzet_organisatie_maand">💰 Organisatie Omzet (Deze Maand)</option>
+                        <option value="omzet_organisatie_kwartaal">📈 Organisatie Omzet (Dit Kwartaal)</option>
+                        <option value="actieve_medewerkers">👨‍💼 Actieve Medewerkers</option>
+                    </optgroup>
+                </select>
+                <p class="mt-1 text-sm text-gray-500">
+                    Kies een automatische metric of typ een custom waarde hieronder
+                </p>
+            </div>
+            
+            <div id="manual-value-field">
+                <label for="content" class="block text-sm font-medium text-gray-700 mb-2">
+                    Waarde *
+                </label>
+                <input 
+                    type="text" 
+                    name="content" 
+                    id="metric-content"
+                    placeholder="Bijvoorbeeld: 150"
+                    class="w-full border-gray-300 rounded-lg"
+                >
+                <p class="mt-1 text-sm text-gray-500">
+                    Tip: Deze waarde kan je later dynamisch maken
+                </p>
+            </div>
+            
+            <div id="auto-value-preview" style="display: none;" class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <p class="text-sm font-medium text-blue-900 mb-2">📊 Live Preview:</p>
+                <p id="metric-preview-value" class="text-3xl font-bold text-blue-600">...</p>
+                <p class="text-xs text-blue-600 mt-1">Deze waarde wordt automatisch bijgewerkt</p>
             </div>
         </div>
 
@@ -216,6 +259,59 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize op basis van huidige selectie
     toggleTypeFields();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    const metricTypeSelect = document.getElementById('metric_type');
+    const manualValueField = document.getElementById('manual-value-field');
+    const autoValuePreview = document.getElementById('auto-value-preview');
+    const metricPreviewValue = document.getElementById('metric-preview-value');
+    
+    // Toon juiste metrics op basis van user rol
+    @if(auth()->user()->isMedewerker() || auth()->user()->isBeheerder())
+        document.getElementById('medewerker-metrics').style.display = 'block';
+    @endif
+    
+    @if(auth()->user()->isBeheerder())
+        document.getElementById('admin-metrics').style.display = 'block';
+    @endif
+    
+    // Toggle tussen manual en auto value
+    metricTypeSelect.addEventListener('change', function() {
+        const isCustom = this.value === 'custom';
+        
+        manualValueField.style.display = isCustom ? 'block' : 'none';
+        autoValuePreview.style.display = isCustom ? 'none' : 'block';
+        
+        if (!isCustom) {
+            // Haal live data op voor geselecteerde metric
+            fetchMetricValue(this.value);
+        }
+    });
+    
+    // Haal metric waarde op via AJAX
+    function fetchMetricValue(metricType) {
+        metricPreviewValue.textContent = 'Laden...';
+        
+        fetch('/dashboard/stats/metric', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({ metric_type: metricType })
+        })
+        .then(response => response.json())
+        .then(data => {
+            metricPreviewValue.textContent = data.formatted;
+            // Sla de waarde op in een hidden field voor het formulier
+            document.getElementById('metric-content').value = data.formatted;
+        })
+        .catch(error => {
+            console.error('Error fetching metric:', error);
+            metricPreviewValue.textContent = 'Fout bij laden';
+        });
+    }
 });
 </script>
 @endsection

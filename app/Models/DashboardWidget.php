@@ -30,6 +30,7 @@ class DashboardWidget extends Model
         'created_by',
         'organisatie_id', // ⚡ TOEGEVOEGD
         'is_active',
+        'metric_type', // NIEUW: Type metric (custom, mijn_bikefits, totaal_klanten, etc.)
     ];
 
     protected $casts = [

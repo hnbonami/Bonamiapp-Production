@@ -145,6 +145,25 @@ Voeg link toe in je navigatie menu (bijv. `layouts/app.blade.php`):
    - KPI's tonen
    - Statistieken
    - **NIEUW**: Met trend indicators (+/- %)
+   - **NIEUW**: Automatische metrics uit database:
+     
+     **Voor Medewerkers:**
+     - 🚴 Mijn Bikefits - Aantal bikefits door jou uitgevoerd
+     - 💪 Mijn Inspanningstests - Aantal inspanningstests door jou
+     - 👥 Mijn Klanten - Aantal klanten toegewezen aan jou
+     - 💰 Mijn Omzet (Deze Maand) - Jouw omzet deze maand
+     - 📊 Mijn Omzet (Dit Kwartaal) - Jouw omzet dit kwartaal
+     
+     **Voor Admins (extra):**
+     - 👥 Totaal Klanten - Alle klanten in organisatie
+     - 🚴 Totaal Bikefits - Alle bikefits in organisatie
+     - ✨ Nieuwe Klanten (Deze Maand) - Recent toegevoegde klanten
+     - 💰 Organisatie Omzet (Deze Maand) - Totale omzet deze maand
+     - 📈 Organisatie Omzet (Dit Kwartaal) - Totale omzet dit kwartaal
+     - 👨‍💼 Actieve Medewerkers - Aantal actieve staff
+     
+   - **Privacy**: Medewerkers zien alleen hun eigen data
+   - **Live Updates**: Data wordt automatisch bijgewerkt
 
 3. **🖼️ Image Widget**
    - Upload afbeeldingen
