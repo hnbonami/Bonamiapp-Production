@@ -17,21 +17,27 @@ class BrandingController extends Controller
     {
         $user = auth()->user();
         
-        // Check of gebruiker een organisatie heeft
-        if (!$user->organisatie_id) {
-            abort(403, 'Geen organisatie gekoppeld aan je account.');
+        // Superadmin kan kiezen welke organisatie te bewerken via query parameter
+        if ($user->rol === 'superadmin' && request()->has('organisatie_id')) {
+            $organisatieId = request()->get('organisatie_id');
+            $organisatie = Organisatie::findOrFail($organisatieId);
+        } else {
+            // Normale admin gebruikt zijn eigen organisatie
+            if (!$user->organisatie_id) {
+                abort(403, 'Geen organisatie gekoppeld aan je account.');
+            }
+            
+            $organisatie = Organisatie::findOrFail($user->organisatie_id);
+            
+            // Check of gebruiker admin is (niet klant, niet medewerker)
+            if ($user->rol === 'klant' || $user->rol === 'medewerker') {
+                abort(403, 'Alleen organisatie admins kunnen branding wijzigen.');
+            }
         }
-        
-        $organisatie = Organisatie::findOrFail($user->organisatie_id);
         
         // Check of organisatie de custom branding feature heeft
         if (!$organisatie->hasCustomBrandingFeature()) {
-            abort(403, 'Custom Branding feature is niet actief voor je organisatie.');
-        }
-        
-        // Check of gebruiker admin is van deze organisatie
-        if (!$user->isAdminOfOrganisatie($organisatie->id)) {
-            abort(403, 'Alleen organisatie admins kunnen branding wijzigen.');
+            abort(403, 'Custom Branding feature is niet actief voor deze organisatie.');
         }
         
         // Haal branding configuratie op of maak aan
@@ -47,65 +53,78 @@ class BrandingController extends Controller
     {
         $user = auth()->user();
         
-        // Bepaal welke organisatie we moeten updaten
-        if ($user->rol === 'superadmin' && $request->has('organisatie_id')) {
-            $organisatieId = $request->get('organisatie_id');
-        } else {
+        // Haal organisatie_id uit request (van hidden field in formulier)
+        $organisatieId = $request->input('organisatie_id');
+        
+        // Als geen organisatie_id in request, gebruik gebruiker zijn organisatie
+        if (!$organisatieId) {
             $organisatieId = $user->organisatie_id;
         }
         
-        // Beveiligingscheck: admin mag alleen eigen organisatie wijzigen
-        if ($user->rol !== 'superadmin' && $user->organisatie_id != $organisatieId) {
-            abort(403, 'Je mag alleen je eigen organisatie branding wijzigen.');
+        // Beveiligingscheck: admin mag alleen eigen organisatie wijzigen, superadmin mag alles
+        if ($user->rol !== 'superadmin') {
+            if ($user->organisatie_id != $organisatieId) {
+                abort(403, 'Je mag alleen je eigen organisatie branding wijzigen.');
+            }
+            
+            // Check of gebruiker niet gewoon klant of medewerker is
+            if ($user->rol === 'klant' || $user->rol === 'medewerker') {
+                abort(403, 'Alleen organisatie admins kunnen branding wijzigen.');
+            }
         }
+        
+        // Check of organisatie bestaat
+        $organisatie = Organisatie::findOrFail($organisatieId);
         
         // Haal branding voor deze SPECIFIEKE organisatie
         $branding = OrganisatieBranding::where('organisatie_id', $organisatieId)->firstOrFail();
         
-        // Validatie met ALLE bestaande database kolommen
-        $validated = $request->validate([
-            // Kleuren
-            'primaire_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'primaire_kleur_hover' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'primaire_kleur_licht' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'secundaire_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'accent_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'tekst_kleur_primair' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'tekst_kleur_secundair' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'achtergrond_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'kaart_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'navbar_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'navbar_tekst_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'rapport_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            
-            // Sidebar kleuren (NIEUW)
-            'sidebar_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'sidebar_tekst_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'sidebar_actief_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'sidebar_actief_lijn' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            
-            // Dark mode kleuren (NIEUW)
-            'dark_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'dark_tekst' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'dark_navbar_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            'dark_sidebar_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
-            
-            // Typografie
-            'font_familie' => 'nullable|string|max:100',
-            'font_grootte_basis' => 'nullable|integer|min:10|max:24',
-            
-            // Rapport instellingen
-            'rapport_footer_tekst' => 'nullable|string|max:1000',
-            'toon_logo_in_rapporten' => 'boolean',
-            
-            // Status
-            'is_actief' => 'boolean',
-            
+        // Validatie - Map Engels naar Nederlands
+        $request->validate([
             // File uploads
             'logo' => 'nullable|image|max:2048',
             'logo_klein' => 'nullable|image|max:1024',
             'rapport_logo' => 'nullable|image|max:2048',
         ]);
+        
+        // Prepare data met mapping van Engels (form) naar Nederlands (database)
+        $validated = [];
+        
+        // Navbar kleuren
+        if ($request->filled('navbar_achtergrond')) {
+            $validated['navbar_achtergrond'] = $request->input('navbar_achtergrond');
+        }
+        if ($request->filled('navbar_tekst_kleur')) {
+            $validated['navbar_tekst_kleur'] = $request->input('navbar_tekst_kleur');
+        }
+        
+        // Sidebar kleuren
+        if ($request->filled('sidebar_achtergrond')) {
+            $validated['sidebar_achtergrond'] = $request->input('sidebar_achtergrond');
+        }
+        if ($request->filled('sidebar_tekst_kleur')) {
+            $validated['sidebar_tekst_kleur'] = $request->input('sidebar_tekst_kleur');
+        }
+        if ($request->filled('sidebar_actief_achtergrond')) {
+            $validated['sidebar_actief_achtergrond'] = $request->input('sidebar_actief_achtergrond');
+        }
+        if ($request->filled('sidebar_actief_lijn')) {
+            $validated['sidebar_actief_lijn'] = $request->input('sidebar_actief_lijn');
+        }
+        
+        // Dark mode kleuren
+        if ($request->filled('dark_achtergrond')) {
+            $validated['dark_achtergrond'] = $request->input('dark_achtergrond');
+        }
+        if ($request->filled('dark_tekst')) {
+            $validated['dark_tekst'] = $request->input('dark_tekst');
+        }
+        if ($request->filled('dark_navbar_achtergrond')) {
+            $validated['dark_navbar_achtergrond'] = $request->input('dark_navbar_achtergrond');
+        }
+        if ($request->filled('dark_sidebar_achtergrond')) {
+            $validated['dark_sidebar_achtergrond'] = $request->input('dark_sidebar_achtergrond');
+        }
         
         // Handle file uploads
         if ($request->hasFile('logo')) {

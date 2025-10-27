@@ -32,12 +32,12 @@ class OrganisatieBranding extends Model
         'navbar_tekst_kleur',
         'is_actief',
         'custom_css',
-        // Sidebar kleuren
+        // Nieuwe sidebar kleuren
         'sidebar_achtergrond',
         'sidebar_tekst_kleur',
         'sidebar_actief_achtergrond',
         'sidebar_actief_lijn',
-        // Dark mode kleuren
+        // Nieuwe dark mode kleuren
         'dark_achtergrond',
         'dark_tekst',
         'dark_navbar_achtergrond',
@@ -45,9 +45,9 @@ class OrganisatieBranding extends Model
     ];
     
     protected $casts = [
-        'custom_css' => 'array',
-        'is_actief' => 'boolean',
         'toon_logo_in_rapporten' => 'boolean',
+        'is_actief' => 'boolean',
+        'custom_css' => 'array',
     ];
     
     /**
@@ -133,12 +133,19 @@ class OrganisatieBranding extends Model
                 'primaire_kleur' => '#3B82F6',
                 'primaire_kleur_hover' => '#2563EB',
                 'primaire_kleur_licht' => '#DBEAFE',
-                'secundaire_kleur' => '#1E40AF',
+                'secundaire_kleur' => '#6B7280',
                 'accent_kleur' => '#10B981',
-                'tekst_kleur_primair' => '#1F2937',
+                'achtergrond_kleur' => '#F9FAFB',
+                'kaart_achtergrond' => '#FFFFFF',
+                'tekst_kleur_primair' => '#111827',
                 'tekst_kleur_secundair' => '#6B7280',
-                'achtergrond_kleur' => '#FFFFFF',
-                'kaart_achtergrond' => '#F9FAFB',
+                'font_familie' => 'Inter',
+                'font_grootte_basis' => 16,
+                'rapport_achtergrond' => '#FFFFFF',
+                'toon_logo_in_rapporten' => true,
+                'navbar_achtergrond' => '#1F2937',
+                'navbar_tekst_kleur' => '#FFFFFF',
+                'is_actief' => false,
             ]
         );
     }

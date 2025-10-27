@@ -65,15 +65,30 @@
                 color: {{ $organisatieBranding->sidebar_tekst_kleur ?? '#374151' }} !important;
             }
             
-            /* Pas sidebar active state achtergrond aan */
+            /* Pas sidebar active state achtergrond aan via attribuut selector */
             aside a[style*="background:#f6fbfe"],
+            aside a[style*="background:#07455f"],
+            aside a[style*="background: #f6fbfe"],
+            aside a[style*="background: #07455f"],
             aside a.bg-blue-50 {
                 background: {{ $organisatieBranding->sidebar_actief_achtergrond ?? '#f6fbfe' }} !important;
             }
             
-            /* Pas sidebar active state lijn aan (verticaal lijntje links) */
-            aside a span[style*="background:#c1dfeb"] {
+            /* Pas sidebar active state lijn aan (verticaal lijntje links) via attribuut selector */
+            aside a span[style*="background:#c1dfeb"],
+            aside a span[style*="background: #c1dfeb"] {
                 background: {{ $organisatieBranding->sidebar_actief_lijn ?? '#c1dfeb' }} !important;
+            }
+            
+            /* Pas badge kleuren aan */
+            .bg-\\[\\#c1dfeb\\],
+            span[class*="bg-[#c1dfeb]"] {
+                background-color: {{ $organisatieBranding->sidebar_actief_achtergrond ?? '#c1dfeb' }} !important;
+            }
+            
+            .text-\\[\\#08474f\\],
+            span[class*="text-[#08474f]"] {
+                color: {{ $organisatieBranding->sidebar_tekst_kleur ?? '#08474f' }} !important;
             }
             
             /* Dark mode ondersteuning */
@@ -558,9 +573,9 @@
         <!-- Sidebar (desktop) -->
     <aside class="hidden md:flex md:flex-col bg-white border-r border-gray-200 fixed left-0 right-auto z-50 overflow-y-auto pointer-events-auto" style="top:56px; bottom:0; width:240px;">
             <nav class="flex-1 px-0 pt-0 pb-1 space-y-6">
-                <a href="{{ route('dashboard.index') }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('dashboard*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="margin-top:24px;padding-left:48px;{{ request()->is('dashboard*') ? 'background:#f6fbfe' : '' }}">
+                <a href="{{ route('dashboard.index') }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('dashboard*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="margin-top:24px;padding-left:48px;{{ request()->is('dashboard*') ? 'background:' . ($organisatieBranding->sidebar_actief_achtergrond ?? '#f6fbfe') : '' }}">
                     @if(request()->is('dashboard*'))
-                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
+                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:{{ $organisatieBranding->sidebar_actief_lijn ?? '#c1dfeb' }};"></span>
                     @endif
                     <svg width="22" height="22" fill="none" viewBox="0 0 20 20"><path d="M3 9.5L10 4l7 5.5V16a1 1 0 0 1-1 1h-3.5a.5.5 0 0 1-.5-.5V13a1 1 0 0 0-1-1h-2a1 1 0 0 0-1 1v3.5a.5.5 0 0 1-.5.5H4a1 1 0 0 1-1-1V9.5z" stroke="#9bb3bd" stroke-width="1.5"/></svg>
                     <span class="font-medium text-[17px]">Dashboard</span>
@@ -571,9 +586,9 @@
                     $ingelogdeKlant = \App\Models\Klant::where('email', Auth::user()->email)->first();
                 @endphp
                 @if($ingelogdeKlant)
-                <a href="{{ route('klanten.show', $ingelogdeKlant->id) }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('klanten/' . $ingelogdeKlant->id) ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('klanten/' . $ingelogdeKlant->id) ? 'background:#f6fbfe' : '' }}">
+                <a href="{{ route('klanten.show', $ingelogdeKlant->id) }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('klanten/' . $ingelogdeKlant->id) ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('klanten/' . $ingelogdeKlant->id) ? 'background:' . ($organisatieBranding->sidebar_actief_achtergrond ?? '#f6fbfe') : '' }}">
                     @if(request()->is('klanten/' . $ingelogdeKlant->id))
-                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
+                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:{{ $organisatieBranding->sidebar_actief_lijn ?? '#c1dfeb' }};"></span>
                     @endif
                     <svg width="22" height="22" fill="none" viewBox="0 0 20 20"><circle cx="10" cy="7" r="4" stroke="#9bb3bd" stroke-width="1.5"/><path d="M3 17c0-2.5 3-4 7-4s7 1.5 7 4v1a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1z" stroke="#9bb3bd" stroke-width="1.5"/></svg>
                     <span class="font-medium text-[17px]">Mijn Profiel</span>
@@ -587,9 +602,9 @@
                 {{-- Klanten - alleen tonen als feature actief is --}}
                 @hasFeature('klantenbeheer')
                 @if(Auth::user() && !Auth::user()->isKlant())
-                <a href="/klanten" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('klanten*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('klanten*') ? 'background:#f6fbfe' : '' }}">
+                <a href="/klanten" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('klanten*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('klanten*') ? 'background:' . ($organisatieBranding->sidebar_actief_achtergrond ?? '#f6fbfe') : '' }}">
                     @if(request()->is('klanten*'))
-                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
+                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:{{ $organisatieBranding->sidebar_actief_lijn ?? '#c1dfeb' }};"></span>
                     @endif
                     <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><g stroke="#9bb3bd" stroke-width="1.5" fill="none"><circle cx="7" cy="8" r="2.2"/><circle cx="13" cy="8" r="2.2"/><path d="M4.5 15c0-2.1 3.5-3.5 5.5-3.5s5.5 1.4 5.5 3.5v1a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1z"/></g></svg>
                     <span class="font-medium text-[17px]">Klanten</span>
@@ -601,9 +616,9 @@
                 {{-- Medewerkers - alleen tonen als feature actief is --}}
                 @hasFeature('medewerkerbeheer')
                 @if(Auth::user() && Auth::user()->isBeheerder())
-                <a href="/medewerkers" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('medewerkers*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('medewerkers*') ? 'background:#f6fbfe' : '' }}">
+                <a href="/medewerkers" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('medewerkers*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('medewerkers*') ? 'background:' . ($organisatieBranding->sidebar_actief_achtergrond ?? '#f6fbfe') : '' }}">
                     @if(request()->is('medewerkers*'))
-                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
+                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:{{ $organisatieBranding->sidebar_actief_lijn ?? '#c1dfeb' }};"></span>
                     @endif
                     <svg width="22" height="22" fill="none" viewBox="0 0 20 20"><rect x="4" y="8" width="12" height="7" rx="2" stroke="#9bb3bd" stroke-width="1.5"/><path d="M8 8V6.5A2.5 2.5 0 0 1 10.5 4h-1A2.5 2.5 0 0 1 12 6.5V8" stroke="#9bb3bd" stroke-width="1.5"/></svg>
                     <span class="font-medium text-[17px]">Medewerkers</span>
