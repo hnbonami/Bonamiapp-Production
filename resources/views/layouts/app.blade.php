@@ -55,13 +55,41 @@
                 color: {{ $organisatieBranding->navbar_tekst_kleur ?? '#000000' }} !important;
             }
             
-            /* Pas sidebar active state aan met primaire kleur */
-            aside a[style*="background:#f6fbfe"] {
-                background: {{ $organisatieBranding->primaire_kleur_licht ?? '#f6fbfe' }} !important;
+            /* Pas sidebar achtergrond aan */
+            aside {
+                background: {{ $organisatieBranding->sidebar_achtergrond ?? '#FFFFFF' }} !important;
             }
             
+            /* Pas sidebar tekst kleur aan */
+            aside a {
+                color: {{ $organisatieBranding->sidebar_tekst_kleur ?? '#374151' }} !important;
+            }
+            
+            /* Pas sidebar active state achtergrond aan */
+            aside a[style*="background:#f6fbfe"],
+            aside a.bg-blue-50 {
+                background: {{ $organisatieBranding->sidebar_actief_achtergrond ?? '#f6fbfe' }} !important;
+            }
+            
+            /* Pas sidebar active state lijn aan (verticaal lijntje links) */
             aside a span[style*="background:#c1dfeb"] {
-                background: {{ $organisatieBranding->primaire_kleur_licht ?? '#c1dfeb' }} !important;
+                background: {{ $organisatieBranding->sidebar_actief_lijn ?? '#c1dfeb' }} !important;
+            }
+            
+            /* Dark mode ondersteuning */
+            @media (prefers-color-scheme: dark) {
+                body.dark-mode {
+                    background: {{ $organisatieBranding->dark_achtergrond ?? '#1F2937' }} !important;
+                    color: {{ $organisatieBranding->dark_tekst ?? '#F9FAFB' }} !important;
+                }
+                
+                body.dark-mode #topbar {
+                    background: {{ $organisatieBranding->dark_navbar_achtergrond ?? '#111827' }} !important;
+                }
+                
+                body.dark-mode aside {
+                    background: {{ $organisatieBranding->dark_sidebar_achtergrond ?? '#111827' }} !important;
+                }
             }
         </style>
     @endif
