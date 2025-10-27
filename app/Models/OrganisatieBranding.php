@@ -130,6 +130,7 @@ class OrganisatieBranding extends Model
         return self::firstOrCreate(
             ['organisatie_id' => $organisatieId],
             [
+                // Basis kleuren
                 'primaire_kleur' => '#3B82F6',
                 'primaire_kleur_hover' => '#2563EB',
                 'primaire_kleur_licht' => '#DBEAFE',
@@ -139,12 +140,32 @@ class OrganisatieBranding extends Model
                 'kaart_achtergrond' => '#FFFFFF',
                 'tekst_kleur_primair' => '#111827',
                 'tekst_kleur_secundair' => '#6B7280',
+                
+                // Navbar kleuren
+                'navbar_achtergrond' => '#1f2937',
+                'navbar_tekst_kleur' => '#ffffff',
+                
+                // Sidebar kleuren (COMPLETE defaults)
+                'sidebar_achtergrond' => '#ffffff',
+                'sidebar_tekst_kleur' => '#374151',
+                'sidebar_actief_achtergrond' => '#f6fbfe',
+                'sidebar_actief_lijn' => '#c1dfeb',
+                
+                // Dark mode kleuren (COMPLETE defaults)
+                'dark_achtergrond' => '#1f2937',
+                'dark_tekst' => '#f9fafb',
+                'dark_navbar_achtergrond' => '#111827',
+                'dark_sidebar_achtergrond' => '#111827',
+                
+                // Typografie
                 'font_familie' => 'Inter',
                 'font_grootte_basis' => 16,
+                
+                // Rapport settings
                 'rapport_achtergrond' => '#FFFFFF',
                 'toon_logo_in_rapporten' => true,
-                'navbar_achtergrond' => '#1F2937',
-                'navbar_tekst_kleur' => '#FFFFFF',
+                
+                // Status
                 'is_actief' => false,
             ]
         );
