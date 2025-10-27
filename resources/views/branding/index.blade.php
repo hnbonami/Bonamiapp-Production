@@ -70,6 +70,7 @@
             
             <form action="{{ route('branding.update') }}" method="POST" enctype="multipart/form-data">
                 @csrf
+                <input type="hidden" name="organisatie_id" value="{{ $organisatie->id }}">
                 
                 {{-- Logo's Section --}}
                 <div class="bg-white shadow-sm rounded-lg p-6">

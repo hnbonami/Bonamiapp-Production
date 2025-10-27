@@ -45,8 +45,22 @@ class BrandingController extends Controller
      */
     public function update(Request $request)
     {
-        // Haal branding op of maak nieuwe aan
-        $branding = OrganisatieBranding::getOrCreateForOrganisatie(auth()->user()->organisatie_id);
+        $user = auth()->user();
+        
+        // Bepaal welke organisatie we moeten updaten
+        if ($user->rol === 'superadmin' && $request->has('organisatie_id')) {
+            $organisatieId = $request->get('organisatie_id');
+        } else {
+            $organisatieId = $user->organisatie_id;
+        }
+        
+        // Beveiligingscheck: admin mag alleen eigen organisatie wijzigen
+        if ($user->rol !== 'superadmin' && $user->organisatie_id != $organisatieId) {
+            abort(403, 'Je mag alleen je eigen organisatie branding wijzigen.');
+        }
+        
+        // Haal branding voor deze SPECIFIEKE organisatie
+        $branding = OrganisatieBranding::where('organisatie_id', $organisatieId)->firstOrFail();
         
         // Validatie met ALLE bestaande database kolommen
         $validated = $request->validate([
