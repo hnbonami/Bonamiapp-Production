@@ -126,10 +126,15 @@ class BrandingController extends Controller
             $validated['dark_sidebar_achtergrond'] = $request->input('dark_sidebar_achtergrond');
         }
         
-        // Handle file uploads
+                // Handle logo upload
         if ($request->hasFile('logo')) {
-            $this->deleteOldFile($branding->logo_pad);
-            $validated['logo_pad'] = $request->file('logo')->store('branding/logos', 'public');
+            // Verwijder oude logo als die bestaat
+            if ($branding->logo_pad) {
+                Storage::delete('public/' . $branding->logo_pad);
+            }
+            
+            $logoPath = $request->file('logo')->store('branding/logos', 'public');
+            $branding->logo_pad = $logoPath; // Alleen logo_pad gebruiken (database kolom)
         }
         
         if ($request->hasFile('logo_klein')) {

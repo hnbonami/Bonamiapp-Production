@@ -353,13 +353,9 @@
                 </button>
             </div>
             
-            <!-- Center: Logo -->
+            <!-- Center: Logo - VAST Performancepulse logo (niet wijzigbaar) -->
             <div class="topbar-logo">
-                @if(isset($organisatieBranding) && $organisatieBranding && $organisatieBranding->logo_pad)
-                    <img src="{{ asset('storage/' . $organisatieBranding->logo_pad) }}" alt="Logo" style="height:35px;" />
-                @else
-                    <img src="/logo_bonami.png" alt="Logo" style="height:35px;" />
-                @endif
+                <img src="/logo_bonami.png" alt="Performancepulse" style="height:35px;" />
             </div>
             
             <!-- Right: User menu -->
@@ -572,6 +568,15 @@
     <div class="md:flex">
         <!-- Sidebar (desktop) -->
     <aside class="hidden md:flex md:flex-col bg-white border-r border-gray-200 fixed left-0 right-auto z-50 overflow-y-auto pointer-events-auto" style="top:56px; bottom:0; width:240px;">
+            <!-- Logo Sidebar - WIJZIGBAAR via branding -->
+            <div class="flex items-center justify-center py-4 px-3 border-b border-gray-100">
+                @if(isset($organisatieBranding) && $organisatieBranding && $organisatieBranding->logo_pad)
+                    <img src="{{ asset('storage/' . $organisatieBranding->logo_pad) }}" alt="Organisatie Logo" style="height: 80px; width: auto;">
+                @else
+                    <img src="{{ asset('images/performancepulse-logo.png') }}" alt="Performancepulse" style="height: 80px; width: auto;">
+                @endif
+            </div>
+            
             <nav class="flex-1 px-0 pt-0 pb-1 space-y-6">
                 <a href="{{ route('dashboard.index') }}" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('dashboard*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="margin-top:24px;padding-left:48px;{{ request()->is('dashboard*') ? 'background:' . ($organisatieBranding->sidebar_actief_achtergrond ?? '#f6fbfe') : '' }}">
                     @if(request()->is('dashboard*'))

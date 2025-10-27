@@ -74,12 +74,18 @@
                 
                 {{-- Logo's Section --}}
                 <div class="bg-white shadow-sm rounded-lg p-6">
-                    <h3 class="text-lg font-semibold mb-4">🖼️ Logo's & Iconen</h3>
+                    <h3 class="text-lg font-semibold mb-4">🖼️ Logo Sidebar (Links Navigatie)</h3>
+                    
+                    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p class="text-sm text-blue-800">
+                            <strong>Let op:</strong> Dit logo wordt getoond in de sidebar aan de linkerkant. Het logo in de topbar bovenaan is vast (organisatie logo) en kan niet worden gewijzigd.
+                        </p>
+                    </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {{-- Main Logo --}}
+                        {{-- Sidebar Logo --}}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Hoofdlogo</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Sidebar Logo</label>
                             @if($branding->logo_path)
                                 <div class="mb-2">
                                     <img src="{{ $branding->logo_url }}" alt="Logo" class="h-20 object-contain border rounded p-2">
@@ -87,7 +93,7 @@
                                 </div>
                             @endif
                             <input type="file" name="logo" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                            <p class="text-xs text-gray-500 mt-1">PNG of JPG, max 2MB</p>
+                            <p class="text-xs text-gray-500 mt-1">PNG of JPG, max 2MB. Wordt getoond in linker sidebar.</p>
                         </div>
                         
                         {{-- Dark Mode Logo --}}
