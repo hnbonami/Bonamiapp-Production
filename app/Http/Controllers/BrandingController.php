@@ -64,6 +64,18 @@ class BrandingController extends Controller
             'navbar_tekst_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             'rapport_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
             
+            // Sidebar kleuren (NIEUW)
+            'sidebar_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'sidebar_tekst_kleur' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'sidebar_actief_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'sidebar_actief_lijn' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            
+            // Dark mode kleuren (NIEUW)
+            'dark_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'dark_tekst' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'dark_navbar_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            'dark_sidebar_achtergrond' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
+            
             // Typografie
             'font_familie' => 'nullable|string|max:100',
             'font_grootte_basis' => 'nullable|integer|min:10|max:24',

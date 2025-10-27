@@ -161,6 +161,210 @@
                     </div>
                 </div>
                 
+                {{-- Navbar Kleuren Section --}}
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">🎯 Hoofdbalk (Navbar) Kleuren</h2>
+                    <p class="text-gray-600 mb-6">Pas de kleuren van de bovenste navigatiebalk aan</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Achtergrondkleur Navbar</label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" 
+                                       name="navbar_achtergrond" 
+                                       id="navbar_achtergrond"
+                                       value="{{ old('navbar_achtergrond', $branding->navbar_achtergrond ?? '#1E293B') }}" 
+                                       class="h-12 w-20 rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition"
+                                       onchange="document.getElementById('navbar_achtergrond_text').value = this.value">
+                                <input type="text" 
+                                       id="navbar_achtergrond_text"
+                                       value="{{ old('navbar_achtergrond', $branding->navbar_achtergrond ?? '#1E293B') }}" 
+                                       class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                       readonly>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">💡 Achtergrondkleur van de bovenste balk met logo en gebruiker</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Tekstkleur Navbar</label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" 
+                                       name="navbar_tekst_kleur" 
+                                       id="navbar_tekst_kleur"
+                                       value="{{ old('navbar_tekst_kleur', $branding->navbar_tekst_kleur ?? '#FFFFFF') }}" 
+                                       class="h-12 w-20 rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition"
+                                       onchange="document.getElementById('navbar_tekst_kleur_text').value = this.value">
+                                <input type="text" 
+                                       id="navbar_tekst_kleur_text"
+                                       value="{{ old('navbar_tekst_kleur', $branding->navbar_tekst_kleur ?? '#FFFFFF') }}" 
+                                       class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                       readonly>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">💡 Kleur van tekst, iconen en hamburger menu in de navbar</p>
+                        </div>
+                    </div>
+                </div>
+                
+                {{-- Sidebar Kleuren Section --}}
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">📂 Sidebar Kleuren</h2>
+                    <p class="text-gray-600 mb-6">Pas de kleuren van de zijbalk (navigatie) aan</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Achtergrondkleur Sidebar</label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" 
+                                       name="sidebar_achtergrond" 
+                                       id="sidebar_achtergrond"
+                                       value="{{ old('sidebar_achtergrond', $branding->sidebar_achtergrond ?? '#FFFFFF') }}" 
+                                       class="h-12 w-20 rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition"
+                                       onchange="document.getElementById('sidebar_achtergrond_text').value = this.value">
+                                <input type="text" 
+                                       id="sidebar_achtergrond_text"
+                                       value="{{ old('sidebar_achtergrond', $branding->sidebar_achtergrond ?? '#FFFFFF') }}" 
+                                       class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                       readonly>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">💡 Achtergrondkleur van de linker navigatiebalk</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Tekstkleur Sidebar</label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" 
+                                       name="sidebar_tekst_kleur" 
+                                       id="sidebar_tekst_kleur"
+                                       value="{{ old('sidebar_tekst_kleur', $branding->sidebar_tekst_kleur ?? '#374151') }}" 
+                                       class="h-12 w-20 rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition"
+                                       onchange="document.getElementById('sidebar_tekst_kleur_text').value = this.value">
+                                <input type="text" 
+                                       id="sidebar_tekst_kleur_text"
+                                       value="{{ old('sidebar_tekst_kleur', $branding->sidebar_tekst_kleur ?? '#374151') }}" 
+                                       class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                       readonly>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">💡 Kleur van menu items in de sidebar</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Actieve Item Achtergrond</label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" 
+                                       name="sidebar_actief_achtergrond" 
+                                       id="sidebar_actief_achtergrond"
+                                       value="{{ old('sidebar_actief_achtergrond', $branding->sidebar_actief_achtergrond ?? '#f6fbfe') }}" 
+                                       class="h-12 w-20 rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition"
+                                       onchange="document.getElementById('sidebar_actief_achtergrond_text').value = this.value">
+                                <input type="text" 
+                                       id="sidebar_actief_achtergrond_text"
+                                       value="{{ old('sidebar_actief_achtergrond', $branding->sidebar_actief_achtergrond ?? '#f6fbfe') }}" 
+                                       class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                       readonly>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">💡 Achtergrondkleur van de actieve pagina in menu</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-3">Actieve Item Lijn (links)</label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" 
+                                       name="sidebar_actief_lijn" 
+                                       id="sidebar_actief_lijn"
+                                       value="{{ old('sidebar_actief_lijn', $branding->sidebar_actief_lijn ?? '#c1dfeb') }}" 
+                                       class="h-12 w-20 rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition"
+                                       onchange="document.getElementById('sidebar_actief_lijn_text').value = this.value">
+                                <input type="text" 
+                                       id="sidebar_actief_lijn_text"
+                                       value="{{ old('sidebar_actief_lijn', $branding->sidebar_actief_lijn ?? '#c1dfeb') }}" 
+                                       class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                       readonly>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">💡 Kleur van het verticale lijntje links bij actieve pagina</p>
+                        </div>
+                    </div>
+                </div>
+                
+                {{-- Dark Mode Kleuren Section --}}
+                <div class="bg-gray-900 rounded-xl shadow-lg p-8 mb-8">
+                    <h2 class="text-2xl font-bold text-white mb-6">🌙 Dark Mode Kleuren</h2>
+                    <p class="text-gray-300 mb-6">Pas de kleuren aan wanneer gebruikers dark mode activeren</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-300 mb-3">Achtergrondkleur (Dark)</label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" 
+                                       name="dark_achtergrond" 
+                                       id="dark_achtergrond"
+                                       value="{{ old('dark_achtergrond', $branding->dark_achtergrond ?? '#1F2937') }}" 
+                                       class="h-12 w-20 rounded-lg border-2 border-gray-600 cursor-pointer hover:border-blue-500 transition"
+                                       onchange="document.getElementById('dark_achtergrond_text').value = this.value">
+                                <input type="text" 
+                                       id="dark_achtergrond_text"
+                                       value="{{ old('dark_achtergrond', $branding->dark_achtergrond ?? '#1F2937') }}" 
+                                       class="flex-1 px-4 py-3 border-2 border-gray-600 bg-gray-800 text-white rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                       readonly>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">💡 Algemene achtergrondkleur in dark mode</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-300 mb-3">Tekstkleur (Dark)</label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" 
+                                       name="dark_tekst" 
+                                       id="dark_tekst"
+                                       value="{{ old('dark_tekst', $branding->dark_tekst ?? '#F9FAFB') }}" 
+                                       class="h-12 w-20 rounded-lg border-2 border-gray-600 cursor-pointer hover:border-blue-500 transition"
+                                       onchange="document.getElementById('dark_tekst_text').value = this.value">
+                                <input type="text" 
+                                       id="dark_tekst_text"
+                                       value="{{ old('dark_tekst', $branding->dark_tekst ?? '#F9FAFB') }}" 
+                                       class="flex-1 px-4 py-3 border-2 border-gray-600 bg-gray-800 text-white rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                       readonly>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">💡 Tekstkleur in dark mode</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-300 mb-3">Navbar Achtergrond (Dark)</label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" 
+                                       name="dark_navbar_achtergrond" 
+                                       id="dark_navbar_achtergrond"
+                                       value="{{ old('dark_navbar_achtergrond', $branding->dark_navbar_achtergrond ?? '#111827') }}" 
+                                       class="h-12 w-20 rounded-lg border-2 border-gray-600 cursor-pointer hover:border-blue-500 transition"
+                                       onchange="document.getElementById('dark_navbar_achtergrond_text').value = this.value">
+                                <input type="text" 
+                                       id="dark_navbar_achtergrond_text"
+                                       value="{{ old('dark_navbar_achtergrond', $branding->dark_navbar_achtergrond ?? '#111827') }}" 
+                                       class="flex-1 px-4 py-3 border-2 border-gray-600 bg-gray-800 text-white rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                       readonly>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">💡 Hoofdbalk achtergrond in dark mode</p>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-300 mb-3">Sidebar Achtergrond (Dark)</label>
+                            <div class="flex gap-3 items-center">
+                                <input type="color" 
+                                       name="dark_sidebar_achtergrond" 
+                                       id="dark_sidebar_achtergrond"
+                                       value="{{ old('dark_sidebar_achtergrond', $branding->dark_sidebar_achtergrond ?? '#111827') }}" 
+                                       class="h-12 w-20 rounded-lg border-2 border-gray-600 cursor-pointer hover:border-blue-500 transition"
+                                       onchange="document.getElementById('dark_sidebar_achtergrond_text').value = this.value">
+                                <input type="text" 
+                                       id="dark_sidebar_achtergrond_text"
+                                       value="{{ old('dark_sidebar_achtergrond', $branding->dark_sidebar_achtergrond ?? '#111827') }}" 
+                                       class="flex-1 px-4 py-3 border-2 border-gray-600 bg-gray-800 text-white rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                       readonly>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">💡 Zijbalk achtergrond in dark mode</p>
+                        </div>
+                    </div>
+                </div>
+                
                 {{-- Kleuren Section --}}
                 <div class="bg-white shadow-sm rounded-lg p-6">
                     <h3 class="text-lg font-semibold mb-4">🎨 Kleurenschema</h3>
