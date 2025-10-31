@@ -9,10 +9,22 @@ use Illuminate\Http\Request;
 class EmailTriggerController extends Controller
 {
     /**
+     * Check admin toegang voor email trigger beheer functies
+     */
+    private function checkAdminAccess()
+    {
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators hebben toegang tot email trigger beheer.');
+        }
+    }
+
+    /**
      * Toon alle email triggers
      */
     public function index()
     {
+        $this->checkAdminAccess();
+
         $triggers = EmailTrigger::with('template')
             ->where('organisatie_id', auth()->user()->organisatie_id)
             ->orderBy('name')
@@ -26,6 +38,8 @@ class EmailTriggerController extends Controller
      */
     public function runNow(EmailIntegrationService $emailService)
     {
+        $this->checkAdminAccess();
+
         try {
             \Log::info('🔄 Manual run all triggers initiated', [
                 'user_id' => auth()->id()
@@ -60,6 +74,8 @@ class EmailTriggerController extends Controller
      */
     public function test($triggerId, EmailIntegrationService $emailService)
     {
+        $this->checkAdminAccess();
+
         try {
             $trigger = EmailTrigger::findOrFail($triggerId);
             
@@ -104,6 +120,8 @@ class EmailTriggerController extends Controller
      */
     public function edit(EmailTrigger $trigger)
     {
+        $this->checkAdminAccess();
+
         // Check organisatie toegang
         if ($trigger->organisatie_id !== auth()->user()->organisatie_id) {
             abort(403, 'Geen toegang tot deze trigger');
@@ -119,6 +137,8 @@ class EmailTriggerController extends Controller
      */
     public function update(Request $request, EmailTrigger $trigger)
     {
+        $this->checkAdminAccess();
+
         // Check organisatie toegang
         if ($trigger->organisatie_id !== auth()->user()->organisatie_id) {
             abort(403, 'Geen toegang tot deze trigger');
@@ -148,6 +168,8 @@ class EmailTriggerController extends Controller
      */
     public function runSingle($triggerType, EmailIntegrationService $emailService)
     {
+        $this->checkAdminAccess();
+
         try {
             \Log::info('🧪 Running single trigger via API', [
                 'trigger_type' => $triggerType,

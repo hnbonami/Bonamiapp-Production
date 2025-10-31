@@ -576,10 +576,10 @@ Route::middleware(['auth'])->get('/admin', function() {
 // Email Triggers Management Routes
 Route::middleware(['auth'])->prefix('admin/email/triggers')->name('admin.email.triggers.')->group(function () {
     Route::get('/', [App\Http\Controllers\EmailTriggerController::class, 'index'])->name('index');
-    Route::post('/run', [App\Http\Controllers\EmailTriggerController::class, 'runNow'])->name('run');
-    Route::post('/{trigger}/test', [App\Http\Controllers\EmailTriggerController::class, 'test'])->name('test');
     Route::get('/{trigger}/edit', [App\Http\Controllers\EmailTriggerController::class, 'edit'])->name('edit');
     Route::put('/{trigger}', [App\Http\Controllers\EmailTriggerController::class, 'update'])->name('update');
+    Route::post('/run', [App\Http\Controllers\EmailTriggerController::class, 'runNow'])->name('run');
+    Route::post('/{trigger}/test', [App\Http\Controllers\EmailTriggerController::class, 'test'])->name('test');
     Route::post('/run/{triggerType}', [App\Http\Controllers\EmailTriggerController::class, 'runSingle'])->name('runSingle');
 });
 
