@@ -12,10 +12,23 @@ use Illuminate\Support\Facades\Log;
 class PrestatieController extends Controller
 {
     /**
+     * Check toegang - klanten mogen NIET naar prestaties
+     */
+    private function checkAccess()
+    {
+        // Klanten hebben GEEN toegang tot prestaties
+        if (auth()->user()->role === 'klant') {
+            abort(403, 'Geen toegang. Klanten kunnen deze pagina niet bekijken.');
+        }
+    }
+
+    /**
      * Toon prestaties overzicht voor ingelogde coach
      */
     public function index(Request $request)
     {
+        $this->checkAccess();
+
         $user = auth()->user();
         $userOrganisatieId = $user->organisatie_id;
         
@@ -82,6 +95,8 @@ class PrestatieController extends Controller
      */
     public function store(Request $request)
     {
+        $this->checkAccess();
+
         $validated = $request->validate([
             'datum_prestatie' => 'required|date',
             'einddatum_prestatie' => 'nullable|date|after_or_equal:datum_prestatie',
@@ -183,6 +198,8 @@ class PrestatieController extends Controller
      */
     public function update(Request $request, Prestatie $prestatie)
     {
+        $this->checkAccess();
+
         // Check of coach deze prestatie mag bewerken
         if ($prestatie->user_id !== auth()->id() && !auth()->user()->is_admin) {
             abort(403, 'Geen toegang tot deze prestatie');
@@ -217,6 +234,8 @@ class PrestatieController extends Controller
      */
     public function destroy(Prestatie $prestatie)
     {
+        $this->checkAccess();
+
         // Check of coach deze prestatie mag verwijderen
         if ($prestatie->user_id !== auth()->id() && !auth()->user()->is_admin) {
             abort(403, 'Geen toegang tot deze prestatie');
@@ -238,6 +257,8 @@ class PrestatieController extends Controller
      */
     public function edit(Prestatie $prestatie)
     {
+        $this->checkAccess();
+
         // Controleer of gebruiker eigenaar is
         if ($prestatie->user_id !== auth()->id()) {
             return response()->json([
@@ -259,6 +280,8 @@ class PrestatieController extends Controller
      */
     public function duplicate(Prestatie $prestatie)
     {
+        $this->checkAccess();
+
         try {
             // Controleer of gebruiker eigenaar is
             if ($prestatie->user_id !== auth()->id()) {
@@ -304,6 +327,8 @@ class PrestatieController extends Controller
      */
     public function toggleUitgevoerd(Request $request, Prestatie $prestatie)
     {
+        $this->checkAccess();
+
         try {
             // Controleer of gebruiker eigenaar is
             if ($prestatie->user_id !== auth()->id()) {
