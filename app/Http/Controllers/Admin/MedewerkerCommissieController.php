@@ -11,10 +11,22 @@ use Illuminate\Http\Request;
 class MedewerkerCommissieController extends Controller
 {
     /**
+     * Check admin toegang voor alle commissie beheer functies
+     */
+    private function checkAdminAccess()
+    {
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators hebben toegang tot commissie beheer.');
+        }
+    }
+    
+    /**
      * Overzicht alle medewerkers met hun commissie factoren
      */
     public function index()
     {
+        $this->checkAdminAccess();
+
         // DEBUG: Check ingelogde gebruiker
         $huidigGebruiker = auth()->user();
         
@@ -71,6 +83,8 @@ class MedewerkerCommissieController extends Controller
      */
     public function edit(User $medewerker)
     {
+        $this->checkAdminAccess();
+
         // 🔒 BEVEILIGING: Check of medewerker bij zelfde organisatie hoort
         if ($medewerker->organisatie_id !== auth()->user()->organisatie_id) {
             abort(403, 'Geen toegang tot deze medewerker');
@@ -108,6 +122,8 @@ class MedewerkerCommissieController extends Controller
      */
     public function update(Request $request, User $medewerker)
     {
+        $this->checkAdminAccess();
+
         $validated = $request->validate([
             'diploma_factor' => 'required|numeric|min:0|max:100',
             'ervaring_factor' => 'required|numeric|min:0|max:100',
@@ -140,6 +156,8 @@ class MedewerkerCommissieController extends Controller
      */
     public function updateDienstCommissie(Request $request, User $medewerker, Dienst $dienst)
     {
+        $this->checkAdminAccess();
+
         // 🔒 BEVEILIGING: Check of medewerker en dienst bij zelfde organisatie horen
         if ($medewerker->organisatie_id !== auth()->user()->organisatie_id) {
             abort(403, 'Geen toegang tot deze medewerker');

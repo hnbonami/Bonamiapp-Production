@@ -845,6 +845,11 @@ Route::middleware(['auth', 'verified'])->prefix('branding')->name('branding.')->
 // Direct route to admin database tools (bypassing view conflicts)
 Route::middleware(['auth', 'verified'])->group(function() {
     Route::get('/admin/database-tools', function() {
+        // Check admin toegang
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators hebben toegang tot database tools.');
+        }
+        
         return view('admin.database-tools');
     })->name('admin.database.tools');
 });
