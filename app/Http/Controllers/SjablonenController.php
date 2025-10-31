@@ -10,8 +10,20 @@ use Illuminate\Support\Facades\Schema;
 
 class SjablonenController extends Controller
 {
+    /**
+     * Check admin toegang voor sjablonen beheer
+     */
+    private function checkAdminAccess()
+    {
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators hebben toegang tot sjablonen beheer.');
+        }
+    }
+
     public function index()
     {
+        $this->checkAdminAccess();
+        
         $user = auth()->user();
         
         // Superadmin ziet alle sjablonen van alle organisaties
@@ -29,11 +41,15 @@ class SjablonenController extends Controller
 
     public function create()
     {
+        $this->checkAdminAccess();
+        
         return view('sjablonen.create');
     }
 
     public function store(Request $request)
     {
+        $this->checkAdminAccess();
+        
         $request->validate([
             'naam' => 'required|string|max:255',
             'categorie' => 'required|string|max:255',
@@ -64,6 +80,8 @@ class SjablonenController extends Controller
 
     public function show($id)
     {
+        $this->checkAdminAccess();
+        
         $user = auth()->user();
         
         // Find sjabloon manually to ensure consistency
@@ -81,6 +99,8 @@ class SjablonenController extends Controller
 
     public function edit($id)
     {
+        $this->checkAdminAccess();
+        
         $user = auth()->user();
         
         // Find sjabloon manually
@@ -212,6 +232,8 @@ class SjablonenController extends Controller
      */
     public function editBasic($id)
     {
+        $this->checkAdminAccess();
+        
         $user = auth()->user();
         $sjabloon = Sjabloon::findOrFail($id);
         
@@ -228,6 +250,8 @@ class SjablonenController extends Controller
      */
     public function updateBasic(Request $request, $id)
     {
+        $this->checkAdminAccess();
+        
         $sjabloon = Sjabloon::findOrFail($id);
         
         $request->validate([
@@ -245,6 +269,8 @@ class SjablonenController extends Controller
 
     public function update(Request $request, Sjabloon $sjabloon)
     {
+        $this->checkAdminAccess();
+        
         $request->validate([
             'naam' => 'required|string|max:255',
             'categorie' => 'required|string|max:255',
@@ -263,6 +289,8 @@ class SjablonenController extends Controller
      */
     public function destroy($id)
     {
+        $this->checkAdminAccess();
+        
         try {
             $user = auth()->user();
             
@@ -300,6 +328,8 @@ class SjablonenController extends Controller
      */
     public function duplicate($id)
     {
+        $this->checkAdminAccess();
+        
         try {
             $user = auth()->user();
             
