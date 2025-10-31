@@ -16,6 +16,11 @@ class MedewerkerController extends Controller
      */
     public function index(Request $request)
     {
+        // Check admin toegang - admin of organisatie_admin kunnen medewerkers beheren
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators kunnen medewerkers beheren.');
+        }
+        
         \Log::info('🔍 Medewerkers index aangeroepen', [
             'user_id' => auth()->id(),
             'organisatie_id' => auth()->user()->organisatie_id
@@ -57,6 +62,11 @@ class MedewerkerController extends Controller
      */
     public function create()
     {
+        // Check admin toegang - admin of organisatie_admin kunnen medewerkers beheren
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators kunnen medewerkers beheren.');
+        }
+        
         return view('medewerkers.create');
     }
 
@@ -65,6 +75,11 @@ class MedewerkerController extends Controller
      */
     public function store(Request $request)
     {
+        // Check admin toegang - admin of organisatie_admin kunnen medewerkers beheren
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators kunnen medewerkers beheren.');
+        }
+        
         \Log::info('🚨 MedewerkerController@store CALLED', [
             'all_input' => $request->all(),
             'geslacht_raw' => $request->input('geslacht'),

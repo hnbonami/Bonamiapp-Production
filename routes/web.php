@@ -1225,6 +1225,7 @@ Route::get('/template-manager', function() {
 // HERNOEM KAPOTTE ROUTE NAAR /template (was /templates)
 Route::get('/template', function() {
     return 'OUDE TEMPLATES ROUTE WERKT!!! Nu hernoemd naar /template!';
+
 });
 
 // TEST MET ANDERE NAAM
@@ -1364,7 +1365,7 @@ Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenControlle
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');
 
 // Bikefit Import/Export routes  
-Route::get('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
+Route::get('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
 Route::post('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
 Route::get('/import/bikefits/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
 Route::get('/bikefit/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
@@ -1474,4 +1475,10 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
     Route::get('/users/roles', [\App\Http\Controllers\UserController::class, 'roles'])->name('users.roles');
     Route::post('/roles/{roleKey}/features/{featureId}/toggle', [\App\Http\Controllers\UserController::class, 'toggleRoleFeature'])
         ->name('roles.features.toggle');
+});
+
+// Medewerkers Routes - beveiliging zit in MedewerkerController
+Route::middleware(['auth'])->group(function () {
+    Route::resource('medewerkers', MedewerkerController::class);
+    Route::post('medewerkers/{medewerker}/send-invitation', [MedewerkerController::class, 'sendInvitation'])->name('medewerkers.send-invitation');
 });
