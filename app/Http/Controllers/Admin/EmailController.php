@@ -14,8 +14,20 @@ use Illuminate\Support\Facades\Storage;
 
 class EmailController extends Controller
 {
+    /**
+     * Check admin toegang voor alle email beheer functies
+     */
+    private function checkAdminAccess()
+    {
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators hebben toegang tot email beheer.');
+        }
+    }
+    
     public function index()
     {
+        $this->checkAdminAccess();
+        
         $templates = EmailTemplate::where('is_active', true)->get();
         $subscriptionStats = $this->getSubscriptionStats();
         
@@ -24,6 +36,8 @@ class EmailController extends Controller
 
     public function templates()
     {
+        $this->checkAdminAccess();
+        
         $templates = EmailTemplate::latest()->get();
         
         // Als er geen templates zijn, maak standaard templates aan
@@ -37,12 +51,16 @@ class EmailController extends Controller
 
     public function editTemplate($id)
     {
+        $this->checkAdminAccess();
+        
         $template = EmailTemplate::findOrFail($id);
         return view('admin.email-edit-template', compact('template'));
     }
 
     public function updateTemplate(Request $request, $id)
     {
+        $this->checkAdminAccess();
+        
         $template = EmailTemplate::findOrFail($id);
 
         $validated = $request->validate([
@@ -137,6 +155,8 @@ class EmailController extends Controller
 
     public function destroyTemplate($id)
     {
+        $this->checkAdminAccess();
+        
         $template = EmailTemplate::findOrFail($id);
         $template->delete();
 
@@ -146,6 +166,8 @@ class EmailController extends Controller
 
     public function settings()
     {
+        $this->checkAdminAccess();
+        
         $settings = EmailSettings::getSettings();
         return view('admin.email-settings', compact('settings'));
     }
@@ -192,6 +214,8 @@ class EmailController extends Controller
 
     public function triggers()
     {
+        $this->checkAdminAccess();
+        
         $data = $this->getTriggerStats();
         
         return view('admin.email-triggers', [
@@ -202,6 +226,8 @@ class EmailController extends Controller
 
     public function logs()
     {
+        $this->checkAdminAccess();
+        
         $logs = EmailLog::orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
@@ -783,7 +809,7 @@ Rol: @{{rol}}</p>
                 'is_active' => true
             ],
             [
-                'name' => 'Verjaardag Felicitatie',
+                'name' => 'Verjaardag Felicitaties',
                 'type' => EmailTemplate::TYPE_BIRTHDAY,
                 'subject' => '🎉 Gefeliciteerd met je verjaardag, @{{voornaam}}!',
                 'body_html' => '<h2>Gefeliciteerd @{{voornaam}}! 🎂</h2>
@@ -943,6 +969,8 @@ Rol: @{{rol}}</p>
      */
     public function bulkEmail()
     {
+        $this->checkAdminAccess();
+        
         $templates = EmailTemplate::where('is_active', true)
                                   ->whereIn('type', ['newsletter', 'custom', 'general'])
                                   ->get();
@@ -1092,6 +1120,8 @@ Rol: @{{rol}}</p>
      */
     public function unsubscribed()
     {
+        $this->checkAdminAccess();
+        
         $unsubscribed = \App\Models\EmailSubscription::with('subscriber')
                                                     ->where('status', 'unsubscribed')
                                                     ->orderBy('unsubscribed_at', 'desc')

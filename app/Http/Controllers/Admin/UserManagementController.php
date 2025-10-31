@@ -9,10 +9,22 @@ use Illuminate\Http\Request;
 class UserManagementController extends Controller
 {
     /**
+     * Check admin toegang voor alle user management functies
+     */
+    private function checkAdminAccess()
+    {
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators hebben toegang tot gebruikersbeheer.');
+        }
+    }
+
+    /**
      * Display a listing of all users (both medewerkers and klanten)
      */
     public function index(Request $request)
     {
+        $this->checkAdminAccess();
+
         // Filter op huidige organisatie
         $organisatieId = auth()->user()->organisatie_id;
 
@@ -145,6 +157,8 @@ class UserManagementController extends Controller
  */
 public function roles()
 {
+    $this->checkAdminAccess();
+
     // Haal alle beschikbare rollen op in een format dat de view verwacht
     $roles = [
         [
@@ -187,6 +201,8 @@ public function roles()
      */
     public function activity()
     {
+        $this->checkAdminAccess();
+
         // Filter op huidige organisatie
         $organisatieId = auth()->user()->organisatie_id;
         
@@ -271,6 +287,8 @@ public function roles()
      */
     public function show(User $user)
     {
+        $this->checkAdminAccess();
+
         return view('admin.users.show', compact('user'));
     }
 
@@ -279,6 +297,8 @@ public function roles()
      */
     public function update(Request $request, User $user)
     {
+        $this->checkAdminAccess();
+
         $validated = $request->validate([
             'status' => 'sometimes|in:active,inactive,suspended',
             'admin_notes' => 'sometimes|string|nullable'
@@ -300,6 +320,8 @@ public function roles()
      */
     public function destroy(User $user)
     {
+        $this->checkAdminAccess();
+
         // Prevent deletion of current user
         if ($user->id === auth()->id()) {
             return redirect()->back()->with('error', 'Je kunt jezelf niet verwijderen.');
@@ -323,6 +345,8 @@ public function roles()
      */
     public function updateRolePermissions(Request $request)
     {
+        $this->checkAdminAccess();
+
         // Valideer de input
         $validated = $request->validate([
             'role' => 'required|string|in:admin,medewerker,klant',

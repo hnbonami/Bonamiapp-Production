@@ -10,10 +10,21 @@ use Illuminate\Support\Facades\Log;
 class DienstenController extends Controller
 {
     /**
+     * Check admin toegang voor alle diensten beheer functies
+     */
+    private function checkAdminAccess()
+    {
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators hebben toegang tot diensten beheer.');
+        }
+    }
+
+    /**
      * Toon overzicht van alle diensten
      */
     public function index()
     {
+        $this->checkAdminAccess();
         // 🔒 ORGANISATIE FILTER: Alleen diensten van eigen organisatie
         $diensten = Dienst::where('organisatie_id', auth()->user()->organisatie_id)
             ->orderBy('naam')
@@ -27,6 +38,7 @@ class DienstenController extends Controller
      */
     public function create()
     {
+        $this->checkAdminAccess();
         return view('admin.prestaties.diensten.create');
     }
 
@@ -35,6 +47,7 @@ class DienstenController extends Controller
      */
     public function store(Request $request)
     {
+        $this->checkAdminAccess();
         try {
             \Log::info('💾 STORE DIENST START', [
                 'all_input' => $request->all(),
@@ -129,6 +142,7 @@ class DienstenController extends Controller
      */
     public function edit(Dienst $dienst)
     {
+        $this->checkAdminAccess();
         // 🔒 Check organisatie
         if ($dienst->organisatie_id !== auth()->user()->organisatie_id) {
             abort(403);
@@ -142,6 +156,7 @@ class DienstenController extends Controller
      */
     public function update(Request $request, Dienst $dienst)
     {
+        $this->checkAdminAccess();
         \Log::info('✅ Update method START', [
             'dienst_id' => $dienst->id,
             'request_all' => $request->all()
@@ -207,6 +222,7 @@ class DienstenController extends Controller
      */
     public function destroy(Dienst $dienst)
     {
+        $this->checkAdminAccess();
         // 🔒 Check organisatie
         if ($dienst->organisatie_id !== auth()->user()->organisatie_id) {
             abort(403);

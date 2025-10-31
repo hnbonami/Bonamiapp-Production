@@ -13,10 +13,22 @@ use Carbon\Carbon;
 class CoachPrestatieController extends Controller
 {
     /**
+     * Check admin toegang voor alle prestaties beheer functies
+     */
+    private function checkAdminAccess()
+    {
+        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+            abort(403, 'Geen toegang. Alleen administrators hebben toegang tot prestaties beheer.');
+        }
+    }
+
+    /**
      * Toon overzicht van alle coaches en hun diensten
      */
     public function index()
     {
+        $this->checkAdminAccess();
+
         $userOrganisatieId = auth()->user()->organisatie_id;
         
         // Haal alle medewerkers op (coaches) van dezelfde organisatie
@@ -39,6 +51,8 @@ class CoachPrestatieController extends Controller
      */
     public function configure(User $user)
     {
+        $this->checkAdminAccess();
+
         // Check of de user bij dezelfde organisatie hoort
         if ($user->organisatie_id !== auth()->user()->organisatie_id) {
             abort(403, 'Geen toegang tot deze coach.');
@@ -58,6 +72,8 @@ class CoachPrestatieController extends Controller
      */
     public function updateDiensten(Request $request, User $user)
     {
+        $this->checkAdminAccess();
+
         $validated = $request->validate([
             'diensten' => 'required|array',
             'diensten.*.dienst_id' => 'required|exists:diensten,id',
@@ -93,6 +109,8 @@ class CoachPrestatieController extends Controller
      */
     public function overzicht(Request $request)
     {
+        $this->checkAdminAccess();
+
         $userOrganisatieId = auth()->user()->organisatie_id;
         
         // Haal jaar en kwartaal uit request, of gebruik huidige waarden
@@ -146,6 +164,8 @@ class CoachPrestatieController extends Controller
      */
     public function adminOverzicht(Request $request)
     {
+        $this->checkAdminAccess();
+
         $userOrganisatieId = auth()->user()->organisatie_id;
         
         // Haal jaar en kwartaal uit request, of gebruik huidige waarden
@@ -195,6 +215,8 @@ class CoachPrestatieController extends Controller
      */
     public function coachDetail(Request $request, User $user)
     {
+        $this->checkAdminAccess();
+
         // Check of de user bij dezelfde organisatie hoort
         if ($user->organisatie_id !== auth()->user()->organisatie_id) {
             abort(403, 'Geen toegang tot deze coach.');
