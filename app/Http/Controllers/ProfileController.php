@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\SecureFileUpload;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -61,11 +62,27 @@ class ProfileController extends Controller
             $user->avatar_path = null;
         }
 
-        // Handle avatar upload
+                // Avatar upload met veilige service class
         if ($request->hasFile('avatar')) {
-            $file = $request->file('avatar');
-            $path = $file->store('avatars', 'public');
-            $user->avatar_path = $path;
+            $request->validate([
+                'avatar' => SecureFileUpload::getAvatarValidationRules()
+            ], [
+                'avatar.required' => 'Selecteer een afbeelding om te uploaden.',
+                'avatar.image' => 'Het bestand moet een afbeelding zijn.',
+                'avatar.mimes' => 'Alleen JPG, JPEG, PNG, GIF en WebP bestanden zijn toegestaan.',
+                'avatar.max' => 'De afbeelding mag maximaal 2MB groot zijn.',
+                'avatar.dimensions' => 'De afbeelding moet minimaal 100x100 pixels zijn en maximaal 4000x4000 pixels.'
+            ]);
+
+            try {
+                $path = SecureFileUpload::uploadAvatar(
+                    $request->file('avatar'),
+                    $user->avatar_path
+                );
+                $user->avatar_path = $path;
+            } catch (\Exception $e) {
+                return back()->withErrors(['avatar' => $e->getMessage()]);
+            }
         }
 
         $user->save();
