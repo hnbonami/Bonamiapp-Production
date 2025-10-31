@@ -216,21 +216,21 @@ Route::middleware('auth')->group(function () {
         // Perfect print route (zonder navigatie/sidebar)
         Route::get('bikefit/{bikefit}/print-perfect', [\App\Http\Controllers\BikefitResultsController::class, 'printPerfect'])->name('bikefit.report.print.perfect');
     // Pixel-perfecte PDF via Browsershot/Puppeteer
-    Route::get('bikefit/{bikefit}/download-pdf-preview', [\AppHttp\Controllers\PdfController::class, 'generatePdf'])->name('bikefit.report.pdf.preview');
+    Route::get('bikefit/{bikefit}/download-pdf-preview', [\App\Http\Controllers\PdfController::class, 'generatePdf'])->name('bikefit.report.pdf.preview');
     // Eenvoudige print-versie (browser native print/PDF)
-    Route::get('bikefit/{bikefit}/print', [\AppHttp\Controllers\PdfController::class, 'printOnly'])->name('bikefit.report.print');
+    Route::get('bikefit/{bikefit}/print', [\App\Http\Controllers\PdfController::class, 'printOnly'])->name('bikefit.report.print');
     // Alternatieve print route via BikefitResultsController
-    Route::get('bikefit/{bikefit}/print-direct', [\AppHttp\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
+    Route::get('bikefit/{bikefit}/print-direct', [\App\Http\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
     // Direct PDF download route voor bikefit rapport
-    Route::get('bikefit/{bikefit}/download-pdf', [\AppHttp\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
+    Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
     // Bikefit berekende resultaten en verslag generatie
-    Route::get('bikefit/{bikefit}/results', [\AppHttp\Controllers\BikefitResultsController::class, 'show'])->name('bikefit.results')->scopeBindings();
-    Route::post('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
-    Route::get('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview')->scopeBindings();
+    Route::get('bikefit/{bikefit}/results', [\App\Http\Controllers\BikefitResultsController::class, 'show'])->name('bikefit.results')->scopeBindings();
+    Route::post('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
+    Route::get('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview')->scopeBindings();
     // SAVE CUSTOM RESULTS ROUTE - ESSENTIAL FOR EDITABLE RESULTS FUNCTIONALITY
-    Route::post('bikefit/{bikefit}/save-custom-results', [\AppHttp\Controllers\BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results')->scopeBindings();
+    Route::post('bikefit/{bikefit}/save-custom-results', [\App\Http\Controllers\BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results')->scopeBindings();
     // RESET TO CALCULATED ROUTE - ESSENTIAL FOR RESET FUNCTIONALITY
-    Route::post('bikefit/{bikefit}/reset-to-calculated', [\AppHttp\Controllers\BikefitController::class, 'resetToCalculated'])->name('bikefit.reset-to-calculated')->scopeBindings();
+    Route::post('bikefit/{bikefit}/reset-to-calculated', [\App\Http\Controllers\BikefitController::class, 'resetToCalculated'])->name('bikefit.reset-to-calculated')->scopeBindings();
         Route::get('bikefit/nieuw', [BikefitController::class, 'create'])->name('bikefit.create');
         Route::post('bikefit', [BikefitController::class, 'store'])->name('bikefit.store');
         Route::get('bikefit/{bikefit}', [BikefitController::class, 'show'])->name('bikefit.show')->scopeBindings();
@@ -807,19 +807,19 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard-content')->name('dash
     
     // SPECIFIEKE ROUTES EERST (voor wildcard routes)
     Route::get('/create', [App\Http\Controllers\DashboardContentController::class, 'create'])->name('create');
-    Route::get('/archived', [AppHttp\Controllers\DashboardContentController::class, 'archived'])->name('archived');
-    Route::post('/update-order', [AppHttp\Controllers\DashboardContentController::class, 'updateOrder'])->name('update-order');
+    Route::get('/archived', [App\Http\Controllers\DashboardContentController::class, 'archived'])->name('archived');
+    Route::post('/update-order', [App\Http\Controllers\DashboardContentController::class, 'updateOrder'])->name('update-order');
     
     // WILDCARD ROUTES LAATST
-    Route::get('/{dashboardContent}', [AppHttp\Controllers\DashboardContentController::class, 'show'])->name('show');
-    Route::get('/{dashboardContent}/edit', [AppHttp\Controllers\DashboardContentController::class, 'edit'])->name('edit');
-    Route::put('/{dashboardContent}', [AppHttp\Controllers\DashboardContentController::class, 'update'])->name('update');
-    Route::delete('/{dashboardContent}', [AppHttp\Controllers\DashboardContentController::class, 'destroy'])->name('destroy');
-    Route::patch('/{dashboardContent}/archive', [AppHttp\Controllers\DashboardContentController::class, 'archive'])->name('archive');
-    Route::patch('/{dashboardContent}/restore', [AppHttp\Controllers\DashboardContentController::class, 'restore'])->name('restore');
+    Route::get('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'show'])->name('show');
+    Route::get('/{dashboardContent}/edit', [App\Http\Controllers\DashboardContentController::class, 'edit'])->name('edit');
+    Route::put('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'update'])->name('update');
+    Route::delete('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'destroy'])->name('destroy');
+    Route::patch('/{dashboardContent}/archive', [App\Http\Controllers\DashboardContentController::class, 'archive'])->name('archive');
+    Route::patch('/{dashboardContent}/restore', [App\Http\Controllers\DashboardContentController::class, 'restore'])->name('restore');
     
     // POST route voor store
-    Route::post('/', [AppHttp\Controllers\DashboardContentController::class, 'store'])->name('store');
+    Route::post('/', [App\Http\Controllers\DashboardContentController::class, 'store'])->name('store');
 });
 
 // Profile Settings Routes
@@ -1370,15 +1370,15 @@ Route::post('medewerkers/{medewerker}/send-invitation', [\App\Http\Controllers\M
 
 // Klanten Import/Export routes
 Route::get('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
-Route::post('/import/klanten', [\AppHttp\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+Route::post('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
 Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
 Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');
 
 // Bikefit Import/Export routes  
-Route::get('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
+Route::get('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
 Route::post('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
-Route::get('/import/bikefits/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
-Route::get('/bikefit/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
+Route::get('/import/bikefits/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
+Route::get('/bikefit/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
 
 // Inspanningstesten Import/Export routes
 Route::get('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'showImport'])->name('inspanningstesten.import.form');
