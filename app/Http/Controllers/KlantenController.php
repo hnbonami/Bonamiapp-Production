@@ -10,14 +10,29 @@ use Illuminate\Support\Facades\Log;
 
 class KlantenController extends Controller
 {
+    /**
+     * Check toegang - klanten mogen NIET naar de klanten lijst
+     */
+    private function checkAccess()
+    {
+        // Klanten hebben GEEN toegang tot klanten lijst
+        if (auth()->user()->role === 'klant') {
+            abort(403, 'Geen toegang. Klanten kunnen deze pagina niet bekijken.');
+        }
+    }
+    
     public function index()
     {
+        $this->checkAccess();
+        
         $klanten = Klant::all();
         return view('klanten.index', compact('klanten'));
     }
 
     public function create()
     {
+        $this->checkAccess();
+        
         try {
             // VEILIG: Haal referral data op ZONDER te crashen
             $referralService = app(ReferralService::class);
@@ -38,6 +53,8 @@ class KlantenController extends Controller
 
     public function store(Request $request)
     {
+        $this->checkAccess();
+        
         // DEBUG: Check welke organisatie_id de gebruiker heeft
         \Log::info('🔍 KLANT STORE - User organisatie_id: ' . auth()->user()->organisatie_id);
         
@@ -162,16 +179,22 @@ class KlantenController extends Controller
 
     public function show(Klant $klant)
     {
+        $this->checkAccess();
+        
         return view('klanten.show', compact('klant'));
     }
 
     public function edit(Klant $klant)
     {
+        $this->checkAccess();
+        
         return view('klanten.edit', compact('klant'));
     }
 
     public function update(Request $request, Klant $klant)
     {
+        $this->checkAccess();
+        
         // DIRECTE TEST - DEZE MOET JE ZIEN!
         \Log::info('🚨🚨🚨 ORIGINELE KLANTEN CONTROLLER AANGEROEPEN!');
         
@@ -219,6 +242,8 @@ class KlantenController extends Controller
 
     public function destroy(Klant $klant)
     {
+        $this->checkAccess();
+        
         $klant->delete();
         return redirect()->route('klanten.index')->with('success', 'Klant succesvol verwijderd!');
     }
