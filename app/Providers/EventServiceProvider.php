@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
+use App\Listeners\LogSuccessfulLogin;
+use App\Listeners\LogSuccessfulLogout;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -21,6 +23,14 @@ class EventServiceProvider extends ServiceProvider
         // Login activity logging - NU ACTIEF!
         'Illuminate\Auth\Events\Login' => [
             'App\Listeners\LogLoginActivity',
+        ],
+        
+        \Illuminate\Auth\Events\Login::class => [
+            LogSuccessfulLogin::class,
+        ],
+        
+        \Illuminate\Auth\Events\Logout::class => [
+            LogSuccessfulLogout::class,
         ],
     ];
 

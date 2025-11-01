@@ -1,16 +1,11 @@
 @extends('layouts.app')
 
 @section('content')
-<!-- TEST COMMENT - REFRESH TO SEE IF THIS APPEARS -->
-<div style="background: red; color: white; padding: 20px; margin: 20px; font-size: 24px; text-align: center;">
-    🚨 TEST: Als je dit rood blok ziet, werken we in het juiste bestand! 🚨
-</div>
-
 <div class="container mx-auto px-4 py-8">
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
         <div>
-            <h1 class="text-3xl font-bold text-gray-800">📊 Login Activiteit - UPDATED</h1>
+            <h1 class="text-3xl font-bold text-gray-800">📊 Login Activiteit</h1>
             <p class="text-gray-600 mt-2">Monitor gebruikers activiteit en sessies</p>
         </div>
         
@@ -19,80 +14,82 @@
         </a>
     </div>
 
-    <!-- FORCE VISIBLE CARDS WITH INLINE STYLES -->
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px;">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         
-        <!-- GROENE CARD -->
-        <div style="background: #10B981; color: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <h3 style="color: white; font-size: 18px; margin-bottom: 8px;">VANDAAG</h3>
-            <p style="color: white; font-size: 32px; font-weight: bold; margin: 0;">{{ $stats['total_logins_today'] ?? '2' }}</p>
+        <!-- Card 1: Vandaag -->
+        <div class="bg-gradient-to-br from-green-400 to-green-600 rounded-xl shadow-lg p-6 text-white">
+            <h3 class="text-lg font-semibold mb-2">Logins Vandaag</h3>
+            <p class="text-4xl font-bold">{{ $stats['total_logins_today'] ?? 0 }}</p>
+            <p class="text-sm mt-2 opacity-90">{{ now()->format('d/m/Y') }}</p>
         </div>
 
-        <!-- BLAUWE CARD -->
-        <div style="background: #3B82F6; color: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <h3 style="color: white; font-size: 18px; margin-bottom: 8px;">DEZE WEEK</h3>
-            <p style="color: white; font-size: 32px; font-weight: bold; margin: 0;">{{ $stats['total_logins_week'] ?? '15' }}</p>
+        <!-- Card 2: Deze Week -->
+        <div class="bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+            <h3 class="text-lg font-semibold mb-2">Deze Week</h3>
+            <p class="text-4xl font-bold">{{ $stats['total_logins_week'] ?? 0 }}</p>
+            <p class="text-sm mt-2 opacity-90">Totaal logins</p>
         </div>
 
-        <!-- PAARSE CARD -->
-        <div style="background: #8B5CF6; color: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <h3 style="color: white; font-size: 18px; margin-bottom: 8px;">UNIEKE VANDAAG</h3>
-            <p style="color: white; font-size: 32px; font-weight: bold; margin: 0;">{{ $stats['unique_users_today'] ?? '1' }}</p>
+        <!-- Card 3: Unieke Gebruikers -->
+        <div class="bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+            <h3 class="text-lg font-semibold mb-2">Unieke Vandaag</h3>
+            <p class="text-4xl font-bold">{{ $stats['unique_users_today'] ?? 0 }}</p>
+            <p class="text-sm mt-2 opacity-90">Verschillende gebruikers</p>
         </div>
 
-        <!-- ORANJE CARD -->
-        <div style="background: #F59E0B; color: white; padding: 24px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
-            <h3 style="color: white; font-size: 18px; margin-bottom: 8px;">GEM. SESSIE</h3>
-            <p style="color: white; font-size: 32px; font-weight: bold; margin: 0;">
+        <!-- Card 4: Gemiddelde Sessie -->
+        <div class="bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+            <h3 class="text-lg font-semibold mb-2">Gem. Sessie</h3>
+            <p class="text-4xl font-bold">
                 @if(isset($stats['average_session_time']) && $stats['average_session_time'])
                     {{ gmdate('H:i', $stats['average_session_time']) }}
                 @else
-                    1:23
+                    0:00
                 @endif
             </p>
+            <p class="text-sm mt-2 opacity-90">Uren:Minuten</p>
         </div>
 
     </div>
 
     <!-- Filters -->
-    <div style="background-color: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); padding: 1.5rem; margin-bottom: 2rem;">
-        <h3 style="font-size: 1.125rem; font-weight: 600; color: #1f2937; margin-bottom: 1rem;">🔍 Filter Opties</h3>
-        <form method="GET" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: end;">
-            <div style="min-width: 250px;">
-                <label for="user_id" style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Gebruiker</label>
-                <select id="user_id" name="user_id" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; background-color: white;">
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">🔍 Filter Opties</h3>
+        <form method="GET" class="flex flex-wrap gap-4 items-end">
+            <div class="min-w-[250px]">
+                <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">Gebruiker</label>
+                <select id="user_id" name="user_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                     <option value="">Alle gebruikers</option>
-                    @if(isset($users))
-                        @foreach($users as $user)
-                            <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
-                                {{ $user->name }} ({{ $user->email }})
-                            </option>
-                        @endforeach
-                    @endif
+                    @foreach($users as $user)
+                        <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>
+                            {{ $user->name }} ({{ $user->email }})
+                        </option>
+                    @endforeach
                 </select>
             </div>
             
-            <div style="min-width: 150px;">
-                <label for="date_from" style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Van Datum</label>
+            <div class="min-w-[150px]">
+                <label for="date_from" class="block text-sm font-medium text-gray-700 mb-2">Van Datum</label>
                 <input type="date" id="date_from" name="date_from" value="{{ request('date_from') }}" 
-                       style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem;">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
             </div>
             
-            <div style="min-width: 150px;">
-                <label for="date_to" style="display: block; font-size: 0.875rem; font-weight: 500; color: #374151; margin-bottom: 0.5rem;">Tot Datum</label>
+            <div class="min-w-[150px]">
+                <label for="date_to" class="block text-sm font-medium text-gray-700 mb-2">Tot Datum</label>
                 <input type="date" id="date_to" name="date_to" value="{{ request('date_to') }}" 
-                       style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem;">
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
             </div>
             
-            <div style="display: flex; gap: 0.75rem;">
-                <button type="submit" style="background-color: #2563eb; color: white; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; border: none; cursor: pointer; display: inline-flex; align-items: center;">
-                    <svg style="width: 1rem; height: 1rem; margin-right: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex gap-3">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                     Filteren
                 </button>
-                <a href="{{ route('admin.users.activity') }}" style="background-color: #d1d5db; color: #374151; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 500; text-decoration: none; display: inline-flex; align-items: center;">
-                    <svg style="width: 1rem; height: 1rem; margin-right: 0.5rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <a href="{{ route('admin.users.activity') }}" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors font-medium flex items-center">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
                     Reset
@@ -102,29 +99,120 @@
     </div>
 
     <!-- Activity Logs Table -->
-        <!-- Activity Logs Table -->
-    <div style="background-color: white; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); overflow: hidden;">
-        <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; background-color: #f9fafb;">
-            <h3 style="font-size: 1.125rem; font-weight: 600; color: #1f2937;">📋 Login Activiteiten 
-                <span style="display: inline-flex; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; background-color: #dbeafe; color: #1e40af; margin-left: 0.5rem;">
-                    {{ isset($logs) ? $logs->total() : '11' }}
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+            <h3 class="text-lg font-semibold text-gray-900">
+                📋 Login Activiteiten 
+                <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 ml-2">
+                    {{ $logs->total() }}
                 </span>
             </h3>
         </div>
-        <div style="overflow-x: auto;">
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead style="background-color: #f9fafb;">
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
                     <tr>
-                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Gebruiker</th>
-                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Login Tijd</th>
-                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Logout Tijd</th>
-                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Sessie Duur</th>
-                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">IP Adres</th>
-                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gebruiker</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Login Tijd</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Logout Tijd</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sessie Duur</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Adres</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     </tr>
                 </thead>
-                <tbody style="background-color: white;">
-                    @forelse($logs ?? [] as $log)
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @forelse($logs as $log)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10">
+                                        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
+                                            <span class="text-sm font-medium text-white">
+                                                {{ strtoupper(substr($log->user->name, 0, 1)) }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">{{ $log->user->name }}</div>
+                                        <div class="text-sm text-gray-500">{{ $log->user->email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                                    </svg>
+                                    {{ $log->logged_in_at->format('d/m/Y H:i:s') }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                @if($log->logged_out_at)
+                                    <div class="flex items-center">
+                                        <svg class="w-4 h-4 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        </svg>
+                                        {{ $log->logged_out_at->format('d/m/Y H:i:s') }}
+                                    </div>
+                                @else
+                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        Actieve sessie
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                @if($log->session_duration)
+                                    <span class="font-mono">{{ $log->sessionDurationHuman }}</span>
+                                @elseif(!$log->logged_out_at)
+                                    <span class="text-blue-600 font-medium">{{ $log->logged_in_at->diffForHumans() }}</span>
+                                @else
+                                    <span class="text-gray-400">-</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <code class="px-2 py-1 bg-gray-100 rounded text-xs">{{ $log->ip_address }}</code>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                @if($log->logged_out_at)
+                                    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Voltooid
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                                        Actief
+                                    </span>
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                                <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+                                </svg>
+                                <p class="text-lg font-medium">Geen login activiteit gevonden</p>
+                                <p class="text-sm mt-2">Probeer de filters aan te passen</p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        
+        @if($logs->hasPages())
+            <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                {{ $logs->appends(request()->query())->links() }}
+            </div>
+        @endif
+    </div>
+
+</div>
+@endsection
                         <tr style="border-top: 1px solid #e5e7eb;" onmouseover="this.style.backgroundColor='#f9fafb'" onmouseout="this.style.backgroundColor='white'">
                             <td style="padding: 1rem 1.5rem; white-space: nowrap;">
                                 <div style="display: flex; align-items: center;">

@@ -59,37 +59,56 @@ class LoginController extends Controller
      */
     public function logout(Request $request)
     {
-        $user = Auth::user();
-        
-        \Log::info('🔥 LOGOUT TRIGGERED', [
-            'user_id' => $user ? $user->id : 'NO_USER',
-            'user_name' => $user ? $user->name : 'NO_USER',
-        ]);
-        
-        // Update the most recent login activity with logout time
-        if ($user) {
-            $latestActivity = LoginActivity::where('user_id', $user->id)
-                ->whereNull('logged_out_at')
-                ->latest('logged_in_at')
-                ->first();
-                
-            if ($latestActivity) {
-                $latestActivity->update(['logged_out_at' => now()]);
-                \Log::info('🔥 LOGOUT TIME UPDATED', [
-                    'activity_id' => $latestActivity->id,
-                    'logged_out_at' => now(),
-                ]);
-            } else {
-                \Log::warning('🔥 NO ACTIVE SESSION FOUND FOR LOGOUT', [
-                    'user_id' => $user->id,
-                ]);
-            }
+        // Update de laatste login activiteit met logout tijd
+        $lastActivity = \App\Models\ActivityLog::where('user_id', auth()->id())
+            ->whereNull('logout_at')
+            ->latest('login_at')
+            ->first();
+
+        if ($lastActivity) {
+            $logoutTime = now();
+            $sessionDuration = $lastActivity->login_at->diffInSeconds($logoutTime);
+            
+            $lastActivity->update([
+                'logout_at' => $logoutTime,
+                'session_duration' => $sessionDuration,
+            ]);
+
+            \Log::info('User logged out', [
+                'user_id' => auth()->id(),
+                'session_duration' => gmdate('H:i:s', $sessionDuration)
+            ]);
         }
-        
+
         Auth::logout();
+
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect('/');
+    }
+
+    /**
+     * The user has been authenticated.
+     */
+    protected function authenticated(Request $request, $user)
+    {
+        // Log de login activiteit
+        \App\Models\ActivityLog::create([
+            'user_id' => $user->id,
+            'login_at' => now(),
+            'ip_address' => $request->ip(),
+            'user_agent' => $request->userAgent(),
+        ]);
+
+        \Log::info('User logged in', [
+            'user_id' => $user->id,
+            'email' => $user->email,
+            'ip' => $request->ip(),
+            'timestamp' => now()
+        ]);
+
+        return redirect()->intended($this->redirectPath());
     }
 
     private function logLoginActivity($request, $user)
