@@ -216,7 +216,7 @@
                     <h4 class="font-semibold text-gray-900 text-sm">Uitnodiging</h4>
                 </div>
                 <p class="text-xs text-gray-600 mb-3">Profieluitnodiging versturen</p>
-                <form action="{{ route('klanten.sendInvitation', $klant) }}" method="POST">
+                <form action="{{ route('klanten.invite', $klant) }}" method="POST" onsubmit="return confirm('Uitnodiging versturen naar {{ $klant->email }}?')">
                     @csrf
                     <button type="submit" class="block w-full text-center" style="background:#c8e1eb;color:#111;padding:0.5rem 0.75rem;border-radius:6px;font-weight:600;font-size:0.813rem;border:none;cursor:pointer;">
                         Versturen
