@@ -359,18 +359,37 @@ class EmailIntegrationService
                 'content_length' => strlen($content),
                 'has_html' => strpos($content, '<') !== false
             ]);
+            
+            // Check SMTP configuratie
+            \Log::info('📧 SMTP CONFIG CHECK', [
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'from' => config('mail.from.address'),
+                'username' => config('mail.mailers.smtp.username') ? 'SET' : 'NOT SET'
+            ]);
 
             // Use Mail::html for proper HTML formatting
-            \Illuminate\Support\Facades\Mail::html($content, function ($message) use ($customer, $subject) {
-                $message->to($customer->email)
-                        ->subject($subject);
-            });
-
-            \Log::info('✅ CUSTOMER WELCOME EMAIL SENT SUCCESSFULLY', [
-                'to' => $customer->email,
-                'customer_name' => $customer->voornaam . ' ' . $customer->naam,
-                'subject' => $subject
-            ]);
+            try {
+                \Illuminate\Support\Facades\Mail::html($content, function ($message) use ($customer, $subject) {
+                    $message->to($customer->email)
+                            ->subject($subject);
+                });
+                
+                \Log::info('✅ CUSTOMER WELCOME EMAIL SENT SUCCESSFULLY', [
+                    'to' => $customer->email,
+                    'customer_name' => $customer->voornaam . ' ' . $customer->naam,
+                    'subject' => $subject,
+                    'mail_sent_via' => config('mail.default')
+                ]);
+            } catch (\Exception $mailError) {
+                \Log::error('❌ MAIL SEND FAILED', [
+                    'error' => $mailError->getMessage(),
+                    'to' => $customer->email,
+                    'trace' => $mailError->getTraceAsString()
+                ]);
+                throw $mailError;
+            }
 
             // Update trigger statistics directly
             $this->updateTriggerStats('welcome_customer', true);
@@ -743,6 +762,55 @@ class EmailIntegrationService
         } catch (\Exception $e) {
             \Log::error('❌ Test email failed: ' . $e->getMessage(), [
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Debug email configuratie en test verzending
+     */
+    public function debugEmailConfiguration()
+    {
+        try {
+            \Log::info('🔍 EMAIL CONFIGURATIE DEBUG GESTART');
+            
+            // Check .env configuratie
+            $config = [
+                'MAIL_MAILER' => config('mail.default'),
+                'MAIL_HOST' => config('mail.mailers.smtp.host'),
+                'MAIL_PORT' => config('mail.mailers.smtp.port'),
+                'MAIL_USERNAME' => config('mail.mailers.smtp.username'),
+                'MAIL_ENCRYPTION' => config('mail.mailers.smtp.encryption'),
+                'MAIL_FROM_ADDRESS' => config('mail.from.address'),
+                'MAIL_FROM_NAME' => config('mail.from.name'),
+            ];
+            
+            \Log::info('📧 Email configuratie:', $config);
+            
+            // Test SMTP connectie
+            try {
+                $transport = \Illuminate\Support\Facades\Mail::getSwiftMailer()->getTransport();
+                \Log::info('✅ SMTP transport beschikbaar');
+            } catch (\Exception $e) {
+                \Log::error('❌ SMTP transport FAILED: ' . $e->getMessage());
+                return false;
+            }
+            
+            // Verstuur test email
+            \Log::info('📤 Versturen test email naar: ' . config('mail.from.address'));
+            
+            \Mail::raw('Dit is een test email van het Bonami systeem. Als je deze ontvangt, werkt email verzending correct!', function ($message) {
+                $message->to(config('mail.from.address'))
+                        ->subject('🧪 Test Email - Bonami Systeem');
+            });
+            
+            \Log::info('✅ Test email verstuurd!');
+            return true;
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Email configuratie debug FAILED: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
             return false;

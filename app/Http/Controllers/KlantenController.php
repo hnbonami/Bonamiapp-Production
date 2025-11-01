@@ -256,8 +256,16 @@ class KlantenController extends Controller
         try {
             \Log::info('🎯 SENDING INVITATION EMAIL', [
                 'klant_id' => $klant->id,
-                'klant_email' => $klant->email
+                'klant_email' => $klant->email,
+                'klant_voornaam' => $klant->voornaam,
+                'klant_naam' => $klant->naam
             ]);
+            
+            // Valideer email adres formaat
+            if (!filter_var($klant->email, FILTER_VALIDATE_EMAIL)) {
+                \Log::error('❌ INVALID EMAIL ADDRESS', ['email' => $klant->email]);
+                return redirect()->back()->with('error', 'Ongeldig email adres: ' . $klant->email);
+            }
 
             // Generate temporary password
             $temporaryPassword = \Str::random(12);
@@ -297,14 +305,26 @@ class KlantenController extends Controller
                 'email' => $klant->email
             ]);
             
+            \Log::info('📧 Email service result', [
+                'result' => $emailResult,
+                'to' => $klant->email,
+                'password_length' => strlen($temporaryPassword)
+            ]);
+            
             if ($emailResult) {
                 return redirect()->back()->with('success', 'Uitnodiging verstuurd naar ' . $klant->voornaam . ' ' . $klant->naam . ' (' . $klant->email . ')');
             } else {
-                return redirect()->back()->with('error', 'Uitnodiging kon niet worden verstuurd naar ' . $klant->naam);
+                \Log::error('❌ Email service returned false', ['email' => $klant->email]);
+                return redirect()->back()->with('error', 'Uitnodiging kon niet worden verstuurd. Check de logs voor details.');
             }
             
         } catch (\Exception $e) {
-            \Log::error('Invitation sending failed: ' . $e->getMessage());
+            \Log::error('❌ Invitation sending failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'klant_email' => $klant->email,
+                'klant_id' => $klant->id
+            ]);
             return redirect()->back()->with('error', 'Fout bij versturen uitnodiging: ' . $e->getMessage());
         }
     }
