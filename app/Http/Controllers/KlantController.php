@@ -18,21 +18,40 @@ class KlantController extends Controller
 {
     public function verwijderViaPost(Request $request, Klant $klant)
     {
-        $klant->delete();
+        $email = $klant->email;
+        
+        // Verwijder gekoppelde user (FORCE DELETE)
+        if ($email) {
+            $user = \App\Models\User::where('email', $email)->first();
+            if ($user) {
+                $user->forceDelete();
+                \Log::info('✅ User account permanent verwijderd', ['email' => $email]);
+            }
+        }
+        
+        // FORCE DELETE klant (geen soft delete)
+        $klant->forceDelete();
+        
         return redirect()->route('klanten.index')->with('success', 'Klant succesvol verwijderd.');
     }
     public function destroy(Klant $klant)
     {
         $id = $klant->id;
-        // Verwijder gekoppelde user
-        if ($klant->email) {
-            $user = \App\Models\User::where('email', $klant->email)->first();
+        $email = $klant->email;
+        
+        // Verwijder gekoppelde user (FORCE DELETE)
+        if ($email) {
+            $user = \App\Models\User::where('email', $email)->first();
             if ($user) {
-                $user->delete();
+                $user->forceDelete(); // FORCE DELETE
+                \Log::info('✅ User account permanent verwijderd', ['email' => $email]);
             }
         }
-        $klant->delete();
-        \Log::info('Klant en gekoppelde user verwijderd', ['id' => $id]);
+        
+        // FORCE DELETE klant (geen soft delete)
+        $klant->forceDelete();
+        
+        \Log::info('🗑️ Klant permanent verwijderd', ['id' => $id, 'email' => $email]);
         return redirect()->route('klanten.index')->with('success', 'Klant en gekoppelde gebruiker succesvol verwijderd.');
     }
     public function edit(Klant $klant)

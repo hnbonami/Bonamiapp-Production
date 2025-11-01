@@ -244,7 +244,24 @@ class KlantenController extends Controller
     {
         $this->checkAccess();
         
-        $klant->delete();
+        // FORCE DELETE - geen soft delete, zodat email opnieuw gebruikt kan worden
+        \Log::info('🗑️ Klant wordt permanent verwijderd', [
+            'klant_id' => $klant->id,
+            'email' => $klant->email
+        ]);
+        
+        // Verwijder gekoppelde user account
+        if ($klant->email) {
+            $user = \App\Models\User::where('email', $klant->email)->first();
+            if ($user) {
+                $user->forceDelete();
+                \Log::info('✅ User account verwijderd voor klant ' . $klant->email);
+            }
+        }
+        
+        // FORCE DELETE ipv soft delete
+        $klant->forceDelete();
+        
         return redirect()->route('klanten.index')->with('success', 'Klant succesvol verwijderd!');
     }
 
