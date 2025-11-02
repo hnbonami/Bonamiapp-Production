@@ -19,6 +19,18 @@
 
     <!-- Compacte Header met avatar en kerngegevens -->
     <div class="mb-6">
+        @php
+            // AVATAR PATH - EENMALIG DECLAREREN BOVENAAN
+            $avatarPath = $klant->avatar_path;
+            $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
+            \Log::info('🖼️ Avatar debug show.blade', [
+                'klant_id' => $klant->id,
+                'avatar_path' => $avatarPath,
+                'full_url' => $avatarPath ? asset('storage/' . $avatarPath) : 'geen avatar',
+                'file_exists' => $avatarPath ? \Storage::disk('public')->exists($avatarPath) : false
+            ]);
+        @endphp
+        
         <!-- Mobile: Avatar links, Geslacht + Email rechts ernaast -->
         <div class="flex items-start gap-4 mb-4 md:hidden">
             <!-- Avatar met overlay - links uitgelijnd op alle devices -->
@@ -26,12 +38,6 @@
                 <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form" style="margin: 0;">
                     @csrf
                     <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
-                        @php
-                            // Direct van klant object - al fresh in controller
-                            $avatarPath = $klant->avatar_path;
-                            $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
-                        @endphp
-                        
                         @if($avatarPath)
                             <img src="{{ asset('storage/' . $avatarPath) }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
                         @else

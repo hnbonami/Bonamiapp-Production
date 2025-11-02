@@ -56,6 +56,9 @@ class KlantController extends Controller
     }
     public function edit(Klant $klant)
     {
+        // FORCE FRESH DATA - haal altijd verse gegevens op
+        $klant = $klant->fresh();
+        
         return view('klanten.edit', compact('klant'));
     }
 
@@ -67,44 +70,76 @@ class KlantController extends Controller
         ]);
         
         // VALIDATIE MET ALLE JUISTE VELDEN + AVATAR
-        $validatedData = $request->validate([
+                $validatedData = $request->validate([
             'voornaam' => 'required|string|max:255',
             'naam' => 'required|string|max:255',
-            'email' => 'required|email|unique:klanten,email,' . $klant->id,
+            'email' => 'required|email|max:255',
             'telefoonnummer' => 'nullable|string|max:20',
             'geboortedatum' => 'nullable|date',
-            'geslacht' => 'nullable|in:Man,Vrouw,Anders',
+            'geslacht' => 'nullable|in:Man,Vrouw,X',
             'straatnaam' => 'nullable|string|max:255',
-            'huisnummer' => 'nullable|string|max:50',
+            'huisnummer' => 'nullable|string|max:10',
             'postcode' => 'nullable|string|max:10',
             'stad' => 'nullable|string|max:255',
-            'status' => 'nullable|string|max:255',
-            'sport' => 'nullable|string|max:255',
-            'niveau' => 'nullable|string|max:255',
-            'club' => 'nullable|string|max:255',
-            'herkomst' => 'nullable|string|max:255',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // ✅ AVATAR VALIDATIE!
+            'status' => 'required|in:Actief,Inactief',
+            'notities' => 'nullable|string',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Handle avatar upload - GEFIXED!
+        // Handle avatar upload - GEFIXED v3!
+        $avatarPath = null;
         if ($request->hasFile('avatar')) {
+            \Log::info('🖼️ Avatar upload gedetecteerd', [
+                'klant_id' => $klant->id,
+                'file_original_name' => $request->file('avatar')->getClientOriginalName(),
+                'file_size' => $request->file('avatar')->getSize()
+            ]);
+            
             // Verwijder oude avatar
             if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
                 \Storage::disk('public')->delete($klant->avatar_path);
+                \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar_path]);
             }
             
             // Upload nieuwe avatar
             $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
-            $validatedData['avatar_path'] = $avatarPath;
             
-            \Log::info('✅ Avatar uploaded in KlantController', ['path' => $avatarPath]);
+            \Log::info('✅ Avatar opgeslagen in storage', [
+                'path' => $avatarPath,
+                'full_path' => storage_path('app/public/' . $avatarPath),
+                'file_exists' => \Storage::disk('public')->exists($avatarPath)
+            ]);
         }
 
-        $klant->update($validatedData);
+        // Verwijder avatar uit validatedData (is een file object)
+        unset($validatedData['avatar']);
         
-        \Log::info('✅ Klant bijgewerkt', ['klant_id' => $klant->id]);
+        // Voeg avatar_path toe als er een nieuwe is
+        if ($avatarPath) {
+            $validatedData['avatar_path'] = $avatarPath;
+        }
+
+        // Update via DB
+        $updateData = array_merge($validatedData, ['updated_at' => now()]);
         
-        return redirect()->route('klanten.show', $klant)->with('success', 'Klant succesvol bijgewerkt!');
+        \DB::table('klanten')
+            ->where('id', $klant->id)
+            ->update($updateData);
+        
+        // Verificatie
+        $dbCheck = \DB::table('klanten')->where('id', $klant->id)->first(['avatar_path', 'voornaam', 'naam']);
+        
+        \Log::info('✅ Klant bijgewerkt in DB', [
+            'klant_id' => $klant->id,
+            'avatar_in_update' => isset($updateData['avatar_path']),
+            'avatar_path_saved' => $updateData['avatar_path'] ?? 'geen',
+            'db_verification' => [
+                'avatar_path' => $dbCheck->avatar_path,
+                'naam' => $dbCheck->voornaam . ' ' . $dbCheck->naam
+            ]
+        ]);
+
+        return redirect()->route('klanten.show', $klant->id)->with('success', 'Klant succesvol bijgewerkt!');
     }
     /**
      * Display a listing of the resource.
@@ -235,6 +270,17 @@ class KlantController extends Controller
     }
     public function show(Klant $klant)
     {
+        // FORCE FRESH DATA - haal altijd verse gegevens op
+        $klant = $klant->fresh();
+        
+        // DEBUG: Check avatar_path
+        \Log::info('🔍 Klant show - avatar check', [
+            'klant_id' => $klant->id,
+            'avatar_path_from_model' => $klant->avatar_path,
+            'avatar_path_from_db' => \DB::table('klanten')->where('id', $klant->id)->value('avatar_path'),
+            'db_columns' => \DB::select('SHOW COLUMNS FROM klanten WHERE Field = "avatar_path"')
+        ]);
+        
         // Laad gerelateerde data met correcte relatie namen
         $klant->load(['bikefits', 'inspanningstesten']);
 
@@ -266,31 +312,44 @@ class KlantController extends Controller
             'avatar' => 'required|image|max:5120',
         ]);
 
-        // Upload nieuwe avatar
-        $path = $request->file('avatar')->store('avatars/klanten', 'public');
-        
-        // Verwijder oude avatar indien aanwezig (van klant EN user)
-        if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
-            \Storage::disk('public')->delete($klant->avatar_path);
-        }
-        if ($klant->user && $klant->user->avatar_path && \Storage::disk('public')->exists($klant->user->avatar_path)) {
-            \Storage::disk('public')->delete($klant->user->avatar_path);
-        }
-        
-        // Update BEIDE: klant én gekoppelde user
-        $klant->update(['avatar_path' => $path]);
-        
-        if ($klant->user) {
-            $klant->user->update(['avatar_path' => $path]);
-            \Log::info('🖼️ Avatar bijgewerkt voor klant EN user', [
+        try {
+            // Verwijder oude avatar indien aanwezig
+            if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
+                \Storage::disk('public')->delete($klant->avatar_path);
+                \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar_path]);
+            }
+            
+            // Upload nieuwe avatar
+            $path = $request->file('avatar')->store('avatars/klanten', 'public');
+            
+            // Update direct op database - geen cache
+            \DB::table('klanten')
+                ->where('id', $klant->id)
+                ->update([
+                    'avatar_path' => $path,
+                    'updated_at' => now()
+                ]);
+            
+            \Log::info('✅ Avatar bijgewerkt via DB (KlantController)', [
                 'klant_id' => $klant->id,
-                'user_id' => $klant->user->id,
-                'avatar_path' => $path
+                'nieuwe_path' => $path,
+                'file_exists' => \Storage::disk('public')->exists($path)
             ]);
+            
+            // Clear model cache
+            $klant = $klant->fresh();
+        
+            return redirect()->route('klanten.show', $klant->id)
+                           ->with('success', 'Profielfoto succesvol bijgewerkt!');
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Avatar update failed', [
+                'error' => $e->getMessage(),
+                'klant_id' => $klant->id
+            ]);
+            
+            return redirect()->back()->with('error', 'Fout bij uploaden avatar: ' . $e->getMessage());
         }
-    
-        // Redirect met success message
-        return redirect()->back()->with('success', 'Profielfoto succesvol bijgewerkt');
     }
 
     /**
