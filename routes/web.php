@@ -218,7 +218,7 @@ Route::middleware('auth')->group(function () {
     // Pixel-perfecte PDF via Browsershot/Puppeteer
     Route::get('bikefit/{bikefit}/download-pdf-preview', [\App\Http\Controllers\PdfController::class, 'generatePdf'])->name('bikefit.report.pdf.preview');
     // Eenvoudige print-versie (browser native print/PDF)
-    Route::get('bikefit/{bikefit}/print', [\App\Http\Controllers\PdfController::class, 'printOnly'])->name('bikefit.report.print');
+    Route::get('bikefit/{bikefit}/print', [\AppHttp\Controllers\PdfController::class, 'printOnly'])->name('bikefit.report.print');
     // Alternatieve print route via BikefitResultsController
     Route::get('bikefit/{bikefit}/print-direct', [\App\Http\Controllers\BikefitResultsController::class, 'printReport'])->name('bikefit.report.print.direct');
     // Direct PDF download route voor bikefit rapport
@@ -811,15 +811,15 @@ Route::middleware(['auth', 'verified'])->prefix('dashboard-content')->name('dash
     Route::post('/update-order', [App\Http\Controllers\DashboardContentController::class, 'updateOrder'])->name('update-order');
     
     // WILDCARD ROUTES LAATST
-    Route::get('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'show'])->name('show');
-    Route::get('/{dashboardContent}/edit', [App\Http\Controllers\DashboardContentController::class, 'edit'])->name('edit');
-    Route::put('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'update'])->name('update');
-    Route::delete('/{dashboardContent}', [App\Http\Controllers\DashboardContentController::class, 'destroy'])->name('destroy');
-    Route::patch('/{dashboardContent}/archive', [App\Http\Controllers\DashboardContentController::class, 'archive'])->name('archive');
-    Route::patch('/{dashboardContent}/restore', [App\Http\Controllers\DashboardContentController::class, 'restore'])->name('restore');
+    Route::get('/{dashboardContent}', [AppHttp\Controllers\DashboardContentController::class, 'show'])->name('show');
+    Route::get('/{dashboardContent}/edit', [AppHttp\Controllers\DashboardContentController::class, 'edit'])->name('edit');
+    Route::put('/{dashboardContent}', [AppHttp\Controllers\DashboardContentController::class, 'update'])->name('update');
+    Route::delete('/{dashboardContent}', [AppHttp\Controllers\DashboardContentController::class, 'destroy'])->name('destroy');
+    Route::patch('/{dashboardContent}/archive', [AppHttp\Controllers\DashboardContentController::class, 'archive'])->name('archive');
+    Route::patch('/{dashboardContent}/restore', [AppHttp\Controllers\DashboardContentController::class, 'restore'])->name('restore');
     
     // POST route voor store
-    Route::post('/', [App\Http\Controllers\DashboardContentController::class, 'store'])->name('store');
+    Route::post('/', [AppHttp\Controllers\DashboardContentController::class, 'store'])->name('store');
 });
 
 // Profile Settings Routes

@@ -61,11 +61,12 @@ class KlantController extends Controller
 
     public function update(Request $request, Klant $klant)
     {
-        // 🚨 KRITIEKE DEBUG - JUISTE CONTROLLER!
-        \Log::info('🎯 KLANTCONTROLLER UPDATE AANGEROEPEN!', $request->all());
-        \Log::info('🎯 KLANT VOOR UPDATE:', $klant->toArray());
+        \Log::info('🎯 KLANTCONTROLLER UPDATE', [
+            'klant_id' => $klant->id,
+            'has_avatar' => $request->hasFile('avatar')
+        ]);
         
-        // VALIDATIE MET ALLE JUISTE VELDEN
+        // VALIDATIE MET ALLE JUISTE VELDEN + AVATAR
         $validatedData = $request->validate([
             'voornaam' => 'required|string|max:255',
             'naam' => 'required|string|max:255',
@@ -73,26 +74,35 @@ class KlantController extends Controller
             'telefoonnummer' => 'nullable|string|max:20',
             'geboortedatum' => 'nullable|date',
             'geslacht' => 'nullable|in:Man,Vrouw,Anders',
-            'straatnaam' => 'nullable|string|max:255', // ✅ TOEGEVOEGD!
-            'huisnummer' => 'nullable|string|max:50',  // ✅ TOEGEVOEGD!
-            'postcode' => 'nullable|string|max:10',    // ✅ TOEGEVOEGD!
-            'stad' => 'nullable|string|max:255',       // ✅ TOEGEVOEGD!
+            'straatnaam' => 'nullable|string|max:255',
+            'huisnummer' => 'nullable|string|max:50',
+            'postcode' => 'nullable|string|max:10',
+            'stad' => 'nullable|string|max:255',
             'status' => 'nullable|string|max:255',
             'sport' => 'nullable|string|max:255',
             'niveau' => 'nullable|string|max:255',
             'club' => 'nullable|string|max:255',
             'herkomst' => 'nullable|string|max:255',
-            // ...andere velden...
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120', // ✅ AVATAR VALIDATIE!
         ]);
 
-        // DEBUG: Check validated data
-        \Log::info('🎯 VALIDATED DATA:', $validatedData);
+        // Handle avatar upload - GEFIXED!
+        if ($request->hasFile('avatar')) {
+            // Verwijder oude avatar
+            if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
+                \Storage::disk('public')->delete($klant->avatar_path);
+            }
+            
+            // Upload nieuwe avatar
+            $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
+            $validatedData['avatar_path'] = $avatarPath;
+            
+            \Log::info('✅ Avatar uploaded in KlantController', ['path' => $avatarPath]);
+        }
 
-        // ✅ GEBRUIK VALIDATED DATA (niet $request->all())
         $klant->update($validatedData);
         
-        // Na update ook loggen
-        \Log::info('🎯 KLANT NA UPDATE:', $klant->fresh()->toArray());
+        \Log::info('✅ Klant bijgewerkt', ['klant_id' => $klant->id]);
         
         return redirect()->route('klanten.show', $klant)->with('success', 'Klant succesvol bijgewerkt!');
     }

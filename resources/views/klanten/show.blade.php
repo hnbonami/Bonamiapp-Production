@@ -27,13 +27,13 @@
                     @csrf
                     <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
                         @php
-                            // CONSISTENTE avatar logica: altijd klant->avatar_path gebruiken
-                            // De avatar wordt opgeslagen in klanten tabel, NIET in users tabel
+                            // Direct van klant object - al fresh in controller
                             $avatarPath = $klant->avatar_path;
+                            $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
                         @endphp
                         
                         @if($avatarPath)
-                            <img src="{{ asset('storage/' . $avatarPath) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                            <img src="{{ asset('storage/' . $avatarPath) }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
                         @else
                             <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:120px;height:120px;font-size:48px;">
                                 {{ strtoupper(substr($klant->voornaam,0,1)) }}
@@ -86,7 +86,7 @@
                     @csrf
                     <label for="avatar-upload-desktop" style="cursor: pointer; display: block; position: relative;">
                         @if($avatarPath)
-                            <img src="{{ asset('storage/' . $avatarPath) }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                            <img src="{{ asset('storage/' . $avatarPath) }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
                         @else
                             <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:120px;height:120px;font-size:48px;">
                                 {{ strtoupper(substr($klant->voornaam,0,1)) }}

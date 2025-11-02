@@ -15,6 +15,11 @@ class KlantenController extends Controller
      */
     private function checkAccess()
     {
+        // Check of user ingelogd is
+        if (!auth()->check()) {
+            return redirect()->route('login')->with('error', 'Je moet ingelogd zijn om deze pagina te bekijken.');
+        }
+        
         // Klanten hebben GEEN toegang tot klanten lijst
         if (auth()->user()->role === 'klant') {
             abort(403, 'Geen toegang. Klanten kunnen deze pagina niet bekijken.');
@@ -181,12 +186,18 @@ class KlantenController extends Controller
     {
         $this->checkAccess();
         
+        // FORCE FRESH DATA - haal altijd verse gegevens op
+        $klant = $klant->fresh();
+        
         return view('klanten.show', compact('klant'));
     }
 
     public function edit(Klant $klant)
     {
         $this->checkAccess();
+        
+        // FORCE FRESH DATA - haal altijd verse gegevens op
+        $klant = $klant->fresh();
         
         return view('klanten.edit', compact('klant'));
     }
@@ -195,15 +206,10 @@ class KlantenController extends Controller
     {
         $this->checkAccess();
         
-        // DIRECTE TEST - DEZE MOET JE ZIEN!
-        \Log::info('🚨🚨🚨 ORIGINELE KLANTEN CONTROLLER AANGEROEPEN!');
-        
-        // SIMPLE DEBUG TEST
-        \Log::info('🚨 KLANT CONTROLLER UPDATE CALLED!');
-        
-        // DEBUG: Check wat er wordt verstuurd
-        \Log::info('🔍 KLANT UPDATE - Incoming data:', $request->all());
-        \Log::info('🔍 KLANT UPDATE - Before update:', $klant->toArray());
+        \Log::info('� KLANTENCONTROLLER UPDATE', [
+            'klant_id' => $klant->id,
+            'has_avatar' => $request->hasFile('avatar')
+        ]);
 
         $validatedData = $request->validate([
             'voornaam' => 'required|string|max:255',
@@ -220,24 +226,82 @@ class KlantenController extends Controller
             'niveau' => 'nullable|string|max:255',
             'club' => 'nullable|string|max:255',
             'herkomst' => 'nullable|string|max:255',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
-        // DEBUG: Check validated data
-        \Log::info('🔍 KLANT UPDATE - Validated data:', $validatedData);
-
-        // Handle avatar upload
+        // Handle avatar upload - GEFIXED!
         if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            // Verwijder oude avatar
+            if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
+                \Storage::disk('public')->delete($klant->avatar_path);
+            }
+            
+            // Upload nieuwe avatar
+            $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
             $validatedData['avatar_path'] = $avatarPath;
+            
+            \Log::info('✅ Avatar uploaded in KlantenController', ['path' => $avatarPath]);
         }
 
-        $klant->update($validatedData);
+        // Update via DB voor betere cache handling
+        \DB::table('klanten')
+            ->where('id', $klant->id)
+            ->update(array_merge($validatedData, ['updated_at' => now()]));
         
-        // DEBUG: Check het resultaat na update
-        \Log::info('🔍 KLANT UPDATE - After update:', $klant->fresh()->toArray());
+        \Log::info('✅ Klant bijgewerkt', ['klant_id' => $klant->id]);
 
-        return redirect()->route('klanten.show', $klant)
+        return redirect()->route('klanten.show', $klant->id)
                          ->with('success', 'Klant succesvol bijgewerkt!');
+    }
+    
+    /**
+     * Update avatar voor klant via aparte route (gebruikt in show.blade.php)
+     */
+    public function updateAvatar(Request $request, Klant $klant)
+    {
+        $this->checkAccess();
+        
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120',
+        ]);
+
+        try {
+            // Verwijder oude avatar
+            if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
+                \Storage::disk('public')->delete($klant->avatar_path);
+                \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar_path]);
+            }
+
+            // Upload nieuwe avatar
+            $path = $request->file('avatar')->store('avatars/klanten', 'public');
+            
+            // Update direct op database - geen cache
+            \DB::table('klanten')
+                ->where('id', $klant->id)
+                ->update([
+                    'avatar_path' => $path,
+                    'updated_at' => now()
+                ]);
+            
+            \Log::info('✅ Avatar bijgewerkt via DB', [
+                'klant_id' => $klant->id,
+                'nieuwe_path' => $path
+            ]);
+            
+            // Clear model cache
+            $klant = $klant->fresh();
+        
+            return redirect()->route('klanten.show', $klant->id)
+                           ->with('success', 'Profielfoto succesvol bijgewerkt!');
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Avatar update failed', [
+                'error' => $e->getMessage(),
+                'klant_id' => $klant->id
+            ]);
+            
+            return redirect()->back()->with('error', 'Fout bij uploaden avatar: ' . $e->getMessage());
+        }
     }
 
     public function destroy(Klant $klant)
