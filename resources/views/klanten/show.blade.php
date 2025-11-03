@@ -35,8 +35,14 @@
         <div class="flex items-start gap-4 mb-4 md:hidden">
             <!-- Avatar met overlay - links uitgelijnd op alle devices -->
             <div class="relative flex-shrink-0" style="width:120px;height:120px;">
-                <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form" style="margin: 0;">
+                <form action="{{ route('klanten.update', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form" style="margin: 0;">
                     @csrf
+                    @method('PUT')
+                    <input type="hidden" name="voornaam" value="{{ $klant->voornaam }}">
+                    <input type="hidden" name="naam" value="{{ $klant->naam }}">
+                    <input type="hidden" name="email" value="{{ $klant->email }}">
+                    <input type="hidden" name="geslacht" value="{{ $klant->geslacht }}">
+                    <input type="hidden" name="status" value="{{ $klant->status }}">
                     <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
                         @if($avatarPath)
                             <img src="{{ asset('storage/' . $avatarPath) }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
@@ -88,8 +94,14 @@
         <div class="hidden md:flex md:items-start" style="gap: 2rem;">
             <!-- Avatar -->
             <div class="relative flex-shrink-0" style="width:120px;height:120px;">
-                <form action="{{ route('klanten.avatar', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form-desktop" style="margin: 0;">
+                <form action="{{ route('klanten.update', $klant) }}" method="POST" enctype="multipart/form-data" id="avatar-form-desktop" style="margin: 0;">
                     @csrf
+                    @method('PUT')
+                    <input type="hidden" name="voornaam" value="{{ $klant->voornaam }}">
+                    <input type="hidden" name="naam" value="{{ $klant->naam }}">
+                    <input type="hidden" name="email" value="{{ $klant->email }}">
+                    <input type="hidden" name="geslacht" value="{{ $klant->geslacht }}">
+                    <input type="hidden" name="status" value="{{ $klant->status }}">
                     <label for="avatar-upload-desktop" style="cursor: pointer; display: block; position: relative;">
                         @if($avatarPath)
                             <img src="{{ asset('storage/' . $avatarPath) }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
