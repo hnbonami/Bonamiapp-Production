@@ -70,7 +70,7 @@ class KlantController extends Controller
         ]);
         
         // VALIDATIE MET ALLE JUISTE VELDEN + AVATAR
-                $validatedData = $request->validate([
+        $validatedData = $request->validate([
             'voornaam' => 'required|string|max:255',
             'naam' => 'required|string|max:255',
             'email' => 'required|email|max:255',
@@ -86,9 +86,11 @@ class KlantController extends Controller
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Handle avatar upload - GEFIXED v3!
-        $avatarPath = null;
-        if ($request->hasFile('avatar')) {
+        // Verwijder avatar uit validatedData (is een file object, niet een string)
+        unset($validatedData['avatar']);
+
+        // Handle avatar upload - ALLEEN als er een nieuwe is
+        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
             \Log::info('🖼️ Avatar upload gedetecteerd', [
                 'klant_id' => $klant->id,
                 'file_original_name' => $request->file('avatar')->getClientOriginalName(),
@@ -103,20 +105,13 @@ class KlantController extends Controller
             
             // Upload nieuwe avatar
             $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
+            $validatedData['avatar_path'] = $avatarPath;
             
             \Log::info('✅ Avatar opgeslagen in storage', [
                 'path' => $avatarPath,
                 'full_path' => storage_path('app/public/' . $avatarPath),
                 'file_exists' => \Storage::disk('public')->exists($avatarPath)
             ]);
-        }
-
-        // Verwijder avatar uit validatedData (is een file object)
-        unset($validatedData['avatar']);
-        
-        // Voeg avatar_path toe als er een nieuwe is
-        if ($avatarPath) {
-            $validatedData['avatar_path'] = $avatarPath;
         }
 
         // Update via DB
