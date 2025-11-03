@@ -439,11 +439,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('🔐 Widget permissions:', widgets);
     
-    // Initialize Gridstack ZONDER animation
+    // Initialize Gridstack ZONDER animation + met auto-compact
     const grid = GridStack.init({
         cellHeight: 80,
         column: 12,
-        float: true,
+        float: false, // ⚡ FALSE = auto-compact naar boven!
         animate: false, // Uit tijdens load!
         resizable: {
             handles: 'e, se, s, sw, w' // Standaard handles
@@ -518,12 +518,18 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Layout opgeslagen:', data);
+                console.log('✅ Layout opgeslagen:', data);
             })
             .catch(error => {
-                console.error('Error bij opslaan layout:', error);
+                console.error('❌ Error bij opslaan layout:', error);
             });
         });
+    });
+    
+    // ⚡ Auto-compact bij widget verwijdering
+    grid.on('removed', function(event, items) {
+        console.log('🗑️ Widget verwijderd, compacting...');
+        grid.compact();
     });
 
     // Widget toggle (minimize/maximize)
