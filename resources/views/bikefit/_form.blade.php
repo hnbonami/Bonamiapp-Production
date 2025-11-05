@@ -137,35 +137,38 @@
 </div>
 
 <!-- Voetmeting -->
-<h2 class="text-2xl font-bold mt-4 mb-4">Voetmeting</h2>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-2">
-    <div>
-        <label>Schoenmaat:</label>
-        <select name="schoenmaat" class="border rounded w-full p-2">
-            @for($i=35;$i<=50;$i+=0.5)
-                <option value="{{ $i }}" {{ old('schoenmaat', $b->schoenmaat ?? '') == $i ? 'selected' : '' }}>{{ $i }}</option>
-            @endfor
-        </select>
+<div class="mb-8 p-4 bg-gray-50 rounded border border-gray-200">
+    <h2 class="text-2xl font-bold mb-4">Voetmeting</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div>
+            <label>Schoenmaat:</label>
+            <select name="schoenmaat" class="border rounded w-full p-2">
+                @for($i=35;$i<=50;$i+=0.5)
+                    <option value="{{ $i }}" {{ old('schoenmaat', $b->schoenmaat ?? '') == $i ? 'selected' : '' }}>{{ $i }}</option>
+                @endfor
+            </select>
+        </div>
+        <div>
+            <label>Voetbreedte (cm):</label>
+            <select name="voetbreedte" class="border rounded w-full p-2">
+                @for($v=6;$v<=13;$v+=0.5)
+                    <option value="{{ $v }}" {{ (string)old('voetbreedte', $b->voetbreedte ?? '') === (string)$v ? 'selected' : '' }}>{{ $v }} cm</option>
+                @endfor
+            </select>
+        </div>
     </div>
-    <div>
-        <label>Voetbreedte (cm):</label>
-        <select name="voetbreedte" class="border rounded w-full p-2">
-            @for($v=6;$v<=13;$v+=0.5)
-                <option value="{{ $v }}" {{ (string)old('voetbreedte', $b->voetbreedte ?? '') === (string)$v ? 'selected' : '' }}>{{ $v }} cm</option>
-            @endfor
-        </select>
-    </div>
-</div>
-<div class="mt-3">
-    <label class="block text-sm">Voetpositie</label>
-    <div class="flex gap-4 mt-2">
-        <label><input type="radio" name="voetpositie" value="neutraal" {{ old('voetpositie', $b->voetpositie ?? '')=='neutraal' ? 'checked' : '' }}> Neutraal</label>
-        <label><input type="radio" name="voetpositie" value="pronatie" {{ old('voetpositie', $b->voetpositie ?? '')=='pronatie' ? 'checked' : '' }}> Pronatie</label>
-        <label><input type="radio" name="voetpositie" value="supinatie" {{ old('voetpositie', $b->voetpositie ?? '')=='supinatie' ? 'checked' : '' }}> Supinatie</label>
+    <div class="mt-3">
+        <label class="block text-sm">Voetpositie</label>
+        <div class="flex gap-4 mt-2">
+            <label><input type="radio" name="voetpositie" value="neutraal" {{ old('voetpositie', $b->voetpositie ?? '')=='neutraal' ? 'checked' : '' }}> Neutraal</label>
+            <label><input type="radio" name="voetpositie" value="pronatie" {{ old('voetpositie', $b->voetpositie ?? '')=='pronatie' ? 'checked' : '' }}> Pronatie</label>
+            <label><input type="radio" name="voetpositie" value="supinatie" {{ old('voetpositie', $b->voetpositie ?? '')=='supinatie' ? 'checked' : '' }}> Supinatie</label>
+        </div>
     </div>
 </div>
 
-<h2 class="text-2xl font-bold mt-20 mb-6">Lichaamsmaten</h2>
+<div class="mb-8 p-4 bg-gray-50 rounded border border-gray-200">
+    <h2 class="text-2xl font-bold mb-4">Lichaamsmaten</h2>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
     <div><label>Lengte (cm):</label><input type="number" step="0.1" name="lengte_cm" class="border rounded w-full p-2" value="{{ old('lengte_cm', $b->lengte_cm ?? '') }}"></div>
     <div><label>Binnenbeenlengte (cm):</label><input type="number" step="0.1" name="binnenbeenlengte_cm" class="border rounded w-full p-2" value="{{ old('binnenbeenlengte_cm', $b->binnenbeenlengte_cm ?? '') }}"></div>
