@@ -2184,29 +2184,55 @@ const fs = require('fs');
             // We slaan de custom waarden op in de bikefit zelf met een prefix
             $columnPrefix = $context . '_'; // bijv. 'prognose_', 'voor_', 'na_'
 
-            // Update of maak nieuwe custom results aan voor elk veld
+            // Verzamel alle updates in één array voor efficiëntie
+            $updateData = [];
+            
+            \Log::info('🔍 Fillable kolommen check', [
+                'fillable_count' => count($bikefit->getFillable()),
+                'first_10_fillable' => array_slice($bikefit->getFillable(), 0, 10)
+            ]);
+            
             foreach ($values as $field => $value) {
-                \Log::info("Opslaan custom result: {$field} = {$value} (context: {$context})");
-
                 $columnName = $columnPrefix . $field;
+                \Log::info("Voorbereiden custom result: {$field} = {$value} (context: {$context})");
                 
-                // Sla direct op in de bikefit tabel met geprefixte kolomnaam
-                try {
-                    $bikefit->update([
-                        $columnName => $value
+                // Voeg ALTIJD toe, laat Laravel beslissen of het werkt
+                $updateData[$columnName] = $value;
+                \Log::info("✅ Toegevoegd aan updateData: {$columnName} = {$value}");
+            }
+
+            // Voer één update uit met alle waarden
+            if (!empty($updateData)) {
+                \Log::info('💾 Update wordt uitgevoerd met data:', $updateData);
+                
+                // Probeer de update
+                $updateResult = $bikefit->update($updateData);
+                \Log::info('📊 Update result:', ['success' => $updateResult]);
+                
+                // BELANGRIJK: Refresh bikefit om nieuwe waarden direct beschikbaar te maken
+                $bikefit->refresh();
+                
+                // Verificatie: haal DIRECT uit database op
+                $freshBikefit = \App\Models\Bikefit::find($bikefit->id);
+                
+                // Log ter verificatie wat er in de database staat
+                foreach ($updateData as $column => $value) {
+                    $refreshedValue = $bikefit->$column;
+                    $dbValue = $freshBikefit->$column;
+                    \Log::info("🔍 Verificatie {$column}:", [
+                        'input' => $value,
+                        'after_refresh' => $refreshedValue,
+                        'direct_from_db' => $dbValue,
+                        'match' => ($dbValue == $value)
                     ]);
-                    \Log::info("✅ Waarde opgeslagen: {$columnName} = {$value}");
-                } catch (\Exception $updateError) {
-                    \Log::warning("⚠️ Kolom {$columnName} bestaat mogelijk niet, skip dit veld");
-                    // Als de kolom niet bestaat, log maar ga verder
-                    continue;
                 }
             }
 
             \Log::info('✅ Custom results opgeslagen', [
                 'bikefit_id' => $bikefit->id,
                 'context' => $context,
-                'aantal_velden' => count($values)
+                'aantal_velden' => count($updateData),
+                'update_data' => $updateData
             ]);
 
             return response()->json([

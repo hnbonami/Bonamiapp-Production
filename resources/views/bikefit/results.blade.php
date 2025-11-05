@@ -123,5 +123,45 @@ document.addEventListener('DOMContentLoaded', function() {
 @endsection
 
 @section('scripts')
+<script>
+    // Geef custom waarden door aan JavaScript
+    window.bikefitCustomValues = @json($customValues ?? []);
+    console.log('📊 Custom waarden geladen vanuit database:', window.bikefitCustomValues);
+    
+    // FORCEER custom waarden in de input velden zodra de pagina geladen is
+    window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            console.log('🔧 Toepassen custom waarden op input velden...');
+            
+            // Loop door alle contexten (prognose, voor, na)
+            ['prognose', 'voor', 'na'].forEach(function(context) {
+                const customValues = window.bikefitCustomValues[context];
+                if (!customValues) return;
+                
+                console.log(`📝 Context: ${context}`, customValues);
+                
+                // Loop door alle velden in deze context
+                Object.keys(customValues).forEach(function(fieldName) {
+                    const customValue = customValues[fieldName];
+                    if (customValue === null || customValue === undefined) return;
+                    
+                    // Zoek het input veld met deze naam in deze context
+                    const inputs = document.querySelectorAll(`input[data-field="${fieldName}"]`);
+                    inputs.forEach(function(input) {
+                        // Check of dit input in de juiste context zit
+                        const section = input.closest('[data-context]');
+                        if (section && section.dataset.context === context) {
+                            console.log(`✏️ Zet ${context}.${fieldName} = ${customValue} (was: ${input.value})`);
+                            input.value = customValue;
+                            input.style.backgroundColor = '#fffbeb'; // Licht geel om te tonen dat het custom is
+                        }
+                    });
+                });
+            });
+            
+            console.log('✅ Custom waarden toegepast op alle input velden');
+        }, 500); // Wacht 500ms zodat editable-results.js eerst kan laden
+    });
+</script>
 <script src="{{ asset('js/editable-results.js') }}"></script>
 @endsection

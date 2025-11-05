@@ -289,6 +289,64 @@ class EditableResults {
         });
         
         console.log(`🎯 Found ${bikefitInputs} bikefit input fields`);
+        
+        // ✨ NIEUWE CODE: Pas custom waarden toe na initialisatie
+        this.applyCustomValues();
+    }
+    
+    applyCustomValues() {
+        console.log('🎨 Applying custom values from database...');
+        
+        // Check of custom waarden beschikbaar zijn
+        if (!window.bikefitCustomValues) {
+            console.log('⚠️ No custom values found in window.bikefitCustomValues');
+            return;
+        }
+        
+        console.log('📊 Custom values:', window.bikefitCustomValues);
+        
+        // Loop door alle contexten (prognose, voor, na)
+        ['prognose', 'voor', 'na'].forEach(context => {
+            const customValues = window.bikefitCustomValues[context];
+            if (!customValues) {
+                console.log(`⚠️ No custom values for context: ${context}`);
+                return;
+            }
+            
+            console.log(`📝 Applying custom values for ${context}:`, customValues);
+            
+            // Loop door alle velden in deze context
+            Object.keys(customValues).forEach(fieldName => {
+                const customValue = customValues[fieldName];
+                
+                // Skip null/undefined waarden
+                if (customValue === null || customValue === undefined) {
+                    return;
+                }
+                
+                // Zoek het input veld met deze naam in deze context
+                const inputs = document.querySelectorAll(`input[data-context="${context}"][data-field="${fieldName}"]`);
+                
+                if (inputs.length === 0) {
+                    console.log(`⚠️ No input found for ${context}.${fieldName}`);
+                    return;
+                }
+                
+                inputs.forEach(input => {
+                    const oldValue = input.value;
+                    input.value = customValue;
+                    input.setAttribute('data-original', customValue); // Update original value
+                    
+                    // Visuele feedback: lichtgeel voor custom waarden
+                    input.style.backgroundColor = '#fef9e7';
+                    input.style.border = '2px solid #f59e0b';
+                    
+                    console.log(`✅ Applied ${context}.${fieldName}: ${oldValue} → ${customValue}`);
+                });
+            });
+        });
+        
+        console.log('✅ All custom values applied');
     }
     
     makeBikefitInputEditable(input, fieldName, originalValue) {

@@ -164,7 +164,47 @@ class BikefitResultsController extends Controller
         $resultsNa = (new \App\Services\BikefitCalculator())->calculate($bikefitNa);
         $resultsVoor = (new \App\Services\BikefitCalculator())->calculate($bikefitVoor, $resultsNa);
 
-        return view('bikefit.results', compact('bikefit', 'results', 'resultsVoor', 'resultsNa', 'klantId', 'bikefitVoor', 'bikefitNa'));
+        // Haal alle custom waarden op uit de database voor gebruik in frontend
+        $customValues = [
+            'prognose' => [
+                'zadelhoogte' => $bikefit->prognose_zadelhoogte,
+                'zadelterugstand' => $bikefit->prognose_zadelterugstand,
+                'zadelterugstand_top' => $bikefit->prognose_zadelterugstand_top,
+                'horizontale_reach' => $bikefit->prognose_horizontale_reach,
+                'reach' => $bikefit->prognose_reach,
+                'drop' => $bikefit->prognose_drop,
+                'cranklengte' => $bikefit->prognose_cranklengte,
+                'stuurbreedte' => $bikefit->prognose_stuurbreedte,
+            ],
+            'voor' => [
+                'zadelhoogte' => $bikefit->voor_zadelhoogte,
+                'zadelterugstand' => $bikefit->voor_zadelterugstand,
+                'zadelterugstand_top' => $bikefit->voor_zadelterugstand_top,
+                'horizontale_reach' => $bikefit->voor_horizontale_reach,
+                'reach' => $bikefit->voor_reach,
+                'drop' => $bikefit->voor_drop,
+                'cranklengte' => $bikefit->voor_cranklengte,
+                'stuurbreedte' => $bikefit->voor_stuurbreedte,
+            ],
+            'na' => [
+                'zadelhoogte' => $bikefit->na_zadelhoogte,
+                'zadelterugstand' => $bikefit->na_zadelterugstand,
+                'zadelterugstand_top' => $bikefit->na_zadelterugstand_top,
+                'horizontale_reach' => $bikefit->na_horizontale_reach,
+                'reach' => $bikefit->na_reach,
+                'drop' => $bikefit->na_drop,
+                'cranklengte' => $bikefit->na_cranklengte,
+                'stuurbreedte' => $bikefit->na_stuurbreedte,
+            ]
+        ];
+        
+        \Log::info('🎨 Custom waarden doorgeven aan frontend', [
+            'bikefit_id' => $bikefit->id,
+            'voor_zadelhoogte' => $customValues['voor']['zadelhoogte'],
+            'voor_stuurbreedte' => $customValues['voor']['stuurbreedte']
+        ]);
+
+        return view('bikefit.results', compact('bikefit', 'results', 'resultsVoor', 'resultsNa', 'klantId', 'bikefitVoor', 'bikefitNa', 'customValues'));
     }
     public function downloadPdf($klantId, $bikefitId)
     {

@@ -16,38 +16,53 @@ class Bikefit extends Model
     ];
 
     protected $fillable = [
-        'klant_id',
-        'datum',
-        'testtype',
-        'template_kind',
-        // info fiets
-        'fietsmerk', 'kadermaat', 'bouwjaar', 'frametype',
-        // voetmeting
-        'schoenmaat', 'voetbreedte', 'voetpositie',
-        'lengte_cm', 'binnenbeenlengte_cm', 'armlengte_cm', 'romplengte_cm', 'schouderbreedte_cm',
-        'zadel_trapas_hoek', 'zadel_trapas_afstand', 'stuur_trapas_hoek', 'stuur_trapas_afstand',
-        'zadel_lengte_center_top',
-        'aanpassingen_zadel', 'aanpassingen_setback', 'aanpassingen_reach', 'aanpassingen_drop',
-        'type_zadel', 'zadeltil', 'zadelbreedte', 'nieuw_testzadel',
-        'rotatie_aanpassingen', 'inclinatie_aanpassingen', 'ophoging_li', 'ophoging_re',
-        'opmerkingen', 'interne_opmerkingen',
-        // anamnese
-        'algemene_klachten', 'beenlengteverschil', 'beenlengteverschil_cm', 'lenigheid_hamstrings', 'steunzolen', 'steunzolen_reden',
-        // functionele mobiliteit
-        'straight_leg_raise_links', 'straight_leg_raise_rechts',
-        'knieflexie_links', 'knieflexie_rechts',
-        'heup_endorotatie_links', 'heup_endorotatie_rechts',
-        'heup_exorotatie_links', 'heup_exorotatie_rechts',
-        'enkeldorsiflexie_links', 'enkeldorsiflexie_rechts',
-        'one_leg_squat_links', 'one_leg_squat_rechts',
-        // aanpassingen stuurpen
-        'aanpassingen_stuurpen_aan', 'aanpassingen_stuurpen_pre', 'aanpassingen_stuurpen_post',
-        // type fitting
-        'type_fitting',
-        // images via relation
-        // note: image URLs can also be stored transiently in 'image_urls' if needed
-        'image_urls',
         'user_id',
+        'bike_id',
+        'name',
+        'date',
+        'notes',
+        'measurement_type',
+        'saddle_height',
+        'saddle_setback',
+        'saddle_angle',
+        'handlebar_reach',
+        'handlebar_drop',
+        'handlebar_width',
+        'crank_length',
+        'stem_length',
+        'stem_angle',
+        'saddle_to_bar_vertical',
+        'saddle_to_bar_horizontal',
+        'stack',
+        'reach',
+        
+        // Custom result kolommen voor verschillende contexten
+        'prognose_zadelhoogte',
+        'prognose_zadelterugstand',
+        'prognose_zadelterugstand_top',
+        'prognose_horizontale_reach',
+        'prognose_reach',
+        'prognose_drop',
+        'prognose_cranklengte',
+        'prognose_stuurbreedte',
+        
+        'voor_zadelhoogte',
+        'voor_zadelterugstand',
+        'voor_zadelterugstand_top',
+        'voor_horizontale_reach',
+        'voor_reach',
+        'voor_drop',
+        'voor_cranklengte',
+        'voor_stuurbreedte',
+        
+        'na_zadelhoogte',
+        'na_zadelterugstand',
+        'na_zadelterugstand_top',
+        'na_horizontale_reach',
+        'na_reach',
+        'na_drop',
+        'na_cranklengte',
+        'na_stuurbreedte',
     ];
 
     public function images()
