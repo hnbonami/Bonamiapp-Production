@@ -113,6 +113,25 @@
                 beenlengteSelect.addEventListener('change', toggleBeenlengteCmField);
                 toggleBeenlengteCmField(); // Initial state
             }
+            
+            // Steunzolen toggle functionaliteit
+            const steunzolenSelect = document.querySelector('select[name="steunzolen"]');
+            const steunzolenRedenField = document.querySelector('[name="steunzolen_reden"]');
+            
+            if (steunzolenSelect && steunzolenRedenField) {
+                const redenFieldContainer = steunzolenRedenField.closest('.mb-4') || steunzolenRedenField.closest('.form-group') || steunzolenRedenField.parentElement;
+                
+                function toggleSteunzolenRedenField() {
+                    if (steunzolenSelect.value === '1') {
+                        redenFieldContainer.style.display = 'block';
+                    } else {
+                        redenFieldContainer.style.display = 'none';
+                    }
+                }
+                
+                steunzolenSelect.addEventListener('change', toggleSteunzolenRedenField);
+                toggleSteunzolenRedenField(); // Initial state
+            }
         });
     </script>
 
