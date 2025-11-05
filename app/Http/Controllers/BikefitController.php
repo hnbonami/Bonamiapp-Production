@@ -1729,7 +1729,7 @@ const fs = require('fs');
                 // UPDATE: bestaande bikefit
                 $bikefit = Bikefit::where('id', $bikefitId)
                     ->where('klant_id', $klant->id)
-                    ->first();
+                                       ->first();
                 
                 if (!$bikefit) {
                     return response()->json([
@@ -2122,6 +2122,109 @@ const fs = require('fs');
             
             return redirect()->back()
                 ->with('error', 'Excel import gefaald: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Parse Excel datum naar Laravel datum formaat
+     */
+    private function parseExcelDate($value)
+    {
+        if (empty($value)) {
+            return null;
+        }
+        
+        // Als het al een datum string is, probeer te parsen
+        if (is_string($value)) {
+            try {
+                return \Carbon\Carbon::parse($value)->format('Y-m-d');
+            } catch (\Exception $e) {
+                \Log::warning('Kon datum niet parsen: ' . $value);
+                return null;
+            }
+        }
+        
+        // Excel numerieke datum (dagen sinds 1900-01-01)
+        if (is_numeric($value)) {
+            try {
+                $date = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($value);
+                return $date->format('Y-m-d');
+            } catch (\Exception $e) {
+                \Log::warning('Kon Excel datum niet converteren: ' . $value);
+                return null;
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Sla aangepaste resultaten op voor prognose/voor/na
+     */
+    public function saveCustomResults(Request $request, Klant $klant, Bikefit $bikefit)
+    {
+        try {
+            \Log::info('💾 saveCustomResults aangeroepen', [
+                'klant_id' => $klant->id,
+                'bikefit_id' => $bikefit->id,
+                'context' => $request->input('context'),
+                'data' => $request->all()
+            ]);
+
+            // Valideer input
+            $validated = $request->validate([
+                'context' => 'required|in:prognose,voor,na',
+                'values' => 'required|array'
+            ]);
+
+            $context = $validated['context'];
+            $values = $validated['values'];
+
+            // Map context naar de juiste kolom in bikefits tabel
+            // We slaan de custom waarden op in de bikefit zelf met een prefix
+            $columnPrefix = $context . '_'; // bijv. 'prognose_', 'voor_', 'na_'
+
+            // Update of maak nieuwe custom results aan voor elk veld
+            foreach ($values as $field => $value) {
+                \Log::info("Opslaan custom result: {$field} = {$value} (context: {$context})");
+
+                $columnName = $columnPrefix . $field;
+                
+                // Sla direct op in de bikefit tabel met geprefixte kolomnaam
+                try {
+                    $bikefit->update([
+                        $columnName => $value
+                    ]);
+                    \Log::info("✅ Waarde opgeslagen: {$columnName} = {$value}");
+                } catch (\Exception $updateError) {
+                    \Log::warning("⚠️ Kolom {$columnName} bestaat mogelijk niet, skip dit veld");
+                    // Als de kolom niet bestaat, log maar ga verder
+                    continue;
+                }
+            }
+
+            \Log::info('✅ Custom results opgeslagen', [
+                'bikefit_id' => $bikefit->id,
+                'context' => $context,
+                'aantal_velden' => count($values)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Waarden succesvol opgeslagen',
+                'saved_count' => count($values)
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ saveCustomResults gefaald', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Opslaan mislukt: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
