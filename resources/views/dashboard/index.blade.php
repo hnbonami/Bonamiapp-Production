@@ -35,6 +35,22 @@
             @php
                 $widget = $item['widget'];
                 $layout = $item['layout'];
+                
+                // ⚡ BELANGRIJKE FIX: Voor klanten, gebruik de MASTER grootte van de creator
+                // Als klant: zoek de originele layout van de widget creator
+                if (auth()->user()->role === 'klant') {
+                    $masterLayout = \App\Models\DashboardUserLayout::where('widget_id', $widget->id)
+                        ->where('user_id', $widget->user_id) // Creator's layout
+                        ->first();
+                    
+                    if ($masterLayout) {
+                        // Gebruik de master grootte van de creator
+                        $layout->grid_width = $masterLayout->grid_width ?? 4;
+                        $layout->grid_height = $masterLayout->grid_height ?? 3;
+                        $layout->grid_x = $masterLayout->grid_x ?? 0;
+                        $layout->grid_y = $masterLayout->grid_y ?? 0;
+                    }
+                }
             @endphp
             
             @if($layout->is_visible)
@@ -43,7 +59,8 @@
                      data-gs-y="{{ $layout->grid_y ?? 0 }}" 
                      data-gs-width="{{ $layout->grid_width ?? 4 }}" 
                      data-gs-height="{{ $layout->grid_height ?? 3 }}"
-                     data-widget-id="{{ $widget->id }}">
+                     data-widget-id="{{ $widget->id }}"
+                     data-is-klant="{{ auth()->user()->role === 'klant' ? 'true' : 'false' }}">
                     <div class="grid-stack-item-content dashboard-widget" 
                          style="background:{{ $widget->background_color }};color:{{ $widget->text_color }};border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);overflow:hidden;">
                         
@@ -453,37 +470,49 @@ document.addEventListener('DOMContentLoaded', function() {
             const h = parseInt(item.getAttribute('data-gs-height')) || 3;
             const x = parseInt(item.getAttribute('data-gs-x')) || 0;
             const y = parseInt(item.getAttribute('data-gs-y')) || 0;
+            const isKlant = item.getAttribute('data-is-klant') === 'true';
             
             // Zoek widget permissions
-            const widgetPerms = widgets.find(w => w.id === widgetId);
+            const widgetPerms = widgets.find(widget => widget.id === widgetId);
             
-            console.log(`Widget ${widgetId}: Forcing ${w}x${h} at (${x},${y})`, widgetPerms);
+            console.log(`Widget ${widgetId}: Forcing ${w}x${h} at (${x},${y})`, { 
+                isKlant, 
+                canResize: widgetPerms?.canResize,
+                canDrag: widgetPerms?.canDrag 
+            });
             
-            // Update via Gridstack API met juiste rechten
+            // ⚡ Voor KLANTEN: gebruik MASTER grootte + disable resize/move
+            // ⚡ Voor ADMIN/MEDEWERKER: normale rechten
             grid.update(item, {
                 x: x,
                 y: y,
                 w: w,
                 h: h,
-                noResize: !widgetPerms?.canResize, // ⚡ Disable resize als user geen rechten heeft
-                noMove: !widgetPerms?.canDrag, // ⚡ Disable drag als user geen rechten heeft
+                noResize: isKlant ? true : !widgetPerms?.canResize, // Klanten kunnen NIET resizen
+                noMove: isKlant ? true : !widgetPerms?.canDrag, // Klanten kunnen NIET verplaatsen
+                locked: isKlant // Volledig vergrendeld voor klanten
             });
         });
         
-        // Enable animation weer
-        grid.opts.animate = true;
-        console.log('✅ All widgets configured with correct permissions!');
-    }, 100);
+        grid.compact(); // Compacteer layout
+        grid.opts.animate = true; // Enable animation
+        console.log('✅ All widgets configured with correct permissions and sizes!');
+    }, 150);
 
-    // Save layout on change (zowel move als resize)
+    // Save layout on change (ALLEEN voor admin/medewerker, NIET voor klanten!)
     grid.on('change', function(event, items) {
         if (!items || items.length === 0) return;
+        
+        // ⚡ KLANTEN mogen layout NIET wijzigen
+        if (userRole === 'klant') {
+            console.log('⚠️ Klant mag layout niet wijzigen - change event genegeerd');
+            return;
+        }
         
         items.forEach(item => {
             const widgetId = item.el.getAttribute('data-widget-id');
             
-            // Log voor debugging
-            console.log('Widget changed:', {
+            console.log('💾 Admin/Medewerker wijzigt widget layout:', {
                 id: widgetId,
                 x: item.x,
                 y: item.y,
@@ -563,6 +592,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+/* Admin/Medewerker: draggable widgets */
 .grid-stack-item-content {
     cursor: move;
 }
@@ -574,6 +604,23 @@ document.addEventListener('DOMContentLoaded', function() {
 .widget-header:active {
     cursor: grabbing;
 }
+
+/* ⚡ KLANTEN: read-only widgets (geen resize/move cursor) */
+@if(auth()->user()->role === 'klant')
+.grid-stack-item-content,
+.widget-header {
+    cursor: default !important;
+}
+
+/* Verberg resize handles voor klanten */
+.grid-stack-item > .ui-resizable-handle {
+    display: none !important;
+}
+
+.grid-stack-item {
+    cursor: default !important;
+}
+@endif
 
 .widget-content {
     cursor: default !important;

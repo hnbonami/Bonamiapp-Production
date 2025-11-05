@@ -56,13 +56,13 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                                 </svg>
                             </div>
-                            <h3 class="text-xl font-semibold text-gray-800 ml-3">Inspanningstesten Toevoegen</h3>
+                            <h3 class="text-xl font-semibold text-gray-800 ml-3">Testen Toevoegen</h3>
                         </div>
                         <p class="text-gray-600 mb-4">Import inspanningstest gegevens uit Excel bestand</p>
                         
                         <div class="mb-4">
                             <a href="/import/inspanningstesten" class="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-sm text-gray-800 uppercase tracking-widest transition" style="background-color: #c8e1eb;">
-                                📤 Import Inspanningstesten
+                                📤 Import Insp. testen
                             </a>
                         </div>
                     </div>
@@ -84,7 +84,7 @@
                                 </div>
                                 <h3 class="text-xl font-semibold text-gray-800 ml-3">Download Alle Klanten</h3>
                             </div>
-                            <p class="text-gray-600 mb-4">Export alle klantgegevens naar Excel</p>
+                            <p class="text-gray-600 mb-4">Export alle klantgegevens naar Excel bestand</p>
                             <a href="{{ route('klanten.export') }}" class="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-sm text-gray-800 uppercase tracking-widest transition mb-3" style="background-color: #c8e1eb;">
                                 💾 Download Klanten
                             </a>
@@ -124,11 +124,11 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                                     </svg>
                                 </div>
-                                <h3 class="text-xl font-semibold text-gray-800 ml-3">Download Alle Inspanningstesten</h3>
+                                <h3 class="text-xl font-semibold text-gray-800 ml-3">Download Alle Testen</h3>
                             </div>
                             <p class="text-gray-600 mb-4">Export alle inspanningstest gegevens naar Excel</p>
                             <a href="{{ route('inspanningstesten.export') }}" class="inline-flex items-center px-6 py-3 rounded-lg font-semibold text-sm text-gray-800 uppercase tracking-widest transition mb-3" style="background-color: #c8e1eb;">
-                                💾 Download Inspanningstesten
+                                💾 Download Testen
                             </a>
                             <div>
                                 <small class="text-gray-600">
