@@ -1008,6 +1008,9 @@ class SjablonenController extends Controller
         $bikefitCalculator = new \App\Services\BikefitCalculator();
         $results = $bikefitCalculator->calculate($bikefit);
         
+        // 🆕 LAAD CUSTOM WAARDEN UIT DATABASE EN OVERRIDE BEREKENDE WAARDEN
+        $this->applyCustomValuesToResults($results, $bikefit, 'prognose');
+        
         $generatedPages = [];
         
         foreach ($sjabloon->pages as $page) {
@@ -1263,6 +1266,10 @@ class SjablonenController extends Controller
         $bikefitCalculator = new \App\Services\BikefitCalculator();
         $resultsNa = $bikefitCalculator->calculate($bikefitNa);
         $resultsVoor = $bikefitCalculator->calculate($bikefitVoor, $resultsNa);
+        
+        // 🆕 PAS CUSTOM WAARDEN TOE OP VOOR/NA RESULTS
+        $this->applyCustomValuesToResults($resultsVoor, $bikefit, 'voor');
+        $this->applyCustomValuesToResults($resultsNa, $bikefit, 'na');
         
         // TERUG NAAR LARAVEL VIEW RENDERING
         try {
@@ -1631,5 +1638,36 @@ class SjablonenController extends Controller
         }
         
         return $content;
+    }
+    
+    /**
+     * Pas custom waarden uit database toe op berekende results
+     */
+    private function applyCustomValuesToResults(&$results, $bikefit, $context)
+    {
+        $columnPrefix = $context . '_';
+        
+        // Lijst van velden die custom kunnen zijn
+        $customFields = [
+            'zadelhoogte',
+            'zadelterugstand',
+            'zadelterugstand_top',
+            'horizontale_reach',
+            'reach',
+            'drop',
+            'cranklengte',
+            'stuurbreedte'
+        ];
+        
+        foreach ($customFields as $field) {
+            $columnName = $columnPrefix . $field;
+            $customValue = $bikefit->$columnName;
+            
+            // Als er een custom waarde is, override de berekende waarde
+            if ($customValue !== null && $customValue !== '') {
+                $results[$field] = $customValue;
+                \Log::info("✅ Custom waarde toegepast in sjabloon: {$context}.{$field} = {$customValue}");
+            }
+        }
     }
 }
