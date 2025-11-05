@@ -99,58 +99,47 @@
                                     </div>
                                 </div>
                                 <script>
-                                    // Laad live metric data
+                                    // Laad live metric data - EXACT zoals in create preview!
                                     document.addEventListener('DOMContentLoaded', function() {
                                         const metricEl = document.getElementById('metric-{{ $widget->id }}');
                                         if (!metricEl) return;
                                         
                                         // Parse widget config voor metric type
                                         let config = @json(json_decode($widget->chart_data, true) ?? []);
-                                        const metricType = config.metric_type || 'bruto'; // bruto, netto, commissie, medewerker
-                                        const scope = config.scope || 'auto';
-                                        const periode = config.periode || 'laatste-30-dagen';
+                                        const metricType = config.metric_type || 'custom';
                                         
-                                        // Bereken datum range
-                                        const { start, eind } = berekenPeriode(periode);
+                                        console.log('📊 Loading metric {{ $widget->id }}:', metricType);
                                         
-                                        console.log('📊 Loading metric {{ $widget->id }}:', { metricType, scope, start, eind });
+                                        // Als custom: toon gewoon de content waarde
+                                        if (metricType === 'custom') {
+                                            metricEl.textContent = '{{ $widget->content ?? "0" }}';
+                                            console.log('✅ Custom metric {{ $widget->id }}: {{ $widget->content ?? "0" }}');
+                                            return;
+                                        }
                                         
-                                        // Haal live data op
-                                        fetch(`/api/dashboard/analytics?start=${start}&eind=${eind}&scope=${scope}`)
-                                            .then(r => r.json())
-                                            .then(data => {
-                                                if (!data.success) {
-                                                    console.error('❌ Metric data laden mislukt:', data.message);
-                                                    metricEl.textContent = '€0,00';
-                                                    return;
-                                                }
-                                                
-                                                // Toon juiste KPI
-                                                let waarde = 0;
-                                                switch(metricType) {
-                                                    case 'bruto':
-                                                        waarde = data.kpis.brutoOmzet || 0;
-                                                        break;
-                                                    case 'netto':
-                                                        waarde = data.kpis.nettoOmzet || 0;
-                                                        break;
-                                                    case 'commissie':
-                                                        waarde = data.kpis.commissie || 0;
-                                                        break;
-                                                    case 'medewerker':
-                                                        waarde = data.kpis.medewerkerInkomsten || 0;
-                                                        break;
-                                                    default:
-                                                        waarde = data.kpis.brutoOmzet || 0;
-                                                }
-                                                
-                                                metricEl.textContent = '€' + Number(waarde).toLocaleString('nl-NL', {minimumFractionDigits: 2});
-                                                console.log('✅ Metric {{ $widget->id }} updated:', waarde);
-                                            })
-                                            .catch(err => {
-                                                console.error('❌ Fout bij laden metric:', err);
-                                                metricEl.textContent = '€0,00';
-                                            });
+                                        // Voor auto metrics: gebruik DEZELFDE endpoint als create preview
+                                        fetch('/dashboard/stats/metric', {
+                                            method: 'POST',
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                            },
+                                            body: JSON.stringify({ metric_type: metricType })
+                                        })
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data.formatted) {
+                                                metricEl.textContent = data.formatted;
+                                                console.log('✅ Metric {{ $widget->id }} updated:', data.formatted);
+                                            } else {
+                                                metricEl.textContent = '0';
+                                                console.warn('⚠️ Metric {{ $widget->id }}: geen data gevonden');
+                                            }
+                                        })
+                                        .catch(err => {
+                                            console.error('❌ Fout bij laden metric {{ $widget->id }}:', err);
+                                            metricEl.textContent = '0';
+                                        });
                                     });
                                 </script>
                             
