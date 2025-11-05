@@ -1729,7 +1729,7 @@ const fs = require('fs');
                 // UPDATE: bestaande bikefit
                 $bikefit = Bikefit::where('id', $bikefitId)
                     ->where('klant_id', $klant->id)
-                                       ->first();
+                                                                             ->first();
                 
                 if (!$bikefit) {
                     return response()->json([
@@ -2224,6 +2224,87 @@ const fs = require('fs');
             return response()->json([
                 'success' => false,
                 'message' => 'Opslaan mislukt: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Reset aangepaste waarden naar berekende waarden (verwijder custom values)
+     */
+    public function resetToCalculated(Request $request, Klant $klant, Bikefit $bikefit)
+    {
+        try {
+            \Log::info('🔄 resetToCalculated aangeroepen', [
+                'klant_id' => $klant->id,
+                'bikefit_id' => $bikefit->id,
+                'context' => $request->input('context')
+            ]);
+
+            // Valideer input
+            $validated = $request->validate([
+                'context' => 'required|in:prognose,voor,na',
+                'fields' => 'nullable|array' // Optioneel: specifieke velden resetten
+            ]);
+
+            $context = $validated['context'];
+            $fields = $validated['fields'] ?? null;
+
+            // Lijst van alle mogelijke velden die gereset kunnen worden
+            $allFields = [
+                'zadelhoogte',
+                'zadelterugstand',
+                'zadelterugstand_top',
+                'horizontale_reach',
+                'reach',
+                'drop',
+                'cranklengte',
+                'stuurbreedte'
+            ];
+
+            // Bepaal welke velden gereset moeten worden
+            $fieldsToReset = $fields ?: $allFields;
+
+            $resetCount = 0;
+            $columnPrefix = $context . '_';
+
+            // Reset elk veld door de custom waarde op NULL te zetten
+            foreach ($fieldsToReset as $field) {
+                $columnName = $columnPrefix . $field;
+                
+                try {
+                    // Zet de waarde op NULL om terug te vallen op de berekende waarde
+                    $bikefit->update([
+                        $columnName => null
+                    ]);
+                    $resetCount++;
+                    \Log::info("✅ Veld gereset: {$columnName}");
+                } catch (\Exception $updateError) {
+                    \Log::warning("⚠️ Kolom {$columnName} bestaat mogelijk niet, skip");
+                    continue;
+                }
+            }
+
+            \Log::info('✅ Reset voltooid', [
+                'bikefit_id' => $bikefit->id,
+                'context' => $context,
+                'reset_count' => $resetCount
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Waarden succesvol gereset naar berekende waarden',
+                'reset_count' => $resetCount
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ resetToCalculated gefaald', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Reset mislukt: ' . $e->getMessage()
             ], 500);
         }
     }
