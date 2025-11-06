@@ -504,6 +504,114 @@
                     </div>
                 </div>
                 
+                {{-- Login Pagina Personalisatie --}}
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">🔐 Login Pagina Personalisatie</h3>
+                    
+                    <!-- Login Achtergrond Afbeelding -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Login Achtergrond Afbeelding</label>
+                        @if($branding->login_background_image)
+                            <div class="mb-3">
+                                <img src="{{ asset('storage/' . $branding->login_background_image) }}" 
+                                     alt="Login Achtergrond" 
+                                     class="w-full h-48 object-cover rounded-lg border border-gray-200">
+                            </div>
+                        @endif
+                        <input type="file" 
+                               name="login_background_image" 
+                               accept="image/*" 
+                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        <p class="mt-1 text-xs text-gray-500">Aanbevolen: 1920x1080px voor beste resultaat</p>
+                    </div>
+
+                    <!-- Tekstkleur -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tekstkleur</label>
+                        <div class="flex items-center gap-3">
+                            <input type="color" 
+                                   name="login_text_color" 
+                                   value="{{ $branding->login_text_color ?? '#374151' }}"
+                                   class="h-10 w-20 rounded border border-gray-300">
+                            <input type="text" 
+                                   name="login_text_color_hex" 
+                                   value="{{ $branding->login_text_color ?? '#374151' }}"
+                                   placeholder="#374151"
+                                   class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Knop Kleur -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Inlogknop Kleur</label>
+                        <div class="flex items-center gap-3">
+                            <input type="color" 
+                                   name="login_button_color" 
+                                   value="{{ $branding->login_button_color ?? '#c8e1eb' }}"
+                                   class="h-10 w-20 rounded border border-gray-300">
+                            <input type="text" 
+                                   name="login_button_color_hex" 
+                                   value="{{ $branding->login_button_color ?? '#c8e1eb' }}"
+                                   placeholder="#c8e1eb"
+                                   class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Knop Hover Kleur -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Inlogknop Hover Kleur</label>
+                        <div class="flex items-center gap-3">
+                            <input type="color" 
+                                   name="login_button_hover_color" 
+                                   value="{{ $branding->login_button_hover_color ?? '#9bb3bd' }}"
+                                   class="h-10 w-20 rounded border border-gray-300">
+                            <input type="text" 
+                                   name="login_button_hover_color_hex" 
+                                   value="{{ $branding->login_button_hover_color ?? '#9bb3bd' }}"
+                                   placeholder="#9bb3bd"
+                                   class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Link Kleur -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Link Kleur (Wachtwoord vergeten)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="color" 
+                                   name="login_link_color" 
+                                   value="{{ $branding->login_link_color ?? '#c8e1eb' }}"
+                                   class="h-10 w-20 rounded border border-gray-300">
+                            <input type="text" 
+                                   name="login_link_color_hex" 
+                                   value="{{ $branding->login_link_color ?? '#c8e1eb' }}"
+                                   placeholder="#c8e1eb"
+                                   class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h4 class="text-sm font-medium text-gray-700 mb-3">🎨 Live Preview</h4>
+                        <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <div class="mb-3" :style="`color: ${document.querySelector('[name=login_text_color]')?.value || '#374151'}`">
+                                <p class="text-sm font-medium">E-mailadres</p>
+                                <input type="text" disabled class="mt-1 w-full rounded border-gray-300 text-sm">
+                            </div>
+                            <button type="button" 
+                                    disabled
+                                    class="w-full py-2 px-4 rounded-md text-sm font-medium text-black transition-colors"
+                                    :style="`background-color: ${document.querySelector('[name=login_button_color]')?.value || '#c8e1eb'}`">
+                                Inloggen
+                            </button>
+                            <a href="#" 
+                               class="block mt-3 text-sm underline"
+                               :style="`color: ${document.querySelector('[name=login_link_color]')?.value || '#c8e1eb'}`">
+                                Wachtwoord vergeten?
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
                 {{-- Action Buttons --}}
                 <div class="bg-white shadow-sm rounded-lg p-6">
                     <div class="flex items-center justify-between">
@@ -576,4 +684,56 @@
         form.submit();
     }
     </script>
+    
+    @push('scripts')
+    <script>
+        // Live preview update voor login kleuren
+        document.addEventListener('DOMContentLoaded', function() {
+            // Color input sync met hex input
+            const colorPairs = [
+                { color: '[name="login_text_color"]', hex: '[name="login_text_color_hex"]' },
+                { color: '[name="login_button_color"]', hex: '[name="login_button_color_hex"]' },
+                { color: '[name="login_button_hover_color"]', hex: '[name="login_button_hover_color_hex"]' },
+                { color: '[name="login_link_color"]', hex: '[name="login_link_color_hex"]' }
+            ];
+
+            colorPairs.forEach(pair => {
+                const colorInput = document.querySelector(pair.color);
+                const hexInput = document.querySelector(pair.hex);
+
+                if (colorInput && hexInput) {
+                    // Sync color picker naar hex input
+                    colorInput.addEventListener('input', function() {
+                        hexInput.value = this.value;
+                        updatePreview();
+                    });
+
+                    // Sync hex input naar color picker
+                    hexInput.addEventListener('input', function() {
+                        if (/^#[0-9A-F]{6}$/i.test(this.value)) {
+                            colorInput.value = this.value;
+                            updatePreview();
+                        }
+                    });
+                }
+            });
+
+            // Update live preview
+            function updatePreview() {
+                const textColor = document.querySelector('[name="login_text_color"]')?.value || '#374151';
+                const buttonColor = document.querySelector('[name="login_button_color"]')?.value || '#c8e1eb';
+                const linkColor = document.querySelector('[name="login_link_color"]')?.value || '#c8e1eb';
+
+                // Update preview elementen
+                const previewText = document.querySelector('.bg-gray-50 [style*="color"]');
+                const previewButton = document.querySelector('.bg-gray-50 button[type="button"]');
+                const previewLink = document.querySelector('.bg-gray-50 a');
+
+                if (previewText) previewText.style.color = textColor;
+                if (previewButton) previewButton.style.backgroundColor = buttonColor;
+                if (previewLink) previewLink.style.color = linkColor;
+            }
+        });
+    </script>
+    @endpush
 </x-app-layout>

@@ -6,6 +6,7 @@ use App\Models\Organisatie;
 use App\Models\OrganisatieBranding;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 
 class BrandingController extends Controller
@@ -85,6 +86,11 @@ class BrandingController extends Controller
             'logo' => 'nullable|image|max:2048',
             'logo_klein' => 'nullable|image|max:1024',
             'rapport_logo' => 'nullable|image|max:2048',
+            'login_background_image' => 'nullable|image|max:5120',
+            'login_text_color' => 'nullable|string|max:7',
+            'login_button_color' => 'nullable|string|max:7',
+            'login_button_hover_color' => 'nullable|string|max:7',
+            'login_link_color' => 'nullable|string|max:7',
         ]);
         
         // Prepare data met mapping van Engels (form) naar Nederlands (database)
@@ -147,6 +153,36 @@ class BrandingController extends Controller
             $validated['rapport_logo_pad'] = $request->file('rapport_logo')->store('branding/rapporten', 'public');
         }
         
+        // Upload login achtergrond afbeelding
+        if ($request->hasFile('login_background_image')) {
+            // Verwijder oude afbeelding
+            if ($branding->login_background_image) {
+                Storage::disk('public')->delete($branding->login_background_image);
+            }
+            
+            $path = $request->file('login_background_image')->store('branding/login', 'public');
+            $branding->login_background_image = $path;
+        }
+
+        // Update login kleuren
+        $branding->login_text_color = $request->input('login_text_color') ?? $branding->login_text_color;
+        $branding->login_button_color = $request->input('login_button_color') ?? $branding->login_button_color;
+        $branding->login_button_hover_color = $request->input('login_button_hover_color') ?? $branding->login_button_hover_color;
+        $branding->login_link_color = $request->input('login_link_color') ?? $branding->login_link_color;
+
+        $branding->save();
+
+        \Log::info('Login branding bijgewerkt', [
+            'organisatie_id' => $organisatie->id,
+            'user_id' => auth()->id(),
+            'changes' => $request->only([
+                'login_text_color',
+                'login_button_color', 
+                'login_button_hover_color',
+                'login_link_color'
+            ])
+        ]);
+
         // Update branding
         $branding->update($validated);
         

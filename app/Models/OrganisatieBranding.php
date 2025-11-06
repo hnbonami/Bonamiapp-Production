@@ -42,6 +42,12 @@ class OrganisatieBranding extends Model
         'dark_tekst',
         'dark_navbar_achtergrond',
         'dark_sidebar_achtergrond',
+        // Login branding velden
+        'login_background_image',
+        'login_text_color',
+        'login_button_color',
+        'login_button_hover_color',
+        'login_link_color',
     ];
     
     protected $casts = [
