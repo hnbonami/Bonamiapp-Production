@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <div class="w-full bg-white p-8 rounded shadow">
-    <h1 class="text-2xl font-bold mb-4">Bikefit berekende resultaten</h1>
+    <h1 class="text-2xl font-bold mb-4">Bikefit berekende resultaten - {{ $klant->voornaam}} {{ $klant->naam }}</h1>
 
     <!-- Hidden form voor het opslaan van wijzigingen -->
     <form id="bikefit-form" method="POST" action="{{ route('bikefit.update', ['klant' => $bikefit->klant_id, 'bikefit' => $bikefit->id]) }}" style="display: none;">

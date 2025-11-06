@@ -12,7 +12,7 @@
             <div class="p-6">
                 <div class="flex justify-between items-start">
                     <div>
-                        <h1 class="text-3xl font-extrabold text-gray-900">Inspanningstest Resultaten</h1>
+                        <h1 class="text-3xl font-extrabold text-gray-900">Inspanningstest Resultaten - {{ $klant->voornaam}} {{ $klant->naam }}</h1>
                         <p class="text-lg text-gray-600 mt-2">{{ $klant->naam }} - {{ \Carbon\Carbon::parse($inspanningstest->datum)->format('d-m-Y') }}</p>
                     </div>
                     <div class="flex gap-3">

@@ -42,12 +42,32 @@
                 <h3 class="text-xl font-semibold text-gray-800 ml-3">Email Beheer</h3>
             </div>
             <p class="text-gray-600 mb-4">Beheer email templates, instellingen en logs. Inclusief verjaardagen en automatische herinneringen.</p>
-            <a href="/admin/email" class="inline-flex items-center font-medium" style="color: #111;">
-                Email Beheer Openen
-                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                </svg>
-            </a>
+            <div class="flex flex-wrap gap-4">
+                <a href="/admin/email/templates" class="inline-flex items-center font-medium" style="color: #111;">
+                    Templates
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+                <a href="/admin/email/triggers" class="inline-flex items-center font-medium" style="color: #111;">
+                    Triggers
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+                <a href="/admin/email/logs" class="inline-flex items-center font-medium" style="color: #111;">
+                    Logs
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+                <a href="/admin/email/settings" class="inline-flex items-center font-medium" style="color: #111;">
+                    Instellingen
+                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
         </div>
         @endhasFeature
 
