@@ -5,9 +5,15 @@ namespace A    /**
     protected function schedule(Schedule $schedule): void
     {
         // Send birthday emails every day at 9:00 AM
-        $schedule->command('birthday:send-emails')
+        $schedule->command('email:send-birthday')
                  ->dailyAt('09:00')
                  ->withoutOverlapping()
+                 ->onSuccess(function () {
+                     \Log::info('✅ Birthday emails scheduled task completed successfully');
+                 })
+                 ->onFailure(function () {
+                     \Log::error('❌ Birthday emails scheduled task failed');
+                 })
                  ->runInBackground();
     }le;
 
@@ -30,7 +36,17 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(\Illuminate\Console\Scheduling\Schedule $schedule): void
     {
-        //
+        // Send birthday emails every day at 9:00 AM
+        $schedule->command('email:send-birthday')
+                 ->dailyAt('09:00')
+                 ->withoutOverlapping()
+                 ->onSuccess(function () {
+                     \Log::info('✅ Birthday emails scheduled task completed successfully');
+                 })
+                 ->onFailure(function () {
+                     \Log::error('❌ Birthday emails scheduled task failed');
+                 })
+                 ->runInBackground();
     }
 
     /**

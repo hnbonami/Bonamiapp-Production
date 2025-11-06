@@ -247,8 +247,10 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <!-- EINDE: Stuurpen aanpassing -->
+</div>
 
-<h2 class="text-2xl font-bold mt-6 mb-4">Zadel</h2>
+<div class="mb-8 p-4 bg-gray-50 rounded border border-gray-200">
+<h2 class="text-2xl font-bold mb-4">Zadel</h2>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
     <div>
         <label class="block font-medium">Type zadel</label>
@@ -269,8 +271,10 @@ document.addEventListener('DOMContentLoaded', function() {
         <input type="text" name="nieuw_testzadel" style="display: none;" class="mt-1 block w-full border-gray-300 rounded" value="{{ old('nieuw_testzadel', $b->nieuw_testzadel ?? '') }}">
     </div>
 </div>
+</div>
 
-<h2 class="text-2xl font-bold mt-6 mb-4">Schoenplaatjes</h2>
+<div class="mb-8 p-4 bg-gray-50 rounded border border-gray-200">
+<h2 class="text-2xl font-bold mb-4">Schoenplaatjes</h2>
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
     <div>
         <label class="block font-medium">Rotatie aanpassingen</label>
@@ -291,7 +295,9 @@ document.addEventListener('DOMContentLoaded', function() {
         <input type="number" name="ophoging_re" class="mt-1 block w-full border-gray-300 rounded" value="{{ old('ophoging_re', $b->ophoging_re ?? '') ?: 'nvt.' }}">
     </div>
 </div>
-<div class="md:col-span-3">
+</div>
+
+<div class="mb-8 p-4 bg-gray-50 rounded border border-gray-200">
 <h2 class="text-2xl font-bold mt-8 mb-4">Opmerkingen</h2>
 <div class="md:col-span-3">
     <label class="block font-medium">Opmerkingen</label>

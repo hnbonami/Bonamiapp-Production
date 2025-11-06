@@ -1299,9 +1299,107 @@ class EmailIntegrationService
      */
     private function runBirthdayTrigger($trigger)
     {
-        // TODO: Implementeer birthday trigger logica
-        \Log::info('Birthday trigger - not yet implemented');
-        return 0;
+        \Log::info('🎂 Running birthday trigger', [
+            'trigger_id' => $trigger->id,
+            'trigger_name' => $trigger->name
+        ]);
+        
+        $emailsSent = 0;
+        
+        try {
+            // Vind alle klanten die vandaag jarig zijn
+            $today = now();
+            $todayMonth = $today->month;
+            $todayDay = $today->day;
+            
+            \Log::info('🔍 Searching for birthdays today', [
+                'month' => $todayMonth,
+                'day' => $todayDay,
+                'date' => $today->format('d-m-Y')
+            ]);
+            
+            // Zoek klanten met verjaardag vandaag (month en day match)
+            $birthdayCustomers = \App\Models\Klant::whereNotNull('geboortedatum')
+                ->whereNotNull('email')
+                ->where('email', '!=', '')
+                ->get()
+                ->filter(function($klant) use ($todayMonth, $todayDay) {
+                    if (!$klant->geboortedatum) {
+                        return false;
+                    }
+                    
+                    $birthDate = \Carbon\Carbon::parse($klant->geboortedatum);
+                    return $birthDate->month === $todayMonth && $birthDate->day === $todayDay;
+                });
+            
+            \Log::info('🎂 Found birthday customers', [
+                'count' => $birthdayCustomers->count(),
+                'customers' => $birthdayCustomers->pluck('voornaam', 'email')->toArray()
+            ]);
+            
+            // Verstuur verjaardag email naar elke klant
+            foreach ($birthdayCustomers as $klant) {
+                try {
+                    // Bereken leeftijd
+                    $birthDate = \Carbon\Carbon::parse($klant->geboortedatum);
+                    $age = $birthDate->age;
+                    
+                    // Bereid variabelen voor email template
+                    $variables = [
+                        'voornaam' => $klant->voornaam,
+                        'naam' => $klant->naam,
+                        'email' => $klant->email,
+                        'leeftijd' => $age,
+                        'age' => $age,
+                        'geboortedatum' => $birthDate->format('d-m-Y'),
+                        'datum' => now()->format('d-m-Y'),
+                        'tijd' => now()->format('H:i'),
+                        'bedrijf_naam' => 'Bonami Sportcoaching',
+                        'website_url' => config('app.url', 'https://bonami-sportcoaching.be'),
+                    ];
+                    
+                    \Log::info('📧 Sending birthday email', [
+                        'customer_email' => $klant->email,
+                        'customer_name' => $klant->voornaam . ' ' . $klant->naam,
+                        'age' => $age
+                    ]);
+                    
+                    // Verstuur verjaardag email via bestaande methode
+                    $sent = $this->sendBirthdayEmail($klant, $variables);
+                    
+                    if ($sent) {
+                        $emailsSent++;
+                        \Log::info('✅ Birthday email sent successfully', [
+                            'customer_email' => $klant->email
+                        ]);
+                    } else {
+                        \Log::warning('⚠️ Birthday email failed', [
+                            'customer_email' => $klant->email
+                        ]);
+                    }
+                    
+                } catch (\Exception $e) {
+                    \Log::error('❌ Failed to send birthday email to customer', [
+                        'customer_id' => $klant->id,
+                        'customer_email' => $klant->email,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+            
+            \Log::info('🎂 Birthday trigger completed', [
+                'emails_sent' => $emailsSent,
+                'birthdays_found' => $birthdayCustomers->count()
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Birthday trigger failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+        
+        return $emailsSent;
     }
     
     private function runTestzadelReminderTrigger($trigger)

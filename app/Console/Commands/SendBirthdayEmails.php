@@ -3,90 +3,69 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use App\Helpers\MailHelper;
-use App\Models\Klant;
-use App\Models\Medewerker;
-use App\Models\User;
-use Illuminate\Support\Facades\Mail;
-use Carbon\Carbon;
+use App\Services\EmailIntegrationService;
+use App\Models\EmailTrigger;
 
 class SendBirthdayEmails extends Command
 {
     /**
      * The name and signature of the console command.
      */
-    protected $signature = 'birthday:send-emails';
+    protected $signature = 'email:send-birthday';
 
     /**
      * The console command description.
      */
-    protected $description = 'Send birthday emails to users who have their birthday today';
+    protected $description = 'Verstuur verjaardag emails naar klanten die vandaag jarig zijn';
 
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(EmailIntegrationService $emailService)
     {
-        $today = Carbon::today();
-        $birthdayCount = 0;
-
-        $this->info('🎂 Checking for birthdays on ' . $today->format('d/m/Y'));
-
-        // Check Klanten
-        $klanten = Klant::whereRaw('DATE_FORMAT(geboortedatum, "%m-%d") = ?', [$today->format('m-d')])
-            ->whereNotNull('email')
-            ->where('email', '!=', '')
-            ->get();
-
-        foreach ($klanten as $klant) {
-            $this->sendBirthdayEmail($klant, 'klant');
-            $birthdayCount++;
-            $this->info("✅ Birthday email sent to klant: {$klant->voornaam} {$klant->naam}");
-        }
-
-        // Check Medewerkers
-        $medewerkers = Medewerker::whereRaw('DATE_FORMAT(geboortedatum, "%m-%d") = ?', [$today->format('m-d')])
-            ->whereNotNull('email')
-            ->where('email', '!=', '')
-            ->get();
-
-        foreach ($medewerkers as $medewerker) {
-            $this->sendBirthdayEmail($medewerker, 'medewerker');
-            $birthdayCount++;
-            $this->info("✅ Birthday email sent to medewerker: {$medewerker->voornaam} {$medewerker->naam}");
-        }
-
-        // Check Users (if they have birthdate)
-        $users = User::whereRaw('DATE_FORMAT(created_at, "%m-%d") = ?', [$today->format('m-d')])
-            ->whereNotNull('email')
-            ->where('email', '!=', '')
-            ->get();
-
-        // Note: Users don't have birthdate field, so we skip this for now
-        // You can add birthdate field to users table if needed
-
-        $this->info("🎉 Total birthday emails sent: {$birthdayCount}");
-
-        return Command::SUCCESS;
-    }
-
-    private function sendBirthdayEmail($person, $type)
-    {
+        $this->info('🎂 Starting birthday email trigger...');
+        
         try {
-            MailHelper::smartSend('emails.birthday', [
-                'person' => $person,
-                'type' => $type
-            ], function($message) use ($person) {
-                $message->to($person->email, $person->voornaam . ' ' . $person->naam);
-                // FORCE the correct sender - use config values to ensure consistency
-                $message->from(config('mail.from.address'), config('mail.from.name'));
-                $message->replyTo(config('mail.from.address'), config('mail.from.name'));
-                $message->subject('Hiep hiep hoera! 🎂 Tijd voor een sportieve felicitatie!');
-            });
-
-            \Log::info("Birthday email sent to: {$person->email}");
+            // Zoek actieve birthday trigger
+            $trigger = EmailTrigger::where('trigger_type', 'birthday')
+                ->where('is_active', true)
+                ->first();
+            
+            if (!$trigger) {
+                $this->warn('⚠️ No active birthday trigger found. Creating one...');
+                
+                // Maak automatisch een birthday trigger aan als die niet bestaat
+                $trigger = EmailTrigger::create([
+                    'name' => 'Verjaardag Felicitatie',
+                    'trigger_type' => 'birthday',
+                    'description' => 'Automatisch aangemaakt - Verstuur verjaardagswensen naar klanten',
+                    'is_active' => true,
+                    'frequency' => 'daily',
+                    'organisatie_id' => 1 // Default organisatie
+                ]);
+                
+                $this->info('✅ Birthday trigger created');
+            }
+            
+            // Run de birthday trigger
+            $emailsSent = $emailService->runTrigger($trigger);
+            
+            if ($emailsSent > 0) {
+                $this->info("✅ Birthday emails sent: {$emailsSent}");
+            } else {
+                $this->info('ℹ️ No birthdays today');
+            }
+            
+            return Command::SUCCESS;
+            
         } catch (\Exception $e) {
-            \Log::error("Failed to send birthday email to {$person->email}: " . $e->getMessage());
+            $this->error('❌ Birthday email trigger failed: ' . $e->getMessage());
+            \Log::error('Birthday command failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return Command::FAILURE;
         }
     }
 }
