@@ -56,7 +56,7 @@
         <option value="naam-desc">Naam (Z-A)</option>
         <option value="voornaam-asc">Voornaam (A-Z)</option>
         <option value="voornaam-desc">Voornaam (Z-A)</option>
-        <option value="datum-nieuw">Nieuwste eerst</option>
+        <option value="datum-nieuw" selected>Nieuwste eerst</option>
         <option value="datum-oud">Oudste eerst</option>
         <option value="status-actief">Status: Actief eerst</option>
         <option value="status-inactief">Status: Inactief eerst</option>
@@ -267,8 +267,17 @@ kolomToggles.forEach(toggle => {
     });
 });
 
-// Laad voorkeuren bij pagina load
+// Initialize
 laadKolomVoorkeuren();
+
+// Zet standaard sortering op "nieuwste eerst" bij laden
+document.addEventListener('DOMContentLoaded', function() {
+    const sorteerSelect = document.getElementById('sorteerKlanten');
+    
+    // Trigger de sortering om de tabel direct te sorteren
+    const event = new Event('change');
+    sorteerSelect.dispatchEvent(event);
+});
 
 // Zoekfunctie
 document.getElementById('searchKlanten').addEventListener('input', function(e) {
