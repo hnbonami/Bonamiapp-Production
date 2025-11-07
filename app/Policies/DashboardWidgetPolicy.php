@@ -2,8 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\DashboardWidget;
 use App\Models\User;
+use App\Models\DashboardWidget;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class DashboardWidgetPolicy
@@ -13,7 +13,7 @@ class DashboardWidgetPolicy
     /**
      * Bepaal of user widgets mag bekijken
      */
-    public function viewAny(User $user)
+    public function viewAny(User $user): bool
     {
         // Iedereen die ingelogd is mag dashboard zien
         return true;
@@ -22,151 +22,65 @@ class DashboardWidgetPolicy
     /**
      * Bepaal of user een specifieke widget mag bekijken
      */
-    public function view(User $user, DashboardWidget $widget)
+    public function view(User $user, DashboardWidget $widget): bool
     {
-        // Super admin mag alleen widgets van organisatie 1 zien
-        if (in_array($user->role, ['super_admin', 'superadmin'])) {
-            return $widget->organisatie_id === 1;
+        // Als de zichtbaarheid 'iedereen' is, mag iedereen het zien
+        if ($widget->visibility === 'everyone') {
+            return true;
         }
-
-        // Anderen zien alleen widgets van hun eigen organisatie
-        return $widget->organisatie_id === $user->organisatie_id;
+        
+        // Als de zichtbaarheid 'alleen ik' is, mag alleen de maker het zien
+        if ($widget->visibility === 'only_me') {
+            return $user->id === $widget->created_by;
+        }
+        
+        // Anders, alleen zien binnen eigen organisatie
+        return $user->organisatie_id === $widget->organisatie_id;
     }
 
     /**
      * Bepaal of user een nieuwe widget mag aanmaken
      */
-    public function create(User $user)
+    public function create(User $user): bool
     {
-        // Super admin mag alleen widgets aanmaken in organisatie 1
-        if (in_array($user->role, ['super_admin', 'superadmin'])) {
-            return $user->organisatie_id === 1;
-        }
-
-        // Klanten mogen GEEN widgets aanmaken
-        if ($user->role === 'klant') {
-            return false;
-        }
-
-        // Admin en medewerkers mogen widgets aanmaken
-        return in_array($user->role, ['admin', 'organisatie_admin', 'medewerker']);
+        // Alleen admin, organisatie admin en superadmin mogen widgets aanmaken
+        return in_array($user->role, ['admin', 'organisatie_admin', 'superadmin']);
     }
 
     /**
      * Bepaal of user een widget mag bewerken
      */
-    public function update(User $user, DashboardWidget $widget)
+    public function update(User $user, DashboardWidget $widget): bool
     {
-        // Super admin mag alleen widgets van organisatie 1 bewerken
-        if (in_array($user->role, ['super_admin', 'superadmin'])) {
-            return $widget->organisatie_id === 1;
-        }
-
-        // Klanten mogen NOOIT bewerken
-        if ($user->role === 'klant') {
-            return false;
-        }
-
-        // Check of widget tot eigen organisatie behoort
-        if ($widget->organisatie_id !== $user->organisatie_id) {
-            return false;
-        }
-
-        // Admin mag alles binnen eigen organisatie bewerken
-        if (in_array($user->role, ['admin', 'organisatie_admin'])) {
+        // Admin en superadmin mogen alles bewerken
+        if (in_array($user->role, ['admin', 'superadmin'])) {
             return true;
         }
-
-        // Medewerker mag alleen eigen widgets bewerken
-        if ($user->role === 'medewerker') {
-            return $widget->created_by === $user->id;
-        }
-
-        return false;
+        
+        // Anders, alleen de maker mag bewerken
+        return $user->id === $widget->created_by;
     }
 
     /**
      * Bepaal of user een widget mag verwijderen
      */
-    public function delete(User $user, DashboardWidget $widget)
+    public function delete(User $user, DashboardWidget $widget): bool
     {
-        // Super admin mag alleen widgets van organisatie 1 verwijderen
-        if (in_array($user->role, ['super_admin', 'superadmin'])) {
-            return $widget->organisatie_id === 1;
-        }
-
-        // Klanten mogen NOOIT verwijderen
-        if ($user->role === 'klant') {
-            return false;
-        }
-
-        // Check of widget tot eigen organisatie behoort
-        if ($widget->organisatie_id !== $user->organisatie_id) {
-            return false;
-        }
-
-        // Admin mag alles binnen eigen organisatie verwijderen
-        if (in_array($user->role, ['admin', 'organisatie_admin'])) {
+        // Admin en superadmin mogen alles verwijderen
+        if (in_array($user->role, ['admin', 'superadmin'])) {
             return true;
         }
-
-        // Medewerker mag alleen eigen widgets verwijderen
-        if ($user->role === 'medewerker') {
-            return $widget->created_by === $user->id;
-        }
-
-        return false;
+        
+        // Anders, alleen de maker mag verwijderen
+        return $user->id === $widget->created_by;
     }
 
     /**
-     * Bepaal of user widgets mag drag & droppen
+     * Bepaal of user de lay-out mag bijwerken
      */
-    public function drag(User $user, DashboardWidget $widget)
+    public function updateLayout(User $user): bool
     {
-        // Super admin mag alleen widgets van organisatie 1 verplaatsen
-        if (in_array($user->role, ['super_admin', 'superadmin'])) {
-            return $widget->organisatie_id === 1;
-        }
-
-        // Check of widget tot eigen organisatie behoort
-        if ($widget->organisatie_id !== $user->organisatie_id) {
-            return false;
-        }
-
-        // Iedereen binnen eigen organisatie mag drag & droppen
+        // Iedereen mag de lay-out bijwerken
         return true;
-    }
-
-    /**
-     * Bepaal of user widgets mag resizen
-     */
-    public function resize(User $user, DashboardWidget $widget)
-    {
-        // Super admin mag alleen widgets van organisatie 1 resizen
-        if (in_array($user->role, ['super_admin', 'superadmin'])) {
-            return $widget->organisatie_id === 1;
-        }
-
-        // Klanten mogen NIET resizen
-        if ($user->role === 'klant') {
-            return false;
-        }
-
-        // Check of widget tot eigen organisatie behoort
-        if ($widget->organisatie_id !== $user->organisatie_id) {
-            return false;
-        }
-
-        // Admin mag alles binnen eigen organisatie resizen
-        if (in_array($user->role, ['admin', 'organisatie_admin'])) {
-            return true;
-        }
-
-        // Medewerker mag alleen eigen widgets resizen
-        if ($user->role === 'medewerker') {
-            return $widget->created_by === $user->id;
-        }
-
-        return false;
     }
 }

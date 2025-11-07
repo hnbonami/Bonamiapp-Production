@@ -16,6 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'organisatie_admin' => \App\Http\Middleware\CheckOrganisatieAdmin::class,
         ]);
     })
+    ->withProviders([
+        \App\Providers\FeatureServiceProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

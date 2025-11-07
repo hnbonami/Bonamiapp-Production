@@ -21,9 +21,30 @@ class FeatureServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // Registreer custom Blade directive voor feature checks
-        // Deze wordt LAZY geëvalueerd, dus geen circular dependency
-        Blade::if('feature', function (string $feature) {
+        // Zowel @hasFeature als @feature voor backwards compatibility
+        Blade::if('hasFeature', function (string $feature) {
             // Check alleen als er een user is
+            if (!app()->bound('auth')) {
+                return false;
+            }
+            
+            $user = auth()->user();
+            
+            if (!$user) {
+                return false;
+            }
+            
+            $organisatie = $user->organisatie;
+            
+            if (!$organisatie) {
+                return false;
+            }
+            
+            return $organisatie->hasFeature($feature);
+        });
+        
+        // Alias voor backwards compatibility
+        Blade::if('feature', function (string $feature) {
             if (!app()->bound('auth')) {
                 return false;
             }

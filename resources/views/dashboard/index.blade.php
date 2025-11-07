@@ -440,6 +440,15 @@
 document.addEventListener('DOMContentLoaded', function() {
     const userRole = '{{ auth()->user()->role }}';
     
+    // ⚡ Check of we op mobiel zijn
+    const isMobile = window.innerWidth < 768;
+    
+    if (isMobile) {
+        console.log('📱 Mobiel gedetecteerd - Gridstack uitgeschakeld');
+        // Op mobiel: geen drag & drop, gewoon statische grid
+        return;
+    }
+    
     // ⚡ Bepaal per widget of deze resizable is
     const widgets = @json($layouts->map(function($item) {
         return [
@@ -451,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('🔐 Widget permissions:', widgets);
     
-    // Initialize Gridstack ZONDER animation + met auto-compact
+    // Initialize Gridstack ZONDER animation + met auto-compact (alleen desktop)
     const grid = GridStack.init({
         cellHeight: 80,
         column: 12,
@@ -462,7 +471,8 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         draggable: {
             handle: '.widget-header'
-        }
+        },
+        disableOneColumnMode: true // ⚡ BELANGRIJK: voorkom auto 1-column mode
     });
 
     // ⚡ FIX: Force correcte groottes NA initialisatie + zet per-widget rechten
@@ -598,43 +608,74 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-/* Admin/Medewerker: draggable widgets */
-.grid-stack-item-content {
-    cursor: move;
-}
-
-.widget-header {
-    cursor: grab;
-}
-
-.widget-header:active {
-    cursor: grabbing;
-}
-
-/* ⚡ KLANTEN: kunnen verplaatsen, maar NIET resizen */
-@if(auth()->user()->role === 'klant')
-/* Verberg resize handles voor klanten */
-.grid-stack-item > .ui-resizable-handle {
-    display: none !important;
-}
-@endif
-
-.widget-content {
-    cursor: default !important;
-}
-
-/* Gridstack custom styling */
-.grid-stack-item {
-    transition: all 0.3s ease;
-}
-
-.grid-stack-item:hover {
-    z-index: 100;
-}
-
+/* ⚡ MOBIEL: Statische grid layout (geen Gridstack) */
 @media (max-width: 768px) {
-    .grid-stack {
-        grid-template-columns: 1fr !important;
+    #dashboard-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+    }
+    
+    .grid-stack-item {
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        transform: none !important;
+        margin-bottom: 0 !important;
+    }
+    
+    .grid-stack-item-content {
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 200px !important;
+        cursor: default !important;
+    }
+    
+    .widget-header {
+        cursor: default !important;
+    }
+    
+    /* Verberg resize handles op mobiel */
+    .grid-stack-item > .ui-resizable-handle {
+        display: none !important;
+    }
+}
+
+/* DESKTOP: Gridstack styling */
+@media (min-width: 769px) {
+    /* Admin/Medewerker: draggable widgets */
+    .grid-stack-item-content {
+        cursor: move;
+    }
+
+    .widget-header {
+        cursor: grab;
+    }
+
+    .widget-header:active {
+        cursor: grabbing;
+    }
+
+    /* ⚡ KLANTEN: kunnen verplaatsen, maar NIET resizen */
+    @if(auth()->user()->role === 'klant')
+    /* Verberg resize handles voor klanten */
+    .grid-stack-item > .ui-resizable-handle {
+        display: none !important;
+    }
+    @endif
+
+    .widget-content {
+        cursor: default !important;
+    }
+
+    /* Gridstack custom styling */
+    .grid-stack-item {
+        transition: all 0.3s ease;
+    }
+
+    .grid-stack-item:hover {
+        z-index: 100;
     }
 }
 </style>

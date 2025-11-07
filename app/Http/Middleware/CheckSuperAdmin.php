@@ -9,12 +9,27 @@ use Symfony\Component\HttpFoundation\Response;
 class CheckSuperAdmin
 {
     /**
-     * Controleer of de gebruiker een superadmin is
+     * Handle an incoming request.
+     * 
+     * Controleert of de ingelogde gebruiker superadmin rechten heeft
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!auth()->check() || !auth()->user()->isSuperAdmin()) {
-            abort(403, 'Toegang geweigerd. Alleen superadmins hebben toegang tot deze pagina.');
+        // Controleer of gebruiker is ingelogd
+        if (!auth()->check()) {
+            return redirect()->route('login');
+        }
+
+        $user = auth()->user();
+
+        // Controleer of gebruiker superadmin is (probeer verschillende mogelijke veldnamen)
+        $isSuperAdmin = $user->is_superadmin ?? 
+                        $user->role === 'superadmin' ?? 
+                        $user->user_type === 'superadmin' ?? 
+                        false;
+
+        if (!$isSuperAdmin) {
+            abort(403, 'Geen toegang. Alleen superadmins hebben toegang tot deze pagina.');
         }
 
         return $next($request);
