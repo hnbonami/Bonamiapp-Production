@@ -188,9 +188,9 @@
 
                 <!-- Nog geen account -->
                 <p class="text-center text-sm mt-6" style="color: {{ $loginTextColor }}">
-                    Nog geen account? 
+                    
                     <a href="#" class="font-medium underline hover:no-underline" style="color: {{ $loginLinkColor }}">
-                        Klik hier om een account aanmaken
+                       
                     </a>
                 </p>
             </div>
