@@ -23,7 +23,10 @@ class BrandingController extends Controller
         
         $organisatie = Organisatie::findOrFail($user->organisatie_id);
         
-        return view('admin.branding.index', compact('organisatie'));
+        // Haal branding op of maak nieuwe aan
+        $branding = $organisatie->branding ?? new \App\Models\OrganisatieBranding(['organisatie_id' => $organisatie->id]);
+        
+        return view('admin.branding.index', compact('organisatie', 'branding'));
     }
     
     /**
@@ -49,6 +52,13 @@ class BrandingController extends Controller
             'custom_css' => 'nullable|string|max:10000',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
             'favicon' => 'nullable|image|mimes:ico,png,jpg|max:512',
+            'login_logo' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:1024',
+            'login_background_image' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'login_background_video' => 'nullable|file|mimes:mp4,mov,avi,webm|max:10240',
+            'login_text_color' => 'nullable|regex:/^#[0-9A-F]{6}$/i',
+            'login_button_color' => 'nullable|regex:/^#[0-9A-F]{6}$/i',
+            'login_button_hover_color' => 'nullable|regex:/^#[0-9A-F]{6}$/i',
+            'login_link_color' => 'nullable|regex:/^#[0-9A-F]{6}$/i',
             'branding_enabled' => 'boolean',
         ]);
         
@@ -73,6 +83,54 @@ class BrandingController extends Controller
             $faviconPath = $request->file('favicon')->store('branding/favicons', 'public');
             $organisatie->favicon_path = $faviconPath;
         }
+        
+        // Haal OrganisatieBranding record op of maak nieuwe aan
+        $branding = $organisatie->branding ?? new \App\Models\OrganisatieBranding(['organisatie_id' => $organisatie->id]);
+        
+        // Upload login logo
+        if ($request->hasFile('login_logo')) {
+            if ($branding->login_logo) {
+                Storage::disk('public')->delete($branding->login_logo);
+            }
+            $branding->login_logo = $request->file('login_logo')->store('branding/login_logos', 'public');
+        }
+        
+        // Upload login achtergrondafbeelding
+        if ($request->hasFile('login_background_image')) {
+            if ($branding->login_background_image) {
+                Storage::disk('public')->delete($branding->login_background_image);
+            }
+            $branding->login_background_image = $request->file('login_background_image')->store('branding/login_backgrounds', 'public');
+        }
+        
+        // Upload login achtergrond video
+        if ($request->hasFile('login_background_video')) {
+            if ($branding->login_background_video) {
+                Storage::disk('public')->delete($branding->login_background_video);
+            }
+            $branding->login_background_video = $request->file('login_background_video')->store('branding/login_videos', 'public');
+            
+            \Log::info('📹 Login video geüpload', [
+                'organisatie_id' => $organisatie->id,
+                'path' => $branding->login_background_video,
+            ]);
+        }
+        
+        // Update login kleuren
+        if ($request->filled('login_text_color')) {
+            $branding->login_text_color = $validated['login_text_color'];
+        }
+        if ($request->filled('login_button_color')) {
+            $branding->login_button_color = $validated['login_button_color'];
+        }
+        if ($request->filled('login_button_hover_color')) {
+            $branding->login_button_hover_color = $validated['login_button_hover_color'];
+        }
+        if ($request->filled('login_link_color')) {
+            $branding->login_link_color = $validated['login_link_color'];
+        }
+        
+        $branding->save();
         
         // Update kleuren
         $organisatie->primary_color = $validated['primary_color'];

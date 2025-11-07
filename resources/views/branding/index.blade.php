@@ -508,21 +508,49 @@
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h3 class="text-xl font-semibold text-gray-800 mb-4">🔐 Login Pagina Personalisatie</h3>
                     
-                    <!-- Login Achtergrond Afbeelding -->
+                    <!-- Login Achtergrond Media (Foto of Video) -->
                     <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Login Achtergrond Afbeelding</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Login Achtergrond (rechts)</label>
+                        <p class="text-xs text-gray-500 mb-3">Kies tussen een foto of video voor de rechterkant van het login scherm</p>
+                        
                         @if($branding->login_background_image)
-                            <div class="mb-3">
+                            <div class="mb-3 p-3 bg-gray-50 rounded-lg">
+                                <p class="text-xs text-gray-600 mb-2">Huidige afbeelding:</p>
                                 <img src="{{ asset('storage/' . $branding->login_background_image) }}" 
                                      alt="Login Achtergrond" 
                                      class="w-full h-48 object-cover rounded-lg border border-gray-200">
                             </div>
                         @endif
-                        <input type="file" 
-                               name="login_background_image" 
-                               accept="image/*" 
-                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-                        <p class="mt-1 text-xs text-gray-500">Aanbevolen: 1920x1080px voor beste resultaat</p>
+                        
+                        @if($branding->login_background_video)
+                            <div class="mb-3 p-3 bg-gray-50 rounded-lg">
+                                <p class="text-xs text-gray-600 mb-2">Huidige video:</p>
+                                <video class="w-full h-48 rounded-lg border border-gray-200" muted loop controls>
+                                    <source src="{{ asset('storage/' . $branding->login_background_video) }}" type="video/mp4">
+                                </video>
+                                <p class="text-xs text-gray-500 mt-1">{{ basename($branding->login_background_video) }}</p>
+                            </div>
+                        @endif
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Upload Afbeelding</label>
+                                <input type="file" 
+                                       name="login_background_image" 
+                                       accept="image/*" 
+                                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                <p class="mt-1 text-xs text-gray-500">Portrait/vierkant formaat, hoge kwaliteit, max 2MB</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Upload Video</label>
+                                <input type="file" 
+                                       name="login_background_video" 
+                                       accept="video/*" 
+                                       class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                <p class="mt-1 text-xs text-gray-500">MP4, MOV, WebM of andere video formaten, max 10MB (video heeft voorrang boven afbeelding)</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Tekstkleur -->

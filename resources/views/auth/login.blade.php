@@ -14,6 +14,11 @@
     $loginBackgroundImage = ($branding && $branding->login_background_image) 
         ? asset('storage/' . $branding->login_background_image) 
         : null;
+    
+    // Achtergrond video - heeft voorrang boven afbeelding
+    $loginBackgroundVideo = ($branding && $branding->login_background_video) 
+        ? asset('storage/' . $branding->login_background_video) 
+        : null;
 @endphp
 
 <!DOCTYPE html>
@@ -65,6 +70,12 @@
         }
         
         .login-image-section img {
+            width: 100%;
+            height: 100vh;
+            object-fit: cover;
+        }
+        
+        .login-image-section video {
             width: 100%;
             height: 100vh;
             object-fit: cover;
@@ -190,14 +201,22 @@
             </div>
         </div>
 
-        <!-- Rechter kant: Achtergrondafbeelding (50%) -->
+        <!-- Rechter kant: Achtergrond video of afbeelding (50%) -->
         <div class="login-image-section">
-            @if($loginBackgroundImage)
+            @if($loginBackgroundVideo)
+                <!-- Video heeft voorrang -->
+                <video autoplay muted loop playsinline>
+                    <source src="{{ $loginBackgroundVideo }}" type="video/mp4">
+                    Uw browser ondersteunt geen video.
+                </video>
+            @elseif($loginBackgroundImage)
+                <!-- Fallback naar afbeelding -->
                 <img 
                     src="{{ $loginBackgroundImage }}" 
                     alt="Login achtergrond"
                 />
             @else
+                <!-- Geen media beschikbaar -->
                 <div class="text-gray-400 text-sm">Login visual</div>
             @endif
         </div>

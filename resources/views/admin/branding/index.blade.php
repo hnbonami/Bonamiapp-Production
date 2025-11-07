@@ -104,15 +104,39 @@
 
                     <!-- Login Achtergrondafbeelding -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Login Achtergrondafbeelding (rechts)</label>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Login Achtergrond (rechts)</label>
+                        <p class="text-xs text-gray-500 mb-3">Kies tussen een foto of video voor de rechterkant van het login scherm</p>
+                        
                         @if($branding && $branding->login_background_image)
                             <div class="mb-3 p-3 bg-gray-50 rounded-lg">
+                                <p class="text-xs text-gray-600 mb-2">Huidige afbeelding:</p>
                                 <img src="{{ asset('storage/' . $branding->login_background_image) }}" alt="Login achtergrond" class="h-32 w-auto mb-2 object-cover rounded">
-                                <p class="text-xs text-gray-500">Huidige achtergrondafbeelding</p>
                             </div>
                         @endif
-                        <input type="file" name="login_background_image" accept="image/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
-                        <p class="text-xs text-gray-500 mt-1">Grote foto rechts op login pagina (Portrait/vierkant formaat, hoge kwaliteit, max 2MB)</p>
+                        
+                        @if($branding && $branding->login_background_video)
+                            <div class="mb-3 p-3 bg-gray-50 rounded-lg">
+                                <p class="text-xs text-gray-600 mb-2">Huidige video:</p>
+                                <video class="h-32 w-auto mb-2 rounded" muted loop>
+                                    <source src="{{ asset('storage/' . $branding->login_background_video) }}" type="video/mp4">
+                                </video>
+                                <p class="text-xs text-gray-500">{{ basename($branding->login_background_video) }}</p>
+                            </div>
+                        @endif
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Upload Afbeelding</label>
+                                <input type="file" name="login_background_image" accept="image/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+                                <p class="text-xs text-gray-500 mt-1">Portrait/vierkant formaat, hoge kwaliteit, max 2MB</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Upload Video</label>
+                                <input type="file" name="login_background_video" accept="video/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+                                <p class="text-xs text-gray-500 mt-1">MP4, MOV, WebM of andere video formaten, max 10MB (video heeft voorrang boven afbeelding)</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Login Kleuren -->

@@ -87,6 +87,7 @@ class BrandingController extends Controller
             'logo_klein' => 'nullable|image|max:1024',
             'rapport_logo' => 'nullable|image|max:2048',
             'login_background_image' => 'nullable|image|max:5120',
+            'login_background_video' => 'nullable|file|mimes:mp4,mov,avi,webm|max:10240',
             'login_text_color' => 'nullable|string|max:7',
             'login_button_color' => 'nullable|string|max:7',
             'login_button_hover_color' => 'nullable|string|max:7',
@@ -162,6 +163,23 @@ class BrandingController extends Controller
             
             $path = $request->file('login_background_image')->store('branding/login', 'public');
             $branding->login_background_image = $path;
+        }
+        
+        // Upload login achtergrond video
+        if ($request->hasFile('login_background_video')) {
+            // Verwijder oude video
+            if ($branding->login_background_video) {
+                Storage::disk('public')->delete($branding->login_background_video);
+            }
+            
+            $path = $request->file('login_background_video')->store('branding/login_videos', 'public');
+            $branding->login_background_video = $path;
+            
+            \Log::info('📹 Login video geüpload', [
+                'organisatie_id' => $organisatie->id,
+                'path' => $path,
+                'user_id' => auth()->id(),
+            ]);
         }
 
         // Update login kleuren
