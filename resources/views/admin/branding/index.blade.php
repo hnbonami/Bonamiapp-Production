@@ -84,6 +84,74 @@
                 </div>
             </div>
 
+            <!-- Login Pagina Instellingen -->
+            <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">🔐 Login Pagina</h3>
+                
+                <div class="space-y-6">
+                    <!-- Login Logo -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Login Logo</label>
+                        @if($branding && $branding->login_logo)
+                            <div class="mb-3 p-3 bg-gray-50 rounded-lg">
+                                <img src="{{ asset('storage/' . $branding->login_logo) }}" alt="Login logo" class="h-16 w-auto mb-2">
+                                <p class="text-xs text-gray-500">Huidige logo</p>
+                            </div>
+                        @endif
+                        <input type="file" name="login_logo" accept="image/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+                        <p class="text-xs text-gray-500 mt-1">Verschijnt boven het login formulier (PNG transparant aanbevolen, max 500KB)</p>
+                    </div>
+
+                    <!-- Login Achtergrondafbeelding -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Login Achtergrondafbeelding (rechts)</label>
+                        @if($branding && $branding->login_background_image)
+                            <div class="mb-3 p-3 bg-gray-50 rounded-lg">
+                                <img src="{{ asset('storage/' . $branding->login_background_image) }}" alt="Login achtergrond" class="h-32 w-auto mb-2 object-cover rounded">
+                                <p class="text-xs text-gray-500">Huidige achtergrondafbeelding</p>
+                            </div>
+                        @endif
+                        <input type="file" name="login_background_image" accept="image/*" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none">
+                        <p class="text-xs text-gray-500 mt-1">Grote foto rechts op login pagina (Portrait/vierkant formaat, hoge kwaliteit, max 2MB)</p>
+                    </div>
+
+                    <!-- Login Kleuren -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Login Tekstkleur</label>
+                            <div class="flex items-center gap-3">
+                                <input type="color" name="login_text_color" value="{{ $branding->login_text_color ?? '#374151' }}" class="h-10 w-20 rounded cursor-pointer border border-gray-300">
+                                <input type="text" value="{{ $branding->login_text_color ?? '#374151' }}" readonly class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm font-mono">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Login Button Kleur</label>
+                            <div class="flex items-center gap-3">
+                                <input type="color" name="login_button_color" value="{{ $branding->login_button_color ?? '#7fb432' }}" class="h-10 w-20 rounded cursor-pointer border border-gray-300">
+                                <input type="text" value="{{ $branding->login_button_color ?? '#7fb432' }}" readonly class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm font-mono">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Login Button Hover</label>
+                            <div class="flex items-center gap-3">
+                                <input type="color" name="login_button_hover_color" value="{{ $branding->login_button_hover_color ?? '#6a9929' }}" class="h-10 w-20 rounded cursor-pointer border border-gray-300">
+                                <input type="text" value="{{ $branding->login_button_hover_color ?? '#6a9929' }}" readonly class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm font-mono">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Login Link Kleur</label>
+                            <div class="flex items-center gap-3">
+                                <input type="color" name="login_link_color" value="{{ $branding->login_link_color ?? '#374151' }}" class="h-10 w-20 rounded cursor-pointer border border-gray-300">
+                                <input type="text" value="{{ $branding->login_link_color ?? '#374151' }}" readonly class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm font-mono">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Kleurinstellingen -->
             <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Themakleuren</h3>
