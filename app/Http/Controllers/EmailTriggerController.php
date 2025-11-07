@@ -14,16 +14,26 @@ class EmailTriggerController extends Controller
      */
     private function checkAdminAccess()
     {
-        // Sta alle authenticated users toe (voor nu - kan later worden aangescherpt)
         if (!auth()->check()) {
             abort(403, 'Geen toegang. Log eerst in.');
         }
         
-        // Log voor debugging
-        \Log::info('🔐 EmailTrigger Access Check', [
-            'user_id' => auth()->id(),
-            'user_email' => auth()->user()->email,
-            'has_access' => true
+        $user = auth()->user();
+        
+        // Check of gebruiker admin rechten heeft
+        if (!in_array($user->role ?? '', ['admin', 'organisatie_admin', 'superadmin'])) {
+            \Log::warning('⚠️ Unauthorized EmailTrigger access attempt', [
+                'user_id' => $user->id,
+                'user_email' => $user->email,
+                'role' => $user->role ?? 'none',
+                'route' => request()->route()->getName()
+            ]);
+            abort(403, 'Geen toegang. Alleen administrators kunnen email triggers beheren.');
+        }
+        
+        \Log::info('✅ EmailTrigger admin access granted', [
+            'user_id' => $user->id,
+            'role' => $user->role
         ]);
     }
 
@@ -137,11 +147,13 @@ class EmailTriggerController extends Controller
      */
     public function edit(EmailTrigger $trigger)
     {
+        $this->checkAdminAccess();
+
         \Log::info('📝 EmailTrigger Edit aangeroepen', [
             'trigger_id' => $trigger->id,
             'trigger_name' => $trigger->name,
             'user_id' => auth()->id(),
-            'user_email' => auth()->user()->email ?? 'unknown'
+            'user_role' => auth()->user()->role ?? 'none'
         ]);
 
         // Haal alle templates op voor de dropdown
