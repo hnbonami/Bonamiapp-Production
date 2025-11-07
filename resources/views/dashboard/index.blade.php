@@ -487,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 canDrag: widgetPerms?.canDrag 
             });
             
-            // ⚡ Voor KLANTEN: gebruik MASTER grootte + disable resize/move
+            // ⚡ Voor KLANTEN: gebruik MASTER grootte + disable resize (maar WEL move!)
             // ⚡ Voor ADMIN/MEDEWERKER: normale rechten
             grid.update(item, {
                 x: x,
@@ -495,30 +495,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 w: w,
                 h: h,
                 noResize: isKlant ? true : !widgetPerms?.canResize, // Klanten kunnen NIET resizen
-                noMove: isKlant ? true : !widgetPerms?.canDrag, // Klanten kunnen NIET verplaatsen
-                locked: isKlant // Volledig vergrendeld voor klanten
+                noMove: isKlant ? false : !widgetPerms?.canDrag, // ✅ Klanten KUNNEN verplaatsen!
+                locked: false // NIET vergrendelen voor klanten
             });
         });
         
-        grid.compact(); // Compacteer layout
+        // ⚡ BELANGRIJK: Voor klanten, compact altijd de layout om gaten te verwijderen
+        if (userRole === 'klant') {
+            console.log('🔧 Klant dashboard: compacting layout om gaten te verwijderen...');
+            grid.compact();
+        }
+        
         grid.opts.animate = true; // Enable animation
         console.log('✅ All widgets configured with correct permissions and sizes!');
     }, 150);
 
-    // Save layout on change (ALLEEN voor admin/medewerker, NIET voor klanten!)
+    // Save layout on change (admin/medewerker én klanten kunnen nu verplaatsen!)
     grid.on('change', function(event, items) {
         if (!items || items.length === 0) return;
-        
-        // ⚡ KLANTEN mogen layout NIET wijzigen
-        if (userRole === 'klant') {
-            console.log('⚠️ Klant mag layout niet wijzigen - change event genegeerd');
-            return;
-        }
         
         items.forEach(item => {
             const widgetId = item.el.getAttribute('data-widget-id');
             
-            console.log('💾 Admin/Medewerker wijzigt widget layout:', {
+            console.log('💾 Gebruiker wijzigt widget layout:', {
+                role: userRole,
                 id: widgetId,
                 x: item.x,
                 y: item.y,
@@ -611,20 +611,11 @@ document.addEventListener('DOMContentLoaded', function() {
     cursor: grabbing;
 }
 
-/* ⚡ KLANTEN: read-only widgets (geen resize/move cursor) */
+/* ⚡ KLANTEN: kunnen verplaatsen, maar NIET resizen */
 @if(auth()->user()->role === 'klant')
-.grid-stack-item-content,
-.widget-header {
-    cursor: default !important;
-}
-
 /* Verberg resize handles voor klanten */
 .grid-stack-item > .ui-resizable-handle {
     display: none !important;
-}
-
-.grid-stack-item {
-    cursor: default !important;
 }
 @endif
 
