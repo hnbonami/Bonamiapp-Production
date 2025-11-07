@@ -159,24 +159,6 @@ class KlantController extends Controller
 
         $zoekterm = $request->input('zoek');
         
-        // 🔥 DEBUG: Log user info
-        \Log::info('🔍 KLANTEN INDEX:', [
-            'user_id' => $user->id,
-            'user_name' => $user->name,
-            'user_role' => $user->role,
-            'user_org_id' => $user->organisatie_id
-        ]);
-        
-        // Start query
-        
-        // Filter op organisatie (behalve superadmin)
-        if ($user->role !== 'superadmin' && $user->organisatie_id) {
-            $query->where('organisatie_id', $user->organisatie_id);
-            \Log::info('✅ Filter toegepast op organisatie: ' . $user->organisatie_id);
-        } else {
-            \Log::warning('⚠️ GEEN FILTER - Role: ' . $user->role . ', Org ID: ' . $user->organisatie_id);
-        }
-        
         // Zoeken
         if ($zoekterm) {
             $query->where(function($q) use ($zoekterm) {

@@ -181,20 +181,28 @@ Route::middleware('auth')->group(function () {
 
     // Authenticated routes (profile endpoints are intentionally omitted)
 
-    // KLANTEN ROUTES - DEBUG WELKE CONTROLLER WORDT GEBRUIKT
-    Route::resource('klanten', KlantController::class)->parameters(['klanten' => 'klant']);
-    \Log::info('🔍 ROUTE REGISTERED: klanten using KlantController');
-    
-    Route::post('klanten/{klant}/uitnodiging', [KlantController::class, 'sendInvitation'])->name('klanten.sendInvitation');
-    Route::post('klanten/{klant}/verwijder', [KlantController::class, 'verwijderViaPost'])->name('klanten.verwijderViaPost');
-    // Alleen profielfoto wijzigen (klant)
-    Route::post('klanten/{klant}/avatar', [KlantController::class, 'updateAvatar'])->name('klanten.avatar');
-    
-    Route::resource('medewerkers', MedewerkerController::class)->except(['show', 'destroy']);
-    Route::get('medewerkers/{medewerker}', [MedewerkerController::class, 'show'])->name('medewerkers.show');
-    Route::delete('medewerkers/{medewerker}', [MedewerkerController::class, 'destroy'])->name('medewerkers.destroy');
-    // Alleen profielfoto wijzigen (medewerker)
-    Route::post('medewerkers/{medewerker}/avatar', [MedewerkerController::class, 'updateAvatar'])->name('medewerkers.avatar');
+    // KLANTEN ROUTES - BEVEILIGD MET prevent.klant middleware
+    Route::middleware(['prevent.klant'])->group(function () {
+        // Import routes moeten VOOR resource routes staan
+        Route::get('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
+        Route::post('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+        Route::get('/klanten/template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
+        
+        // Resource routes
+        Route::resource('klanten', KlantController::class)->parameters(['klanten' => 'klant']);
+        
+        Route::post('klanten/{klant}/uitnodiging', [KlantController::class, 'sendInvitation'])->name('klanten.sendInvitation');
+        Route::post('klanten/{klant}/verwijder', [KlantController::class, 'verwijderViaPost'])->name('klanten.verwijderViaPost');
+        Route::post('klanten/{klant}/avatar', [KlantController::class, 'updateAvatar'])->name('klanten.avatar');
+    });
+    // MEDEWERKERS ROUTES - BEVEILIGD MET prevent.klant middleware
+    Route::middleware(['prevent.klant'])->group(function () {
+        Route::resource('medewerkers', MedewerkerController::class)->except(['show', 'destroy']);
+        Route::get('medewerkers/{medewerker}', [MedewerkerController::class, 'show'])->name('medewerkers.show');
+        Route::delete('medewerkers/{medewerker}', [MedewerkerController::class, 'destroy'])->name('medewerkers.destroy');
+        Route::post('medewerkers/{medewerker}/avatar', [MedewerkerController::class, 'updateAvatar'])->name('medewerkers.avatar');
+        Route::post('medewerkers/{medewerker}/send-invitation', [MedewerkerController::class, 'sendInvitation'])->name('medewerkers.send-invitation');
+    });
 
     // SuperAdmin routes - alleen toegankelijk voor superadmins
     Route::middleware(['superadmin'])->group(function () {
@@ -667,16 +675,13 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
     Route::get('/bikefits/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefits.template');
 });
 
-// Klanten routes
-Route::middleware('auth')->group(function () {
-    // Import routes moeten VOOR resource routes staan
-    Route::get('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
-    Route::post('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
-    Route::get('/klanten/template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
-    
-    // Resource routes
-    Route::resource('klanten', \App\Http\Controllers\KlantenController::class);
-});
+// Klanten routes - VERWIJDERD (staat al bovenin met middleware)
+// Route::middleware('auth')->group(function () {
+//     Route::get('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
+//     Route::post('/klanten/import', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
+//     Route::get('/klanten/template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
+//     Route::resource('klanten', \App\Http\Controllers\KlantenController::class);
+// });
 
 // Add this route to your existing web routes
 Route::post('/api/calculate-thresholds', [App\Http\Controllers\ThresholdCalculationController::class, 'calculateThresholds'])
@@ -1359,9 +1364,9 @@ Route::post('/api/ai-advice', [App\Http\Controllers\InspanningstestController::c
 Route::post('inspanningstest/ai-complete-analysis', [InspanningstestController::class, 'generateCompleteAIAnalysis'])
     ->name('inspanningstest.ai-complete-analysis');
 
-// Klanten routes
-Route::resource('klanten', \App\Http\Controllers\KlantenController::class);
-Route::post('klanten/{klant}/send-invitation', [\App\Http\Controllers\KlantenController::class, 'sendInvitation'])->name('klanten.send-invitation');
+// Klanten routes - VERWIJDERD (duplicate registratie)
+// Route::resource('klanten', \App\Http\Controllers\KlantenController::class);
+// Route::post('klanten/{klant}/send-invitation', [\App\Http\Controllers\KlantenController::class, 'sendInvitation'])->name('klanten.send-invitation');
 
 // Medewerkers routes
 Route::post('medewerkers/{medewerker}/send-invitation', [\App\Http\Controllers\MedewerkerController::class, 'sendInvitation'])->name('medewerkers.send-invitation');
@@ -1485,8 +1490,8 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         ->name('roles.features.toggle');
 });
 
-// Medewerkers Routes - beveiliging zit in MedewerkerController
-Route::middleware(['auth'])->group(function () {
-    Route::resource('medewerkers', MedewerkerController::class);
-    Route::post('medewerkers/{medewerker}/send-invitation', [MedewerkerController::class, 'sendInvitation'])->name('medewerkers.send-invitation');
-});
+// Medewerkers Routes - VERWIJDERD (duplicate, staat al bovenin)
+// Route::middleware(['auth'])->group(function () {
+//     Route::resource('medewerkers', MedewerkerController::class);
+//     Route::post('medewerkers/{medewerker}/send-invitation', [MedewerkerController::class, 'sendInvitation'])->name('medewerkers.send-invitation');
+// });
