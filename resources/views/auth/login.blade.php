@@ -91,9 +91,16 @@
                 </div>
 
                 <!-- Titel -->
-                <h2 class="text-3xl font-semibold text-center mb-8" style="color: {{ $loginTextColor }}">
+                <h2 class="text-3xl font-semibold text-center mb-4" style="color: {{ $loginTextColor }}">
                     Inloggen
                 </h2>
+
+                <!-- Nog geen account -->
+                <p class="text-center text-sm mb-8" style="color: {{ $loginTextColor }}">
+                    Nog geen account? <a href="#" class="font-medium underline hover:no-underline" style="color: {{ $loginLinkColor }}">
+                        Klik hier om een account aanmaken
+                    </a>
+                </p>
 
                 <!-- Session Status -->
                 <x-auth-session-status class="mb-4" :status="session('status')" />
@@ -180,13 +187,6 @@
                         </div>
                     @endif
                 </form>
-
-                <!-- Nog geen account -->
-                <p class="text-center text-sm mt-6" style="color: {{ $loginTextColor }}">
-                    Nog geen account? <a href="#" class="font-medium underline hover:no-underline" style="color: {{ $loginLinkColor }}">
-                        Klik hier om een account aanmaken
-                    </a>
-                </p>
             </div>
         </div>
 
