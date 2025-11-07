@@ -1,0 +1,132 @@
+:root {
+    /* ===========================
+       BONAMI BRAND COLORS
+       =========================== */
+    --bonami-blue: #00D4FF;
+    --bonami-blue-hover: #00BFEA;
+    --bonami-blue-active: #00AAD5;
+    --bonami-blue-text: #0891B2;  /* Donkerder blauw voor tekst op witte achtergrond */
+    --bonami-dark: #111111;
+    --bonami-darker: #0A0A0A;
+    
+    /* ===========================
+       LIGHT MODE COLORS
+       =========================== */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-hover: #f1f3f5;
+    
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-dark: #ced4da;
+    
+    --shadow: rgba(0, 0, 0, 0.1);
+    --shadow-md: rgba(0, 0, 0, 0.15);
+    --shadow-lg: rgba(0, 0, 0, 0.2);
+    
+    /* ===========================
+       STATUS COLORS
+       =========================== */
+    --success: #28a745;
+    --success-bg: #d4edda;
+    --success-border: #c3e6cb;
+    
+    --danger: #dc3545;
+    --danger-bg: #f8d7da;
+    --danger-border: #f5c6cb;
+    
+    --warning: #ffc107;
+    --warning-bg: #fff3cd;
+    --warning-border: #ffeaa7;
+    
+    --info: #17a2b8;
+    --info-bg: #d1ecf1;
+    --info-border: #bee5eb;
+    
+    /* ===========================
+       SPACING & SIZING
+       =========================== */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+    
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --border-radius-xl: 16px;
+    
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 2rem;
+    
+    /* ===========================
+       TRANSITIONS
+       =========================== */
+    --transition-fast: 150ms ease;
+    --transition-base: 250ms ease;
+    --transition-slow: 350ms ease;
+}
+
+/* ===========================
+   DARK MODE COLORS
+   =========================== */
+.dark {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #242424;
+    --bg-tertiary: #2e2e2e;
+    --bg-hover: #333333;
+    
+    --text-primary: #e9ecef;
+    --text-secondary: #adb5bd;
+    --text-muted: #6c757d;
+    
+    --border-color: #404040;
+    --border-light: #333333;
+    --border-dark: #4a4a4a;
+    
+    --shadow: rgba(0, 0, 0, 0.3);
+    --shadow-md: rgba(0, 0, 0, 0.4);
+    --shadow-lg: rgba(0, 0, 0, 0.5);
+    
+    /* Bonami blue blijft hetzelfde in dark mode - goed zichtbaar */
+    --bonami-blue-text: #00D4FF;
+    
+    /* Status colors blijven hetzelfde maar iets gedimpt */
+    --success: #2ea44f;
+    --success-bg: #1a3a26;
+    --success-border: #2d5a3d;
+    
+    --danger: #f85149;
+    --danger-bg: #3a1a1a;
+    --danger-border: #5a2d2d;
+    
+    --warning: #d29922;
+    --warning-bg: #3a3020;
+    --warning-border: #5a4a30;
+    
+    --info: #1f9fb0;
+    --info-bg: #1a3a3f;
+    --info-border: #2d5a60;
+}
+
+/* ===========================
+   SMOOTH TRANSITIONS
+   =========================== */
+* {
+    transition: background-color var(--transition-base),
+                color var(--transition-base),
+                border-color var(--transition-base),
+                box-shadow var(--transition-base);
+}

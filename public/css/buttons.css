@@ -1,0 +1,178 @@
+/* ===========================
+   UNIFORM BUTTON SYSTEM
+   Alle knoppen in de applicatie gebruiken deze classes
+   =========================== */
+
+/* Base button styling */
+.btn, button:not(.unstyled) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    line-height: 1.5;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+/* Primary button - Bonami Blue */
+.btn-primary {
+    background-color: var(--bonami-blue);
+    color: var(--bonami-dark);
+    border-color: var(--bonami-blue);
+}
+
+.btn-primary:hover {
+    background-color: var(--bonami-blue-hover);
+    border-color: var(--bonami-blue-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px var(--shadow-md);
+}
+
+.btn-primary:active {
+    background-color: var(--bonami-blue-active);
+    transform: translateY(0);
+}
+
+/* Secondary button */
+.btn-secondary {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.btn-secondary:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-dark);
+}
+
+/* Danger button */
+.btn-danger {
+    background-color: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
+
+.btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+/* Success button */
+.btn-success {
+    background-color: var(--success);
+    color: white;
+    border-color: var(--success);
+}
+
+.btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+/* Warning button */
+.btn-warning {
+    background-color: var(--warning);
+    color: var(--bonami-dark);
+    border-color: var(--warning);
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+    border-color: #d39e00;
+}
+
+/* Ghost/Outline buttons */
+.btn-outline {
+    background-color: transparent;
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.btn-outline:hover {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-dark);
+}
+
+.btn-outline-primary {
+    background-color: transparent;
+    color: var(--bonami-blue);
+    border-color: var(--bonami-blue);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--bonami-blue);
+    color: var(--bonami-dark);
+}
+
+/* Button sizes */
+.btn-sm {
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--font-size-sm);
+}
+
+.btn-lg {
+    padding: var(--spacing-md) var(--spacing-xl);
+    font-size: var(--font-size-lg);
+}
+
+.btn-xl {
+    padding: var(--spacing-lg) var(--spacing-2xl);
+    font-size: var(--font-size-xl);
+}
+
+/* Full width button */
+.btn-block {
+    display: flex;
+    width: 100%;
+}
+
+/* Disabled state */
+.btn:disabled, .btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Icon buttons */
+.btn-icon {
+    padding: var(--spacing-sm);
+    aspect-ratio: 1;
+}
+
+.btn-icon-lg {
+    padding: var(--spacing-md);
+    font-size: var(--font-size-lg);
+}
+
+/* Button groups */
+.btn-group {
+    display: inline-flex;
+    gap: var(--spacing-xs);
+}
+
+.btn-group .btn {
+    margin: 0;
+}
+
+.btn-group .btn:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.btn-group .btn:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+.btn-group .btn:not(:first-child):not(:last-child) {
+    border-radius: 0;
+}

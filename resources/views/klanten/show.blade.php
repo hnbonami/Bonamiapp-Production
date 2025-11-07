@@ -225,8 +225,8 @@
             <!-- Uitnodiging Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
-                    <div style="background:#c8e1eb;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
+                    <div style="background:#bbf7d0;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                             <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
@@ -236,7 +236,7 @@
                 <p class="text-xs text-gray-600 mb-3">Profieluitnodiging versturen</p>
                 <form action="{{ route('klanten.invite', $klant) }}" method="POST" onsubmit="return confirm('Uitnodiging versturen naar {{ $klant->email }}?')">
                     @csrf
-                    <button type="submit" class="block w-full text-center" style="background:#c8e1eb;color:#111;padding:0.5rem 0.75rem;border-radius:6px;font-weight:600;font-size:0.813rem;border:none;cursor:pointer;">
+                    <button type="submit" class="block w-full text-center hover:bg-green-200 transition-colors" style="background:#bbf7d0;color:#15803d;padding:0.5rem 0.75rem;border-radius:6px;font-weight:600;font-size:0.813rem;border:none;cursor:pointer;">
                         Versturen
                     </button>
                 </form>
@@ -433,14 +433,14 @@ if (uploadModal) {
                                 </a>
                                 <form action="{{ route('bikefit.duplicate', [$klant->id, $test->id]) }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" aria-label="Dupliceer" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800" title="Dupliceer">
+                                    <button type="submit" aria-label="Dupliceer" class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-green-200 transition-colors" style="background-color: #bbf7d0; color: #15803d;" title="Dupliceer">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
                                     </button>
                                 </form>
                                 <form action="{{ route('bikefit.destroy', [$klant->id, $test->id]) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" onclick="return confirm('Weet je zeker dat je deze bikefit wilt verwijderen?')" aria-label="Wis" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-800" title="Wis">
+                                    <button type="submit" onclick="return confirm('Weet je zeker dat je deze bikefit wilt verwijderen?')" aria-label="Wis" class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-200 transition-colors" style="background-color: #fbe2e2ff; color: #dc2626;" title="Wis">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6"/></svg>
                                     </button>
                                 </form>
@@ -463,7 +463,7 @@ if (uploadModal) {
                                 <form action="{{ route('klanten.documenten.destroy', [$klant, $test]) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" onclick="return confirm('Weet je zeker dat je dit document wilt verwijderen?')" aria-label="Wis" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-800" title="Wis">
+                                    <button type="submit" onclick="return confirm('Weet je zeker dat je dit document wilt verwijderen?')" aria-label="Wis" class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-200 transition-colors" style="background-color: #fecaca; color: #dc2626;" title="Wis">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6"/></svg>
                                     </button>
                                 </form>
@@ -476,14 +476,14 @@ if (uploadModal) {
                                 </a>
                                 <form action="{{ route('inspanningstest.duplicate', [$klant->id, $test->id]) }}" method="POST" class="inline">
                                     @csrf
-                                    <button type="submit" aria-label="Dupliceer" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-800" title="Dupliceer">
+                                    <button type="submit" aria-label="Dupliceer" class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-green-200 transition-colors" style="background-color: #bbf7d0; color: #15803d;" title="Dupliceer">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
                                     </button>
                                 </form>
                                 <form action="{{ route('inspanningstest.destroy', [$klant->id, $test->id]) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" onclick="return confirm('Weet je zeker dat je deze test wilt verwijderen?')" aria-label="Wis" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-800" title="Wis">
+                                    <button type="submit" onclick="return confirm('Weet je zeker dat je deze test wilt verwijderen?')" aria-label="Wis" class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-200 transition-colors" style="background-color: #fecaca; color: #dc2626;" title="Wis">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6"/></svg>
                                     </button>
                                 </form>

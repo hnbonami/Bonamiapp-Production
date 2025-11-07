@@ -170,14 +170,14 @@
                             </a>
                             <form action="{{ route('organisaties.sendInvitation', $org) }}" method="POST" class="inline">
                                 @csrf
-                                <button type="submit" onclick="return confirm('Uitnodiging versturen naar {{ $org->email }}?')" aria-label="Uitnodigen" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-800" title="Uitnodiging sturen">
+                                <button type="submit" onclick="return confirm('Uitnodiging versturen naar {{ $org->email }}?')" aria-label="Uitnodigen" class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-green-200 transition-colors" style="background-color: #bbf7d0; color: #15803d;" title="Uitnodiging sturen">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                                 </button>
                             </form>
                             <form action="{{ route('organisaties.destroy', $org->id) }}" method="POST" class="inline">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" onclick="return confirm('Weet je zeker dat je {{ $org->naam }} wilt verwijderen? Alle gerelateerde gegevens (klanten, medewerkers, etc.) worden ook verwijderd!')" aria-label="Verwijderen" class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-rose-100 text-rose-700" style="margin-right:2px;">
+                                <button type="submit" onclick="return confirm('Weet je zeker dat je {{ $org->naam }} wilt verwijderen? Alle gerelateerde gegevens (klanten, medewerkers, etc.) worden ook verwijderd!')" aria-label="Verwijderen" class="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-red-200 transition-colors" style="background-color: #fecaca; color: #dc2626;">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7h6m-7 0a1 1 0 001 1h8a1 1 0 001-1m-10 0V6a2 2 0 012-2h4a2 2 0 012 2v1"/></svg>
                                 </button>
                             </form>
