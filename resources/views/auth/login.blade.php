@@ -10,13 +10,9 @@
     $loginButtonHoverColor = $branding->login_button_hover_color ?? '#6a9929';
     $loginLinkColor = $branding->login_link_color ?? '#374151';
     
-    // Achtergrondafbeelding en logo - alleen tonen als ze bestaan
+    // Achtergrondafbeelding - alleen tonen als deze bestaat in branding
     $loginBackgroundImage = ($branding && $branding->login_background_image) 
         ? asset('storage/' . $branding->login_background_image) 
-        : null;
-    
-    $loginLogo = ($branding && $branding->login_logo) 
-        ? asset('storage/' . $branding->login_logo) 
         : null;
 @endphp
 
@@ -89,13 +85,9 @@
         <!-- Linker kant: Login formulier (50%) -->
         <div class="login-form-section">
             <div class="w-full max-w-md">
-                <!-- Logo -->
+                <!-- Organisatie Logo (vast, niet aanpasbaar via branding) -->
                 <div class="flex justify-center mb-8">
-                    @if($loginLogo)
-                        <img src="{{ $loginLogo }}" alt="Logo" class="h-16 w-auto">
-                    @else
-                        <div class="text-gray-400 text-xs">Logo</div>
-                    @endif
+                    <img src="{{ asset('images/logo_login.png') }}" alt="Logo" class="h-16 w-auto">
                 </div>
 
                 <!-- Titel -->
@@ -175,12 +167,15 @@
                     <!-- Wachtwoord vergeten link -->
                     @if (Route::has('password.request'))
                         <div class="text-center">
+                            <span class="text-sm" style="color: {{ $loginTextColor }}">
+                                Wachtwoord vergeten? 
+                            </span>
                             <a 
                                 href="{{ route('password.request') }}" 
                                 class="text-sm underline hover:no-underline transition"
                                 style="color: {{ $loginLinkColor }}"
                             >
-                                Wachtwoord vergeten? Klik hier om je wachtwoord te resetten
+                                Klik hier om je wachtwoord te resetten
                             </a>
                         </div>
                     @endif
@@ -188,9 +183,8 @@
 
                 <!-- Nog geen account -->
                 <p class="text-center text-sm mt-6" style="color: {{ $loginTextColor }}">
-                    
-                    <a href="#" class="font-medium underline hover:no-underline" style="color: {{ $loginLinkColor }}">
-                       
+                    Nog geen account? <a href="#" class="font-medium underline hover:no-underline" style="color: {{ $loginLinkColor }}">
+                        Klik hier om een account aanmaken
                     </a>
                 </p>
             </div>
