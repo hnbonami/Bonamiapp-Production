@@ -1,4 +1,4 @@
-# PHP Upload Configuratie
+# PHP Upload Configuratie (voor mod_php servers)
 <IfModule mod_php.c>
     php_value upload_max_filesize 50M
     php_value post_max_size 50M
@@ -6,6 +6,8 @@
     php_value max_input_time 300
     php_value memory_limit 256M
 </IfModule>
+
+# Voor PHP-FPM servers, gebruik .user.ini bestand in plaats van mod_php directieven
 
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>

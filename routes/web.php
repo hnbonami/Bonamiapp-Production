@@ -103,7 +103,7 @@ use App\Http\Controllers\InstagramPostController;
 
 Route::get('/', function () {
     if (auth()->check()) {
-        return redirect()->route('dashboard');
+        return redirect()->route('dashboard.index');
     }
     // For guests we show the login page as the public landing
     return redirect()->route('login');
