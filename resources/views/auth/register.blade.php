@@ -1,63 +1,252 @@
-<x-guest-layout>
-    <form method="POST" action="{{ route('register') }}">
-        @csrf
+@php
+    // Haal branding instellingen op voor organisatie (dynamisch per subdomain/organisatie)
+    $organisatieId = 1; // Standaard organisatie, later dynamisch maken
+    $branding = \App\Models\OrganisatieBranding::where('organisatie_id', $organisatieId)->first();
+    
+    // Fallback naar default waarden
+    $loginTextColor = $branding->login_text_color ?? '#374151';
+    $loginButtonColor = $branding->login_button_color ?? '#7fb432';
+    $loginButtonHoverColor = $branding->login_button_hover_color ?? '#6a9929';
+    $loginLinkColor = $branding->login_link_color ?? '#374151';
+    
+    // Achtergrondafbeelding - alleen tonen als deze bestaat in branding
+    $loginBackgroundImage = ($branding && $branding->login_background_image) 
+        ? asset('storage/' . $branding->login_background_image) 
+        : null;
+    
+    // Achtergrond video - heeft voorrang boven afbeelding
+    $loginBackgroundVideo = ($branding && $branding->login_background_video) 
+        ? asset('storage/' . $branding->login_background_video) 
+        : null;
+@endphp
 
-        <!-- Name -->
-        <div>
-            <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
-            <x-input-error :messages="$errors->get('name')" class="mt-2" />
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Registreren - {{ config('app.name', 'Bonami app') }}</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    
+    <!-- Scripts -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
+    <style>
+        /* Zorg voor volledige hoogte en 50-50 split */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .login-container {
+            display: flex;
+            min-height: 100vh;
+            width: 100%;
+        }
+        
+        .login-form-section {
+            flex: 1;
+            min-width: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: white;
+            padding: 2rem;
+        }
+        
+        .login-image-section {
+            flex: 1;
+            min-width: 50%;
+            background-color: #f3f4f6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .login-image-section img {
+            width: 100%;
+            height: 100vh;
+            object-fit: cover;
+        }
+        
+        .login-image-section video {
+            width: 100%;
+            height: 100vh;
+            object-fit: cover;
+        }
+        
+        @media (max-width: 1023px) {
+            .login-image-section {
+                display: none;
+            }
+            .login-form-section {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Linker kant: Registratie formulier (50%) -->
+        <div class="login-form-section">
+            <div class="w-full max-w-md">
+                <!-- Organisatie Logo (vast, niet aanpasbaar via branding) -->
+                <div class="flex justify-center mb-8">
+                    <img src="{{ asset('images/logo_login.png') }}" alt="Logo" class="h-16 w-auto">
+                </div>
+
+                <!-- Titel -->
+                <h2 class="text-3xl font-semibold text-center mb-4" style="color: {{ $loginTextColor }}">
+                    Account Aanmaken
+                </h2>
+
+                <!-- Al een account -->
+                <div class="text-center text-sm mb-8" style="color: {{ $loginTextColor }}">
+                    <p class="mb-1 md:mb-0 md:inline">Al een account?</p>
+                    <a href="{{ route('login') }}" class="font-medium underline hover:no-underline md:ml-1" style="color: {{ $loginLinkColor }}">
+                        Klik hier om in te loggen
+                    </a>
+                </div>
+
+                <form method="POST" action="{{ route('register') }}" class="space-y-6">
+                    @csrf
+
+                    <!-- Naam -->
+                    <div>
+                        <label for="name" class="block text-sm font-medium mb-2" style="color: {{ $loginTextColor }}">
+                            Naam
+                        </label>
+                        <input 
+                            id="name" 
+                            type="text" 
+                            name="name" 
+                            value="{{ old('name') }}"
+                            required 
+                            autofocus 
+                            autocomplete="name"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition"
+                            style="--tw-ring-color: {{ $loginButtonColor }}"
+                        />
+                        <x-input-error :messages="$errors->get('name')" class="mt-2" />
+                    </div>
+
+                    <!-- E-mail -->
+                    <div>
+                        <label for="email" class="block text-sm font-medium mb-2" style="color: {{ $loginTextColor }}">
+                            E-mail
+                        </label>
+                        <input 
+                            id="email" 
+                            type="email" 
+                            name="email" 
+                            value="{{ old('email') }}"
+                            required 
+                            autocomplete="username"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition"
+                            style="--tw-ring-color: {{ $loginButtonColor }}"
+                        />
+                        <x-input-error :messages="$errors->get('email')" class="mt-2" />
+                    </div>
+
+                    <!-- Wachtwoord -->
+                    <div>
+                        <label for="password" class="block text-sm font-medium mb-2" style="color: {{ $loginTextColor }}">
+                            Wachtwoord
+                        </label>
+                        <input 
+                            id="password" 
+                            type="password" 
+                            name="password" 
+                            required 
+                            autocomplete="new-password"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition"
+                            style="--tw-ring-color: {{ $loginButtonColor }}"
+                        />
+                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                    </div>
+
+                    <!-- Bevestig Wachtwoord -->
+                    <div>
+                        <label for="password_confirmation" class="block text-sm font-medium mb-2" style="color: {{ $loginTextColor }}">
+                            Bevestig Wachtwoord
+                        </label>
+                        <input 
+                            id="password_confirmation" 
+                            type="password" 
+                            name="password_confirmation" 
+                            required 
+                            autocomplete="new-password"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-opacity-50 focus:border-transparent transition"
+                            style="--tw-ring-color: {{ $loginButtonColor }}"
+                        />
+                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
+                    </div>
+
+                    <!-- Rol - automatisch ingesteld op 'klant' -->
+                    <input type="hidden" name="role" value="klant" />
+
+                    <!-- Registreer button -->
+                    <button 
+                        type="submit"
+                        class="w-full py-3 px-4 rounded-lg font-medium text-white transition-colors duration-200"
+                        style="background-color: {{ $loginButtonColor }}"
+                        onmouseover="this.style.backgroundColor='{{ $loginButtonHoverColor }}'"
+                        onmouseout="this.style.backgroundColor='{{ $loginButtonColor }}'"
+                    >
+                        Registreren
+                    </button>
+                </form>
+                
+                <!-- Footer Logo - VAST (niet wijzigbaar via branding) -->
+                <div class="mt-8 pt-4 border-t border-gray-200">
+                    <div class="flex justify-center">
+                        <img src="{{ asset('images/login-footer-logo.png') }}" alt="Powered by" class="h-8 opacity-60">
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Email Address -->
-        <div class="mt-4">
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email')" required autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
+        <!-- Rechter kant: Achtergrond video of afbeelding (50%) -->
+        <div class="login-image-section">
+            @if($loginBackgroundVideo)
+                <!-- Video heeft voorrang -->
+                <video autoplay muted loop playsinline id="loginVideo">
+                    <source src="{{ $loginBackgroundVideo }}" type="video/mp4">
+                    Uw browser ondersteunt geen video.
+                </video>
+            @elseif($loginBackgroundImage)
+                <!-- Fallback naar afbeelding -->
+                <img 
+                    src="{{ $loginBackgroundImage }}" 
+                    alt="Login achtergrond"
+                />
+            @else
+                <!-- Geen media beschikbaar -->
+                <div class="text-gray-400 text-sm">Login visual</div>
+            @endif
         </div>
-
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
-
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
-
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                            type="password"
-                            name="password_confirmation" required autocomplete="new-password" />
-
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <!-- Role -->
-        <div class="mt-4">
-            <x-input-label for="role" :value="__('Rol')" />
-            <select id="role" name="role" class="block mt-1 w-full" required>
-                <option value="klant">Klant</option>
-                <option value="medewerker">Medewerker</option>
-                <option value="admin">Admin</option>
-            </select>
-            <x-input-error :messages="$errors->get('role')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
-                {{ __('Already registered?') }}
-            </a>
-
-            <x-primary-button class="ms-4">
-                {{ __('Register') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+    </div>
+    
+    <script>
+        // Forceer video autoplay bij laden van de pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('loginVideo');
+            if (video) {
+                // Probeer video af te spelen
+                video.play().catch(function(error) {
+                    console.log('Video autoplay geblokkeerd door browser:', error);
+                    // Als autoplay geblokkeerd is, probeer het opnieuw met gebruikersinteractie
+                    document.addEventListener('click', function() {
+                        video.play();
+                    }, { once: true });
+                });
+            }
+        });
+    </script>
+</body>
+</html>

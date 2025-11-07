@@ -355,7 +355,7 @@
             
             <!-- Center: Logo - VAST Performancepulse logo (niet wijzigbaar) -->
             <div class="topbar-logo">
-                <img src="/logo_bonami.png" alt="Performancepulse" style="height:35px;" />
+                <img src="{{ asset('images/logo_login.png') }}" alt="Logo" style="height:35px;" />
             </div>
             
             <!-- Right: User menu -->

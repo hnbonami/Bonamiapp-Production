@@ -107,11 +107,12 @@
                 </h2>
 
                 <!-- Nog geen account -->
-                <p class="text-center text-sm mb-8" style="color: {{ $loginTextColor }}">
-                    Nog geen account? <a href="#" class="font-medium underline hover:no-underline" style="color: {{ $loginLinkColor }}">
+                <div class="text-center text-sm mb-8" style="color: {{ $loginTextColor }}">
+                    <p class="mb-1 md:mb-0 md:inline">Nog geen account?</p>
+                    <a href="{{ route('register') }}" class="font-medium underline hover:no-underline md:ml-1" style="color: {{ $loginLinkColor }}">
                         Klik hier om een account aanmaken
                     </a>
-                </p>
+                </div>
 
                 <!-- Session Status -->
                 <x-auth-session-status class="mb-4" :status="session('status')" />
@@ -184,13 +185,11 @@
 
                     <!-- Wachtwoord vergeten link -->
                     @if (Route::has('password.request'))
-                        <div class="text-center">
-                            <span class="text-sm" style="color: {{ $loginTextColor }}">
-                                Wachtwoord vergeten? 
-                            </span>
+                        <div class="text-center text-sm" style="color: {{ $loginTextColor }}">
+                            <p class="mb-1 md:mb-0 md:inline">Wachtwoord vergeten?</p>
                             <a 
                                 href="{{ route('password.request') }}" 
-                                class="text-sm underline hover:no-underline transition"
+                                class="underline hover:no-underline transition md:ml-1"
                                 style="color: {{ $loginLinkColor }}"
                             >
                                 Klik hier om je wachtwoord te resetten
@@ -198,6 +197,13 @@
                         </div>
                     @endif
                 </form>
+                
+                <!-- Footer Logo - VAST (niet wijzigbaar via branding) -->
+                <div class="mt-8 pt-4 border-t border-gray-200">
+                    <div class="flex justify-center">
+                        <img src="{{ asset('images/login-footer-logo.png') }}" alt="Powered by" class="h-8 opacity-60">
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -205,7 +211,7 @@
         <div class="login-image-section">
             @if($loginBackgroundVideo)
                 <!-- Video heeft voorrang -->
-                <video autoplay muted loop playsinline>
+                <video autoplay muted loop playsinline id="loginVideo">
                     <source src="{{ $loginBackgroundVideo }}" type="video/mp4">
                     Uw browser ondersteunt geen video.
                 </video>
@@ -221,5 +227,22 @@
             @endif
         </div>
     </div>
+    
+    <script>
+        // Forceer video autoplay bij laden van de pagina
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('loginVideo');
+            if (video) {
+                // Probeer video af te spelen
+                video.play().catch(function(error) {
+                    console.log('Video autoplay geblokkeerd door browser:', error);
+                    // Als autoplay geblokkeerd is, probeer het opnieuw met gebruikersinteractie
+                    document.addEventListener('click', function() {
+                        video.play();
+                    }, { once: true });
+                });
+            }
+        });
+    </script>
 </body>
 </html>
