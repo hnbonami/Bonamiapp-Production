@@ -206,7 +206,17 @@ class BikefitResultsController extends Controller
             'customValues' => $customValues
         ]);
 
-        return view('bikefit.results', compact('bikefit', 'results', 'resultsVoor', 'resultsNa', 'klantId', 'bikefitVoor', 'bikefitNa', 'customValues'));
+        return view('bikefit.results', [
+            'klant' => $klant,
+            'bikefit' => $bikefit,
+            'results' => $results,
+            'resultsVoor' => $resultsVoor,
+            'resultsNa' => $resultsNa,
+            'klantId' => $klantId,
+            'bikefitVoor' => $bikefitVoor,
+            'bikefitNa' => $bikefitNa,
+            'customValues' => $customValues
+        ]);
     }
     public function downloadPdf($klantId, $bikefitId)
     {
