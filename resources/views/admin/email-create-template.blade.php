@@ -139,8 +139,6 @@
                             <div><code class="bg-white px-2 py-1 rounded">@{{voornaam}}</code> - Voornaam</div>
                             <div><code class="bg-white px-2 py-1 rounded">@{{naam}}</code> - Achternaam</div>
                             <div><code class="bg-white px-2 py-1 rounded">@{{email}}</code> - Email adres</div>
-                            <div><code class="bg-white px-2 py-1 rounded">@{{merk}}</code> - Zadel merk</div>
-                            <div><code class="bg-white px-2 py-1 rounded">@{{model}}</code> - Zadel model</div>
                             <div><code class="bg-white px-2 py-1 rounded">@{{bedrijf_naam}}</code> - Bedrijfsnaam</div>
                             <div><code class="bg-white px-2 py-1 rounded">@{{jaar}}</code> - Huidig jaar</div>
                         </div>
