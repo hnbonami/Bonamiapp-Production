@@ -206,9 +206,9 @@
         </div>
         @endif
 
-        {{-- Branding & Layout - alleen voor organisatie admins als feature actief is --}}
+        {{-- Branding & Layout - alleen voor admins als feature actief is --}}
         @hasFeature('branding_layout')
-        @if(auth()->user()->organisatie_id && in_array(auth()->user()->role, ['admin', 'organisatie_admin']))
+        @if(auth()->user()->isBeheerder())
         <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
             <div class="flex items-center mb-4">
                 <div class="p-3 rounded-lg" style="background-color: #c8e1eb;">
@@ -219,7 +219,7 @@
                 <h3 class="text-xl font-semibold text-gray-800 ml-3">Branding & Layout</h3>
             </div>
             <p class="text-gray-600 mb-4">Personaliseer de app voor je organisatie. Upload logo, pas themakleuren aan en maak de app helemaal van jou!</p>
-            <a href="{{ route('admin.branding.index') }}" class="inline-flex items-center font-medium" style="color: #111;">
+            <a href="{{ route('branding.index') }}" class="inline-flex items-center font-medium" style="color: #111;">
                 Branding Configureren
                 <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>

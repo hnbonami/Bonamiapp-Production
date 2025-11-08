@@ -20,5 +20,8 @@ class DatabaseSeeder extends Seeder
             'role' => 'admin',
             'password' => bcrypt('password'),
         ]);
+
+        // Seed Performance Pulse default branding (organisatie ID 1)
+        $this->call(PerformancePulseDefaultBrandingSeeder::class);
     }
 }

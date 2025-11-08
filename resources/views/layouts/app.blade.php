@@ -19,10 +19,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Bonami.app')</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png?s=32">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon.png?s=16">
-    <link rel="shortcut icon" type="image/png" href="/favicon.png?s=32">
-    <link rel="apple-touch-icon" href="/favicon.png?s=180">
+    <!-- Favicon - Performance Pulse Logo -->
+    <link rel="icon" type="image/png" href="{{ asset('images/logo_login.png?v=2') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo_login.png?v=2') }}">
     <!-- Bunny Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,800|georgia:400,700|times-new-roman:400,700|arial:400,700|courier-new:400,700&display=swap" rel="stylesheet" />
@@ -430,13 +429,6 @@
                 Dashboard
             </a>
             
-            {{-- Analytics - alleen voor admin/medewerkers --}}
-            @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
-                <a href="/admin/analytics" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('admin/analytics*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
-                    Analytics
-                </a>
-            @endif
-            
             @if(Auth::user() && Auth::user()->role === 'klant')
                 {{-- Klanten gaan naar hun klant show pagina (profiel overzicht) --}}
                 @php
@@ -543,20 +535,18 @@
             
             @if(Auth::user() && Auth::user()->isBeheerder())
                 <div class="border-t border-gray-200 mt-2 pt-2">
-                    <div class="px-6 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">Beheer</div>
-                    <a href="/users" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('users*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
-                        Gebruikers
-                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\User::count() }}</span>
+                    <a href="/admin" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('admin*') && !request()->is('admin/analytics*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                        Beheer
                     </a>
-                    <a href="/testzadels" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('testzadels*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
-                        Testzadels
-                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Testzadel::count() }}</span>
-                    </a>
-                    <a href="/email-integratie" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('email-integratie*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
-                        Email Integratie
-                    </a>
-                    <a href="/database-backup" class="block px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('database-backup*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
-                        Database Backup
+                </div>
+            @endif
+            
+            {{-- SuperAdmin Organisaties link --}}
+            @if(Auth::user() && Auth::user()->isSuperAdmin())
+                <div class="border-t border-gray-200 mt-2 pt-2">
+                    <a href="/organisaties" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('organisaties*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
+                        Organisaties
+                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">{{ \App\Models\Organisatie::count() }}</span>
                     </a>
                 </div>
             @endif

@@ -12,7 +12,7 @@
             padding: 20px;
         }
         .header {
-            background: #c8e1eb;
+            background: #dce8edff;
             padding: 30px;
             text-align: center;
             border-radius: 10px 10px 0 0;
@@ -48,13 +48,14 @@
 </head>
 <body>
     <div class="header">
-        <h1 style="margin: 0; color: #1f2937;">🎉 Welkom bij Bonami Sportcoaching!</h1>
+        <img src="{{ asset('images/performance-pulse-logo.png') }}" alt="Performance Pulse Logo" style="max-width: 70px; height: auto; margin-bottom: 20px;">
+        <h1 style="margin: 0; color: #1f2937;">Welkom bij Performance Pulse!</h1>
     </div>
     
     <div class="content">
         <p>Beste <strong>{{ $organisatie->naam }}</strong>,</p>
         
-        <p>Welkom bij het Bonami Sportcoaching platform! Je admin account is aangemaakt en je kunt nu direct aan de slag.</p>
+        <p>Welkom bij het Performance Pulse platform! Je admin account is aangemaakt en je kunt nu direct aan de slag.</p>
         
         <div class="info-box">
             <strong>� Jouw inloggegevens:</strong><br>

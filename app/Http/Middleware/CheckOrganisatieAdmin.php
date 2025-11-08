@@ -9,27 +9,12 @@ use Symfony\Component\HttpFoundation\Response;
 class CheckOrganisatieAdmin
 {
     /**
-     * Handle an incoming request.
-     * 
-     * Controleert of de ingelogde gebruiker organisatie admin rechten heeft
+     * Controleer of de gebruiker een organisatie admin of superadmin is
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Controleer of gebruiker is ingelogd
-        if (!auth()->check()) {
-            return redirect()->route('login');
-        }
-
-        $user = auth()->user();
-
-        // Controleer of gebruiker organisatie admin is (probeer verschillende mogelijke veldnamen)
-        $isOrganisatieAdmin = $user->is_organisatie_admin ?? 
-                              $user->role === 'organisatie_admin' ?? 
-                              $user->user_type === 'organisatie_admin' ?? 
-                              false;
-
-        if (!$isOrganisatieAdmin) {
-            abort(403, 'Geen toegang. Alleen organisatie admins hebben toegang tot deze pagina.');
+        if (!auth()->check() || !auth()->user()->isBeheerder()) {
+            abort(403, 'Toegang geweigerd. Alleen beheerders hebben toegang tot deze pagina.');
         }
 
         return $next($request);

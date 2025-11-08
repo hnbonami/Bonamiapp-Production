@@ -125,9 +125,9 @@ class FeatureSeeder extends Seeder
                 'sorteer_volgorde' => 110,
             ],
             [
-                'key' => 'custom_branding',
-                'naam' => 'Custom Branding',
-                'beschrijving' => 'Eigen logo, kleuren en huisstijl in rapporten',
+                'key' => 'branding_layout',
+                'naam' => 'Branding & Layout',
+                'beschrijving' => 'Eigen logo, kleuren en huisstijl aanpassen in de applicatie',
                 'categorie' => 'geavanceerd',
                 'icoon' => 'paint-brush',
                 'is_premium' => true,
@@ -147,9 +147,14 @@ class FeatureSeeder extends Seeder
         ];
 
         foreach ($features as $feature) {
+            // Auto-genereer slug als deze niet bestaat
+            if (!isset($feature['slug'])) {
+                $feature['slug'] = \Illuminate\Support\Str::slug($feature['key']); // Gebruik key voor consistentie
+            }
+            
             Feature::updateOrCreate(
-                ['key' => $feature['key']],
-                $feature
+                ['key' => $feature['key']], // Match op key
+                $feature // Update alle velden inclusief slug
             );
         }
 

@@ -6,6 +6,7 @@ use App\Models\Organisatie;
 use App\Models\User;
 use App\Models\Klant;
 use App\Models\Feature;
+use App\Models\OrganisatieBranding;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -97,6 +98,9 @@ class OrganisatieController extends Controller
 
         try {
             $organisatie = Organisatie::create($validated);
+            
+            // ✅ Kopieer Performance Pulse default branding naar nieuwe organisatie
+            $this->copyDefaultBrandingToOrganisatie($organisatie);
 
             Log::info('Nieuwe organisatie aangemaakt', [
                 'organisatie_id' => $organisatie->id,
@@ -467,5 +471,46 @@ class OrganisatieController extends Controller
                 'message' => 'Er is een fout opgetreden: ' . $e->getMessage()
             ], 500);
         }
+    }
+    
+    /**
+     * Kopieer Performance Pulse default branding (organisatie ID 1) naar nieuwe organisatie
+     */
+    private function copyDefaultBrandingToOrganisatie(Organisatie $organisatie)
+    {
+        $masterBranding = OrganisatieBranding::where('organisatie_id', 1)
+            ->where('is_actief', true)
+            ->first();
+        
+        if (!$masterBranding) {
+            \Log::warning('⚠️ Geen master branding gevonden (organisatie ID 1)');
+            return;
+        }
+        
+        // Kopieer alle branding velden BEHALVE logo's (die zijn organisatie-specifiek)
+        OrganisatieBranding::create([
+            'organisatie_id' => $organisatie->id,
+            'is_actief' => true,
+            'navbar_achtergrond' => $masterBranding->navbar_achtergrond,
+            'navbar_tekst_kleur' => $masterBranding->navbar_tekst_kleur,
+            'sidebar_achtergrond' => $masterBranding->sidebar_achtergrond,
+            'sidebar_tekst_kleur' => $masterBranding->sidebar_tekst_kleur,
+            'sidebar_actief_achtergrond' => $masterBranding->sidebar_actief_achtergrond,
+            'sidebar_actief_lijn' => $masterBranding->sidebar_actief_lijn,
+            'dark_achtergrond' => $masterBranding->dark_achtergrond,
+            'dark_tekst' => $masterBranding->dark_tekst,
+            'dark_navbar_achtergrond' => $masterBranding->dark_navbar_achtergrond,
+            'dark_sidebar_achtergrond' => $masterBranding->dark_sidebar_achtergrond,
+            'login_text_color' => $masterBranding->login_text_color,
+            'login_button_color' => $masterBranding->login_button_color,
+            'login_button_hover_color' => $masterBranding->login_button_hover_color,
+            'login_link_color' => $masterBranding->login_link_color,
+            // Logo's blijven NULL - organisatie moet eigen uploaden
+        ]);
+        
+        \Log::info('✅ Default Performance Pulse branding gekopieerd naar nieuwe organisatie', [
+            'organisatie_id' => $organisatie->id,
+            'organisatie_naam' => $organisatie->naam
+        ]);
     }
 }

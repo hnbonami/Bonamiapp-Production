@@ -241,9 +241,21 @@
 
             <!-- Acties -->
             <div class="flex justify-between items-center">
-                <a href="{{ route('admin.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
-                    ← Terug
-                </a>
+                <div class="flex gap-3">
+                    <a href="{{ route('admin.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                        ← Terug
+                    </a>
+                    
+                    <form action="{{ route('branding.reset') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" 
+                                onclick="return confirm('⚠️ Dit reset ALLE branding naar Performance Pulse defaults. Weet je het zeker?')"
+                                class="px-4 py-2 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition font-medium">
+                            🔄 Reset naar Performance Pulse Defaults
+                        </button>
+                    </form>
+                </div>
+                
                 <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold">
                     💾 Opslaan
                 </button>

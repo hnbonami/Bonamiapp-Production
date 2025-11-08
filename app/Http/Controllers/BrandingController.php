@@ -36,8 +36,8 @@ class BrandingController extends Controller
             }
         }
         
-        // Check of organisatie de custom branding feature heeft
-        if (!$organisatie->hasCustomBrandingFeature()) {
+        // Check of organisatie de branding_layout feature heeft
+        if (!$organisatie->hasFeature('branding_layout')) {
             abort(403, 'Custom Branding feature is niet actief voor deze organisatie.');
         }
         
@@ -221,7 +221,7 @@ class BrandingController extends Controller
         
         $organisatie = Organisatie::findOrFail($user->organisatie_id);
         
-        if (!$organisatie->hasCustomBrandingFeature() || !$user->isAdminOfOrganisatie($organisatie->id)) {
+        if (!$organisatie->hasFeature('branding_layout') || !$user->isAdminOfOrganisatie($organisatie->id)) {
             return response()->json(['success' => false, 'message' => 'Geen toegang.'], 403);
         }
         
@@ -255,61 +255,97 @@ class BrandingController extends Controller
     }
     
     /**
-     * Reset branding naar defaults
+     * Reset branding naar Performance Pulse defaults (organisatie ID 1)
      */
-    public function reset()
+    public function reset(Request $request)
     {
-        $user = auth()->user();
+        $organisatie = auth()->user()->organisatie;
         
-        if (!$user->organisatie_id) {
-            return back()->with('error', 'Geen organisatie gekoppeld.');
+        if (!$organisatie) {
+            return redirect()->back()->with('error', 'Geen organisatie gevonden.');
         }
         
-        $organisatie = Organisatie::findOrFail($user->organisatie_id);
+        // Haal de Performance Pulse master branding op (organisatie ID 1)
+        $masterOrganisatie = \App\Models\Organisatie::find(1);
+        $masterBranding = \App\Models\OrganisatieBranding::where('organisatie_id', 1)
+            ->where('is_actief', true)
+            ->first();
         
-        if (!$organisatie->hasCustomBrandingFeature() || !$user->isAdminOfOrganisatie($organisatie->id)) {
-            return back()->with('error', 'Geen toegang.');
+        if (!$masterOrganisatie) {
+            return redirect()->back()->with('error', 'Performance Pulse default branding niet gevonden.');
         }
         
-        $branding = OrganisatieBranding::where('organisatie_id', $organisatie->id)->first();
-        
-        if ($branding) {
-            // Verwijder alle uploads
-            $this->deleteOldFile($branding->logo_pad);
-            $this->deleteOldFile($branding->logo_klein_pad);
-            $this->deleteOldFile($branding->rapport_logo_pad);
+        try {
+            \DB::beginTransaction();
             
-            // Reset naar defaults met ALLE database kolommen
-            $branding->update([
-                'logo_pad' => null,
-                'logo_klein_pad' => null,
-                'rapport_logo_pad' => null,
-                'primaire_kleur' => '#3B82F6',
-                'primaire_kleur_hover' => '#2563EB',
-                'primaire_kleur_licht' => '#DBEAFE',
-                'secundaire_kleur' => '#1E40AF',
-                'accent_kleur' => '#10B981',
-                'tekst_kleur_primair' => '#1F2937',
-                'tekst_kleur_secundair' => '#6B7280',
-                'achtergrond_kleur' => '#FFFFFF',
-                'kaart_achtergrond' => '#F9FAFB',
-                'navbar_achtergrond' => '#1E293B',
-                'navbar_tekst_kleur' => '#FFFFFF',
-                'rapport_achtergrond' => '#FFFFFF',
-                'rapport_footer_tekst' => null,
-                'font_familie' => 'Inter',
-                'font_grootte_basis' => 16,
-                'toon_logo_in_rapporten' => true,
-                'is_actief' => true,
+            // Kopieer organisatie branding velden
+            $organisatie->update([
+                'branding_enabled' => false, // Zet uit, gebruiken we defaults
+                'logo_path' => null, // Verwijder custom logo
+                'favicon_path' => null, // Verwijder custom favicon
+                'primary_color' => $masterOrganisatie->primary_color ?? '#3b82f6',
+                'secondary_color' => $masterOrganisatie->secondary_color ?? '#1e40af',
+                'sidebar_color' => $masterOrganisatie->sidebar_color ?? '#1f2937',
+                'text_color' => $masterOrganisatie->text_color ?? '#111827',
+                'custom_css' => null, // Verwijder custom CSS
             ]);
             
-            Log::info('Branding gereset naar defaults', [
+            // Verwijder of update huidige branding naar master template
+            $currentBranding = \App\Models\OrganisatieBranding::where('organisatie_id', $organisatie->id)
+                ->where('is_actief', true)
+                ->first();
+            
+            if ($masterBranding) {
+                // Kopieer ALLE branding velden van master
+                $brandingData = [
+                    'organisatie_id' => $organisatie->id,
+                    'is_actief' => true,
+                    'navbar_achtergrond' => $masterBranding->navbar_achtergrond ?? '#c8e1eb',
+                    'navbar_tekst_kleur' => $masterBranding->navbar_tekst_kleur ?? '#000000',
+                    'sidebar_achtergrond' => $masterBranding->sidebar_achtergrond ?? '#FFFFFF',
+                    'sidebar_tekst_kleur' => $masterBranding->sidebar_tekst_kleur ?? '#374151',
+                    'sidebar_actief_achtergrond' => $masterBranding->sidebar_actief_achtergrond ?? '#f6fbfe',
+                    'sidebar_actief_lijn' => $masterBranding->sidebar_actief_lijn ?? '#c1dfeb',
+                    'dark_achtergrond' => $masterBranding->dark_achtergrond ?? '#1F2937',
+                    'dark_tekst' => $masterBranding->dark_tekst ?? '#F9FAFB',
+                    'dark_navbar_achtergrond' => $masterBranding->dark_navbar_achtergrond ?? '#111827',
+                    'dark_sidebar_achtergrond' => $masterBranding->dark_sidebar_achtergrond ?? '#111827',
+                    'logo_pad' => null, // Geen custom logo
+                    'login_logo' => $masterBranding->login_logo ?? null, // Kopieer login logo PAD niet (willen niet delen)
+                    'login_background_image' => $masterBranding->login_background_image ?? null,
+                    'login_background_video' => $masterBranding->login_background_video ?? null,
+                    'login_text_color' => $masterBranding->login_text_color ?? '#374151',
+                    'login_button_color' => $masterBranding->login_button_color ?? '#7fb432',
+                    'login_button_hover_color' => $masterBranding->login_button_hover_color ?? '#6a9929',
+                    'login_link_color' => $masterBranding->login_link_color ?? '#374151',
+                ];
+                
+                if ($currentBranding) {
+                    $currentBranding->update($brandingData);
+                } else {
+                    \App\Models\OrganisatieBranding::create($brandingData);
+                }
+            }
+            
+            \DB::commit();
+            
+            \Log::info('✅ Branding gereset naar Performance Pulse defaults', [
                 'organisatie_id' => $organisatie->id,
-                'user_id' => $user->id,
+                'organisatie_naam' => $organisatie->naam
             ]);
+            
+            return redirect()->back()->with('success', '✅ Branding succesvol gereset naar Performance Pulse defaults!');
+            
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            
+            \Log::error('❌ Fout bij resetten branding', [
+                'organisatie_id' => $organisatie->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return redirect()->back()->with('error', 'Fout bij resetten branding: ' . $e->getMessage());
         }
-        
-        return back()->with('success', 'Branding instellingen gereset naar standaard waarden.');
     }
     
     /**
