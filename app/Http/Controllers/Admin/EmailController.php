@@ -241,14 +241,24 @@ public function storeTemplate(Request $request)
     public function updateSettings(Request $request)
     {
         $validated = $request->validate([
-            'company_name' => 'required|max:255',
-            'primary_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
-            'secondary_color' => 'required|regex:/^#[0-9A-Fa-f]{6}$/',
-            'footer_text' => 'nullable|max:500',
-            'signature' => 'nullable|max:500',
-            'logo' => 'nullable|image|max:2048|mimes:jpg,jpeg,png,gif,svg'
+            'company_name' => 'required|string|max:255',
+            'logo' => 'nullable|image|max:2048',
+            'primary_color' => 'required|string|max:7',
+            'secondary_color' => 'required|string|max:7',
+            'text_color' => 'nullable|string|max:7',
+            'logo_position' => 'nullable|in:left,center,right',
+            'footer_text' => 'nullable|string',
+            'signature' => 'nullable|string',
         ]);
-
+        
+        // Set defaults voor nieuwe velden
+        $validated['email_text_color'] = $validated['text_color'] ?? '#ffffff';
+        $validated['email_logo_position'] = $validated['logo_position'] ?? 'left';
+        
+        // Verwijder de oude keys
+        unset($validated['text_color']);
+        unset($validated['logo_position']);
+        
         $settings = EmailSettings::getSettings();
         
         // Handle logo upload
@@ -263,7 +273,6 @@ public function storeTemplate(Request $request)
                 $logoPath = $request->file('logo')->store('email-logos', 'public');
                 $validated['logo_path'] = $logoPath;
                 
-                // Debug: Log successful upload
                 \Log::info('Logo uploaded successfully: ' . $logoPath);
                 
             } catch (\Exception $e) {
@@ -273,9 +282,16 @@ public function storeTemplate(Request $request)
         }
 
         $settings->update($validated);
-
+        
+        \Log::info('Email settings bijgewerkt', [
+            'organisatie_id' => auth()->user()->organisatie_id,
+            'user_id' => auth()->id(),
+            'email_logo_position' => $validated['email_logo_position'],
+            'email_text_color' => $validated['email_text_color'],
+        ]);
+        
         return redirect()->route('admin.email.settings')
-                        ->with('success', 'Email instellingen succesvol bijgewerkt!');
+                        ->with('success', '✅ Email instellingen succesvol bijgewerkt!');
     }
 
     public function triggers()

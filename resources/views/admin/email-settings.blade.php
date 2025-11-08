@@ -5,7 +5,7 @@
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
         <div>
-            <h1 class="text-3xl font-bold text-gray-900">🎨 Email Instellingen</h1>
+            <h1 class="text-3xl font-bold text-gray-900">Email Branding</h1>
             <p class="text-gray-600 mt-1">Beheer logo, kleuren en branding voor al je emails</p>
         </div>
         <a href="{{ route('admin.email.index') }}" 
@@ -172,6 +172,39 @@
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                 @enderror
                             </div>
+
+                            <div>
+                                <label for="text_color" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Tekstkleur Header
+                                </label>
+                                <div class="flex items-center space-x-3">
+                                    <input type="color" name="text_color" id="text_color" 
+                                           value="{{ old('text_color', $settings->email_text_color ?? '#ffffff') }}"
+                                           class="h-10 w-16 border border-gray-300 rounded-md cursor-pointer">
+                                    <input type="text" value="{{ old('text_color', $settings->email_text_color ?? '#ffffff') }}" 
+                                           readonly class="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                </div>
+                                <p class="mt-1 text-sm text-gray-500">Kleur van tekst in email header</p>
+                                @error('text_color')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="logo_position" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Logo Positie
+                                </label>
+                                <select name="logo_position" id="logo_position"
+                                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="left" {{ old('logo_position', $settings->email_logo_position ?? 'left') === 'left' ? 'selected' : '' }}>Links</option>
+                                    <option value="center" {{ old('logo_position', $settings->email_logo_position ?? 'left') === 'center' ? 'selected' : '' }}>Midden</option>
+                                    <option value="right" {{ old('logo_position', $settings->email_logo_position ?? 'left') === 'right' ? 'selected' : '' }}>Rechts</option>
+                                </select>
+                                <p class="mt-1 text-sm text-gray-500">Positie van het logo in de email header</p>
+                                @error('logo_position')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
                         </div>
                     </div>
 
@@ -266,20 +299,39 @@
 </div>
 
 <script>
-// Update preview when colors change
+// Update preview when colors or logo position change
 document.addEventListener('DOMContentLoaded', function() {
     const primaryColorInput = document.getElementById('primary_color');
     const secondaryColorInput = document.getElementById('secondary_color');
+    const textColorInput = document.getElementById('text_color');
+    const logoPositionInput = document.getElementById('logo_position');
     
     function updatePreview() {
         const preview = document.getElementById('email-preview');
         const primaryColor = primaryColorInput.value;
         const secondaryColor = secondaryColorInput.value;
+        const textColor = textColorInput.value;
+        const logoPosition = logoPositionInput.value;
         
         // Update gradient in header
         const header = preview.querySelector('div[style*="background: linear-gradient"]');
         if (header) {
             header.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
+            
+            // Update text alignment based on logo position
+            if (logoPosition === 'left') {
+                header.style.textAlign = 'left';
+            } else if (logoPosition === 'center') {
+                header.style.textAlign = 'center';
+            } else if (logoPosition === 'right') {
+                header.style.textAlign = 'right';
+            }
+        }
+        
+        // Update text color in header
+        const headerTitle = header ? header.querySelector('h1') : null;
+        if (headerTitle) {
+            headerTitle.style.color = textColor;
         }
         
         // Update button color
@@ -291,10 +343,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update text input values
         primaryColorInput.nextElementSibling.value = primaryColor;
         secondaryColorInput.nextElementSibling.value = secondaryColor;
+        textColorInput.nextElementSibling.value = textColor;
     }
     
     primaryColorInput.addEventListener('change', updatePreview);
     secondaryColorInput.addEventListener('change', updatePreview);
+    textColorInput.addEventListener('change', updatePreview);
+    logoPositionInput.addEventListener('change', updatePreview);
 });
 </script>
 @endsection

@@ -11,12 +11,15 @@ class EmailSettings extends Model
     use HasFactory;
 
     protected $fillable = [
+        'organisatie_id',
         'company_name',
         'logo_path',
+        'email_logo_position',
         'primary_color',
         'secondary_color',
+        'email_text_color',
         'footer_text',
-        'signature'
+        'signature',
     ];
 
     // Singleton pattern - er is maar 1 email settings record
