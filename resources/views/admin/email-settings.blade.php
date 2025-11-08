@@ -267,11 +267,11 @@
                 
                 <div id="email-preview" class="border border-gray-200 rounded-lg overflow-hidden">
                     <!-- Live preview wordt hier geladen -->
-                    <div style="background: linear-gradient(135deg, {{ $settings->primary_color }} 0%, {{ $settings->secondary_color }} 100%); padding: 20px; text-align: center;">
+                    <div class="header" style="background: linear-gradient(135deg, {{ $settings->primary_color }} 0%, {{ $settings->secondary_color }} 100%); padding: 20px; text-align: {{ $settings->email_logo_position ?? 'left' }};">
                         @if($settings->hasLogo())
-                            <img src="{{ $settings->logo_url }}" alt="Logo" style="height: 40px; margin-bottom: 10px;">
+                            <img src="{{ $settings->getLogoUrl() }}" alt="Logo" style="height: 40px; margin-bottom: 10px; display: inline-block;">
                         @endif
-                        <h1 style="color: white; margin: 0; font-size: 20px;">{{ $settings->company_name }}</h1>
+                        <h1 style="color: {{ $settings->email_text_color ?? '#ffffff' }}; margin: 0; font-size: 20px;">{{ $settings->company_name }}</h1>
                     </div>
                     <div style="padding: 20px;">
                         <h2 style="margin-top: 0;">Beste Jan,</h2>
@@ -310,11 +310,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const preview = document.getElementById('email-preview');
         const primaryColor = primaryColorInput.value;
         const secondaryColor = secondaryColorInput.value;
-        const textColor = textColorInput.value;
-        const logoPosition = logoPositionInput.value;
+        const textColor = textColorInput ? textColorInput.value : '#ffffff';
+        const logoPosition = logoPositionInput ? logoPositionInput.value : 'left';
         
         // Update gradient in header
-        const header = preview.querySelector('div[style*="background: linear-gradient"]');
+        const header = preview.querySelector('div[style*="background"]');
         if (header) {
             header.style.background = `linear-gradient(135deg, ${primaryColor} 0%, ${secondaryColor} 100%)`;
             
@@ -329,10 +329,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Update text color in header
-        const headerTitle = header ? header.querySelector('h1') : null;
-        if (headerTitle) {
-            headerTitle.style.color = textColor;
-        }
+        const headerTexts = preview.querySelectorAll('.header h1, .header img + h1');
+        headerTexts.forEach(function(el) {
+            el.style.color = textColor;
+        });
         
         // Update button color
         const button = preview.querySelector('a[style*="background-color"]');
@@ -343,13 +343,22 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update text input values
         primaryColorInput.nextElementSibling.value = primaryColor;
         secondaryColorInput.nextElementSibling.value = secondaryColor;
-        textColorInput.nextElementSibling.value = textColor;
+        if (textColorInput && textColorInput.nextElementSibling) {
+            textColorInput.nextElementSibling.value = textColor;
+        }
     }
     
     primaryColorInput.addEventListener('change', updatePreview);
     secondaryColorInput.addEventListener('change', updatePreview);
-    textColorInput.addEventListener('change', updatePreview);
-    logoPositionInput.addEventListener('change', updatePreview);
+    if (textColorInput) {
+        textColorInput.addEventListener('change', updatePreview);
+    }
+    if (logoPositionInput) {
+        logoPositionInput.addEventListener('change', updatePreview);
+    }
+    
+    // Initial update
+    updatePreview();
 });
 </script>
 @endsection

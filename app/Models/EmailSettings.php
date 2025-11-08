@@ -49,28 +49,37 @@ class EmailSettings extends Model
         return null;
     }
 
+    /**
+     * Check if logo exists
+     */
     public function hasLogo()
     {
-        return $this->logo_path && Storage::disk('public')->exists($this->logo_path);
+        return !empty($this->logo_path) && \Storage::disk('public')->exists($this->logo_path);
     }
-
-    // Get logo as base64 for email embedding
+    
+    /**
+     * Get logo URL voor web display
+     */
+    public function getLogoUrl()
+    {
+        if ($this->hasLogo()) {
+            return asset('storage/' . $this->logo_path);
+        }
+        return null;
+    }
+    
+    /**
+     * Get logo as base64 encoded string for email embedding
+     */
     public function getLogoBase64()
     {
-        if (!$this->hasLogo()) {
-            return null;
+        if ($this->hasLogo()) {
+            $path = storage_path('app/public/' . $this->logo_path);
+            $type = pathinfo($path, PATHINFO_EXTENSION);
+            $data = file_get_contents($path);
+            return 'data:image/' . $type . ';base64,' . base64_encode($data);
         }
-
-        try {
-            $logoContent = Storage::disk('public')->get($this->logo_path);
-            $extension = pathinfo($this->logo_path, PATHINFO_EXTENSION);
-            $mimeType = $this->getMimeType($extension);
-            
-            return 'data:' . $mimeType . ';base64,' . base64_encode($logoContent);
-        } catch (\Exception $e) {
-            \Log::error('Logo base64 error: ' . $e->getMessage());
-            return null;
-        }
+        return null;
     }
 
     private function getMimeType($extension)
