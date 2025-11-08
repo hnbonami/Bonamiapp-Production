@@ -3,16 +3,17 @@
 @section('content')
 <div class="dashboard-container" style="padding:2em;">
     <!-- Header -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2em;position:relative;z-index:100;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2em;">
         <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
         
+        <!-- Desktop: knop rechts bovenin -->
         @if(auth()->user()->role !== 'klant')
-        <button id="addWidgetBtn" class="inline-flex items-center gap-2" style="background:#c8e1eb;color:#111;padding:0.75em 1.2em;border-radius:7px;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;border:none;cursor:pointer;position:relative;z-index:1000;pointer-events:auto;min-width:48px;min-height:48px;touch-action:manipulation;">
+        <a href="{{ route('dashboard.widgets.create') }}" id="addWidgetBtn" class="inline-flex items-center gap-2" style="background:#c8e1eb;color:#111;padding:0.75em 1.2em;border-radius:7px;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;border:none;cursor:pointer;text-decoration:none;">
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
             <span>Widget toevoegen</span>
-        </button>
+        </a>
         @endif
     </div>
 
@@ -580,34 +581,39 @@ document.addEventListener('DOMContentLoaded', function() {
             icon.style.transform = isHidden ? 'rotate(0deg)' : 'rotate(-90deg)';
         });
     });
-
-    // Add Widget Modal
-    const addWidgetBtn = document.getElementById('addWidgetBtn');
-    const modal = document.getElementById('addWidgetModal');
-    const closeModalBtn = document.getElementById('closeModalBtn');
-
-    if (addWidgetBtn) {
-        addWidgetBtn.addEventListener('click', function() {
-            modal.style.display = 'flex';
-        });
-    }
-
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', function() {
-            modal.style.display = 'none';
-        });
-    }
-
-    // Close modal on outside click
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    });
 });
 </script>
 
 <style>
+/* DESKTOP: Normale knop in header */
+@media (min-width: 769px) {
+    #addWidgetBtn {
+        position: relative !important;
+    }
+}
+
+/* ⚡ MOBIEL: Floating Action Button rechtsonder */
+@media (max-width: 768px) {
+    #addWidgetBtn {
+        position: fixed !important;
+        bottom: 16px !important;
+        right: 16px !important;
+        z-index: 9999 !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3) !important;
+        padding: 0.7em 1em !important;
+        font-size: 0.85em !important;
+    }
+    
+    #addWidgetBtn svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+    
+    #addWidgetBtn:active {
+        transform: scale(0.95) !important;
+    }
+}
+
 /* ⚡ MOBIEL: Statische grid layout (geen Gridstack) */
 @media (max-width: 768px) {
     #dashboard-grid {
