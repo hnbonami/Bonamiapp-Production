@@ -99,10 +99,14 @@ class EmailController extends Controller
         ];
         $settings = EmailSettings::getSettings();
         
+        // Haal logo positie en tekstkleur op
+        $logoPosition = $settings->email_logo_position ?? 'left';
+        $textColor = $settings->email_text_color ?? '#ffffff';
+        
         // Default modern email template with logo
         $logoHtml = '';
         if ($settings->hasLogo()) {
-            $logoHtml = '<img src="' . $settings->getLogoBase64() . '" alt="' . $settings->company_name . '" style="height: 60px; margin-bottom: 15px;">';
+            $logoHtml = '<img src="' . $settings->getLogoBase64() . '" alt="' . $settings->company_name . '" style="height: 60px; margin-bottom: 15px; display: inline-block;">';
         }
         
         $defaultTemplate = '
@@ -115,8 +119,8 @@ class EmailController extends Controller
     <style>
         body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
         .email-container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
-        .header { background: linear-gradient(135deg, ' . $settings->primary_color . ' 0%, ' . $settings->secondary_color . ' 100%); padding: 40px 30px; text-align: center; }
-        .header h1 { color: #ffffff; margin: 0; font-size: 28px; font-weight: 300; }
+        .header { background: linear-gradient(135deg, ' . $settings->primary_color . ' 0%, ' . $settings->secondary_color . ' 100%); padding: 40px 30px; text-align: ' . $logoPosition . '; }
+        .header h1 { color: ' . $textColor . '; margin: 0; font-size: 28px; font-weight: 300; }
         .content { padding: 40px 30px; }
         .content h2 { color: #333333; margin-top: 0; }
         .content p { color: #666666; line-height: 1.6; }
