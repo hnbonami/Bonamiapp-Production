@@ -233,12 +233,12 @@ Route::middleware('auth')->group(function () {
     Route::get('bikefit/{bikefit}/download-pdf', [\App\Http\Controllers\PdfController::class, 'exportPdf'])->name('bikefit.report.pdf')->scopeBindings();
     // Bikefit berekende resultaten en verslag generatie
     Route::get('bikefit/{bikefit}/results', [\App\Http\Controllers\BikefitResultsController::class, 'show'])->name('bikefit.results')->scopeBindings();
-    Route::post('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
-    Route::get('bikefit/{bikefit}/generate-report', [\App\Http\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview')->scopeBindings();
+    Route::post('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.generateReport')->scopeBindings();
+    Route::get('bikefit/{bikefit}/generate-report', [\AppHttp\Controllers\BikefitResultsController::class, 'generateReport'])->name('bikefit.reportPreview')->scopeBindings();
     // SAVE CUSTOM RESULTS ROUTE - ESSENTIAL FOR EDITABLE RESULTS FUNCTIONALITY
-    Route::post('bikefit/{bikefit}/save-custom-results', [\App\Http\Controllers\BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results')->scopeBindings();
+    Route::post('bikefit/{bikefit}/save-custom-results', [\AppHttp\Controllers\BikefitController::class, 'saveCustomResults'])->name('bikefit.save-custom-results')->scopeBindings();
     // RESET TO CALCULATED ROUTE - ESSENTIAL FOR RESET FUNCTIONALITY
-    Route::post('bikefit/{bikefit}/reset-to-calculated', [\App\Http\Controllers\BikefitController::class, 'resetToCalculated'])->name('bikefit.reset-to-calculated')->scopeBindings();
+    Route::post('bikefit/{bikefit}/reset-to-calculated', [\AppHttp\Controllers\BikefitController::class, 'resetToCalculated'])->name('bikefit.reset-to-calculated')->scopeBindings();
         Route::get('bikefit/nieuw', [BikefitController::class, 'create'])->name('bikefit.create');
         Route::post('bikefit', [BikefitController::class, 'store'])->name('bikefit.store');
         Route::get('bikefit/{bikefit}', [BikefitController::class, 'show'])->name('bikefit.show')->scopeBindings();
@@ -1104,7 +1104,7 @@ Route::middleware(['auth'])->group(function () {
             
             $requiredColumns = [
                 'id', 'klant_id', 'bikefit_id', 'merk', 'model', 'type', 'breedte', 
-                'foto_pad', 'uitgeleend_op', 'verwachte_terugbring_datum', 
+                'foto_pad', 'uitleen_datum', 'verwachte_terugbring_datum', 
                 'werkelijke_terugbring_datum', 'status', 'beschrijving', 'opmerkingen', 
                 'gearchiveerd', 'gearchiveerd_op', 'laatste_herinnering', 'created_at', 'updated_at'
             ];
@@ -1211,18 +1211,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/admin/email/templates', [\App\Http\Controllers\Admin\EmailController::class, 'templates'])->name('admin.email.templates');
     Route::get('/admin/email/templates/create', [\App\Http\Controllers\Admin\EmailController::class, 'createTemplate'])->name('admin.email.templates.create');
     Route::post('/admin/email/templates', [\App\Http\Controllers\Admin\EmailController::class, 'storeTemplate'])->name('admin.email.templates.store');
-    Route::get('/admin/email/templates/{id}/edit', [\App\Http\Controllers\Admin\EmailController::class, 'editTemplate'])->name('admin.email.templates.edit');
-    Route::put('/admin/email/templates/{id}', [\App\Http\Controllers\Admin\EmailController::class, 'updateTemplate'])->name('admin.email.templates.update');
-    Route::delete('/admin/email/templates/{id}', [\App\Http\Controllers\Admin\EmailController::class, 'destroyTemplate'])->name('admin.email.templates.destroy');
-    Route::get('/admin/email/settings', [\App\Http\Controllers\Admin\EmailController::class, 'settings'])->name('admin.email.settings');
-    Route::post('/admin/email/settings', [\App\Http\Controllers\Admin\EmailController::class, 'updateSettings'])->name('admin.email.settings.update');
-    
-    // Logs en helper routes (trigger index blijft in EmailController voor backward compatibility)
-    Route::get('/admin/email/triggers', [\App\Http\Controllers\Admin\EmailController::class, 'triggers'])->name('admin.email.triggers');
-    Route::get('/admin/email/logs', [\App\Http\Controllers\Admin\EmailController::class, 'logs'])->name('admin.email.logs');
-    Route::post('/admin/email/test-triggers', [\App\Http\Controllers\Admin\EmailController::class, 'testTriggers'])->name('admin.email.test-triggers');
-    Route::post('/admin/email/setup-triggers', [\App\Http\Controllers\Admin\EmailController::class, 'setupTriggers'])->name('admin.email.setup-triggers');
-    Route::post('/admin/email/migrate-templates', [\App\Http\Controllers\Admin\EmailController::class, 'migrateTemplates'])->name('admin.email.migrate-templates');
+    Route::get('/admin/email/templates/{template}/edit', [\App\Http\Controllers\Admin\EmailController::class, 'editTemplate'])->name('admin.email.templates.edit');
+    Route::put('/admin/email/templates/{template}', [\App\Http\Controllers\Admin\EmailController::class, 'updateTemplate'])->name('admin.email.templates.update');
+    Route::delete('/admin/email/templates/{template}', [\App\Http\Controllers\Admin\EmailController::class, 'destroyTemplate'])->name('admin.email.templates.destroy');
+    Route::get('/admin/email/templates/{template}/preview', [\App\Http\Controllers\Admin\EmailController::class, 'preview'])->name('admin.email.templates.preview');
+    Route::post('/admin/email/templates/reset-defaults', [\App\Http\Controllers\Admin\EmailController::class, 'resetDefaultTemplates'])->name('admin.email.templates.reset');
 });
 
 // Avatar management routes - TEMP WITHOUT AUTH MIDDLEWARE
@@ -1237,7 +1230,7 @@ Route::get('/template-manager', function() {
 
 // HERNOEM KAPOTTE ROUTE NAAR /template (was /templates)
 Route::get('/template', function() {
-    return 'OUDE TEMPLATES ROUTE WERKT!!! Nu hernoemd naar /template!';
+       return 'OUDE TEMPLATES ROUTE WERKT!!! Nu hernoemd naar /template!';
 
 });
 
@@ -1257,13 +1250,13 @@ Route::get('/sjablonen/{id}/edit-basic', [App\Http\Controllers\SjablonenControll
 Route::post('/sjablonen/{id}/update-basic', [App\Http\Controllers\SjablonenController::class, 'updateBasic'])->name('sjablonen.update-basic');
 
 // Routes voor rapport generatie
-Route::get('/sjablonen/bikefit/{id}/rapport', [App\Http\Controllers\SjablonenController::class, 'generateBikefitReport'])->name('sjablonen.bikefit-rapport');
-Route::get('/sjablonen/inspanningstest/{id}/rapport', [App\Http\Controllers\SjablonenController::class, 'generateInspanningstestReport'])->name('sjablonen.inspanningstest-rapport');
+Route::get('/sjablonen/bikefit/{id}/rapport', [AppHttp\Controllers\SjablonenController::class, 'generateBikefitReport'])->name('sjablonen.bikefit-rapport');
+Route::get('/sjablonen/inspanningstest/{id}/rapport', [AppHttp\Controllers\SjablonenController::class, 'generateInspanningstestReport'])->name('sjablonen.inspanningstest-rapport');
 
 // Routes voor sjabloon-gebaseerde rapporten
-Route::get('/bikefit/{klant}/{bikefit}/sjabloon-rapport', [App\Http\Controllers\BikefitController::class, 'generateSjabloonReport'])->name('bikefit.sjabloon-rapport');
-Route::get('/bikefit/{klant}/{bikefit}/sjabloon-rapport-pdf', [App\Http\Controllers\BikefitController::class, 'generateSjabloonReportPdf'])->name('bikefit.sjabloon-rapport-pdf');
-Route::get('/inspanningstest/{klant}/{test}/sjabloon-rapport', [App\Http\Controllers\InspanningstestController::class, 'generateSjabloonReport'])->name('inspanningstest.sjabloon-rapport');
+Route::get('/bikefit/{klant}/{bikefit}/sjabloon-rapport', [AppHttp\Controllers\BikefitController::class, 'generateSjabloonReport'])->name('bikefit.sjabloon-rapport');
+Route::get('/bikefit/{klant}/{bikefit}/sjabloon-rapport-pdf', [AppHttp\Controllers\BikefitController::class, 'generateSjabloonReportPdf'])->name('bikefit.sjabloon-rapport-pdf');
+Route::get('/inspanningstest/{klant}/{test}/sjabloon-rapport', [AppHttp\Controllers\InspanningstestController::class, 'generateSjabloonReport'])->name('inspanningstest.sjabloon-rapport');
 
 // API route voor sjabloon check
 Route::get('/api/check-sjabloon', [App\Http\Controllers\SjablonenController::class, 'checkSjabloon']);
@@ -1318,7 +1311,7 @@ Route::post('/klanten/{klant}/inspanningstest/{test}/auto-save', [Inspanningstes
 // Login activity logging is nu actief via middleware!
 // Check /admin/users/activity om alle login activiteiten te zien
 
-// Debug route for login activities
+// Debug route for login activities - VOLLEDIGE ROUTE
 Route::get('/debug/login-activities', function() {
     if (!app()->environment('local')) abort(404);
     
@@ -1375,19 +1368,19 @@ Route::post('medewerkers/{medewerker}/send-invitation', [\App\Http\Controllers\M
 Route::get('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'showImport'])->name('klanten.import.form');
 Route::post('/import/klanten', [\App\Http\Controllers\KlantenController::class, 'import'])->name('klanten.import');
 Route::get('/download/klanten-template', [\App\Http\Controllers\KlantenController::class, 'downloadTemplate'])->name('klanten.template');
-Route::get('/export/klanten', [\App\Http\Controllers\KlantenController::class, 'export'])->name('klanten.export');
+Route::get('/export/klanten', [\AppHttp\Controllers\KlantenController::class, 'export'])->name('klanten.export');
 
 // Bikefit Import/Export routes  
 Route::get('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'showImport'])->name('bikefit.import.form');
-Route::post('/import/bikefits', [\App\Http\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
-Route::get('/import/bikefits/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
-Route::get('/bikefit/template', [\App\Http\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
+Route::post('/import/bikefits', [\AppHttp\Controllers\BikefitController::class, 'import'])->name('bikefit.import');
+Route::get('/import/bikefits/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.import.template');
+Route::get('/bikefit/template', [\AppHttp\Controllers\BikefitController::class, 'downloadBikefitTemplate'])->name('bikefit.template'); // Alias voor backward compatibility
 
 // Inspanningstesten Import/Export routes
 Route::get('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'showImport'])->name('inspanningstesten.import.form');
-Route::post('/import/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'import'])->name('inspanningstesten.import');
-Route::get('/download/inspanningstesten-template', [\App\Http\Controllers\InspanningstestenController::class, 'downloadTemplate'])->name('inspanningstesten.template');
-Route::get('/export/inspanningstesten', [\App\Http\Controllers\InspanningstestenController::class, 'export'])->name('inspanningstesten.export');
+Route::post('/import/inspanningstesten', [\AppHttp\Controllers\InspanningstestenController::class, 'import'])->name('inspanningstesten.import');
+Route::get('/download/inspanningstesten-template', [\AppHttp\Controllers\InspanningstestenController::class, 'downloadTemplate'])->name('inspanningstesten.template');
+Route::get('/export/inspanningstesten', [\AppHttp\Controllers\InspanningstestenController::class, 'export'])->name('inspanningstesten.export');
 
 // AI Analyse endpoints
 Route::post('/klanten/{klant}/inspanningstest/{test}/ai-analyse', [\App\Http\Controllers\InspanningstestController::class, 'generateCompleteAIAnalysis'])->name('inspanningstest.ai.analyse');

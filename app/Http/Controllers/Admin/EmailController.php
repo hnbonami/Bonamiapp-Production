@@ -1369,4 +1369,49 @@ Rol: @{{rol}}</p>
             ], 500);
         }
     }
+
+    /**
+     * Preview een email template
+     */
+    public function preview($id)
+    {
+        $template = EmailTemplate::findOrFail($id);
+        
+        // Haal demo data op voor preview
+        $demoData = $this->getDemoDataForTemplate($template);
+        
+        // Render de template met demo data
+        $renderedContent = $this->renderTemplate($template->content, $demoData);
+        
+        return view('admin.email-preview', [
+            'template' => $template,
+            'content' => $renderedContent
+        ]);
+    }
+    
+    /**
+     * Haal demo data op voor template preview
+     */
+    private function getDemoDataForTemplate($template)
+    {
+        return [
+            'user_name' => 'Jan Janssen',
+            'user_email' => 'jan@example.com',
+            'organisation_name' => auth()->user()->organisatie->naam ?? 'Performance Pulse',
+            'current_date' => now()->format('d-m-Y'),
+            'current_year' => now()->year,
+        ];
+    }
+    
+    /**
+     * Render template met variabelen
+     */
+    private function renderTemplate($content, $data)
+    {
+        foreach ($data as $key => $value) {
+            $content = str_replace('{{' . $key . '}}', $value, $content);
+        }
+        
+        return $content;
+    }
 }

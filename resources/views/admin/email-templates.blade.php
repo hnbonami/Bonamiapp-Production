@@ -12,13 +12,30 @@
             <h1 class="text-3xl font-bold text-gray-900">📧 Email Templates</h1>
             <p class="text-gray-600 mt-2">Beheer alle email templates op één plek</p>
         </div>
-        <a href="{{ route('admin.email.index') }}" 
-           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-            </svg>
-            Terug naar Email Beheer
-        </a>
+        <div class="flex space-x-3">
+            @if(auth()->user()->is_superadmin)
+                <!-- Reset Default Templates Knop (alleen voor superadmin) -->
+                <form action="{{ route('admin.email.templates.reset') }}" method="POST" 
+                      onsubmit="return confirm('Weet je zeker dat je alle standaard Performance Pulse templates wilt bijwerken? Custom templates blijven behouden.');">
+                    @csrf
+                    <button type="submit" 
+                            class="inline-flex items-center px-4 py-2 border border-orange-300 rounded-md shadow-sm text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Reset Standaard Templates
+                    </button>
+                </form>
+            @endif
+            
+            <a href="{{ route('admin.email.index') }}" 
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Terug naar Email Beheer
+            </a>
+        </div>
     </div>
 
     <!-- Current Templates -->
@@ -49,6 +66,15 @@
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $template->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
                             {{ $template->is_active ? 'Actief' : 'Inactief' }}
                         </span>
+                        @if($template->isDefaultTemplate())
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-2">
+                                📧 Performance Pulse Standaard
+                            </span>
+                        @elseif($template->isCustomTemplate())
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 ml-2">
+                                ✨ Custom Template
+                            </span>
+                        @endif
                     </div>
                     
                     <div class="border border-gray-200 rounded-md p-4 bg-gray-50 mb-4">
@@ -62,6 +88,12 @@
                     </div>
                     
                     <div class="flex space-x-2">
+                        <a href="{{ route('admin.email.templates.preview', $template->id) }}" 
+                           target="_blank"
+                           class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-center text-white hover:opacity-80" 
+                           style="background-color: #4a5568;">
+                            👁️ Preview
+                        </a>
                         <a href="{{ route('admin.email.templates.edit', $template->id) }}" 
                            class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-center text-gray-800 hover:opacity-80" 
                            style="background-color: #c8e1eb;">
@@ -171,10 +203,11 @@
                 </svg>
             </div>
             <div class="ml-3">
-                <h3 class="text-sm font-medium text-blue-800">Development Status</h3>
+                <h3 class="text-sm font-medium text-blue-800">Multi-tenant Email Systeem</h3>
                 <p class="mt-1 text-sm text-blue-700">
-                    <strong>STAP 2 COMPLEET:</strong> Email templates overzicht geladen. 
-                    Huidige templates gevisualiseerd. Klaar voor stap 3: Bewerk functionaliteit!
+                    <strong>📧 Performance Pulse Standaard:</strong> Professionele templates voor alle organisaties.<br>
+                    <strong>✨ Custom Templates:</strong> Organisaties met 'custom_emails' feature kunnen eigen templates maken.<br>
+                    <strong>🔄 Fallback Systeem:</strong> Als geen custom template beschikbaar, wordt automatisch Performance Pulse standaard gebruikt.
                 </p>
             </div>
         </div>

@@ -17,10 +17,11 @@ class EmailIntegrationService
     public function sendTestzadelReminderEmail($klant, $variables)
     {
         try {
-            // Find active testzadel reminder template
-            $template = EmailTemplate::where('type', 'testzadel_reminder')
-                                    ->where('is_active', true)
-                                    ->first();
+            // Haal organisatie ID op van de klant
+            $organisatieId = $klant->organisatie_id ?? null;
+            
+            // Find active testzadel reminder template met fallback
+            $template = EmailTemplate::findTemplateWithFallback('testzadel_reminder', $organisatieId);
             
             if (!$template) {
                 Log::error('No active testzadel reminder template found');
@@ -125,9 +126,10 @@ class EmailIntegrationService
     public function sendBirthdayEmail($klant, $variables)
     {
         try {
-            $template = EmailTemplate::where('type', 'birthday')
-                                    ->where('is_active', true)
-                                    ->first();
+            // Haal organisatie ID op van de klant
+            $organisatieId = $klant->organisatie_id ?? null;
+            
+            $template = EmailTemplate::findTemplateWithFallback('birthday', $organisatieId);
             
             if (!$template) {
                 Log::error('No active birthday template found');
@@ -195,9 +197,10 @@ class EmailIntegrationService
     public function sendWelcomeCustomerEmail($klant, $variables)
     {
         try {
-            $template = EmailTemplate::where('type', 'welcome_customer')
-                                    ->where('is_active', true)
-                                    ->first();
+            // Haal organisatie ID op van de klant
+            $organisatieId = $klant->organisatie_id ?? null;
+            
+            $template = EmailTemplate::findTemplateWithFallback('welcome_customer', $organisatieId);
             
             if (!$template) {
                 Log::error('No active welcome customer template found');
@@ -301,12 +304,17 @@ class EmailIntegrationService
             // If template is an array or not provided, try to find welcome_customer template
             if (!$template || is_array($template)) {
                 \Log::info('Template is array or not provided, searching for welcome_customer template');
-                $template = \App\Models\EmailTemplate::where('type', 'welcome_customer')
-                                                   ->where('is_active', true)
-                                                   ->first();
+                
+                // Haal organisatie ID op van de customer
+                $organisatieId = $customer->organisatie_id ?? null;
+                
+                $template = EmailTemplate::findTemplateWithFallback('welcome_customer', $organisatieId);
+                
                 \Log::info('Template search result', [
                     'found' => $template ? 'yes' : 'no',
-                    'template_id' => $template->id ?? 'none'
+                    'template_id' => $template->id ?? 'none',
+                    'is_default' => $template->isDefaultTemplate() ?? false,
+                    'organisatie_id' => $organisatieId
                 ]);
             }
 
@@ -464,12 +472,17 @@ class EmailIntegrationService
             // If template is an array or not provided, try to find welcome_employee template
             if (!$template || is_array($template)) {
                 \Log::info('Template is array or not provided, searching for welcome_employee template');
-                $template = \App\Models\EmailTemplate::where('type', 'welcome_employee')
-                                                   ->where('is_active', true)
-                                                   ->first();
+                
+                // Haal organisatie ID op van de employee
+                $organisatieId = $employee->organisatie_id ?? null;
+                
+                $template = EmailTemplate::findTemplateWithFallback('welcome_employee', $organisatieId);
+                
                 \Log::info('Template search result', [
                     'found' => $template ? 'yes' : 'no',
-                    'template_id' => $template->id ?? 'none'
+                    'template_id' => $template->id ?? 'none',
+                    'is_default' => $template->isDefaultTemplate() ?? false,
+                    'organisatie_id' => $organisatieId
                 ]);
             }
 
@@ -1107,10 +1120,11 @@ class EmailIntegrationService
                 'referred_customer' => $referredCustomer->email
             ]);
 
-            // Zoek active referral thank you template
-            $template = EmailTemplate::where('type', 'referral_thank_you')
-                                    ->where('is_active', true)
-                                    ->first();
+            // Haal organisatie ID op
+            $organisatieId = $referringCustomer->organisatie_id ?? null;
+            
+            // Zoek active referral thank you template met fallback
+            $template = EmailTemplate::findTemplateWithFallback('referral_thank_you', $organisatieId);
             
             if (!$template) {
                 \Log::warning('⚠️ No active referral thank you template found');
