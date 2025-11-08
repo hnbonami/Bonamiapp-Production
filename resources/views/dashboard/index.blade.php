@@ -3,15 +3,15 @@
 @section('content')
 <div class="dashboard-container" style="padding:2em;">
     <!-- Header -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2em;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2em;position:relative;z-index:100;">
         <h1 class="text-3xl font-bold text-gray-900">Dashboard</h1>
         
         @if(auth()->user()->role !== 'klant')
-        <button id="addWidgetBtn" class="inline-flex items-center gap-2" style="background:#c8e1eb;color:#111;padding:0.5em 1.2em;border-radius:7px;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;border:none;cursor:pointer;">
+        <button id="addWidgetBtn" class="inline-flex items-center gap-2" style="background:#c8e1eb;color:#111;padding:0.75em 1.2em;border-radius:7px;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;border:none;cursor:pointer;position:relative;z-index:1000;pointer-events:auto;min-width:48px;min-height:48px;touch-action:manipulation;">
             <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
-            <span class="hidden md:inline">Widget toevoegen</span>
+            <span>Widget toevoegen</span>
         </button>
         @endif
     </div>

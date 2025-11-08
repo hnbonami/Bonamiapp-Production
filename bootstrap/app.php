@@ -14,6 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'superadmin' => \App\Http\Middleware\CheckSuperAdmin::class,
             'organisatie_admin' => \App\Http\Middleware\CheckOrganisatieAdmin::class,
+            'prevent.klant' => \App\Http\Middleware\PreventKlantAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
