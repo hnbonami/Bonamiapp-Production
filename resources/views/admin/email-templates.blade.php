@@ -87,22 +87,25 @@
                         </div>
                     </div>
                     
-                    <div class="flex space-x-2">
-                        <a href="{{ route('admin.email.templates.preview', $template->id) }}" 
-                           target="_blank"
-                           class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-center text-white hover:opacity-80" 
-                           style="background-color: #4a5568;">
-                            👁️ Preview
-                        </a>
-                        <a href="{{ route('admin.email.templates.edit', $template->id) }}" 
-                           class="flex-1 px-4 py-2 rounded-md text-sm font-medium text-center text-gray-800 hover:opacity-80" 
+                    <div class="flex gap-2 mt-4">
+                        <!-- Bewerken knop met custom kleur #c8e1eb -->
+                        <a href="{{ route('admin.email.templates.edit', $template->id) }}"
+                           class="px-4 py-2 rounded-lg transition text-gray-800 font-medium"
                            style="background-color: #c8e1eb;">
                             Bewerken
                         </a>
-                        <button onclick="deleteTemplate({{ $template->id }}, '{{ $template->name }}')" 
-                                class="px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 hover:bg-red-50">
-                            🗑️
-                        </button>
+                        
+                        <!-- Verwijderen knop -->
+                        <form action="{{ route('admin.email.templates.destroy', $template->id) }}" 
+                              method="POST" 
+                              onsubmit="return confirm('Weet je zeker dat je deze template wilt verwijderen?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" 
+                                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">
+                                Verwijderen
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -156,23 +159,7 @@
                 </div>
             </div>
             
-            <div>
-                <h4 class="font-medium text-gray-900 mb-3">Testzadel Info</h4>
-                <div class="space-y-2">
-                    <div class="flex items-center text-sm">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono mr-2">@{{merk}}</code>
-                        <span class="text-gray-600">Zadel merk</span>
-                    </div>
-                    <div class="flex items-center text-sm">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono mr-2">@{{model}}</code>
-                        <span class="text-gray-600">Zadel model</span>
-                    </div>
-                    <div class="flex items-center text-sm">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono mr-2">@{{uitgeleend_op}}</code>
-                        <span class="text-gray-600">Uitleen datum</span>
-                    </div>
-                </div>
-            </div>
+            
             
             <div>
                 <h4 class="font-medium text-gray-900 mb-3">Algemeen</h4>

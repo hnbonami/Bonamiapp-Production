@@ -38,14 +38,23 @@ class EmailController extends Controller
     {
         $this->checkAdminAccess();
         
-        $templates = EmailTemplate::latest()->get();
-        
-        // Als er geen templates zijn, maak standaard templates aan
-        if ($templates->isEmpty()) {
-            $this->createDefaultTemplates();
-            $templates = EmailTemplate::latest()->get();
+        // Superadmin ziet alle templates
+        if (auth()->user()->role === 'superadmin') {
+            $templates = EmailTemplate::orderBy('type')->orderBy('name')->get();
+        } else {
+            // Organisatie admins zien ALLEEN:
+            // 1. Performance Pulse templates (organisatie_id = null)
+            // 2. Hun eigen templates (organisatie_id = auth()->user()->organisatie_id)
+            // NIET de templates van andere organisaties!
+            $templates = EmailTemplate::where(function($query) {
+                $query->whereNull('organisatie_id') // Performance Pulse standaard templates
+                      ->orWhere('organisatie_id', auth()->user()->organisatie_id); // Eigen templates
+            })
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get();
         }
-
+        
         return view('admin.email-templates', compact('templates'));
     }
 
@@ -134,26 +143,54 @@ class EmailController extends Controller
         return view('admin.email-create-template', compact('templateTypes', 'defaultTemplate', 'settings'));
     }
 
-    public function storeTemplate(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|max:255',
-            'type' => 'required|in:' . implode(',', array_keys(EmailTemplate::getTypes())),
-            'subject' => 'required|max:255',
-            'body_html' => 'required',
-            'description' => 'nullable|max:1000',
-            'is_active' => 'sometimes|boolean'
-        ]);
-
-        $validated['is_active'] = $request->has('is_active');
-
-        EmailTemplate::create($validated);
-
-        return redirect()->route('admin.email.templates')
-                        ->with('success', 'Template succesvol aangemaakt!');
+public function storeTemplate(Request $request)
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'slug' => 'nullable|string|max:255|unique:email_templates,slug',
+        'type' => 'nullable|string|max:255', // Accept any string value from the form
+        'subject' => 'required|string|max:255',
+        'content' => 'nullable|string',
+        'description' => 'nullable|string',
+        'is_active' => 'nullable|boolean',
+    ]);
+    
+    // Auto-generate slug from name if not provided
+    if (empty($validated['slug'])) {
+        $validated['slug'] = \Str::slug($validated['name']);
     }
-
-    public function destroyTemplate($id)
+    
+    // Set default values
+    if (!isset($validated['type']) || empty($validated['type'])) {
+        $validated['type'] = 'algemeen';
+    }
+    
+    // Map 'content' to 'body_html' voor database (database gebruikt body_html kolom)
+    $validated['body_html'] = $validated['content'] ?? '<p>Beste @{{naam}},</p><p>Uw bericht hier...</p><p>Met vriendelijke groet,<br>@{{bedrijf_naam}}</p>';
+    unset($validated['content']); // Verwijder content om dubbele kolom error te voorkomen
+    
+    if (!isset($validated['is_active'])) {
+        $validated['is_active'] = true;
+    }
+    
+    // NIEUWE TEMPLATES KRIJGEN ALTIJD EEN ORGANISATIE_ID
+    // Alleen Performance Pulse templates hebben organisatie_id = null
+    // Zelfs superadmin maakt templates voor eigen organisatie!
+    $validated['organisatie_id'] = auth()->user()->organisatie_id;
+    
+    $template = EmailTemplate::create($validated);
+    
+    \Log::info('Nieuwe email template aangemaakt', [
+        'template_id' => $template->id,
+        'template_name' => $template->name,
+        'template_type' => $template->type,
+        'organisatie_id' => $template->organisatie_id,
+        'user_id' => auth()->id(),
+    ]);
+    
+    return redirect()->route('admin.email.templates')
+        ->with('success', '✅ Email template succesvol aangemaakt voor jouw organisatie!');
+}    public function destroyTemplate($id)
     {
         $this->checkAdminAccess();
         

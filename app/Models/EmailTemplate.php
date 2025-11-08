@@ -11,14 +11,13 @@ class EmailTemplate extends Model
 
     protected $fillable = [
         'name',
+        'slug',
         'type', 
         'subject',
-        'body_html',
+        'body_html', // Database kolom naam
         'description',
         'is_active',
         'organisatie_id',
-        'is_default',
-        'parent_template_id',
     ];
 
     protected $casts = [

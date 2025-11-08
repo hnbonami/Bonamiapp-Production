@@ -115,16 +115,7 @@
                                 <div><code class="bg-white px-2 py-1 rounded">@{{email}}</code></div>
                             </div>
                         </div>
-                        
-                        <div>
-                            <h4 class="font-medium text-gray-900">Testzadel:</h4>
-                            <div class="mt-1 space-y-1 text-gray-600">
-                                <div><code class="bg-white px-2 py-1 rounded">@{{merk}}</code></div>
-                                <div><code class="bg-white px-2 py-1 rounded">@{{model}}</code></div>
-                                <div><code class="bg-white px-2 py-1 rounded">@{{uitgeleend_op}}</code></div>
-                                <div><code class="bg-white px-2 py-1 rounded">@{{verwachte_retour}}</code></div>
-                            </div>
-                        </div>
+            
                         
                         <div>
                             <h4 class="font-medium text-gray-900">Algemeen:</h4>
