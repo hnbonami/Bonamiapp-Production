@@ -90,7 +90,13 @@ class EmailController extends Controller
 
     public function createTemplate()
     {
-        $templateTypes = EmailTemplate::getTypes();
+        $templateTypes = [
+            'testzadel_reminder' => 'Testzadel Herinnering',
+            'welcome_customer' => 'Welkom Klant',
+            'welcome_employee' => 'Welkom Medewerker',
+            'birthday' => 'Verjaardag',
+            'referral' => 'Referral', // Nieuwe optie toegevoegd
+        ];
         $settings = EmailSettings::getSettings();
         
         // Default modern email template with logo
@@ -148,9 +154,10 @@ public function storeTemplate(Request $request)
     $validated = $request->validate([
         'name' => 'required|string|max:255',
         'slug' => 'nullable|string|max:255|unique:email_templates,slug',
-        'type' => 'nullable|string|max:255', // Accept any string value from the form
+        'type' => 'nullable|string|max:255',
         'subject' => 'required|string|max:255',
         'content' => 'nullable|string',
+        'body_html' => 'nullable|string', // Ook body_html accepteren van formulier
         'description' => 'nullable|string',
         'is_active' => 'nullable|boolean',
     ]);
@@ -165,17 +172,40 @@ public function storeTemplate(Request $request)
         $validated['type'] = 'algemeen';
     }
     
-    // Map 'content' to 'body_html' voor database (database gebruikt body_html kolom)
-    $validated['body_html'] = $validated['content'] ?? '<p>Beste @{{naam}},</p><p>Uw bericht hier...</p><p>Met vriendelijke groet,<br>@{{bedrijf_naam}}</p>';
-    unset($validated['content']); // Verwijder content om dubbele kolom error te voorkomen
+    // Bepaal de content die gewrapt moet worden
+    // Probeer eerst body_html (uit formulier), dan content, dan default
+    $contentToWrap = $validated['body_html'] ?? $validated['content'] ?? '<p>Beste @{{naam}},</p><p>Uw bericht hier...</p><p>Met vriendelijke groet,<br>@{{bedrijf_naam}}</p>';
+    
+    // Haal de huisstijl template op voor deze organisatie
+    $organisatie = \App\Models\Organisatie::find(auth()->user()->organisatie_id);
+    
+    // Wrap de content in de huisstijl template als deze bestaat
+    if ($organisatie && !empty($organisatie->email_template_html)) {
+        // Vervang {{content}} in de huisstijl template met de daadwerkelijke content
+        $validated['body_html'] = str_replace('{{content}}', $contentToWrap, $organisatie->email_template_html);
+        
+        \Log::info('Template wrapped met huisstijl', [
+            'organisatie_id' => $organisatie->id,
+            'heeft_huisstijl' => true,
+        ]);
+    } else {
+        // Geen huisstijl template, gebruik alleen de content
+        $validated['body_html'] = $contentToWrap;
+        
+        \Log::info('Template zonder huisstijl', [
+            'organisatie_id' => auth()->user()->organisatie_id,
+            'heeft_huisstijl' => false,
+        ]);
+    }
+    
+    // Verwijder content om dubbele kolom error te voorkomen
+    unset($validated['content']);
     
     if (!isset($validated['is_active'])) {
         $validated['is_active'] = true;
     }
     
     // NIEUWE TEMPLATES KRIJGEN ALTIJD EEN ORGANISATIE_ID
-    // Alleen Performance Pulse templates hebben organisatie_id = null
-    // Zelfs superadmin maakt templates voor eigen organisatie!
     $validated['organisatie_id'] = auth()->user()->organisatie_id;
     
     $template = EmailTemplate::create($validated);
@@ -183,13 +213,12 @@ public function storeTemplate(Request $request)
     \Log::info('Nieuwe email template aangemaakt', [
         'template_id' => $template->id,
         'template_name' => $template->name,
-        'template_type' => $template->type,
-        'organisatie_id' => $template->organisatie_id,
+        'body_html_length' => strlen($template->body_html ?? ''),
         'user_id' => auth()->id(),
     ]);
     
     return redirect()->route('admin.email.templates')
-        ->with('success', '✅ Email template succesvol aangemaakt voor jouw organisatie!');
+        ->with('success', '✅ Email template succesvol aangemaakt!');
 }    public function destroyTemplate($id)
     {
         $this->checkAdminAccess();
