@@ -63,6 +63,83 @@
                         </div>
                     @endif
 
+                    <!-- Bedrijfsinformatie voor Emails -->
+                    <div class="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+                        <h3 class="text-lg font-medium text-blue-900 mb-2">📧 Bedrijfsinformatie voor Emails</h3>
+                        <p class="text-sm text-blue-700 mb-4">Deze informatie wordt gebruikt in email templates via variabelen zoals @{{bedrijf_naam}}, @{{website_url}}, etc.</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label for="bedrijf_naam" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Bedrijfsnaam voor Emails <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" name="bedrijf_naam" id="bedrijf_naam" 
+                                       value="{{ old('bedrijf_naam', $organisatie->bedrijf_naam ?? $organisatie->naam) }}" 
+                                       placeholder="Bijv. Level Up Cycling"
+                                       class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <p class="mt-1 text-sm text-gray-500">Wordt gebruikt als @{{bedrijf_naam}} in email templates</p>
+                                @error('bedrijf_naam')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="website_url_email" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Website URL
+                                </label>
+                                <input type="url" name="website_url" id="website_url_email" 
+                                       value="{{ old('website_url', $organisatie->website_url) }}" 
+                                       placeholder="https://jouwbedrijf.be"
+                                       class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <p class="mt-1 text-sm text-gray-500">Wordt gebruikt als @{{website_url}} in email templates</p>
+                                @error('website_url')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="email_from_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Afzender Naam
+                                </label>
+                                <input type="text" name="email_from_name" id="email_from_name" 
+                                       value="{{ old('email_from_name', $organisatie->email_from_name ?? $organisatie->naam) }}" 
+                                       placeholder="Bijv. Level Up Cycling Team"
+                                       class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <p class="mt-1 text-sm text-gray-500">Deze naam verschijnt als afzender in emails</p>
+                                @error('email_from_name')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="email_from_address" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Afzender Email Adres
+                                </label>
+                                <input type="email" name="email_from_address" id="email_from_address" 
+                                       value="{{ old('email_from_address', $organisatie->email_from_address) }}" 
+                                       placeholder="info@jouwbedrijf.be"
+                                       class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                                <p class="mt-1 text-sm text-gray-500">Email adres gebruikt als afzender (optioneel)</p>
+                                @error('email_from_address')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+
+                            <div>
+                                <label for="email_signature_org" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Email Handtekening
+                                </label>
+                                <textarea name="email_signature" id="email_signature_org" rows="3" 
+                                          placeholder="Sportieve groet,&#10;Het Level Up Cycling Team"
+                                          class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ old('email_signature', $organisatie->email_signature) }}</textarea>
+                                <p class="mt-1 text-sm text-gray-500">Standaard handtekening voor alle emails van jouw organisatie</p>
+                                @error('email_signature')
+                                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Company Branding -->
                     <div class="mb-8">
                         <h3 class="text-lg font-medium text-gray-900 mb-4">🏢 Bedrijf Branding</h3>
@@ -73,7 +150,7 @@
                                     Bedrijfsnaam <span class="text-red-500">*</span>
                                 </label>
                                 <input type="text" name="company_name" id="company_name" 
-                                       value="{{ old('company_name', $settings->company_name) }}" required
+                                       value="{{ old('company_name', $organisatie->bedrijf_naam ?? $organisatie->naam ?? $settings->company_name) }}" required
                                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                                 @error('company_name')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -217,9 +294,18 @@
                                 <label for="footer_text" class="block text-sm font-medium text-gray-700 mb-2">
                                     Footer Tekst
                                 </label>
+                                @php
+                                    $footerText = old('footer_text', $settings->footer_text);
+                                    // Vervang oude "Bonami Sportcoaching" met organisatie naam
+                                    if ($footerText && str_contains($footerText, 'Bonami Sportcoaching')) {
+                                        $footerText = str_replace('Bonami Sportcoaching', $organisatie->bedrijf_naam ?? $organisatie->naam, $footerText);
+                                    } elseif (!$footerText) {
+                                        $footerText = 'Met vriendelijke groet, Het ' . ($organisatie->bedrijf_naam ?? $organisatie->naam);
+                                    }
+                                @endphp
                                 <input type="text" name="footer_text" id="footer_text" 
-                                       value="{{ old('footer_text', $settings->footer_text) }}"
-                                       placeholder="Met vriendelijke groet, Het Bonami Cycling team"
+                                       value="{{ $footerText }}"
+                                       placeholder="Met vriendelijke groet, Het {{ $organisatie->bedrijf_naam ?? $organisatie->naam }}"
                                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                                 <p class="mt-1 text-sm text-gray-500">Verschijnt onderaan alle emails</p>
                                 @error('footer_text')
@@ -231,9 +317,18 @@
                                 <label for="signature" class="block text-sm font-medium text-gray-700 mb-2">
                                     Handtekening
                                 </label>
+                                @php
+                                    $signature = old('signature', $settings->signature);
+                                    // Vervang oude "Bonami Sportcoaching" met organisatie naam
+                                    if ($signature && str_contains($signature, 'Bonami Sportcoaching')) {
+                                        $signature = str_replace('Bonami Sportcoaching', $organisatie->bedrijf_naam ?? $organisatie->naam, $signature);
+                                    } elseif (!$signature) {
+                                        $signature = ($organisatie->bedrijf_naam ?? $organisatie->naam) . ' - Haal meer uit je sportprestaties';
+                                    }
+                                @endphp
                                 <textarea name="signature" id="signature" rows="3" 
-                                          placeholder="Bonami Cycling - Jouw partner voor de perfecte bikefit"
-                                          class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ old('signature', $settings->signature) }}</textarea>
+                                          placeholder="{{ $organisatie->bedrijf_naam ?? $organisatie->naam }} - Jouw partner voor de perfecte bikefit"
+                                          class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ $signature }}</textarea>
                                 <p class="mt-1 text-sm text-gray-500">Extra informatie in de footer</p>
                                 @error('signature')
                                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>

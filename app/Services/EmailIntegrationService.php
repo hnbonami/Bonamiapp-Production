@@ -350,13 +350,19 @@ class EmailIntegrationService
                     // Geen probleem, gebruik N/A
                 }
                 
+                // Haal organisatie bedrijfsnaam op, fallback naar hardcoded waarde
+                $organisatie = $customer->organisatie;
+                $bedrijfNaam = $organisatie && $organisatie->bedrijf_naam 
+                    ? $organisatie->bedrijf_naam 
+                    : 'Bonami Sportcoaching';
+                
                 // Vervang placeholders in subject
                 $subject = str_replace('@{{voornaam}}', $customer->voornaam ?? 'Onbekend', $subject);
                 $subject = str_replace('@{{naam}}', $customer->naam ?? 'Onbekend', $subject);
                 $subject = str_replace('@{{email}}', $customer->email ?? '', $subject);
                 $subject = str_replace('@{{temporary_password}}', $temporaryPassword, $subject);
                 $subject = str_replace('@{{wachtwoord}}', $temporaryPassword, $subject);
-                $subject = str_replace('@{{bedrijf_naam}}', 'Bonami Sportcoaching', $subject);
+                $subject = str_replace('@{{bedrijf_naam}}', $bedrijfNaam, $subject);
                 $subject = str_replace('@{{datum}}', now()->format('d-m-Y'), $subject);
                 
                 // Ondersteuning voor oude formaten in subject
@@ -518,6 +524,12 @@ class EmailIntegrationService
                     // Geen probleem, gebruik N/A
                 }
                 
+                // Haal organisatie bedrijfsnaam op, fallback naar hardcoded waarde
+                $organisatie = $employee->organisatie;
+                $bedrijfNaam = $organisatie && $organisatie->bedrijf_naam 
+                    ? $organisatie->bedrijf_naam 
+                    : 'Bonami Sportcoaching';
+                
                 // Vervang placeholders in subject
                 $subject = str_replace('@{{voornaam}}', $employee->voornaam ?? 'Onbekend', $subject);
                 $subject = str_replace('@{{naam}}', ($employee->achternaam ?? $employee->naam ?? 'Onbekend'), $subject);
@@ -525,7 +537,7 @@ class EmailIntegrationService
                 $subject = str_replace('@{{email}}', $employee->email ?? '', $subject);
                 $subject = str_replace('@{{temporary_password}}', $temporaryPassword, $subject);
                 $subject = str_replace('@{{wachtwoord}}', $temporaryPassword, $subject);
-                $subject = str_replace('@{{bedrijf_naam}}', 'Bonami Sportcoaching', $subject);
+                $subject = str_replace('@{{bedrijf_naam}}', $bedrijfNaam, $subject);
                 $subject = str_replace('@{{datum}}', now()->format('d-m-Y'), $subject);
                 
                 // Ondersteuning voor oude formaten in subject
@@ -649,12 +661,18 @@ class EmailIntegrationService
         ]);
 
         // Vervang placeholders stap voor stap voor betere debugging
+        // Haal organisatie bedrijfsnaam op, fallback naar hardcoded waarde
+        $organisatie = $customer->organisatie;
+        $bedrijfNaam = $organisatie && $organisatie->bedrijf_naam 
+            ? $organisatie->bedrijf_naam 
+            : 'Bonami Sportcoaching';
+        
         $content = str_replace('@{{voornaam}}', $customer->voornaam ?? 'Onbekend', $content);
         $content = str_replace('@{{naam}}', $customer->naam ?? 'Onbekend', $content);
         $content = str_replace('@{{email}}', $customer->email ?? '', $content);
         $content = str_replace('@{{temporary_password}}', $temporaryPassword, $content);
         $content = str_replace('@{{wachtwoord}}', $temporaryPassword, $content);
-        $content = str_replace('@{{bedrijf_naam}}', 'Bonami Sportcoaching', $content);
+        $content = str_replace('@{{bedrijf_naam}}', $bedrijfNaam, $content);
         $content = str_replace('@{{website_url}}', config('app.url', 'https://bonami-sportcoaching.be'), $content);
         $content = str_replace('@{{datum}}', now()->format('d-m-Y'), $content);
         $content = str_replace('@{{jaar}}', now()->format('Y'), $content);
@@ -725,13 +743,19 @@ class EmailIntegrationService
         ]);
 
         // Vervang placeholders stap voor stap voor betere debugging
+        // Haal organisatie bedrijfsnaam op, fallback naar hardcoded waarde
+        $organisatie = $employee->organisatie;
+        $bedrijfNaam = $organisatie && $organisatie->bedrijf_naam 
+            ? $organisatie->bedrijf_naam 
+            : 'Bonami Sportcoaching';
+        
         $content = str_replace('@{{voornaam}}', $employee->voornaam ?? 'Onbekend', $content);
         $content = str_replace('@{{naam}}', ($employee->achternaam ?? $employee->naam ?? 'Onbekend'), $content);
         $content = str_replace('@{{achternaam}}', $employee->achternaam ?? 'Onbekend', $content);
         $content = str_replace('@{{email}}', $employee->email ?? '', $content);
         $content = str_replace('@{{temporary_password}}', $temporaryPassword, $content);
         $content = str_replace('@{{wachtwoord}}', $temporaryPassword, $content);
-        $content = str_replace('@{{bedrijf_naam}}', 'Bonami Sportcoaching', $content);
+        $content = str_replace('@{{bedrijf_naam}}', $bedrijfNaam, $content);
         $content = str_replace('@{{website_url}}', config('app.url', 'https://bonami-sportcoaching.be'), $content);
         $content = str_replace('@{{datum}}', now()->format('d-m-Y'), $content);
         $content = str_replace('@{{jaar}}', now()->format('Y'), $content);

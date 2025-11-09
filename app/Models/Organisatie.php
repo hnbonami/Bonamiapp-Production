@@ -14,24 +14,27 @@ class Organisatie extends Model
 
     protected $fillable = [
         'naam',
-        'email',
+        'slug',
+        'email',  // Was missing!
         'telefoon',
         'adres',
         'postcode',
         'plaats',
         'btw_nummer',
-        'logo_path',
-        'favicon_path',
-        'primary_color',
-        'secondary_color',
-        'sidebar_color',
-        'text_color',
-        'custom_css',
-        'branding_enabled',
         'status',
         'trial_eindigt_op',
         'maandelijkse_prijs',
         'notities',
+        'logo',
+        'primary_color',
+        'secondary_color',
+        'beschrijving',
+        'actief',
+        'bedrijf_naam',
+        'email_from_name',
+        'email_from_address',
+        'website_url',
+        'email_signature',
     ];
 
     protected $casts = [

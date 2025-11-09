@@ -357,12 +357,22 @@ public function storeTemplate(Request $request)
         $this->checkAdminAccess();
         
         $settings = EmailSettings::getSettings();
-        return view('admin.email-settings', compact('settings'));
+        $organisatie = auth()->user()->organisatie;
+        
+        return view('admin.email-settings', compact('settings', 'organisatie'));
     }
 
     public function updateSettings(Request $request)
     {
         $validated = $request->validate([
+            // Bedrijfsinformatie voor emails (nieuwe velden)
+            'bedrijf_naam' => 'nullable|string|max:255',
+            'website_url' => 'nullable|url|max:255',
+            'email_from_name' => 'nullable|string|max:255',
+            'email_from_address' => 'nullable|email|max:255',
+            'email_signature' => 'nullable|string',
+            
+            // Bestaande email settings velden
             'company_name' => 'required|string|max:255',
             'logo' => 'nullable|image|max:2048',
             'primary_color' => 'required|string|max:7',
@@ -373,13 +383,35 @@ public function storeTemplate(Request $request)
             'signature' => 'nullable|string',
         ]);
         
+        // Update organisatie velden (voor @{{bedrijf_naam}} etc. in emails)
+        $organisatie = auth()->user()->organisatie;
+        if ($organisatie) {
+            $organisatie->update([
+                'bedrijf_naam' => $validated['bedrijf_naam'] ?? $organisatie->naam,
+                'website_url' => $validated['website_url'],
+                'email_from_name' => $validated['email_from_name'],
+                'email_from_address' => $validated['email_from_address'],
+                'email_signature' => $validated['email_signature'],
+            ]);
+            
+            \Log::info('📧 Organisatie email info bijgewerkt', [
+                'organisatie_id' => $organisatie->id,
+                'bedrijf_naam' => $validated['bedrijf_naam'],
+            ]);
+        }
+        
         // Set defaults voor nieuwe velden
         $validated['email_text_color'] = $validated['text_color'] ?? '#ffffff';
         $validated['email_logo_position'] = $validated['logo_position'] ?? 'left';
         
-        // Verwijder de oude keys
+        // Verwijder de oude keys en organisatie keys (die zijn al opgeslagen)
         unset($validated['text_color']);
         unset($validated['logo_position']);
+        unset($validated['bedrijf_naam']);
+        unset($validated['website_url']);
+        unset($validated['email_from_name']);
+        unset($validated['email_from_address']);
+        unset($validated['email_signature']);
         
         $settings = EmailSettings::getSettings();
         
