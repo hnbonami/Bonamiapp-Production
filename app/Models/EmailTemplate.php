@@ -18,6 +18,8 @@ class EmailTemplate extends Model
         'description',
         'is_active',
         'organisatie_id',
+        'is_default',
+        'parent_template_id',
     ];
 
     protected $casts = [

@@ -20,13 +20,22 @@ class EmailIntegrationService
             // Haal organisatie ID op van de klant
             $organisatieId = $klant->organisatie_id ?? null;
             
-            // Find active testzadel reminder template met fallback
+            // Find active testzadel reminder template met fallback naar Performance Pulse standaard
             $template = EmailTemplate::findTemplateWithFallback('testzadel_reminder', $organisatieId);
             
             if (!$template) {
                 Log::error('No active testzadel reminder template found');
                 return false;
             }
+            
+            \Log::info('📧 Testzadel reminder - template selectie', [
+                'klant_id' => $klant->id,
+                'organisatie_id' => $organisatieId,
+                'template_id' => $template->id,
+                'template_name' => $template->name,
+                'is_default' => $template->isDefaultTemplate(),
+                'is_custom' => $template->isCustomTemplate()
+            ]);
             
             // Render subject and body with variables
             $subject = $template->renderSubject($variables);

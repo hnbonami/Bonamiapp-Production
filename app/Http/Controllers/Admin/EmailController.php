@@ -38,24 +38,48 @@ class EmailController extends Controller
     {
         $this->checkAdminAccess();
         
-        // Superadmin ziet alle templates
+        // Superadmin ziet ALLEEN Performance Pulse standaard templates (organisatie_id = null, is_default = true)
         if (auth()->user()->role === 'superadmin') {
-            $templates = EmailTemplate::orderBy('type')->orderBy('name')->get();
+            $templates = EmailTemplate::whereNull('organisatie_id')
+                                      ->where('is_default', true)
+                                      ->orderBy('type')
+                                      ->orderBy('name')
+                                      ->get();
+            
+            \Log::info('🔐 Superadmin bekijkt Performance Pulse templates', [
+                'user_id' => auth()->id(),
+                'templates_count' => $templates->count()
+            ]);
+            
+            return view('admin.email-templates', compact('templates'));
         } else {
-            // Organisatie admins zien ALLEEN:
-            // 1. Performance Pulse templates (organisatie_id = null)
-            // 2. Hun eigen templates (organisatie_id = auth()->user()->organisatie_id)
-            // NIET de templates van andere organisaties!
-            $templates = EmailTemplate::where(function($query) {
-                $query->whereNull('organisatie_id') // Performance Pulse standaard templates
-                      ->orWhere('organisatie_id', auth()->user()->organisatie_id); // Eigen templates
-            })
-            ->orderBy('type')
-            ->orderBy('name')
-            ->get();
+            // Organisatie admins zien ALLEEN hun eigen gekloneerde templates
+            $templates = EmailTemplate::where('organisatie_id', auth()->user()->organisatie_id)
+                                      ->orderBy('type')
+                                      ->orderBy('name')
+                                      ->get();
+            
+            \Log::info('👥 Organisatie admin bekijkt eigen templates', [
+                'user_id' => auth()->id(),
+                'organisatie_id' => auth()->user()->organisatie_id,
+                'templates_count' => $templates->count()
+            ]);
+            
+            // Check of organisatie al templates heeft
+            if ($templates->isEmpty()) {
+                // Nog geen templates - toon waarschuwing en knop om te klonen
+                $needsCloning = true;
+                
+                \Log::warning('⚠️ Organisatie heeft nog geen email templates', [
+                    'organisatie_id' => auth()->user()->organisatie_id,
+                    'user_id' => auth()->id()
+                ]);
+                
+                return view('admin.email-templates', compact('templates', 'needsCloning'));
+            }
+            
+            return view('admin.email-templates', compact('templates'));
         }
-        
-        return view('admin.email-templates', compact('templates'));
     }
 
     public function editTemplate($id)
@@ -72,6 +96,34 @@ class EmailController extends Controller
         
         $template = EmailTemplate::findOrFail($id);
 
+        // BEVEILIGING: Check of de gebruiker deze template mag bewerken
+        if (auth()->user()->role === 'superadmin') {
+            // Superadmin mag ALLEEN Performance Pulse standaard templates bewerken
+            if (!$template->isDefaultTemplate()) {
+                \Log::warning('🚫 Superadmin probeerde organisatie template te bewerken', [
+                    'user_id' => auth()->id(),
+                    'template_id' => $template->id,
+                    'template_organisatie_id' => $template->organisatie_id
+                ]);
+                
+                return redirect()->route('admin.email.templates')
+                    ->with('error', '❌ Je kunt alleen Performance Pulse standaard templates bewerken.');
+            }
+        } else {
+            // Organisatie admins mogen ALLEEN hun eigen templates bewerken
+            if ($template->organisatie_id !== auth()->user()->organisatie_id) {
+                \Log::warning('🚫 Organisatie admin probeerde template van andere organisatie te bewerken', [
+                    'user_id' => auth()->id(),
+                    'user_organisatie_id' => auth()->user()->organisatie_id,
+                    'template_id' => $template->id,
+                    'template_organisatie_id' => $template->organisatie_id
+                ]);
+                
+                return redirect()->route('admin.email.templates')
+                    ->with('error', '❌ Je kunt alleen je eigen templates bewerken. Wil je een Performance Pulse template aanpassen? Maak eerst een kopie.');
+            }
+        }
+
         $validated = $request->validate([
             'name' => 'required|max:255',
             'subject' => 'required|max:255',
@@ -83,6 +135,12 @@ class EmailController extends Controller
         $validated['is_active'] = $request->has('is_active');
 
         $template->update($validated);
+        
+        \Log::info('✅ Email template bijgewerkt', [
+            'template_id' => $template->id,
+            'user_id' => auth()->id(),
+            'is_default' => $template->isDefaultTemplate()
+        ]);
 
         return redirect()->route('admin.email.templates')
                         ->with('success', 'Template succesvol bijgewerkt!');
@@ -328,7 +386,41 @@ public function storeTemplate(Request $request)
     }
     
     // NIEUWE TEMPLATES KRIJGEN ALTIJD EEN ORGANISATIE_ID
-    $validated['organisatie_id'] = auth()->user()->organisatie_id;
+    // Tenzij dit een superadmin is die expliciet een Performance Pulse template aanmaakt
+    if (auth()->user()->role === 'superadmin' && $request->has('create_as_default_template')) {
+        // Superadmin maakt bewust een nieuwe Performance Pulse standaard template aan
+        // Dit moet expliciet worden aangegeven via een checkbox in het formulier
+        $validated['organisatie_id'] = null;
+        $validated['is_default'] = true;
+        
+        \Log::info('🔐 Superadmin maakt nieuwe Performance Pulse standaard template', [
+            'user_id' => auth()->id(),
+            'template_name' => $validated['name']
+        ]);
+    } else {
+        // ALLE andere templates (ook van superadmin) krijgen organisatie_id
+        // Superadmin werkt normaal gezien binnen een organisatie context
+        if (!auth()->user()->organisatie_id) {
+            \Log::error('❌ Gebruiker heeft geen organisatie_id', [
+                'user_id' => auth()->id(),
+                'user_role' => auth()->user()->role
+            ]);
+            
+            return redirect()->route('admin.email.templates')
+                ->with('error', '❌ Je moet gekoppeld zijn aan een organisatie om templates aan te maken.');
+        }
+        
+        // Normale organisatie template (inclusief superadmin die binnen organisatie werkt)
+        $validated['organisatie_id'] = auth()->user()->organisatie_id;
+        $validated['is_default'] = false;
+        
+        \Log::info('👥 Template aangemaakt voor organisatie', [
+            'user_id' => auth()->id(),
+            'user_role' => auth()->user()->role,
+            'organisatie_id' => auth()->user()->organisatie_id,
+            'template_name' => $validated['name']
+        ]);
+    }
     
     $template = EmailTemplate::create($validated);
     
@@ -341,7 +433,168 @@ public function storeTemplate(Request $request)
     
     return redirect()->route('admin.email.templates')
         ->with('success', '✅ Email template succesvol aangemaakt!');
-}    public function destroyTemplate($id)
+}    /**
+     * Kloon een Performance Pulse template naar organisatie template
+     * Organisaties kunnen zo een kopie maken van standaard templates om aan te passen
+     */
+    public function cloneTemplate($id)
+    {
+        $this->checkAdminAccess();
+        
+        try {
+            $sourceTemplate = EmailTemplate::findOrFail($id);
+            
+            // Check dat dit een Performance Pulse template is
+            if (!$sourceTemplate->isDefaultTemplate()) {
+                \Log::warning('🚫 Poging om niet-default template te klonen', [
+                    'user_id' => auth()->id(),
+                    'template_id' => $sourceTemplate->id
+                ]);
+                
+                return redirect()->route('admin.email.templates')
+                    ->with('error', '❌ Je kunt alleen Performance Pulse templates klonen.');
+            }
+            
+            // Check dat user een organisatie admin is (geen superadmin)
+            if (auth()->user()->role === 'superadmin') {
+                return redirect()->route('admin.email.templates')
+                    ->with('error', '❌ Superadmin hoeft geen templates te klonen.');
+            }
+            
+            // Check of er al een custom template bestaat voor dit type
+            $existingCustom = EmailTemplate::where('type', $sourceTemplate->type)
+                                          ->where('organisatie_id', auth()->user()->organisatie_id)
+                                          ->first();
+            
+            if ($existingCustom) {
+                return redirect()->route('admin.email.templates')
+                    ->with('warning', '⚠️ Je hebt al een custom template voor dit type. Bewerk die template in plaats van een nieuwe kopie te maken.');
+            }
+            
+            // Maak een kopie van de template voor deze organisatie
+            $clonedTemplate = EmailTemplate::create([
+                'name' => $sourceTemplate->name . ' (Custom)',
+                'slug' => $sourceTemplate->slug . '-custom-' . auth()->user()->organisatie_id,
+                'type' => $sourceTemplate->type,
+                'subject' => $sourceTemplate->subject,
+                'body_html' => $sourceTemplate->body_html,
+                'description' => $sourceTemplate->description . ' (Aangepaste versie voor ' . auth()->user()->organisatie->naam . ')',
+                'is_active' => true,
+                'is_default' => false,
+                'organisatie_id' => auth()->user()->organisatie_id,
+                'parent_template_id' => $sourceTemplate->id, // Link naar originele template
+            ]);
+            
+            \Log::info('✅ Performance Pulse template gekloond naar organisatie', [
+                'source_template_id' => $sourceTemplate->id,
+                'cloned_template_id' => $clonedTemplate->id,
+                'organisatie_id' => auth()->user()->organisatie_id,
+                'user_id' => auth()->id()
+            ]);
+            
+            return redirect()->route('admin.email.templates.edit', $clonedTemplate->id)
+                ->with('success', '✅ Template succesvol gekloond! Je kunt deze nu aanpassen naar wens.');
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Failed to clone template: ' . $e->getMessage(), [
+                'template_id' => $id,
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('admin.email.templates')
+                ->with('error', '❌ Er ging iets mis bij het klonen van de template: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Initialiseer email templates voor een organisatie
+     * Kloont alle 6 Performance Pulse standaard templates naar de organisatie
+     */
+    public function initializeTemplates()
+    {
+        $this->checkAdminAccess();
+        
+        try {
+            // Check dat user een organisatie admin is (geen superadmin)
+            if (auth()->user()->role === 'superadmin') {
+                return redirect()->route('admin.email.templates')
+                    ->with('error', '❌ Superadmin gebruikt de Performance Pulse templates direct.');
+            }
+            
+            $organisatieId = auth()->user()->organisatie_id;
+            
+            // Check of organisatie al templates heeft
+            $existingCount = EmailTemplate::where('organisatie_id', $organisatieId)->count();
+            
+            if ($existingCount > 0) {
+                return redirect()->route('admin.email.templates')
+                    ->with('warning', '⚠️ Je organisatie heeft al email templates. Gebruik deze in plaats van nieuwe te maken.');
+            }
+            
+            \Log::info('🔄 Initialiseren email templates voor organisatie', [
+                'organisatie_id' => $organisatieId,
+                'user_id' => auth()->id()
+            ]);
+            
+            // Haal alle Performance Pulse standaard templates op
+            $defaultTemplates = EmailTemplate::whereNull('organisatie_id')
+                                            ->where('is_default', true)
+                                            ->where('is_active', true)
+                                            ->get();
+            
+            if ($defaultTemplates->isEmpty()) {
+                \Log::error('❌ Geen Performance Pulse templates gevonden om te klonen');
+                return redirect()->route('admin.email.templates')
+                    ->with('error', '❌ Er zijn geen standaard templates beschikbaar. Neem contact op met de systeembeheerder.');
+            }
+            
+            $clonedCount = 0;
+            
+            foreach ($defaultTemplates as $defaultTemplate) {
+                // Maak een kopie van de template voor deze organisatie
+                $clonedTemplate = EmailTemplate::create([
+                    'name' => $defaultTemplate->name,
+                    'slug' => $defaultTemplate->slug . '-org-' . $organisatieId,
+                    'type' => $defaultTemplate->type,
+                    'subject' => $defaultTemplate->subject,
+                    'body_html' => $defaultTemplate->body_html,
+                    'description' => $defaultTemplate->description,
+                    'is_active' => true,
+                    'is_default' => false,
+                    'organisatie_id' => $organisatieId,
+                    'parent_template_id' => $defaultTemplate->id,
+                ]);
+                
+                \Log::info("✅ Template gekloond: {$defaultTemplate->name}", [
+                    'source_id' => $defaultTemplate->id,
+                    'clone_id' => $clonedTemplate->id
+                ]);
+                
+                $clonedCount++;
+            }
+            
+            \Log::info('✅ Email templates geïnitialiseerd', [
+                'organisatie_id' => $organisatieId,
+                'templates_cloned' => $clonedCount
+            ]);
+            
+            return redirect()->route('admin.email.templates')
+                ->with('success', "✅ Perfect! {$clonedCount} email templates zijn aangemaakt voor jouw organisatie. Je kunt deze nu naar wens aanpassen.");
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Failed to initialize templates: ' . $e->getMessage(), [
+                'organisatie_id' => auth()->user()->organisatie_id,
+                'user_id' => auth()->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return redirect()->route('admin.email.templates')
+                ->with('error', '❌ Er ging iets mis bij het initialiseren van templates: ' . $e->getMessage());
+        }
+    }
+
+    public function destroyTemplate($id)
     {
         $this->checkAdminAccess();
         
@@ -1553,7 +1806,7 @@ Rol: @{{rol}}</p>
      */
     public function deleteTemplate($id)
     {
-        try {
+               try {
             $template = \App\Models\EmailTemplate::findOrFail($id);
             $templateName = $template->name;
             $template->delete();

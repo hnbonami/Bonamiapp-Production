@@ -5,200 +5,196 @@
 @endsection
 
 @section('content')
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-gray-900">📧 Email Templates</h1>
-            <p class="text-gray-600 mt-2">Beheer alle email templates op één plek</p>
-        </div>
-        <div class="flex space-x-3">
-            @if(auth()->user()->is_superadmin)
-                <!-- Reset Default Templates Knop (alleen voor superadmin) -->
-                <form action="{{ route('admin.email.templates.reset') }}" method="POST" 
-                      onsubmit="return confirm('Weet je zeker dat je alle standaard Performance Pulse templates wilt bijwerken? Custom templates blijven behouden.');">
-                    @csrf
-                    <button type="submit" 
-                            class="inline-flex items-center px-4 py-2 border border-orange-300 rounded-md shadow-sm text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100">
-                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                        </svg>
-                        Reset Standaard Templates
-                    </button>
-                </form>
-            @endif
-            
-            <a href="{{ route('admin.email.index') }}" 
-               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                </svg>
-                Terug naar Email Beheer
-            </a>
-        </div>
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-900">Email Templates</h1>
+        <p class="text-gray-600 mt-2">Beheer je email templates voor automatische communicatie</p>
     </div>
 
-    <!-- Current Templates -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        @forelse($templates as $template)
-            <div class="bg-white shadow rounded-lg overflow-hidden">
-                <div class="p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center">
-                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
-                                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    @if($template->type === 'testzadel_reminder')
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                                    @elseif($template->type === 'welcome_customer')
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                    @elseif($template->type === 'birthday')
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0A1.5 1.5 0 013 15.546V12a1.5 1.5 0 011.5-1.5h15A1.5 1.5 0 0121 12v3.546z"/>
-                                    @else
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                    @endif
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-lg font-medium text-gray-900">{{ $template->name }}</h3>
-                                <p class="text-sm text-gray-500">{{ $template->description }}</p>
-                            </div>
-                        </div>
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $template->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                            {{ $template->is_active ? 'Actief' : 'Inactief' }}
-                        </span>
-                        @if($template->isDefaultTemplate())
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 ml-2">
-                                📧 Performance Pulse Standaard
-                            </span>
-                        @elseif($template->isCustomTemplate())
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 ml-2">
-                                ✨ Custom Template
-                            </span>
-                        @endif
-                    </div>
-                    
-                    <div class="border border-gray-200 rounded-md p-4 bg-gray-50 mb-4">
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">Onderwerp:</h4>
-                        <p class="text-sm text-gray-900">{{ $template->subject }}</p>
-                        
-                        <h4 class="text-sm font-medium text-gray-700 mb-2 mt-3">Inhoud preview:</h4>
-                        <div class="text-sm text-gray-600 prose-sm max-w-none">
-                            {!! Str::limit(strip_tags($template->body_html), 150) !!}
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-2 mt-4">
-                        <!-- Bewerken knop met custom kleur #c8e1eb -->
-                        <a href="{{ route('admin.email.templates.edit', $template->id) }}"
-                           class="px-4 py-2 rounded-lg transition text-gray-800 font-medium"
-                           style="background-color: #c8e1eb;">
-                            Bewerken
-                        </a>
-                        
-                        <!-- Verwijderen knop -->
-                        <form action="{{ route('admin.email.templates.destroy', $template->id) }}" 
-                              method="POST" 
-                              onsubmit="return confirm('Weet je zeker dat je deze template wilt verwijderen?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" 
-                                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition">
-                                Verwijderen
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        @empty
-            <div class="col-span-2 text-center py-12">
-                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
-                <h3 class="mt-2 text-sm font-medium text-gray-900">Geen templates gevonden</h3>
-                <p class="mt-1 text-sm text-gray-500">Begin met het maken van je eerste email template.</p>
-            </div>
-        @endforelse
+    @if(session('success'))
+        <div class="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+            {{ session('success') }}
+        </div>
+    @endif
 
-        <!-- Add New Template Card -->
-        <div class="bg-white shadow rounded-lg overflow-hidden border-2 border-dashed border-gray-200 hover:border-gray-300 transition-colors">
-            <div class="p-6 text-center">
-                <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    @if(session('error'))
+        <div class="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+            {{ session('error') }}
+        </div>
+    @endif
+
+    @if(session('warning'))
+        <div class="mb-6 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
+            {{ session('warning') }}
+        </div>
+    @endif
+
+    {{-- Check of organisatie templates moet initialiseren --}}
+    @if(isset($needsCloning) && $needsCloning && auth()->user()->role !== 'superadmin')
+        <div class="bg-white shadow rounded-lg p-8 text-center">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
+                <svg class="h-8 w-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                </svg>
+            </div>
+            
+            <h3 class="text-xl font-semibold text-gray-900 mb-2">Email Templates Initialiseren</h3>
+            <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
+                Je organisatie heeft nog geen email templates. Klik op de knop hieronder om automatisch 
+                <strong>6 standaard email templates</strong> aan te maken die je daarna naar wens kunt aanpassen.
+            </p>
+            
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 max-w-2xl mx-auto">
+                <h4 class="font-semibold text-blue-900 mb-2">📧 Templates die worden aangemaakt:</h4>
+                <ul class="text-left text-blue-800 space-y-1">
+                    <li>✅ Testzadel Herinnering</li>
+                    <li>✅ Welkom Nieuwe Klant</li>
+                    <li>✅ Welkom Nieuwe Medewerker</li>
+                    <li>✅ Verjaardag Felicitatie</li>
+                    <li>✅ Klant Uitnodiging</li>
+                    <li>✅ Medewerker Uitnodiging</li>
+                </ul>
+            </div>
+            
+            <form action="{{ route('admin.email.templates.initialize') }}" method="POST" class="inline-block">
+                @csrf
+                <button type="submit" 
+                        class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                     </svg>
+                    Initialiseer Email Templates
+                </button>
+            </form>
+            
+            <p class="text-sm text-gray-500 mt-4">
+                Dit duurt slechts een paar seconden en je kunt de templates daarna direct aanpassen.
+            </p>
+        </div>
+    @else
+        {{-- Templates lijst --}}
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900">
+                        @if(auth()->user()->role === 'superadmin')
+                            Performance Pulse Standaard Templates
+                        @else
+                            Jouw Email Templates
+                        @endif
+                    </h3>
+                    <p class="text-sm text-gray-500 mt-1">
+                        @if(auth()->user()->role === 'superadmin')
+                            Deze templates worden gebruikt als standaard voor alle organisaties
+                        @else
+                            Pas deze templates aan naar de huisstijl van jouw organisatie
+                        @endif
+                    </p>
                 </div>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Nieuwe Template</h3>
-                <p class="text-sm text-gray-500 mb-4">Maak een nieuwe email template voor automatische of handmatige verzending</p>
+                
                 <a href="{{ route('admin.email.templates.create') }}" 
-                   class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">
-                    Template Maken
+                   class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-900 hover:text-gray-700"
+                   style="background-color: #c8e1eb;">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                    </svg>
+                    Nieuwe Template
                 </a>
             </div>
-        </div>
-    </div>
 
-    <!-- Template Variables Guide -->
-    <div class="bg-white shadow rounded-lg p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">📝 Beschikbare Template Variabelen</h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-                <h4 class="font-medium text-gray-900 mb-3">Klant Gegevens</h4>
-                <div class="space-y-2">
-                    <div class="flex items-center text-sm">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono mr-2">@{{voornaam}}</code>
-                        <span class="text-gray-600">Voornaam</span>
+            @if($templates->isEmpty())
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">Geen email templates</h3>
+                    <p class="mt-1 text-sm text-gray-500">Klik op "Initialiseer Email Templates" om te beginnen.</p>
+                </div>
+            @else
+                <div class="divide-y divide-gray-200">
+                    @foreach($templates as $template)
+                        <div class="px-6 py-4 hover:bg-gray-50 transition-colors">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-3">
+                                        <h4 class="text-base font-medium text-gray-900">
+                                            {{ $template->name }}
+                                        </h4>
+                                        
+                                        @if($template->isDefaultTemplate())
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                Performance Pulse
+                                            </span>
+                                        @endif
+                                        
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                            {{ $template->is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                            {{ $template->is_active ? 'Actief' : 'Inactief' }}
+                                        </span>
+                                    </div>
+                                    
+                                    @if($template->description)
+                                        <p class="mt-1 text-sm text-gray-500">{{ $template->description }}</p>
+                                    @endif
+                                    
+                                    <div class="mt-2 flex items-center space-x-4 text-xs text-gray-500">
+                                        <span>Type: <strong>{{ ucfirst($template->type) }}</strong></span>
+                                        <span>•</span>
+                                        <span>Onderwerp: {{ \Str::limit($template->subject, 50) }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="ml-6 flex items-center space-x-2">
+                                    <a href="{{ route('admin.email.templates.edit', $template->id) }}" 
+                                       class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-gray-900 hover:text-gray-700"
+                                       style="background-color: #c8e1eb;">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                        </svg>
+                                        Bewerken
+                                    </a>
+                                    
+                                    <form action="{{ route('admin.email.templates.destroy', $template->id) }}" 
+                                          method="POST" 
+                                          class="inline-block"
+                                          onsubmit="return confirm('Weet je zeker dat je deze template wilt verwijderen?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" 
+                                                class="inline-flex items-center px-3 py-2 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                            Verwijderen
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+        
+        @if(auth()->user()->role === 'superadmin' && $templates->isNotEmpty())
+            <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
                     </div>
-                    <div class="flex items-center text-sm">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono mr-2">@{{naam}}</code>
-                        <span class="text-gray-600">Achternaam</span>
-                    </div>
-                    <div class="flex items-center text-sm">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono mr-2">@{{email}}</code>
-                        <span class="text-gray-600">Email adres</span>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-yellow-800">Let op: Superadmin Templates</h3>
+                        <div class="mt-2 text-sm text-yellow-700">
+                            <p>Wijzigingen aan deze templates zijn zichtbaar voor alle organisaties die nog geen eigen versie hebben aangemaakt.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            
-            
-            <div>
-                <h4 class="font-medium text-gray-900 mb-3">Algemeen</h4>
-                <div class="space-y-2">
-                    <div class="flex items-center text-sm">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono mr-2">@{{bedrijf_naam}}</code>
-                        <span class="text-gray-600">Bedrijfsnaam</span>
-                    </div>
-                    <div class="flex items-center text-sm">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono mr-2">@{{datum}}</code>
-                        <span class="text-gray-600">Huidige datum</span>
-                    </div>
-                    <div class="flex items-center text-sm">
-                        <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono mr-2">@{{jaar}}</code>
-                        <span class="text-gray-600">Huidig jaar</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Step Progress -->
-    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-md p-4">
-        <div class="flex">
-            <div class="flex-shrink-0">
-                <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                </svg>
-            </div>
-            <div class="ml-3">
-                <h3 class="text-sm font-medium text-blue-800">Multi-tenant Email Systeem</h3>
-                <p class="mt-1 text-sm text-blue-700">
-                    <strong>📧 Performance Pulse Standaard:</strong> Professionele templates voor alle organisaties.<br>
-                    <strong>✨ Custom Templates:</strong> Organisaties met 'custom_emails' feature kunnen eigen templates maken.<br>
-                    <strong>🔄 Fallback Systeem:</strong> Als geen custom template beschikbaar, wordt automatisch Performance Pulse standaard gebruikt.
-                </p>
-            </div>
-        </div>
-    </div>
+        @endif
+    @endif
 </div>
 
 <script>
