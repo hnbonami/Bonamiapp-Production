@@ -8,8 +8,19 @@
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Header -->
     <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Email Templates</h1>
-        <p class="text-gray-600 mt-2">Beheer je email templates voor automatische communicatie</p>
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Email Templates</h1>
+                <p class="text-gray-600 mt-2">Beheer je email templates voor automatische communicatie</p>
+            </div>
+            <a href="/admin" 
+               class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Terug naar Dashboard
+            </a>
+        </div>
     </div>
 
     @if(session('success'))

@@ -38,17 +38,30 @@ class EmailController extends Controller
     {
         $this->checkAdminAccess();
         
-        // Superadmin ziet ALLEEN Performance Pulse standaard templates (organisatie_id = null, is_default = true)
+        // Superadmin ziet BEIDE Performance Pulse standaard templates EN eigen organisatie templates
         if (auth()->user()->role === 'superadmin') {
-            $templates = EmailTemplate::whereNull('organisatie_id')
-                                      ->where('is_default', true)
-                                      ->orderBy('type')
-                                      ->orderBy('name')
-                                      ->get();
+            // Haal beide sets templates op
+            $performancePulseTemplates = EmailTemplate::whereNull('organisatie_id')
+                                                      ->where('is_default', true)
+                                                      ->get();
             
-            \Log::info('🔐 Superadmin bekijkt Performance Pulse templates', [
+            $organisatieTemplates = collect();
+            if (auth()->user()->organisatie_id) {
+                $organisatieTemplates = EmailTemplate::where('organisatie_id', auth()->user()->organisatie_id)
+                                                    ->where('is_default', false)
+                                                    ->get();
+            }
+            
+            // Combineer beide collections en sorteer
+            $templates = $performancePulseTemplates->merge($organisatieTemplates)
+                                                   ->sortBy('type')
+                                                   ->sortBy('name');
+            
+            \Log::info('🔐 Superadmin bekijkt templates', [
                 'user_id' => auth()->id(),
-                'templates_count' => $templates->count()
+                'performance_pulse_count' => $performancePulseTemplates->count(),
+                'organisatie_count' => $organisatieTemplates->count(),
+                'total_count' => $templates->count()
             ]);
             
             return view('admin.email-templates', compact('templates'));
@@ -98,16 +111,34 @@ class EmailController extends Controller
 
         // BEVEILIGING: Check of de gebruiker deze template mag bewerken
         if (auth()->user()->role === 'superadmin') {
-            // Superadmin mag ALLEEN Performance Pulse standaard templates bewerken
-            if (!$template->isDefaultTemplate()) {
-                \Log::warning('🚫 Superadmin probeerde organisatie template te bewerken', [
+            // Superadmin mag:
+            // 1. Performance Pulse templates (organisatie_id = null EN is_default = true)
+            // 2. Templates van eigen organisatie (als superadmin een organisatie heeft)
+            
+            $isPerformancePulse = ($template->organisatie_id === null && $template->is_default == true);
+            $isOwnOrganisation = ($template->organisatie_id !== null && $template->organisatie_id === auth()->user()->organisatie_id);
+            
+            // Debug logging
+            \Log::info('� Superadmin template edit check', [
+                'user_id' => auth()->id(),
+                'user_organisatie_id' => auth()->user()->organisatie_id,
+                'template_id' => $template->id,
+                'template_name' => $template->name,
+                'template_organisatie_id' => $template->organisatie_id,
+                'template_is_default' => $template->is_default,
+                'isPerformancePulse' => $isPerformancePulse,
+                'isOwnOrganisation' => $isOwnOrganisation,
+            ]);
+            
+            if (!$isPerformancePulse && !$isOwnOrganisation) {
+                \Log::warning('🚫 Superadmin probeerde template van andere organisatie te bewerken', [
                     'user_id' => auth()->id(),
                     'template_id' => $template->id,
-                    'template_organisatie_id' => $template->organisatie_id
+                    'template_organisatie_id' => $template->organisatie_id,
                 ]);
                 
                 return redirect()->route('admin.email.templates')
-                    ->with('error', '❌ Je kunt alleen Performance Pulse standaard templates bewerken.');
+                    ->with('error', '❌ Je kunt alleen Performance Pulse standaard templates en je eigen templates bewerken.');
             }
         } else {
             // Organisatie admins mogen ALLEEN hun eigen templates bewerken
@@ -139,7 +170,8 @@ class EmailController extends Controller
         \Log::info('✅ Email template bijgewerkt', [
             'template_id' => $template->id,
             'user_id' => auth()->id(),
-            'is_default' => $template->isDefaultTemplate()
+            'user_role' => auth()->user()->role,
+            'is_default' => $template->is_default
         ]);
 
         return redirect()->route('admin.email.templates')
