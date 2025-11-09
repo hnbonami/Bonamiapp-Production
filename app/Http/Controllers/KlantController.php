@@ -204,7 +204,7 @@ class KlantController extends Controller
         $validated = $request->validate([
             'voornaam' => 'required|string|max:255',
             'naam' => 'required|string|max:255',
-            'email' => 'required|email', // Geen |unique:users,email meer!
+            'email' => 'required|email',
             'telefoon' => 'nullable|string|max:20',
             'geboortedatum' => 'nullable|date',
             'geslacht' => 'nullable|in:Man,Vrouw,Anders',
@@ -218,11 +218,10 @@ class KlantController extends Controller
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // 🔥 KRITIEK: Voeg organisatie_id toe ALS EERSTE!
         $validated['organisatie_id'] = auth()->user()->organisatie_id;
         $validated['name'] = $validated['voornaam'] . ' ' . $validated['naam'];
         $validated['role'] = 'klant';
-        $validated['password'] = \Hash::make(\Illuminate\Support\Str::random(12)); // Genereer random wachtwoord
+        $validated['password'] = \Hash::make(\Illuminate\Support\Str::random(12));
         $validated['status'] = $validated['status'] ?? 'Actief';
 
         if ($request->hasFile('avatar')) {
@@ -230,20 +229,59 @@ class KlantController extends Controller
             $validated['avatar_path'] = $path;
         }
 
-        // Log voor debugging
         \Log::info('🔥 Creating klant with data:', $validated);
-
-        // Maak klant aan
+        
         $klant = Klant::create($validated);
         
-        // Refresh de klant zodat alle relaties up-to-date zijn
-        $klant->refresh();
+        // Maak user account aan als email is opgegeven
+        if (!empty($klant->email)) {
+            $existingUser = \App\Models\User::where('email', $klant->email)->first();
+            
+            if (!$existingUser) {
+                try {
+                    $user = \App\Models\User::create([
+                        'name' => $klant->naam,
+                        'email' => $klant->email,
+                        'password' => \Hash::make(\Str::random(16)),
+                        'role' => 'klant',
+                        'organisatie_id' => $klant->organisatie_id,
+                        'status' => 'active',
+                        'email_verified_at' => null,
+                    ]);
+                    
+                    \Log::info('✅ User account aangemaakt voor klant', [
+                        'klant_id' => $klant->id,
+                        'user_id' => $user->id,
+                        'email' => $klant->email
+                    ]);
+                    
+                    // 🚀 AUTOMATISCHE WELCOME EMAIL
+                    try {
+                        $emailService = app(\App\Services\EmailIntegrationService::class);
+                        $emailSent = $emailService->sendCustomerWelcomeEmail($klant);
+                        
+                        \Log::info('✅ Automatische welcome email verzonden', [
+                            'klant_id' => $klant->id,
+                            'success' => $emailSent
+                        ]);
+                    } catch (\Exception $emailError) {
+                        \Log::error('❌ Failed to send automatic welcome email', [
+                            'klant_id' => $klant->id,
+                            'error' => $emailError->getMessage()
+                        ]);
+                    }
+                    
+                } catch (\Exception $e) {
+                    \Log::error('❌ Fout bij aanmaken user account', [
+                        'klant_id' => $klant->id,
+                        'error' => $e->getMessage()
+                    ]);
+                }
+            }
+        }
         
-        // NIEUW: Maak automatisch user account aan voor de klant
-        $this->createUserAccountForKlant($klant);
-
         return redirect()->route('klanten.show', $klant->id)
-            ->with('success', 'Klant succesvol toegevoegd!');
+            ->with('success', 'Klant succesvol aangemaakt' . (!empty($klant->email) ? ' en welcome email verzonden.' : '.'));
     }
     public function show(Klant $klant)
     {

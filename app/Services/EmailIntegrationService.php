@@ -350,11 +350,8 @@ class EmailIntegrationService
                     // Geen probleem, gebruik N/A
                 }
                 
-                // Haal organisatie bedrijfsnaam op, fallback naar hardcoded waarde
-                $organisatie = $customer->organisatie;
-                $bedrijfNaam = $organisatie && $organisatie->bedrijf_naam 
-                    ? $organisatie->bedrijf_naam 
-                    : 'Bonami Sportcoaching';
+                // Haal organisatie-info op voor subject placeholders
+                $organisatieInfo = $this->getOrganisatieInfo($customer);
                 
                 // Vervang placeholders in subject
                 $subject = str_replace('@{{voornaam}}', $customer->voornaam ?? 'Onbekend', $subject);
@@ -362,19 +359,20 @@ class EmailIntegrationService
                 $subject = str_replace('@{{email}}', $customer->email ?? '', $subject);
                 $subject = str_replace('@{{temporary_password}}', $temporaryPassword, $subject);
                 $subject = str_replace('@{{wachtwoord}}', $temporaryPassword, $subject);
-                $subject = str_replace('@{{bedrijf_naam}}', $bedrijfNaam, $subject);
+                $subject = str_replace('@{{bedrijf_naam}}', $organisatieInfo['bedrijf_naam'], $subject);
                 $subject = str_replace('@{{datum}}', now()->format('d-m-Y'), $subject);
                 
                 // Ondersteuning voor oude formaten in subject
                 $subject = str_replace('{{customer_name}}', ($customer->voornaam ?? '') . ' ' . ($customer->naam ?? ''), $subject);
                 $subject = str_replace('{{klant_naam}}', ($customer->voornaam ?? '') . ' ' . ($customer->naam ?? ''), $subject);
-                $subject = str_replace('{{company_name}}', 'Bonami Sportcoaching', $subject);
-                $subject = str_replace('{{app_name}}', 'Bonami Sportcoaching', $subject);
+                $subject = str_replace('{{company_name}}', $organisatieInfo['bedrijf_naam'], $subject);
+                $subject = str_replace('{{app_name}}', $organisatieInfo['bedrijf_naam'], $subject);
                 
                 \Log::info('✅ CUSTOMER SUBJECT PLACEHOLDERS VERVANGEN', [
                     'original_subject' => $template->subject ?? 'none',
                     'processed_subject' => $subject,
-                    'temporary_password_used' => $temporaryPassword
+                    'temporary_password_used' => $temporaryPassword,
+                    'organisatie_used' => $organisatieInfo['bedrijf_naam']
                 ]);
             }
 
@@ -524,11 +522,8 @@ class EmailIntegrationService
                     // Geen probleem, gebruik N/A
                 }
                 
-                // Haal organisatie bedrijfsnaam op, fallback naar hardcoded waarde
-                $organisatie = $employee->organisatie;
-                $bedrijfNaam = $organisatie && $organisatie->bedrijf_naam 
-                    ? $organisatie->bedrijf_naam 
-                    : 'Bonami Sportcoaching';
+                // Haal organisatie-info op voor subject placeholders
+                $organisatieInfo = $this->getOrganisatieInfo($employee);
                 
                 // Vervang placeholders in subject
                 $subject = str_replace('@{{voornaam}}', $employee->voornaam ?? 'Onbekend', $subject);
@@ -537,19 +532,20 @@ class EmailIntegrationService
                 $subject = str_replace('@{{email}}', $employee->email ?? '', $subject);
                 $subject = str_replace('@{{temporary_password}}', $temporaryPassword, $subject);
                 $subject = str_replace('@{{wachtwoord}}', $temporaryPassword, $subject);
-                $subject = str_replace('@{{bedrijf_naam}}', $bedrijfNaam, $subject);
+                $subject = str_replace('@{{bedrijf_naam}}', $organisatieInfo['bedrijf_naam'], $subject);
                 $subject = str_replace('@{{datum}}', now()->format('d-m-Y'), $subject);
                 
                 // Ondersteuning voor oude formaten in subject
                 $subject = str_replace('{{employee_name}}', ($employee->voornaam ?? '') . ' ' . ($employee->achternaam ?? ''), $subject);
                 $subject = str_replace('{{medewerker_naam}}', ($employee->voornaam ?? '') . ' ' . ($employee->achternaam ?? ''), $subject);
-                $subject = str_replace('{{company_name}}', 'Bonami Sportcoaching', $subject);
-                $subject = str_replace('{{app_name}}', 'Bonami Sportcoaching', $subject);
+                $subject = str_replace('{{company_name}}', $organisatieInfo['bedrijf_naam'], $subject);
+                $subject = str_replace('{{app_name}}', $organisatieInfo['bedrijf_naam'], $subject);
                 
                 \Log::info('✅ EMPLOYEE SUBJECT PLACEHOLDERS VERVANGEN', [
                     'original_subject' => $template->subject ?? 'none',
                     'processed_subject' => $subject,
-                    'temporary_password_used' => $temporaryPassword
+                    'temporary_password_used' => $temporaryPassword,
+                    'organisatie_used' => $organisatieInfo['bedrijf_naam']
                 ]);
             }
 
@@ -625,8 +621,11 @@ class EmailIntegrationService
      */
     private function processCustomerWelcomeTemplate($template, $customer)
     {
+        // Haal organisatie-info op voor dynamische vervanging
+        $organisatieInfo = $this->getOrganisatieInfo($customer);
+        
         if (!$template) {
-            return "Welkom bij " . config('app.name', 'Bonami') . "!\n\nBeste " . $customer->voornaam . " " . $customer->naam . ",\n\nWelkom bij ons systeem!\n\nMet vriendelijke groet,\nHet " . config('app.name', 'Bonami') . " team";
+            return "Welkom bij " . $organisatieInfo['bedrijf_naam'] . "!\n\nBeste " . $customer->voornaam . " " . $customer->naam . ",\n\nWelkom bij ons systeem!\n\nMet vriendelijke groet,\nHet " . $organisatieInfo['bedrijf_naam'] . " team";
         }
 
         // Use body_html from the EmailTemplate model
@@ -656,24 +655,22 @@ class EmailIntegrationService
             'naam' => $customer->naam,
             'email' => $customer->email,
             'temporary_password' => $temporaryPassword,
+            'organisatie_info' => $organisatieInfo,
             'contains_voornaam_placeholder' => strpos($content, '@{{voornaam}}') !== false,
             'contains_temp_password_placeholder' => strpos($content, '@{{temporary_password}}') !== false
         ]);
 
         // Vervang placeholders stap voor stap voor betere debugging
-        // Haal organisatie bedrijfsnaam op, fallback naar hardcoded waarde
-        $organisatie = $customer->organisatie;
-        $bedrijfNaam = $organisatie && $organisatie->bedrijf_naam 
-            ? $organisatie->bedrijf_naam 
-            : 'Bonami Sportcoaching';
-        
         $content = str_replace('@{{voornaam}}', $customer->voornaam ?? 'Onbekend', $content);
         $content = str_replace('@{{naam}}', $customer->naam ?? 'Onbekend', $content);
         $content = str_replace('@{{email}}', $customer->email ?? '', $content);
         $content = str_replace('@{{temporary_password}}', $temporaryPassword, $content);
         $content = str_replace('@{{wachtwoord}}', $temporaryPassword, $content);
-        $content = str_replace('@{{bedrijf_naam}}', $bedrijfNaam, $content);
-        $content = str_replace('@{{website_url}}', config('app.url', 'https://bonami-sportcoaching.be'), $content);
+        $content = str_replace('@{{bedrijf_naam}}', $organisatieInfo['bedrijf_naam'], $content);
+        $content = str_replace('@{{website_url}}', $organisatieInfo['website_url'], $content);
+        $content = str_replace('@{{email_from_name}}', $organisatieInfo['email_from_name'], $content);
+        $content = str_replace('@{{email_from_address}}', $organisatieInfo['email_from_address'], $content);
+        $content = str_replace('@{{email_signature}}', $organisatieInfo['email_signature'], $content);
         $content = str_replace('@{{datum}}', now()->format('d-m-Y'), $content);
         $content = str_replace('@{{jaar}}', now()->format('Y'), $content);
         $content = str_replace('@{{tijd}}', now()->format('H:i'), $content);
@@ -685,18 +682,19 @@ class EmailIntegrationService
         $content = str_replace('@{{preferences_url}}', $unsubscribeUrl, $content);
         $content = str_replace('@{{email_id}}', 'CUST-' . $customer->id . '-' . time(), $content);
         
-        // Ondersteuning voor oude formaten
+        // Ondersteuning voor oude formaten - gebruik nu ook organisatie-info
         $content = str_replace('{{customer_name}}', ($customer->voornaam ?? '') . ' ' . ($customer->naam ?? ''), $content);
         $content = str_replace('{{klant_naam}}', ($customer->voornaam ?? '') . ' ' . ($customer->naam ?? ''), $content);
         $content = str_replace('{{customer_email}}', $customer->email ?? '', $content);
         $content = str_replace('{{klant_email}}', $customer->email ?? '', $content);
-        $content = str_replace('{{company_name}}', 'Bonami Sportcoaching', $content);
-        $content = str_replace('{{app_name}}', 'Bonami Sportcoaching', $content);
+        $content = str_replace('{{company_name}}', $organisatieInfo['bedrijf_naam'], $content);
+        $content = str_replace('{{app_name}}', $organisatieInfo['bedrijf_naam'], $content);
 
         \Log::info('✅ CUSTOMER PLACEHOLDERS VERVANGEN', [
             'processed_content_sample' => substr($content, 0, 200),
             'still_contains_placeholders' => preg_match('/@\{\{|\{\{/', $content),
-            'temporary_password_used' => $temporaryPassword
+            'temporary_password_used' => $temporaryPassword,
+            'organisatie_used' => $organisatieInfo['bedrijf_naam']
         ]);
 
         return $content;
@@ -707,8 +705,11 @@ class EmailIntegrationService
      */
     private function processEmployeeWelcomeTemplate($template, $employee)
     {
+        // Haal organisatie-info op voor dynamische vervanging
+        $organisatieInfo = $this->getOrganisatieInfo($employee);
+        
         if (!$template) {
-            return "Welkom in het team van " . config('app.name', 'Bonami') . "!\n\nBeste " . $employee->voornaam . " " . $employee->achternaam . ",\n\nWelkom in ons team!\n\nMet vriendelijke groet,\nHet " . config('app.name', 'Bonami') . " team";
+            return "Welkom in het team van " . $organisatieInfo['bedrijf_naam'] . "!\n\nBeste " . $employee->voornaam . " " . $employee->achternaam . ",\n\nWelkom in ons team!\n\nMet vriendelijke groet,\nHet " . $organisatieInfo['bedrijf_naam'] . " team";
         }
 
         // Use body_html from the EmailTemplate model
@@ -738,25 +739,23 @@ class EmailIntegrationService
             'achternaam' => $employee->achternaam,
             'email' => $employee->email,
             'temporary_password' => $temporaryPassword,
+            'organisatie_info' => $organisatieInfo,
             'contains_voornaam_placeholder' => strpos($content, '@{{voornaam}}') !== false,
             'contains_temp_password_placeholder' => strpos($content, '@{{temporary_password}}') !== false
         ]);
 
         // Vervang placeholders stap voor stap voor betere debugging
-        // Haal organisatie bedrijfsnaam op, fallback naar hardcoded waarde
-        $organisatie = $employee->organisatie;
-        $bedrijfNaam = $organisatie && $organisatie->bedrijf_naam 
-            ? $organisatie->bedrijf_naam 
-            : 'Bonami Sportcoaching';
-        
         $content = str_replace('@{{voornaam}}', $employee->voornaam ?? 'Onbekend', $content);
         $content = str_replace('@{{naam}}', ($employee->achternaam ?? $employee->naam ?? 'Onbekend'), $content);
         $content = str_replace('@{{achternaam}}', $employee->achternaam ?? 'Onbekend', $content);
         $content = str_replace('@{{email}}', $employee->email ?? '', $content);
         $content = str_replace('@{{temporary_password}}', $temporaryPassword, $content);
         $content = str_replace('@{{wachtwoord}}', $temporaryPassword, $content);
-        $content = str_replace('@{{bedrijf_naam}}', $bedrijfNaam, $content);
-        $content = str_replace('@{{website_url}}', config('app.url', 'https://bonami-sportcoaching.be'), $content);
+        $content = str_replace('@{{bedrijf_naam}}', $organisatieInfo['bedrijf_naam'], $content);
+        $content = str_replace('@{{website_url}}', $organisatieInfo['website_url'], $content);
+        $content = str_replace('@{{email_from_name}}', $organisatieInfo['email_from_name'], $content);
+        $content = str_replace('@{{email_from_address}}', $organisatieInfo['email_from_address'], $content);
+        $content = str_replace('@{{email_signature}}', $organisatieInfo['email_signature'], $content);
         $content = str_replace('@{{datum}}', now()->format('d-m-Y'), $content);
         $content = str_replace('@{{jaar}}', now()->format('Y'), $content);
         $content = str_replace('@{{tijd}}', now()->format('H:i'), $content);
@@ -768,21 +767,88 @@ class EmailIntegrationService
         $content = str_replace('@{{preferences_url}}', $unsubscribeUrl, $content);
         $content = str_replace('@{{email_id}}', 'EMP-' . $employee->id . '-' . time(), $content);
         
-        // Ondersteuning voor oude formaten
+        // Ondersteuning voor oude formaten - gebruik nu ook organisatie-info
         $content = str_replace('{{employee_name}}', ($employee->voornaam ?? '') . ' ' . ($employee->achternaam ?? ''), $content);
         $content = str_replace('{{medewerker_naam}}', ($employee->voornaam ?? '') . ' ' . ($employee->achternaam ?? ''), $content);
         $content = str_replace('{{employee_email}}', $employee->email ?? '', $content);
         $content = str_replace('{{medewerker_email}}', $employee->email ?? '', $content);
-        $content = str_replace('{{company_name}}', 'Bonami Sportcoaching', $content);
-        $content = str_replace('{{app_name}}', 'Bonami Sportcoaching', $content);
+        $content = str_replace('{{company_name}}', $organisatieInfo['bedrijf_naam'], $content);
+        $content = str_replace('{{app_name}}', $organisatieInfo['bedrijf_naam'], $content);
 
         \Log::info('✅ EMPLOYEE PLACEHOLDERS VERVANGEN', [
             'processed_content_sample' => substr($content, 0, 200),
             'still_contains_placeholders' => preg_match('/@\{\{|\{\{/', $content),
-            'temporary_password_used' => $temporaryPassword
+            'temporary_password_used' => $temporaryPassword,
+            'organisatie_used' => $organisatieInfo['bedrijf_naam']
         ]);
 
         return $content;
+    }
+
+    /**
+     * Haal organisatie informatie op voor email templates
+     * Centrale methode voor consistente organisatie data in alle emails
+     * 
+     * @param mixed $entity Klant, Medewerker, of andere entiteit met organisatie relatie
+     * @return array Organisatie informatie met fallbacks
+     */
+    private function getOrganisatieInfo($entity)
+    {
+        try {
+            // Haal organisatie op via relatie
+            $organisatie = null;
+            
+            if (isset($entity->organisatie)) {
+                $organisatie = $entity->organisatie;
+            } elseif (isset($entity->organisatie_id)) {
+                $organisatie = \App\Models\Organisatie::find($entity->organisatie_id);
+            }
+            
+            \Log::info('🏢 Organisatie info ophalen', [
+                'entity_type' => get_class($entity),
+                'entity_id' => $entity->id ?? 'unknown',
+                'organisatie_found' => $organisatie ? 'yes' : 'no',
+                'organisatie_id' => $organisatie->id ?? 'none'
+            ]);
+            
+            // Return array met organisatie info (met fallbacks naar Performance Pulse defaults)
+            return [
+                'bedrijf_naam' => $organisatie && $organisatie->bedrijf_naam 
+                    ? $organisatie->bedrijf_naam 
+                    : ($organisatie && $organisatie->naam ? $organisatie->naam : 'Performance Pulse'),
+                
+                'website_url' => $organisatie && $organisatie->website_url 
+                    ? $organisatie->website_url 
+                    : config('app.url', 'https://performance-pulse.app'),
+                
+                'email_from_name' => $organisatie && $organisatie->email_from_name 
+                    ? $organisatie->email_from_name 
+                    : ($organisatie && $organisatie->naam ? $organisatie->naam . ' Team' : 'Performance Pulse Team'),
+                
+                'email_from_address' => $organisatie && $organisatie->email_from_address 
+                    ? $organisatie->email_from_address 
+                    : config('mail.from.address', 'noreply@performance-pulse.app'),
+                
+                'email_signature' => $organisatie && $organisatie->email_signature 
+                    ? $organisatie->email_signature 
+                    : 'Met sportieve groet,<br>Het ' . ($organisatie && $organisatie->bedrijf_naam ? $organisatie->bedrijf_naam : ($organisatie && $organisatie->naam ? $organisatie->naam : 'Performance Pulse')) . ' team',
+            ];
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Failed to retrieve organisatie info', [
+                'error' => $e->getMessage(),
+                'entity_type' => get_class($entity) ?? 'unknown'
+            ]);
+            
+            // Fallback naar Performance Pulse defaults bij errors
+            return [
+                'bedrijf_naam' => 'Performance Pulse',
+                'website_url' => config('app.url', 'https://performance-pulse.app'),
+                'email_from_name' => 'Performance Pulse Team',
+                'email_from_address' => config('mail.from.address', 'noreply@performance-pulse.app'),
+                'email_signature' => 'Met sportieve groet,<br>Het Performance Pulse team',
+            ];
+        }
     }
 
     /**
@@ -1392,6 +1458,9 @@ class EmailIntegrationService
                     $birthDate = \Carbon\Carbon::parse($klant->geboortedatum);
                     $age = $birthDate->age;
                     
+                    // Haal organisatie-info op voor deze klant
+                    $organisatieInfo = $this->getOrganisatieInfo($klant);
+                    
                     // Bereid variabelen voor email template
                     $variables = [
                         'voornaam' => $klant->voornaam,
@@ -1402,14 +1471,15 @@ class EmailIntegrationService
                         'geboortedatum' => $birthDate->format('d-m-Y'),
                         'datum' => now()->format('d-m-Y'),
                         'tijd' => now()->format('H:i'),
-                        'bedrijf_naam' => 'Bonami Sportcoaching',
-                        'website_url' => config('app.url', 'https://bonami-sportcoaching.be'),
+                        'bedrijf_naam' => $organisatieInfo['bedrijf_naam'],
+                        'website_url' => $organisatieInfo['website_url'],
                     ];
                     
                     \Log::info('📧 Sending birthday email', [
                         'customer_email' => $klant->email,
                         'customer_name' => $klant->voornaam . ' ' . $klant->naam,
-                        'age' => $age
+                        'age' => $age,
+                        'organisatie' => $organisatieInfo['bedrijf_naam']
                     ]);
                     
                     // Verstuur verjaardag email via bestaande methode
