@@ -38,33 +38,48 @@ class EmailController extends Controller
     {
         $this->checkAdminAccess();
         
-        // Superadmin ziet BEIDE Performance Pulse standaard templates EN eigen organisatie templates
+        // ⚠️ BELANGRIJK: Email templates zijn ALTIJD toegankelijk voor admin/organisatie_admin
+        // Feature "sjablonen" controleert alleen of organisatie deze feature heeft GEKOCHT
+        // Maar email templates zijn basis functionaliteit die altijd moet werken
+        
+        // Superadmin ziet BEIDE Performance Pulse standaard templates EN eigen organisatie templates IN APARTE TABELLEN
         if (auth()->user()->role === 'superadmin') {
-            // Haal beide sets templates op
+            // Haal Performance Pulse standaard templates op (UNIEKE, GEEN DUPLICATEN)
             $performancePulseTemplates = EmailTemplate::whereNull('organisatie_id')
-                                                      ->where('is_default', true)
+                                                      ->where('is_default', 1) // Gebruik 1 in plaats van true
+                                                      ->orderBy('type')
+                                                      ->orderBy('name')
                                                       ->get();
             
+            // Haal eigen organisatie templates op (als superadmin een organisatie heeft)
             $organisatieTemplates = collect();
             if (auth()->user()->organisatie_id) {
                 $organisatieTemplates = EmailTemplate::where('organisatie_id', auth()->user()->organisatie_id)
-                                                    ->where('is_default', false)
+                                                    ->where(function($query) {
+                                                        $query->where('is_default', 0)
+                                                              ->orWhereNull('is_default');
+                                                    })
+                                                    ->orderBy('type')
+                                                    ->orderBy('name')
                                                     ->get();
             }
             
-            // Combineer beide collections en sorteer
-            $templates = $performancePulseTemplates->merge($organisatieTemplates)
-                                                   ->sortBy('type')
-                                                   ->sortBy('name');
-            
-            \Log::info('🔐 Superadmin bekijkt templates', [
+            \Log::info('🔐 Superadmin bekijkt templates (APARTE TABELLEN)', [
                 'user_id' => auth()->id(),
                 'performance_pulse_count' => $performancePulseTemplates->count(),
                 'organisatie_count' => $organisatieTemplates->count(),
-                'total_count' => $templates->count()
+                'performance_pulse_ids' => $performancePulseTemplates->pluck('id')->toArray(),
+                'organisatie_ids' => $organisatieTemplates->pluck('id')->toArray(),
             ]);
             
-            return view('admin.email-templates', compact('templates'));
+            // Geef flag mee voor twee aparte tabellen in de view
+            $showSeparateTables = true;
+            
+            // Voor backward compatibility: geef ook lege $templates collection mee
+            // View kan checken op $showSeparateTables en dan de aparte collections gebruiken
+            $templates = collect();
+            
+            return view('admin.email-templates', compact('performancePulseTemplates', 'organisatieTemplates', 'showSeparateTables', 'templates'));
         } else {
             // Organisatie admins zien ALLEEN hun eigen gekloneerde templates
             $templates = EmailTemplate::where('organisatie_id', auth()->user()->organisatie_id)
