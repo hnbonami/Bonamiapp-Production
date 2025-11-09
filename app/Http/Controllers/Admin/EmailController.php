@@ -101,12 +101,50 @@ class EmailController extends Controller
         // Standaard content voor elk template type
         $templateDefaults = [
             'testzadel_reminder' => [
-                'subject' => 'Herinnering: Testzadel @{{merk}} @{{model}} terugbrengen',
-                'content' => '<h2>Beste @{{voornaam}},</h2>
-<p>Je hebt een testzadel <strong>@{{merk}} @{{model}}</strong> uitgeleend op @{{uitgeleend_op}}.</p>
-<p>De verwachte terugbreng datum is <strong>@{{verwachte_retour}}</strong>.</p>
-<p>Kun je deze zo spoedig mogelijk terugbrengen?</p>
-<p>Met vriendelijke groet,<br>@{{bedrijf_naam}}</p>',
+                'subject' => 'Herinnering: Testzadel @{{merk}} @{{model}} 🚴',
+                'content' => '<p><strong>Dag @{{voornaam}},</strong></p>
+<p><strong>Graag horen we hoe het testzadel je bevalt!</strong></p>
+<p>We zien dat je het zadel al een tijdje in gebruik hebt. Zou je het daarom willen terugbrengen? Andere klanten wachten inmiddels om dit type zadel te testen, en we willen hen niet te lang laten wachten.</p>
+
+<div class="testzadel-info">
+    <h3 style="margin-top: 0; color: #92400e;">📋 Testzadel Informatie</h3>
+    
+    <div class="info-row">
+        <strong>Zadel:</strong>
+        <span>@{{merk}} @{{model}}</span>
+    </div>
+    
+    <div class="info-row">
+        <strong>Uitgeleend op:</strong>
+        <span>@{{uitgeleend_op}}</span>
+    </div>
+    
+    <div class="info-row">
+        <strong>Verwachte retour:</strong>
+        <span style="font-weight: bold; color: #dc2626;">@{{verwachte_retour}}</span>
+    </div>
+</div>
+
+<div class="action-needed">
+    <h3 style="margin-top: 0; color: #2563eb;">🚴‍♀️ Je hebt de volgende opties om het zadel terug te brengen:</h3>
+    
+    <p><strong>Langskomen & Service:</strong> Kom langs bij ons. Dit is het beste als je nog vragen hebt of als je een definitief zadel wilt monteren. We hebben de zadels meestal op voorraad.</p>
+    
+    <p><strong>Deponeren:</strong> Indien er niemand thuis is, mag je het zadel altijd in de brievenbus deponeren.</p>
+</div>
+
+<div style="background-color: #f0f9ff; border: 1px solid #bfdbfe; padding: 20px; border-radius: 8px; margin: 25px 0;">
+    <h3 style="margin-top: 0; color: #1e40af;">🤔 Wat is de volgende stap voor jou?</h3>
+    
+    <p><strong>Tevreden?</strong> Spring even langs, dan monteren we meteen je nieuwe, definitieve zadel.</p>
+    
+    <p><strong>Nog niet perfect?</strong> Laat het ons zeker weten! Dan gaan we samen op zoek naar een andere oplossing die wel 100% past.</p>
+</div>
+
+<p><strong>Laat ons snel iets weten over je bevindingen, zodat we het traject kunnen afronden.</strong></p>
+
+<p style="margin-top: 40px;"><strong>Sportieve groeten,</strong><br>
+Team @{{bedrijf_naam}}</p>',
             ],
             'welcome_customer' => [
                 'subject' => 'Welkom bij @{{bedrijf_naam}}, @{{voornaam}}! �',
@@ -201,6 +239,10 @@ Het @{{bedrijf_naam}} team</p>',
         .content p { color: #666666; line-height: 1.6; }
         .highlight { background: #f8f9fa; border-left: 4px solid #c8e1eb; padding: 20px; margin: 25px 0; border-radius: 4px; }
         .button { display: inline-block; padding: 14px 28px; background: #c8e1eb; color: #1a1a1a; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+        .testzadel-info { background: linear-gradient(135deg, #fef3cd 0%, #fefce8 100%); border-left: 4px solid #d97706; padding: 25px; margin: 30px 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(217, 119, 6, 0.1); }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 8px 0; border-bottom: 1px solid #fed7aa; }
+        .info-row:last-child { border-bottom: none; margin-bottom: 0; }
+        .action-needed { background-color: #fef2f2; border: 1px solid #fecaca; padding: 20px; border-radius: 8px; margin: 25px 0; }
         .footer { background-color: #f8f9fa; padding: 30px; text-align: center; color: #999999; font-size: 14px; }
     </style>
 </head>
