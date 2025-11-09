@@ -669,6 +669,7 @@ public function storeTemplate(Request $request)
         $settings = EmailSettings::getSettings();
         
         // Handle logo upload
+        $logoPath = null;
         if ($request->hasFile('logo')) {
             // Delete old logo if exists
             if ($settings->logo_path && Storage::disk('public')->exists($settings->logo_path)) {
@@ -697,8 +698,171 @@ public function storeTemplate(Request $request)
             'email_text_color' => $validated['email_text_color'],
         ]);
         
+        // 🔄 UPDATE ALLE BESTAANDE TEMPLATES VAN DEZE ORGANISATIE
+        $this->updateExistingTemplatesWithNewBranding($organisatie, $settings, $logoPath);
+        
         return redirect()->route('admin.email.settings')
-                        ->with('success', '✅ Email instellingen succesvol bijgewerkt!');
+                        ->with('success', '✅ Email instellingen succesvol bijgewerkt en toegepast op alle templates!');
+    }
+    
+    /**
+     * Update alle bestaande templates met nieuwe branding instellingen
+     * 
+     * @param \App\Models\Organisatie $organisatie
+     * @param \App\Models\EmailSettings $settings
+     * @param string|null $newLogoPath
+     * @return void
+     */
+    private function updateExistingTemplatesWithNewBranding($organisatie, $settings, $newLogoPath = null)
+    {
+        if (!$organisatie) {
+            \Log::warning('⚠️ Geen organisatie gevonden voor template update');
+            return;
+        }
+        
+        // Bepaal welke templates moeten worden bijgewerkt
+        if (auth()->user()->role === 'superadmin') {
+            // Superadmin: update alleen eigen aangemaakte templates (NIET Performance Pulse standaard)
+            $templates = EmailTemplate::where('organisatie_id', $organisatie->id)
+                                      ->where('is_default', false)
+                                      ->get();
+            
+            \Log::info('🔐 Superadmin update eigen templates', [
+                'organisatie_id' => $organisatie->id,
+                'templates_count' => $templates->count()
+            ]);
+        } else {
+            // Organisatie admin: update ALLE templates van de organisatie
+            $templates = EmailTemplate::where('organisatie_id', $organisatie->id)->get();
+            
+            \Log::info('👥 Organisatie admin update alle templates', [
+                'organisatie_id' => $organisatie->id,
+                'templates_count' => $templates->count()
+            ]);
+        }
+        
+        if ($templates->isEmpty()) {
+            \Log::info('ℹ️ Geen templates gevonden om bij te werken');
+            return;
+        }
+        
+        $updatedCount = 0;
+        $logoBase64 = null;
+        
+        // Genereer logo base64 als er een nieuw logo is
+        if ($newLogoPath && Storage::disk('public')->exists($newLogoPath)) {
+            try {
+                $logoContent = Storage::disk('public')->get($newLogoPath);
+                $mimeType = Storage::disk('public')->mimeType($newLogoPath);
+                $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($logoContent);
+            } catch (\Exception $e) {
+                \Log::error('❌ Kon logo niet converteren naar base64: ' . $e->getMessage());
+            }
+        } elseif ($settings->logo_path && Storage::disk('public')->exists($settings->logo_path)) {
+            // Gebruik bestaand logo
+            try {
+                $logoContent = Storage::disk('public')->get($settings->logo_path);
+                $mimeType = Storage::disk('public')->mimeType($settings->logo_path);
+                $logoBase64 = 'data:' . $mimeType . ';base64,' . base64_encode($logoContent);
+            } catch (\Exception $e) {
+                \Log::error('❌ Kon bestaand logo niet converteren naar base64: ' . $e->getMessage());
+            }
+        }
+        
+        foreach ($templates as $template) {
+            try {
+                $bodyHtml = $template->body_html;
+                $updated = false;
+                
+                // Update kleuren in de HTML
+                $bodyHtml = preg_replace(
+                    '/background:\s*linear-gradient\([^)]+\)/i',
+                    'background: linear-gradient(135deg, ' . $settings->primary_color . ' 0%, ' . $settings->secondary_color . ' 100%)',
+                    $bodyHtml,
+                    -1,
+                    $colorCount
+                );
+                if ($colorCount > 0) $updated = true;
+                
+                // Update tekstkleur in header
+                $bodyHtml = preg_replace(
+                    '/(\.header\s+h1[^}]*color:\s*)[^;]+/i',
+                    '$1' . $settings->email_text_color,
+                    $bodyHtml,
+                    -1,
+                    $textColorCount
+                );
+                if ($textColorCount > 0) $updated = true;
+                
+                // Update logo positie
+                $bodyHtml = preg_replace(
+                    '/(\.header[^}]*text-align:\s*)[^;]+/i',
+                    '$1' . $settings->email_logo_position,
+                    $bodyHtml,
+                    -1,
+                    $logoPositionCount
+                );
+                if ($logoPositionCount > 0) $updated = true;
+                
+                // Update logo src als er een nieuw logo is
+                if ($logoBase64) {
+                    $bodyHtml = preg_replace(
+                        '/(<img[^>]*src=")[^"]+("[^>]*alt="[^"]*"[^>]*>)/i',
+                        '$1' . $logoBase64 . '$2',
+                        $bodyHtml,
+                        -1,
+                        $logoCount
+                    );
+                    if ($logoCount > 0) $updated = true;
+                }
+                
+                // Update bedrijfsnaam in template
+                if ($organisatie->bedrijf_naam) {
+                    // Vervang hardcoded bedrijfsnamen met placeholder
+                    $bodyHtml = str_replace(
+                        ['Bonami Sportcoaching', 'Level Up Cycling', 'Performance Pulse'],
+                        '@{{bedrijf_naam}}',
+                        $bodyHtml
+                    );
+                    $updated = true;
+                }
+                
+                // Update footer text
+                if ($settings->footer_text) {
+                    $bodyHtml = preg_replace(
+                        '/(Met vriendelijke groet,<br>)[^<]+/i',
+                        '$1' . $settings->footer_text,
+                        $bodyHtml,
+                        -1,
+                        $footerCount
+                    );
+                    if ($footerCount > 0) $updated = true;
+                }
+                
+                // Sla wijzigingen op als er iets is veranderd
+                if ($updated) {
+                    $template->update(['body_html' => $bodyHtml]);
+                    $updatedCount++;
+                    
+                    \Log::info('✅ Template bijgewerkt met nieuwe branding', [
+                        'template_id' => $template->id,
+                        'template_name' => $template->name
+                    ]);
+                }
+                
+            } catch (\Exception $e) {
+                \Log::error('❌ Fout bij updaten template: ' . $e->getMessage(), [
+                    'template_id' => $template->id,
+                    'template_name' => $template->name
+                ]);
+            }
+        }
+        
+        \Log::info('🎨 Branding update voltooid', [
+            'organisatie_id' => $organisatie->id,
+            'templates_checked' => $templates->count(),
+            'templates_updated' => $updatedCount
+        ]);
     }
 
     public function triggers()
