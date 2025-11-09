@@ -312,10 +312,20 @@ class EmailIntegrationService
                 
                 \Log::info('Template search result', [
                     'found' => $template ? 'yes' : 'no',
-                    'template_id' => $template->id ?? 'none',
-                    'is_default' => $template->isDefaultTemplate() ?? false,
+                    'template_id' => $template ? $template->id : 'none',
+                    'is_default' => $template ? $template->isDefaultTemplate() : false,
                     'organisatie_id' => $organisatieId
                 ]);
+                
+                // Als er geen template gevonden is, log error en return false
+                if (!$template) {
+                    \Log::error('❌ No welcome_customer template found for customer', [
+                        'customer_id' => $customer->id,
+                        'customer_email' => $customer->email,
+                        'organisatie_id' => $organisatieId
+                    ]);
+                    return false;
+                }
             }
 
             \Log::info('🚀 About to send customer welcome email to: ' . $customer->email);
