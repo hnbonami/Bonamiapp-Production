@@ -8,6 +8,7 @@ use App\Models\Klant;
 use App\Models\Testzadel;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
 
 class EmailIntegrationService
 {
@@ -391,15 +392,55 @@ class EmailIntegrationService
                 'has_html' => strpos($content, '<') !== false
             ]);
             
-            // Check SMTP configuratie
-            \Log::info('📧 SMTP CONFIG CHECK', [
-                'mailer' => config('mail.default'),
-                'host' => config('mail.mailers.smtp.host'),
-                'port' => config('mail.mailers.smtp.port'),
-                'from' => config('mail.from.address'),
-                'username' => config('mail.mailers.smtp.username') ? 'SET' : 'NOT SET'
-            ]);
-
+            // BELANGRIJK: Haal organisatie op voor correcte afzendernaam
+            $organisatie = null;
+            if ($customer && method_exists($customer, 'organisatie')) {
+                $organisatie = $customer->organisatie;
+            } elseif ($customer && property_exists($customer, 'organisatie')) {
+                $organisatie = $customer->organisatie;
+            }
+            
+            // Bepaal afzendernaam op basis van organisatie
+            $fromName = config('mail.from.name', 'Performance Pulse');
+            // BELANGRIJK: Gebruik ALTIJD het email adres uit .env - dit mag niet overschreven worden!
+            $fromEmail = config('mail.from.address');
+            
+            if ($organisatie) {
+                $organisatie->refresh(); // Haal nieuwste data op
+                
+                // Gebruik ALLEEN de NAAM van de organisatie (NIET het email adres!)
+                if (!empty($organisatie->email_from_name)) {
+                    $fromName = $organisatie->email_from_name;
+                } elseif (!empty($organisatie->bedrijf_naam)) {
+                    $fromName = $organisatie->bedrijf_naam;
+                } elseif (!empty($organisatie->naam)) {
+                    $fromName = $organisatie->naam;
+                }
+                
+                // LET OP: email_from_address wordt NIET gebruikt voor verzending!
+                // Dit voorkomt SMTP authorisatie fouten zoals:
+                // "User [no_reply@bonami-sportcoaching.be] not authorized to send on behalf of <info@bonami-sportcoaching.be>"
+                
+                \Log::info('🎯 EMAIL AFZENDERNAAM INGESTELD', [
+                    'from_name' => $fromName,
+                    'from_email' => $fromEmail,
+                    'organisatie_id' => $organisatie->id,
+                    'organisatie_naam' => $organisatie->naam,
+                    'email_from_name_db' => $organisatie->email_from_name,
+                    'bedrijf_naam_db' => $organisatie->bedrijf_naam,
+                    'note' => 'Email adres is ALTIJD uit .env (SMTP account)'
+                ]);
+            } else {
+                \Log::warning('⚠️ GEEN ORGANISATIE - DEFAULT AFZENDER GEBRUIKT', [
+                    'from_name' => $fromName,
+                    'from_email' => $fromEmail
+                ]);
+            }
+            
+            // Configureer Mail met organisatie-specifieke afzender
+            Config::set('mail.from.name', $fromName);
+            // Email adres blijft altijd hetzelfde (uit .env)
+            
             // Use Mail::html for proper HTML formatting
             try {
                 \Illuminate\Support\Facades\Mail::html($content, function ($message) use ($customer, $subject) {
@@ -564,7 +605,51 @@ class EmailIntegrationService
                 'has_html' => strpos($content, '<') !== false
             ]);
 
-            // Use Mail::html for proper HTML formatting
+            // BELANGRIJK: Haal organisatie op voor correcte afzendernaam
+            $organisatie = null;
+            if ($employee && method_exists($employee, 'organisatie')) {
+                $organisatie = $employee->organisatie;
+            } elseif ($employee && property_exists($employee, 'organisatie')) {
+                $organisatie = $employee->organisatie;
+            }
+            
+            // Bepaal afzendernaam op basis van organisatie
+            $fromName = config('mail.from.name', 'Performance Pulse');
+            // BELANGRIJK: Gebruik ALTIJD het email adres uit .env - dit mag niet overschreven worden!
+            $fromEmail = config('mail.from.address');
+            
+            if ($organisatie) {
+                $organisatie->refresh(); // Haal nieuwste data op
+                
+                // Gebruik ALLEEN de NAAM van de organisatie (NIET het email adres!)
+                if (!empty($organisatie->email_from_name)) {
+                    $fromName = $organisatie->email_from_name;
+                } elseif (!empty($organisatie->bedrijf_naam)) {
+                    $fromName = $organisatie->bedrijf_naam;
+                } elseif (!empty($organisatie->naam)) {
+                    $fromName = $organisatie->naam;
+                }
+                
+                \Log::info('🎯 EMAIL AFZENDERNAAM INGESTELD (Employee)', [
+                    'from_name' => $fromName,
+                    'from_email' => $fromEmail,
+                    'organisatie_id' => $organisatie->id,
+                    'organisatie_naam' => $organisatie->naam,
+                    'email_from_name_db' => $organisatie->email_from_name,
+                    'bedrijf_naam_db' => $organisatie->bedrijf_naam,
+                    'note' => 'Email adres is ALTIJD uit .env (SMTP account)'
+                ]);
+            } else {
+                \Log::warning('⚠️ GEEN ORGANISATIE - DEFAULT AFZENDER GEBRUIKT (Employee)', [
+                    'from_name' => $fromName,
+                    'from_email' => $fromEmail
+                ]);
+            }
+            
+            // Configureer Mail met organisatie-specifieke afzender
+            Config::set('mail.from.name', $fromName);
+            // Email adres blijft altijd hetzelfde (uit .env)
+            
             \Illuminate\Support\Facades\Mail::html($content, function ($message) use ($employee, $subject) {
                 $message->to($employee->email)
                         ->subject($subject);

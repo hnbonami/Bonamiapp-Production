@@ -734,7 +734,7 @@ public function storeTemplate(Request $request)
             $organisatie->update([
                 'bedrijf_naam' => $validated['bedrijf_naam'] ?? $organisatie->naam,
                 'website_url' => $validated['website_url'],
-                'email_from_name' => $validated['email_from_name'],
+                'email_from_name' => $validated['email_from_name'] ?? $validated['bedrijf_naam'] ?? $organisatie->naam,
                 'email_from_address' => $validated['email_from_address'],
                 'email_signature' => $validated['email_signature'],
             ]);
@@ -742,6 +742,8 @@ public function storeTemplate(Request $request)
             \Log::info('📧 Organisatie email info bijgewerkt', [
                 'organisatie_id' => $organisatie->id,
                 'bedrijf_naam' => $validated['bedrijf_naam'],
+                'email_from_name' => $validated['email_from_name'] ?? $validated['bedrijf_naam'] ?? $organisatie->naam,
+                'email_from_address' => $validated['email_from_address'],
             ]);
         }
         
