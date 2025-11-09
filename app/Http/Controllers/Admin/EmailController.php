@@ -95,8 +95,83 @@ class EmailController extends Controller
             'welcome_customer' => 'Welkom Klant',
             'welcome_employee' => 'Welkom Medewerker',
             'birthday' => 'Verjaardag',
-            'referral' => 'Referral', // Nieuwe optie toegevoegd
+            'referral' => 'Referral',
         ];
+        
+        // Standaard content voor elk template type
+        $templateDefaults = [
+            'testzadel_reminder' => [
+                'subject' => 'Herinnering: Testzadel @{{merk}} @{{model}} terugbrengen',
+                'content' => '<h2>Beste @{{voornaam}},</h2>
+<p>Je hebt een testzadel <strong>@{{merk}} @{{model}}</strong> uitgeleend op @{{uitgeleend_op}}.</p>
+<p>De verwachte terugbreng datum is <strong>@{{verwachte_retour}}</strong>.</p>
+<p>Kun je deze zo spoedig mogelijk terugbrengen?</p>
+<p>Met vriendelijke groet,<br>@{{bedrijf_naam}}</p>',
+            ],
+            'welcome_customer' => [
+                'subject' => 'Welkom bij @{{bedrijf_naam}}, @{{voornaam}}! �',
+                'content' => '<h2>Welkom, @{{voornaam}}! 👋</h2>
+
+<p>We zijn blij je te verwelkomen bij <strong>@{{bedrijf_naam}}</strong>!</p>
+
+<p>Je account is succesvol aangemaakt en je kunt nu inloggen met de volgende gegevens:</p>
+
+<div style="background: #f0f9ff; padding: 20px; margin: 25px 0; border-radius: 4px;">
+    <p style="margin: 0 0 10px 0;"><strong>📧 Email:</strong> @{{email}}</p>
+    <p style="margin: 0;"><strong>🔑 Tijdelijk wachtwoord:</strong> @{{temporary_password}}</p>
+</div>
+
+<p><strong>Belangrijk:</strong> Wijzig je wachtwoord na je eerste login voor optimale beveiliging.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="@{{login_url}}" style="background: #c8e1eb; color: #1a1a1a; text-decoration: none; padding: 12px 30px; border-radius: 4px; display: inline-block; font-weight: 500;">Inloggen</a>
+</div>
+
+<p>Met vriendelijke groet,<br>
+Het @{{bedrijf_naam}} team</p>',
+            ],
+            'welcome_employee' => [
+                'subject' => 'Welkom bij het @{{bedrijf_naam}} team! 👥',
+                'content' => '<h2>Welkom bij het team, @{{voornaam}}! 👥</h2>
+
+<p>We zijn verheugd je te verwelkomen bij <strong>@{{bedrijf_naam}}</strong> als nieuwe medewerker!</p>
+
+<p>Je account is aangemaakt en je hebt nu toegang tot ons systeem:</p>
+
+<div style="background: #f0f9ff; padding: 20px; margin: 25px 0; border-radius: 4px;">
+    <p style="margin: 0 0 10px 0;"><strong>📧 Email:</strong> @{{email}}</p>
+    <p style="margin: 0 0 10px 0;"><strong>🔑 Tijdelijk wachtwoord:</strong> @{{temporary_password}}</p>
+    <p style="margin: 0;"><strong>👤 Rol:</strong> @{{rol}}</p>
+</div>
+
+<p><strong>Belangrijk:</strong> Wijzig je wachtwoord na je eerste login voor optimale beveiliging.</p>
+
+<div style="text-align: center; margin: 30px 0;">
+    <a href="@{{login_url}}" style="background: #c8e1eb; color: #1a1a1a; text-decoration: none; padding: 12px 30px; border-radius: 4px; display: inline-block; font-weight: 500;">Inloggen</a>
+</div>
+
+<p>We kijken ernaar uit om met je samen te werken!</p>
+
+<p>Met vriendelijke groet,<br>
+Het @{{bedrijf_naam}} team</p>',
+            ],
+            'birthday' => [
+                'subject' => '🎉 Gefeliciteerd met je verjaardag, @{{voornaam}}!',
+                'content' => '<h2>Gefeliciteerd @{{voornaam}}! 🎂</h2>
+<p>Van harte gefeliciteerd met je verjaardag!</p>
+<p>Het hele team van <strong>@{{bedrijf_naam}}</strong> wenst je een fantastische dag toe.</p>
+<p>Geniet van je speciale dag!</p>
+<p>Met vriendelijke groet,<br>Het @{{bedrijf_naam}} team</p>',
+            ],
+            'referral' => [
+                'subject' => 'Bedankt voor je aanbeveling! 🙏',
+                'content' => '<h2>Beste @{{voornaam}},</h2>
+<p>Hartelijk dank voor het aanbevelen van <strong>@{{bedrijf_naam}}</strong>!</p>
+<p>We waarderen je vertrouwen enorm.</p>
+<p>Met vriendelijke groet,<br>Het @{{bedrijf_naam}} team</p>',
+            ],
+        ];
+        
         $settings = EmailSettings::getSettings();
         
         // Haal logo positie en tekstkleur op
@@ -124,7 +199,8 @@ class EmailController extends Controller
         .content { padding: 40px 30px; }
         .content h2 { color: #333333; margin-top: 0; }
         .content p { color: #666666; line-height: 1.6; }
-        .button { display: inline-block; padding: 12px 24px; background-color: ' . $settings->primary_color . '; color: #ffffff; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+        .highlight { background: #f8f9fa; border-left: 4px solid #c8e1eb; padding: 20px; margin: 25px 0; border-radius: 4px; }
+        .button { display: inline-block; padding: 14px 28px; background: #c8e1eb; color: #1a1a1a; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
         .footer { background-color: #f8f9fa; padding: 30px; text-align: center; color: #999999; font-size: 14px; }
     </style>
 </head>
@@ -150,7 +226,7 @@ class EmailController extends Controller
 </body>
 </html>';
 
-        return view('admin.email-create-template', compact('templateTypes', 'defaultTemplate', 'settings'));
+        return view('admin.email-create-template', compact('templateTypes', 'defaultTemplate', 'settings', 'templateDefaults'));
     }
 
 public function storeTemplate(Request $request)

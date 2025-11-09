@@ -207,6 +207,9 @@
 </div>
 
 <script>
+// Template defaults data van server
+const templateDefaults = @json($templateDefaults);
+
 // Tab switching
 function toggleEditor(mode) {
     const visualEditor = document.getElementById('visual-editor');
@@ -225,6 +228,37 @@ function toggleEditor(mode) {
         htmlEditor.style.display = 'block';
         htmlTab.className = 'px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-r-md';
         visualTab.className = 'px-4 py-2 text-sm font-medium bg-gray-200 text-gray-700 rounded-l-md';
+    }
+}
+
+// Automatisch invullen bij template type selectie
+function loadTemplateDefaults(templateType) {
+    if (!templateType || !templateDefaults[templateType]) {
+        return;
+    }
+    
+    const defaults = templateDefaults[templateType];
+    
+    // Vul subject in
+    if (defaults.subject) {
+        document.getElementById('subject').value = defaults.subject;
+    }
+    
+    // Vul content in en wrap in volledige huisstijl template
+    if (defaults.content) {
+        const htmlEditor = document.getElementById('body_html');
+        
+        // Haal de default template HTML op (met organisatie huisstijl)
+        const defaultTemplate = `{!! addslashes($defaultTemplate) !!}`;
+        
+        // Vervang de placeholder content met de template specifieke content
+        let wrappedContent = defaultTemplate.replace(
+            /<h2>Beste @\{\{voornaam\}\},<\/h2>[\s\S]*?<p>.*?Het @\{\{bedrijf_naam\}\} team<\/p>/,
+            defaults.content
+        );
+        
+        htmlEditor.value = wrappedContent;
+        updatePreview();
     }
 }
 
@@ -354,6 +388,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update preview when HTML changes
     document.getElementById('body_html').addEventListener('input', updatePreview);
+    
+    // Luister naar wijzigingen in template type selectie
+    const typeSelect = document.getElementById('type');
+    typeSelect.addEventListener('change', function() {
+        const selectedType = this.value;
+        if (selectedType) {
+            loadTemplateDefaults(selectedType);
+        }
+    });
 });
 </script>
 @endsection
