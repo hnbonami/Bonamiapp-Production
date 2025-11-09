@@ -251,20 +251,41 @@ class TestzadelsController extends Controller
         }
 
         try {
-            Mail::send('emails.testzadel-reminder', [
-                'testzadel' => $testzadel,
-                'klant' => $testzadel->klant
-            ], function($message) use ($testzadel) {
-                $message->to($testzadel->klant->email, $testzadel->klant->voornaam . ' ' . $testzadel->klant->naam);
-                $message->subject('Herinnering Testzadel - Bonami Sportcoaching');
-            });
-
-            $testzadel->update(['laatste_herinnering' => now()]);
-
-            return redirect()->back()
-                ->with('success', 'Herinnering verzonden naar ' . $testzadel->klant->email);
+            // Gebruik nieuwe EmailIntegrationService voor multi-tenant template support
+            $emailService = app(\App\Services\EmailIntegrationService::class);
+            
+            // Bereid variabelen voor email template
+            $variables = [
+                'voornaam' => $testzadel->klant->voornaam,
+                'naam' => $testzadel->klant->naam,
+                'email' => $testzadel->klant->email,
+                'merk' => $testzadel->zadel_merk ?? $testzadel->merk ?? 'Onbekend',
+                'model' => $testzadel->zadel_model ?? $testzadel->model ?? 'Onbekend',
+                'uitgeleend_op' => $testzadel->uitleen_datum ? \Carbon\Carbon::parse($testzadel->uitleen_datum)->format('d-m-Y') : 'Onbekend',
+                'verwachte_retour' => $testzadel->verwachte_retour_datum ? \Carbon\Carbon::parse($testzadel->verwachte_retour_datum)->format('d-m-Y') : 'Onbekend',
+                'datum' => now()->format('d-m-Y'),
+                'bedrijf_naam' => 'Bonami Sportcoaching',
+            ];
+            
+            // Verstuur via EmailIntegrationService (gebruikt automatisch juiste template)
+            $sent = $emailService->sendTestzadelReminderEmail($testzadel->klant, $variables);
+            
+            if ($sent) {
+                $testzadel->update(['laatste_herinnering' => now()]);
+                
+                return redirect()->back()
+                    ->with('success', 'Herinnering verzonden naar ' . $testzadel->klant->email);
+            } else {
+                return redirect()->back()
+                    ->with('error', 'Fout bij verzenden herinnering. Controleer de logs voor meer details.');
+            }
                 
         } catch (\Exception $e) {
+            \Log::error('Testzadel herinnering failed', [
+                'testzadel_id' => $testzadel->id,
+                'error' => $e->getMessage()
+            ]);
+            
             return redirect()->back()
                 ->with('error', 'Fout bij verzenden herinnering: ' . $e->getMessage());
         }
