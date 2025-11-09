@@ -266,4 +266,12 @@ class Organisatie extends Model
             'text' => $this->text_color,
         ];
     }
+
+    /**
+     * Email templates van deze organisatie
+     */
+    public function emailTemplates()
+    {
+        return $this->hasMany(EmailTemplate::class, 'organisatie_id');
+    }
 }
