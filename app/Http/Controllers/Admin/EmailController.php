@@ -597,11 +597,20 @@ public function storeTemplate(Request $request)
             }
             
             $clonedCount = 0;
+            $organisatieNaam = auth()->user()->organisatie->naam ?? 'Organisatie';
             
             foreach ($defaultTemplates as $defaultTemplate) {
+                // Vervang "Performance Pulse" in de naam met de organisatie naam
+                $templateNaam = str_replace('Performance Pulse', $organisatieNaam, $defaultTemplate->name);
+                
+                // Als "Performance Pulse" niet in de naam staat, voeg organisatie naam toe als prefix
+                if ($templateNaam === $defaultTemplate->name) {
+                    $templateNaam = $organisatieNaam . ' - ' . $defaultTemplate->name;
+                }
+                
                 // Maak een kopie van de template voor deze organisatie
                 $clonedTemplate = EmailTemplate::create([
-                    'name' => $defaultTemplate->name,
+                    'name' => $templateNaam,
                     'slug' => $defaultTemplate->slug . '-org-' . $organisatieId,
                     'type' => $defaultTemplate->type,
                     'subject' => $defaultTemplate->subject,
@@ -613,9 +622,10 @@ public function storeTemplate(Request $request)
                     'parent_template_id' => $defaultTemplate->id,
                 ]);
                 
-                \Log::info("✅ Template gekloond: {$defaultTemplate->name}", [
+                \Log::info("✅ Template gekloond: {$templateNaam}", [
                     'source_id' => $defaultTemplate->id,
-                    'clone_id' => $clonedTemplate->id
+                    'clone_id' => $clonedTemplate->id,
+                    'organisatie_naam' => $organisatieNaam
                 ]);
                 
                 $clonedCount++;
