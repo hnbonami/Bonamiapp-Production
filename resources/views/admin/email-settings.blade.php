@@ -8,12 +8,12 @@
             <h1 class="text-3xl font-bold text-gray-900">Email Branding</h1>
             <p class="text-gray-600 mt-1">Beheer logo, kleuren en branding voor al je emails</p>
         </div>
-        <a href="{{ route('admin.email.index') }}" 
+        <a href="{{ url('/admin') }}" 
            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
-            Terug naar Email Beheer
+            Terug naar Dashboard
         </a>
     </div>
 
@@ -130,7 +130,7 @@
                                     Email Handtekening
                                 </label>
                                 <textarea name="email_signature" id="email_signature_org" rows="3" 
-                                          placeholder="Sportieve groet,&#10;Het Level Up Cycling Team"
+                                          placeholder="Sportieve groet,&#10;{{ $organisatie->bedrijf_naam ?? $organisatie->naam }} Team"
                                           class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ old('email_signature', $organisatie->email_signature) }}</textarea>
                                 <p class="mt-1 text-sm text-gray-500">Standaard handtekening voor alle emails van jouw organisatie</p>
                                 @error('email_signature')
@@ -296,16 +296,16 @@
                                 </label>
                                 @php
                                     $footerText = old('footer_text', $settings->footer_text);
-                                    // Vervang oude "Bonami Sportcoaching" met organisatie naam
-                                    if ($footerText && str_contains($footerText, 'Bonami Sportcoaching')) {
-                                        $footerText = str_replace('Bonami Sportcoaching', $organisatie->bedrijf_naam ?? $organisatie->naam, $footerText);
+                                    // Vervang oude "Bonami Sportcoaching" of "LEVELUP" met organisatie naam
+                                    if ($footerText && (str_contains($footerText, 'Bonami Sportcoaching') || str_contains($footerText, 'LEVELUP'))) {
+                                        $footerText = str_replace(['Bonami Sportcoaching', 'LEVELUP'], $organisatie->bedrijf_naam ?? $organisatie->naam, $footerText);
                                     } elseif (!$footerText) {
                                         $footerText = 'Met vriendelijke groet, Het ' . ($organisatie->bedrijf_naam ?? $organisatie->naam);
                                     }
                                 @endphp
                                 <input type="text" name="footer_text" id="footer_text" 
                                        value="{{ $footerText }}"
-                                       placeholder="Met vriendelijke groet, Het {{ $organisatie->bedrijf_naam ?? $organisatie->naam }}"
+                                       placeholder="Met vriendelijke groet, Het {{ $organisatie->bedrijf_naam ?? $organisatie->naam }} Team"
                                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                                 <p class="mt-1 text-sm text-gray-500">Verschijnt onderaan alle emails</p>
                                 @error('footer_text')
@@ -319,15 +319,15 @@
                                 </label>
                                 @php
                                     $signature = old('signature', $settings->signature);
-                                    // Vervang oude "Bonami Sportcoaching" met organisatie naam
-                                    if ($signature && str_contains($signature, 'Bonami Sportcoaching')) {
-                                        $signature = str_replace('Bonami Sportcoaching', $organisatie->bedrijf_naam ?? $organisatie->naam, $signature);
+                                    // Vervang oude "Bonami Sportcoaching" of "LEVELUP" met organisatie naam
+                                    if ($signature && (str_contains($signature, 'Bonami Sportcoaching') || str_contains($signature, 'LEVELUP'))) {
+                                        $signature = str_replace(['Bonami Sportcoaching', 'LEVELUP'], $organisatie->bedrijf_naam ?? $organisatie->naam, $signature);
                                     } elseif (!$signature) {
                                         $signature = ($organisatie->bedrijf_naam ?? $organisatie->naam) . ' - Haal meer uit je sportprestaties';
                                     }
                                 @endphp
                                 <textarea name="signature" id="signature" rows="3" 
-                                          placeholder="{{ $organisatie->bedrijf_naam ?? $organisatie->naam }} - Jouw partner voor de perfecte bikefit"
+                                          placeholder="{{ $organisatie->bedrijf_naam ?? $organisatie->naam }} - Jouw partner voor optimale sportprestaties"
                                           class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ $signature }}</textarea>
                                 <p class="mt-1 text-sm text-gray-500">Extra informatie in de footer</p>
                                 @error('signature')
@@ -339,7 +339,7 @@
 
                     <!-- Submit Button -->
                     <div class="flex justify-end space-x-3 border-t border-gray-200 pt-6">
-                        <a href="{{ route('admin.email.index') }}" 
+                        <a href="{{ url('/admin') }}" 
                            class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
                             Annuleren
                         </a>

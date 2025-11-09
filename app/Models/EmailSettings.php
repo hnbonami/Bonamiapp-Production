@@ -11,33 +11,23 @@ class EmailSettings extends Model
     use HasFactory;
 
     protected $fillable = [
-        'organisatie_id',
+        'organisatie_id', // ⚠️ BELANGRIJK: Elke organisatie heeft eigen settings
         'company_name',
         'logo_path',
-        'email_logo_position',
         'primary_color',
         'secondary_color',
         'email_text_color',
+        'email_logo_position',
         'footer_text',
         'signature',
     ];
 
-    // Singleton pattern - er is maar 1 email settings record
-    public static function getSettings()
+    /**
+     * Relatie: Email settings behoren tot een organisatie
+     */
+    public function organisatie()
     {
-        $settings = self::first();
-        
-        if (!$settings) {
-            $settings = self::create([
-                'company_name' => 'Bonami Cycling',
-                'primary_color' => '#667eea',
-                'secondary_color' => '#764ba2',
-                'footer_text' => 'Met vriendelijke groet, Het Bonami Cycling team',
-                'signature' => 'Bonami Cycling - Jouw partner voor de perfecte bikefit'
-            ]);
-        }
-        
-        return $settings;
+        return $this->belongsTo(Organisatie::class);
     }
 
     public function getLogoUrlAttribute()

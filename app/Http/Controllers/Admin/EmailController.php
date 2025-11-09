@@ -666,14 +666,49 @@ public function storeTemplate(Request $request)
     {
         $this->checkAdminAccess();
         
-        $settings = EmailSettings::getSettings();
+        // BELANGRIJK: Haal settings op voor DEZE specifieke organisatie
+        $organisatieId = auth()->user()->organisatie_id;
+        
+        if (!$organisatieId) {
+            return redirect()->route('admin.email.index')
+                ->with('error', '❌ Je moet gekoppeld zijn aan een organisatie om email settings te beheren.');
+        }
+        
+        // Haal of maak settings voor deze organisatie
+        $settings = EmailSettings::firstOrCreate(
+            ['organisatie_id' => $organisatieId],
+            [
+                'organisatie_id' => $organisatieId,
+                'company_name' => auth()->user()->organisatie->bedrijf_naam ?? auth()->user()->organisatie->naam,
+                'primary_color' => '#c8e1eb',
+                'secondary_color' => '#c8e1eb',
+                'email_text_color' => '#ffffff',
+                'email_logo_position' => 'left',
+            ]
+        );
+        
         $organisatie = auth()->user()->organisatie;
+        
+        \Log::info('📧 Email settings pagina geladen', [
+            'user_id' => auth()->id(),
+            'organisatie_id' => $organisatieId,
+            'settings_id' => $settings->id
+        ]);
         
         return view('admin.email-settings', compact('settings', 'organisatie'));
     }
 
     public function updateSettings(Request $request)
     {
+        $this->checkAdminAccess();
+        
+        $organisatieId = auth()->user()->organisatie_id;
+        
+        if (!$organisatieId) {
+            return redirect()->route('admin.email.index')
+                ->with('error', '❌ Je moet gekoppeld zijn aan een organisatie om settings te wijzigen.');
+        }
+        
         $validated = $request->validate([
             // Bedrijfsinformatie voor emails (nieuwe velden)
             'bedrijf_naam' => 'nullable|string|max:255',
@@ -723,7 +758,28 @@ public function storeTemplate(Request $request)
         unset($validated['email_from_address']);
         unset($validated['email_signature']);
         
-        $settings = EmailSettings::getSettings();
+        // BELANGRIJK: Haal settings op voor DEZE specifieke organisatie
+        $settings = EmailSettings::where('organisatie_id', $organisatieId)->first();
+        
+        if (!$settings) {
+            // Maak nieuwe settings aan voor deze organisatie
+            $settings = EmailSettings::create(array_merge($validated, [
+                'organisatie_id' => $organisatieId
+            ]));
+            
+            \Log::info('📧 Nieuwe email settings aangemaakt voor organisatie', [
+                'organisatie_id' => $organisatieId,
+                'settings_id' => $settings->id
+            ]);
+        } else {
+            // Update bestaande settings
+            $settings->update($validated);
+            
+            \Log::info('📧 Email settings bijgewerkt voor organisatie', [
+                'organisatie_id' => $organisatieId,
+                'settings_id' => $settings->id
+            ]);
+        }
         
         // Handle logo upload
         $logoPath = null;
@@ -746,16 +802,17 @@ public function storeTemplate(Request $request)
             }
         }
 
+        // Update settings voor DEZE organisatie (niet voor alle organisaties!)
         $settings->update($validated);
         
         \Log::info('Email settings bijgewerkt', [
-            'organisatie_id' => auth()->user()->organisatie_id,
+            'organisatie_id' => $organisatieId,
             'user_id' => auth()->id(),
             'email_logo_position' => $validated['email_logo_position'],
             'email_text_color' => $validated['email_text_color'],
         ]);
         
-        // 🔄 UPDATE ALLE BESTAANDE TEMPLATES VAN DEZE ORGANISATIE
+        // 🔄 UPDATE ALLE BESTAANDE TEMPLATES VAN DEZE ORGANISATIE (niet van andere organisaties!)
         $this->updateExistingTemplatesWithNewBranding($organisatie, $settings, $logoPath);
         
         return redirect()->route('admin.email.settings')

@@ -6,15 +6,13 @@
 <div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-900">📧 Email Logs</h1>
-        @if(Route::has('admin.email.index'))
-            <a href="{{ route('admin.email.index') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                ← Terug naar Email Dashboard
-            </a>
-        @else
-            <a href="/admin/email" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                ← Terug naar Email Dashboard
-            </a>
-        @endif
+        <a href="{{ url('/admin') }}" 
+           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+            </svg>
+            Terug naar Admin Dashboard
+        </a>
     </div>
 
     <!-- Statistics Cards -->
