@@ -169,6 +169,27 @@
         </div>
         @endhasFeature
 
+        {{-- Rapporten Opmaken - alleen tonen als feature actief is --}}
+        @hasFeature('rapporten_opmaken')
+        <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+            <div class="flex items-center mb-4">
+                <div class="p-3 rounded-lg" style="background-color: #c8e1eb;">
+                    <svg class="w-6 h-6" style="color: #111;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-semibold text-gray-800 ml-3">Rapporten Opmaken</h3>
+            </div>
+            <p class="text-gray-600 mb-4">Personaliseer rapporten met eigen header, footer, logo, kleuren en contactgegevens. Maak professionele rapporten in jouw huisstijl!</p>
+            <a href="{{ route('admin.rapporten.instellingen') }}" class="inline-flex items-center font-medium" style="color: #111;">
+                Rapporten Configureren
+                <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+        </div>
+        @endhasFeature
+
         {{-- Custom Branding - alleen tonen als feature ACTIEF is voor deze organisatie EN user is admin --}}
         @php
             $user = auth()->user();

@@ -67,6 +67,14 @@ class Organisatie extends Model
     }
 
     /**
+     * Rapport instellingen van deze organisatie
+     */
+    public function rapportInstellingen()
+    {
+        return $this->hasOne(OrganisatieRapportInstelling::class);
+    }
+
+    /**
      * Check of organisatie actief is
      */
     public function isActief(): bool

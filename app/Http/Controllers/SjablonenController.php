@@ -131,6 +131,25 @@ class SjablonenController extends Controller
         
         // Get template keys for the sidebar - alleen werkende database velden
         $templateKeys = collect([
+            'rapport_instellingen' => [
+                (object)['placeholder' => '{{rapport.header}}', 'display_name' => 'Rapport Header Tekst'],
+                (object)['placeholder' => '{{rapport.footer}}', 'display_name' => 'Rapport Footer Tekst'],
+                (object)['placeholder' => '{{rapport.logo}}', 'display_name' => 'Organisatie Logo (IMG tag)'],
+                (object)['placeholder' => '{{rapport.voorblad_foto}}', 'display_name' => 'Voorblad Foto (IMG tag)'],
+                (object)['placeholder' => '{{rapport.inleidende_tekst}}', 'display_name' => 'Inleidende Tekst'],
+                (object)['placeholder' => '{{rapport.laatste_blad_tekst}}', 'display_name' => 'Laatste Blad Tekst'],
+                (object)['placeholder' => '{{rapport.disclaimer}}', 'display_name' => 'Disclaimer Tekst'],
+                (object)['placeholder' => '{{rapport.primaire_kleur}}', 'display_name' => 'Primaire Kleur (HEX)'],
+                (object)['placeholder' => '{{rapport.secundaire_kleur}}', 'display_name' => 'Secundaire Kleur (HEX)'],
+                (object)['placeholder' => '{{rapport.lettertype}}', 'display_name' => 'Lettertype'],
+                (object)['placeholder' => '{{rapport.contactgegevens}}', 'display_name' => 'Contactgegevens (HTML)'],
+                (object)['placeholder' => '{{rapport.contact_adres}}', 'display_name' => 'Contact Adres'],
+                (object)['placeholder' => '{{rapport.contact_telefoon}}', 'display_name' => 'Contact Telefoon'],
+                (object)['placeholder' => '{{rapport.contact_email}}', 'display_name' => 'Contact Email'],
+                (object)['placeholder' => '{{rapport.contact_website}}', 'display_name' => 'Contact Website'],
+                (object)['placeholder' => '{{rapport.qr_code}}', 'display_name' => 'QR Code (IMG tag)'],
+                (object)['placeholder' => '{{rapport.paginanummer}}', 'display_name' => 'Paginanummer'],
+            ],
             'klant' => [
                 (object)['placeholder' => '{{klant.voornaam}}', 'display_name' => 'Voornaam'],
                 (object)['placeholder' => '{{klant.naam}}', 'display_name' => 'Naam'],
@@ -611,6 +630,10 @@ class SjablonenController extends Controller
                 // Systeem variabelen
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
                 $content = str_replace('{{datum.jaar}}', date('Y'), $content);
+                
+                // 🆕 RAPPORT VARIABELEN VERVANGEN (met defaults voor preview)
+                $rapportService = new \App\Services\RapportVariabelenService();
+                $content = $rapportService->vervangRapportVariabelen($content, auth()->user()->organisatie_id ?? null, $page->page_number);
                 
                 // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
                 $content = $this->hideCKEditorTableBorders($content);
@@ -1132,6 +1155,10 @@ class SjablonenController extends Controller
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
                 $content = str_replace('{{datum.jaar}}', date('Y'), $content);
                 
+                // 🆕 RAPPORT VARIABELEN VERVANGEN
+                $rapportService = new \App\Services\RapportVariabelenService();
+                $content = $rapportService->vervangRapportVariabelen($content, $bikefit->klant->organisatie_id ?? auth()->user()->organisatie_id, $page->page_number);
+                
                 // Bikefit HTML componenten - Genereer echte HTML
                 $content = $this->replaceBikefitHTMLComponents($content, $bikefit, $results);
                 
@@ -1178,6 +1205,10 @@ class SjablonenController extends Controller
                 // ✅ GEBRUIK SJABLOONSERVICE VOOR INSPANNINGSTEST
                 $sjabloonService = new \App\Services\SjabloonService();
                 $content = $sjabloonService->vervangSleutels($content, null, $inspanningstest->klant, $inspanningstest);
+                
+                // 🆕 RAPPORT VARIABELEN VERVANGEN
+                $rapportService = new \App\Services\RapportVariabelenService();
+                $content = $rapportService->vervangRapportVariabelen($content, $inspanningstest->klant->organisatie_id ?? auth()->user()->organisatie_id, $page->page_number);
                 
                 // Verberg CKEditor table borders
                 $content = $this->hideCKEditorTableBorders($content);
