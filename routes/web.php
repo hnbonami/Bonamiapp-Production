@@ -1490,6 +1490,16 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         ->name('roles.features.toggle');
 });
 
+// ============================================
+// RAPPORT INSTELLINGEN ROUTES (ADMIN)
+// ============================================
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/rapporten/instellingen', [App\Http\Controllers\RapportInstellingenController::class, 'index'])->name('admin.rapporten.instellingen');
+    Route::put('/admin/rapporten/instellingen', [App\Http\Controllers\RapportInstellingenController::class, 'update'])->name('admin.rapporten.update');
+    Route::delete('/admin/rapporten/delete-logo', [App\Http\Controllers\RapportInstellingenController::class, 'deleteLogo'])->name('admin.rapporten.delete-logo');
+    Route::delete('/admin/rapporten/delete-voorblad-foto', [App\Http\Controllers\RapportInstellingenController::class, 'deleteVoorbladFoto'])->name('admin.rapporten.delete-voorblad-foto');
+    Route::get('/admin/rapporten/reset', [App\Http\Controllers\RapportInstellingenController::class, 'reset'])->name('admin.rapporten.reset');
+});
 // Medewerkers Routes - VERWIJDERD (duplicate, staat al bovenin)
 // Route::middleware(['auth'])->group(function () {
 //     Route::resource('medewerkers', MedewerkerController::class);
