@@ -47,71 +47,46 @@ class SjablonenController extends Controller
         \Log::info('🗂️ Database kolommen sjablonen tabel', ['columns' => $columns]);
         
         if ($user->role === 'superadmin') {
-            // Superadmin ziet:
-            // 1. Standaard sjablonen (organisatie_id = 1, is_actief = 1)
-            // 2. Eigen organisatie sjablonen (organisatie_id = superadmin's organisatie_id, is_actief = 0 of 1)
+            // Superadmin ziet ALLEEN sjablonen van organisatie 1 (Performance Pulse)
+            // Dit omvat zowel shared (App Sjablonen) als privé sjablonen
             $sjablonen = Sjabloon::withoutGlobalScopes()
-                ->where(function($query) use ($user) {
-                    $query->where('organisatie_id', 1) // Standaard sjablonen (actief en inactief van org 1)
-                          ->orWhere('organisatie_id', $user->organisatie_id); // Eigen organisatie sjablonen
-                })
-                ->orderBy('naam')
-                ->get();
-            
-            \Log::info('✅ Superadmin - Standaard + Eigen organisatie sjablonen', [
-                'count' => $sjablonen->count(),
-                'superadmin_org_id' => $user->organisatie_id
-            ]);
-        } elseif ($heeftRapportenOpmaken) {
-            // Organisatie MET feature: eigen sjablonen + standaard sjablonen (org_id = 1)
-            
-            // 🔥 DEBUG: Check hoeveel sjablonen er in totaal zijn
-            $totalSjablonen = Sjabloon::withoutGlobalScopes()->whereRaw('is_actief = 1')->count();
-            $org1Sjablonen = Sjabloon::withoutGlobalScopes()->whereRaw('is_actief = 1')->where('organisatie_id', 1)->count();
-            $orgEigenSjablonen = Sjabloon::withoutGlobalScopes()->whereRaw('is_actief = 1')->where('organisatie_id', $organisatie->id)->count();
-            
-            \Log::info('🔍 DEBUG: Sjablonen count VOOR query', [
-                'organisatie_id' => $organisatie->id,
-                'total_actief' => $totalSjablonen,
-                'org_1_actief' => $org1Sjablonen,
-                'org_eigen_actief' => $orgEigenSjablonen,
-                'heeft_feature' => $heeftRapportenOpmaken
-            ]);
-            
-            $sjablonen = Sjabloon::withoutGlobalScopes()
-                ->whereRaw('is_actief = 1')
-                ->where(function($query) use ($organisatie) {
-                    $query->where('organisatie_id', $organisatie->id)
-                          ->orWhere('organisatie_id', 1); // Standaard sjablonen
-                })
-                ->orderBy('naam')
-                ->get();
-            
-            \Log::info('✅ Organisatie MET feature - Eigen + Standaard sjablonen', [
-                'count' => $sjablonen->count(),
-                'organisatie_id' => $organisatie->id,
-                'organisatie_naam' => $organisatie->naam,
-                'sjablonen_details' => $sjablonen->map(fn($s) => [
-                    'id' => $s->id,
-                    'naam' => $s->naam,
-                    'org_id' => $s->organisatie_id,
-                    'is_actief' => $s->is_actief
-                ])->toArray()
-            ]);
-        } else {
-            // Organisatie ZONDER feature: alleen standaard sjablonen (read-only, van Bonami organisatie_id = 1)
-            $sjablonen = Sjabloon::withoutGlobalScopes()
-                ->whereRaw('is_actief = 1')
                 ->where('organisatie_id', 1)
                 ->orderBy('naam')
                 ->get();
             
-            \Log::info('✅ Organisatie ZONDER feature - Standaard sjablonen geladen', [
+            \Log::info('✅ Superadmin - Alle sjablonen van organisatie 1 (Performance Pulse)', [
+                'count' => $sjablonen->count()
+            ]);
+        } elseif ($heeftRapportenOpmaken) {
+            // Organisatie MET feature: eigen sjablonen (actief + inactief) + standaard sjablonen (ALLEEN actief)
+            $sjablonen = Sjabloon::withoutGlobalScopes()
+                ->where(function($query) use ($organisatie) {
+                    $query->where('organisatie_id', $organisatie->id) // Eigen sjablonen (alle)
+                          ->orWhere(function($q) {
+                              $q->where('organisatie_id', 1)
+                                ->where('is_actief', 1); // Standaard sjablonen (alleen actief)
+                          });
+                })
+                ->orderBy('naam')
+                ->get();
+            
+            \Log::info('✅ Organisatie MET feature - Eigen (alle) + Standaard (actief)', [
                 'count' => $sjablonen->count(),
                 'organisatie_id' => $organisatie->id,
-                'organisatie_naam' => $organisatie->naam,
-                'query' => "WHERE is_actief=1 AND organisatie_id=1",
-                'sjablonen_namen' => $sjablonen->pluck('naam')->toArray()
+                'organisatie_naam' => $organisatie->naam
+            ]);
+        } else {
+            // Organisatie ZONDER feature: alleen actieve standaard sjablonen (organisatie_id = 1, is_actief = 1)
+            $sjablonen = Sjabloon::withoutGlobalScopes()
+                ->where('organisatie_id', 1)
+                ->where('is_actief', 1)
+                ->orderBy('naam')
+                ->get();
+            
+            \Log::info('✅ Organisatie ZONDER feature - Standaard sjablonen (alleen actief)', [
+                'count' => $sjablonen->count(),
+                'organisatie_id' => $organisatie->id,
+                'organisatie_naam' => $organisatie->naam
             ]);
         }
         
@@ -161,6 +136,7 @@ class SjablonenController extends Controller
             'testtype' => 'nullable|string|max:255',
             'beschrijving' => 'nullable|string',
             'is_shared_template' => 'nullable|boolean',
+            'is_actief' => 'nullable|boolean',
         ]);
 
         // Bouw data array dynamisch op basis van aanwezige kolommen
@@ -169,20 +145,27 @@ class SjablonenController extends Controller
             'categorie' => $request->categorie,
             'testtype' => $request->testtype,
             'beschrijving' => $request->beschrijving,
-            'is_actief' => true,
+            'is_actief' => $request->has('is_actief') && $request->is_actief ? 1 : 0,
         ];
         
         // Bepaal organisatie_id op basis van shared template toggle (alleen voor superadmin)
-        if ($user->role === 'superadmin' && $request->has('is_shared_template') && $request->is_shared_template) {
-            // Maak het een shared template (organisatie_id = 1)
-            $data['organisatie_id'] = 1;
-            \Log::info('✨ Creating SHARED template (zichtbaar voor alle organisaties)', ['naam' => $request->naam]);
-        } elseif ($user->role === 'superadmin' && (!$request->has('is_shared_template') || !$request->is_shared_template)) {
-            // Superadmin ZONDER vinkje: maak het privé voor Performance Pulse (organisatie ID 1, maar NIET gedeeld)
-            // We gebruiken een speciale marker om aan te geven dat dit NIET gedeeld moet worden
-            $data['organisatie_id'] = 1;
-            $data['is_actief'] = 0; // Zet op inactief zodat het NIET zichtbaar is voor andere organisaties
-            \Log::info('🔒 Creating PRIVATE template voor Performance Pulse (alleen zichtbaar in ID1)', ['naam' => $request->naam]);
+        if ($user->role === 'superadmin') {
+            if ($request->has('is_shared_template') && $request->is_shared_template) {
+                // App Sjabloon AAN: maak het een shared template (organisatie_id = 1)
+                $data['organisatie_id'] = 1;
+                \Log::info('✨ Creating APP SJABLOON (shared voor alle organisaties)', [
+                    'naam' => $request->naam, 
+                    'is_actief' => $data['is_actief']
+                ]);
+            } else {
+                // App Sjabloon UIT: zet op EIGEN organisatie van superadmin
+                $data['organisatie_id'] = $user->organisatie_id;
+                \Log::info('🔒 Creating PRIVÉ sjabloon voor eigen organisatie', [
+                    'naam' => $request->naam, 
+                    'organisatie_id' => $user->organisatie_id,
+                    'is_actief' => $data['is_actief']
+                ]);
+            }
         } else {
             // Normale organisatie sjabloon
             $data['organisatie_id'] = auth()->user()->organisatie_id;
@@ -439,26 +422,48 @@ class SjablonenController extends Controller
             'testtype' => 'nullable|string|max:255',
             'beschrijving' => 'nullable|string',
             'is_shared_template' => 'nullable|boolean',
+            'is_actief_checkbox' => 'nullable|boolean',
         ]);
 
         // Update basis informatie
         $sjabloon->update($request->only(['naam', 'categorie', 'testtype', 'beschrijving']));
         
-        // Superadmin: Update shared template status
+        // Update is_actief status (VOOR IEDEREEN - voordat we organisatie_id aanpassen)
+        $sjabloon->is_actief = $request->has('is_actief_checkbox') && $request->is_actief_checkbox ? 1 : 0;
+        
+        // Superadmin: Update organisatie_id op basis van shared template checkbox
         if ($user->role === 'superadmin') {
             if ($request->has('is_shared_template') && $request->is_shared_template) {
-                // Maak het een shared template
+                // App Sjabloon AAN: maak het shared (organisatie_id = 1)
+                $previousOrgId = $sjabloon->organisatie_id;
                 $sjabloon->organisatie_id = 1;
-                $sjabloon->is_actief = 1;
-                \Log::info('✨ Updated to SHARED template', ['sjabloon_id' => $sjabloon->id]);
+                \Log::info('✨ Updated to APP SJABLOON (shared)', [
+                    'sjabloon_id' => $sjabloon->id,
+                    'previous_org' => $previousOrgId,
+                    'new_org' => 1,
+                    'is_actief' => $sjabloon->is_actief
+                ]);
             } else {
-                // Maak het privé voor Performance Pulse
-                $sjabloon->organisatie_id = 1;
-                $sjabloon->is_actief = 0;
-                \Log::info('🔒 Updated to PRIVATE template', ['sjabloon_id' => $sjabloon->id]);
+                // App Sjabloon UIT: zet terug naar eigen organisatie van superadmin
+                $previousOrgId = $sjabloon->organisatie_id;
+                $sjabloon->organisatie_id = $user->organisatie_id;
+                \Log::info('🔒 Updated to PRIVÉ sjabloon (eigen organisatie)', [
+                    'sjabloon_id' => $sjabloon->id,
+                    'previous_org' => $previousOrgId,
+                    'new_org' => $user->organisatie_id,
+                    'is_actief' => $sjabloon->is_actief
+                ]);
             }
-            $sjabloon->save();
         }
+        
+        \Log::info('💾 Sjabloon opgeslagen', [
+            'sjabloon_id' => $sjabloon->id,
+            'organisatie_id' => $sjabloon->organisatie_id,
+            'is_actief' => $sjabloon->is_actief,
+            'is_shared' => $request->has('is_shared_template') && $request->is_shared_template
+        ]);
+        
+        $sjabloon->save();
 
         return redirect()->route('sjablonen.edit', $sjabloon)
                         ->with('success', 'Sjabloon informatie bijgewerkt! Nu kun je de inhoud bewerken.');
@@ -534,8 +539,8 @@ class SjablonenController extends Controller
         try {
             $user = auth()->user();
             
-            // Find the sjabloon by ID
-            $sjabloon = Sjabloon::findOrFail($id);
+            // Find the sjabloon by ID (zonder global scope voor cross-org toegang)
+            $sjabloon = Sjabloon::withoutGlobalScopes()->findOrFail($id);
             
             // Check organisatie toegang (behalve voor superadmin)
             if ($user->role !== 'superadmin') {
@@ -758,8 +763,8 @@ class SjablonenController extends Controller
 
     public function preview($id)
     {
-        // Find sjabloon
-        $sjabloon = Sjabloon::findOrFail($id);
+        // Find sjabloon (zonder global scope voor cross-org toegang)
+        $sjabloon = Sjabloon::withoutGlobalScopes()->findOrFail($id);
         
         // Load pages and sort by page_number
         $sjabloon->load(['pages' => function($query) {

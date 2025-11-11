@@ -113,20 +113,37 @@
                 @enderror
             </div>
 
+                        <!-- Sjabloon Actief/Inactief Toggle -->
+            <div class="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" 
+                           name="is_actief" 
+                           id="is_actief" 
+                           value="1"
+                           checked
+                           class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <span class="ml-3">
+                        <span class="text-sm font-semibold text-blue-900">✓ Sjabloon Actief</span>
+                        <span class="block text-xs text-blue-700 mt-1">
+                            Inactieve sjablonen worden niet getoond in de sjablonen lijst en kunnen niet gebruikt worden voor rapporten.
+                        </span>
+                    </span>
+                </label>
+            </div>
+
             @if(auth()->user()->role === 'superadmin')
-                <!-- Superadmin: Shared Template Toggle -->
+                <!-- Superadmin: Shared Template Toggle (STANDAARD UITGESCHAKELD) -->
                 <div class="mt-6 p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
                     <label class="flex items-center cursor-pointer">
                         <input type="checkbox" 
                                name="is_shared_template" 
                                id="is_shared_template" 
                                value="1"
-                               {{ old('is_shared_template') ? 'checked' : '' }}
                                class="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
                         <span class="ml-3">
-                            <span class="text-sm font-semibold text-purple-900">✨ Maak dit een Standaard Sjabloon</span>
+                            <span class="text-sm font-semibold text-purple-900">✨ Maak dit een App Sjabloon</span>
                             <span class="block text-xs text-purple-700 mt-1">
-                                Standaard sjablonen zijn zichtbaar voor alle organisaties en krijgen een speciale badge.
+                                App sjablonen zijn zichtbaar voor alle organisaties. Als je dit NIET aanvinkt, wordt het een privé sjabloon voor jouw organisatie.
                             </span>
                         </span>
                     </label>

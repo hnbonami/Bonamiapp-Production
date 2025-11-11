@@ -66,30 +66,27 @@
                                         </span>
                                     @endif
 
-                                    <!-- Badge voor standaard sjablonen (ALLEEN als organisatie_id = 1 EN is_actief = 1) -->
-                                    @if($sjabloon->organisatie_id == 1 && $sjabloon->is_actief == 1)
-                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 ml-2">
-                                            ✨ Standaard Sjabloon
+                                    <!-- Status Badge: Actief / Inactief -->
+                                    @if($sjabloon->is_actief == 1)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            ✓ Actief
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                            ✗ Inactief
                                         </span>
                                     @endif
                                 </div>
                             </div>
                             
                             @if(auth()->user()->role === 'superadmin')
-                                <!-- Superadmin: Toon shared badge ALLEEN als organisatie_id = 1 EN is_actief = 1 -->
-                                @if($sjabloon->organisatie_id == 1 && $sjabloon->is_actief == 1)
+                                <!-- Superadmin: Toon shared badge op basis van ALLEEN organisatie_id (niet is_actief) -->
+                                @if($sjabloon->organisatie_id == 1)
                                     <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-md" style="background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: white;">
                                         <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                                         </svg>
                                         App Sjabloon
-                                    </span>
-                                @elseif($sjabloon->organisatie_id == 1 && $sjabloon->is_actief == 0)
-                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
-                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
-                                        </svg>
-                                        Privé sjabloon
                                     </span>
                                 @else
                                     <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
@@ -100,13 +97,13 @@
                                     </span>
                                 @endif
                             @else
-                                <!-- Niet-superadmin: Toon alleen read-only badge als het een shared template is -->
-                                @if(!$heeftRapportenOpmaken && (is_null($sjabloon->organisatie_id) || $sjabloon->organisatie_id == 1))
-                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                <!-- Niet-superadmin: Toon App Sjabloon badge voor shared templates -->
+                                @if($sjabloon->organisatie_id == 1)
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-md" style="background: linear-gradient(135deg, #b9c8edff 0%, #a9c6d5ff 100%); color: white;">
                                         <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
                                         </svg>
-                                        Alleen Lezen
+                                        App Sjabloon
                                     </span>
                                 @endif
                             @endif
@@ -130,44 +127,71 @@
                     <!-- Card Actions -->
                     <div class="px-6 py-4 bg-gray-50 border-t">
                         <div class="flex items-center justify-between">
-                            <!-- Eerste drie knoppen in kleur #c8e1eb -->
-                            <div class="flex space-x-3">
-                                <a href="{{ route('sjablonen.edit-basic', $sjabloon) }}" 
-                                   class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
-                                   style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                    </svg>
-                                    Bewerken
-                                </a>
+                            <!-- App Sjablonen (organisatie_id = 1): ALLEEN Bekijken + Dupliceren -->
+                            @if($sjabloon->organisatie_id == 1 && auth()->user()->role !== 'superadmin')
+                                <div class="flex space-x-3">
+                                    <a href="{{ route('sjablonen.preview', $sjabloon) }}" 
+                                       class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
+                                       style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        Bekijken
+                                    </a>
+                                    
+                                    <button type="button" onclick="duplicateTemplate({{ $sjabloon->id }})" 
+                                            class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
+                                            style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Dupliceren
+                                    </button>
+                                </div>
                                 
-                                <a href="{{ route('sjablonen.preview', $sjabloon) }}" 
-                                   class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
-                                   style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                    </svg>
-                                    Bekijken
-                                </a>
+                                <!-- Geen verwijder knop voor App Sjablonen -->
+                                <div></div>
+                            @else
+                                <!-- Eigen sjablonen: Bewerken + Bekijken + Dupliceren + Verwijderen -->
+                                <div class="flex space-x-3">
+                                    <a href="{{ route('sjablonen.edit-basic', $sjabloon) }}" 
+                                       class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
+                                       style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                        </svg>
+                                        Bewerken
+                                    </a>
+                                    
+                                    <a href="{{ route('sjablonen.preview', $sjabloon) }}" 
+                                       class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
+                                       style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        Bekijken
+                                    </a>
+                                    
+                                    <button type="button" onclick="duplicateTemplate({{ $sjabloon->id }})" 
+                                            class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
+                                            style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
+                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                        </svg>
+                                        Dupliceren
+                                    </button>
+                                </div>
                                 
-                                <button type="button" onclick="duplicateTemplate({{ $sjabloon->id }})" 
-                                        class="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-gray-900 transition-all duration-200"
-                                        style="background-color: #c8e1eb; border: 1px solid #a5c9d6;">
-                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                <!-- Verwijder knop met prullenbak icoon -->
+                                <button type="button" onclick="deleteTemplate({{ $sjabloon->id }}, '{{ addslashes($sjabloon->naam) }}')" 
+                                        class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-gray-300 text-gray-600 hover:text-black hover:border-gray-400 transition-all duration-200 shadow-sm">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                     </svg>
-                                    Dupliceren
                                 </button>
-                            </div>
-                            
-                            <!-- Verwijder knop met prullenbak icoon -->
-                            <button type="button" onclick="deleteTemplate({{ $sjabloon->id }}, '{{ addslashes($sjabloon->naam) }}')" 
-                                    class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white border border-gray-300 text-gray-600 hover:text-black hover:border-gray-400 transition-all duration-200 shadow-sm">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                </svg>
-                            </button>
+                            @endif
                         </div>
                     </div>
                 </div>

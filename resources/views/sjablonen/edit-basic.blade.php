@@ -104,19 +104,55 @@
             </div>
 
             @if(auth()->user()->role === 'superadmin')
-                <!-- Superadmin: Shared Template Toggle -->
+                <!-- Sjabloon Actief/Inactief Toggle (ONAFHANKELIJK systeem) -->
+                <div class="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" 
+                               name="is_actief_checkbox" 
+                               id="is_actief_checkbox" 
+                               value="1"
+                               {{ old('is_actief_checkbox', $sjabloon->is_actief == 1) ? 'checked' : '' }}
+                               class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3">
+                            <span class="text-sm font-semibold text-blue-900">✓ Sjabloon Actief</span>
+                            <span class="block text-xs text-blue-700 mt-1">
+                                Inactieve sjablonen kunnen niet gebruikt worden voor rapporten (maar blijven zichtbaar in de lijst).
+                            </span>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Superadmin: App Sjabloon Toggle (ONAFHANKELIJK systeem) -->
                 <div class="mt-6 p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
                     <label class="flex items-center cursor-pointer">
                         <input type="checkbox" 
                                name="is_shared_template" 
                                id="is_shared_template" 
                                value="1"
-                               {{ old('is_shared_template', $sjabloon->organisatie_id == 1 && $sjabloon->is_actief == 1 ? 1 : 0) ? 'checked' : '' }}
+                               {{ old('is_shared_template', $sjabloon->organisatie_id == 1 ? 1 : 0) ? 'checked' : '' }}
                                class="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
                         <span class="ml-3">
-                            <span class="text-sm font-semibold text-purple-900">✨ Maak dit een Standaard Sjabloon</span>
+                            <span class="text-sm font-semibold text-purple-900">✨ Maak dit een App Sjabloon (Shared)</span>
                             <span class="block text-xs text-purple-700 mt-1">
-                                Standaard sjablonen zijn zichtbaar voor alle organisaties en krijgen een speciale badge.
+                                App sjablonen (organisatie_id = 1) zijn zichtbaar voor alle organisaties. Privé sjablonen (jouw organisatie) zijn alleen voor jou.
+                            </span>
+                        </span>
+                    </label>
+                </div>
+            @else
+                <!-- Normale organisaties: Gewone Actief/Inactief Toggle -->
+                <div class="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" 
+                               name="is_actief_checkbox" 
+                               id="is_actief_checkbox" 
+                               value="1"
+                               {{ old('is_actief_checkbox', $sjabloon->is_actief == 1 ? 1 : 0) ? 'checked' : '' }}
+                               class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                        <span class="ml-3">
+                            <span class="text-sm font-semibold text-blue-900">✓ Sjabloon Actief</span>
+                            <span class="block text-xs text-blue-700 mt-1">
+                                Inactieve sjablonen worden niet getoond in de sjablonen lijst en kunnen niet gebruikt worden.
                             </span>
                         </span>
                     </label>
