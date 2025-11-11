@@ -49,8 +49,8 @@ class RapportVariabelenService
                 return [
                     'header' => $dbInstellingen->header_tekst ?? config('rapport.header'),
                     'footer' => $dbInstellingen->footer_tekst ?? config('rapport.footer'),
-                    'logo_html' => $dbInstellingen->logo_path ? '<img src="' . asset('storage/' . $dbInstellingen->logo_path) . '" alt="Logo" style="max-width: 200px; height: auto;">' : '',
-                    'voorblad_foto_html' => $dbInstellingen->voorblad_foto_path ? '<img src="' . asset('storage/' . $dbInstellingen->voorblad_foto_path) . '" alt="Voorblad" style="width: 100%; height: auto;">' : '',
+                    'logo_html' => $dbInstellingen->logo_path ? '<div style="margin: 0 -20mm 10px -20mm; padding: 0 20mm; text-align: right;"><img src="' . asset('storage/' . $dbInstellingen->logo_path) . '" alt="Logo" style="max-width: 105px; height: auto; display: inline-block;"></div>' : '',
+                    'voorblad_foto_html' => $dbInstellingen->voorblad_foto_path ? '<div style="margin: 20px -20mm; padding: 0; text-align: center;"><img src="' . asset('storage/' . $dbInstellingen->voorblad_foto_path) . '" alt="Voorblad" style="width: 210mm; max-width: 210mm; height: auto; display: block;"></div>' : '',
                     'inleidende_tekst' => $dbInstellingen->inleidende_tekst ?? config('rapport.inleidende_tekst'),
                     'laatste_blad_tekst' => $dbInstellingen->laatste_blad_tekst ?? config('rapport.laatste_blad_tekst'),
                     'disclaimer' => $dbInstellingen->disclaimer_tekst ?? config('rapport.disclaimer'),
