@@ -633,7 +633,15 @@ class SjablonenController extends Controller
                 
                 // 🆕 RAPPORT VARIABELEN VERVANGEN (met defaults voor preview)
                 $rapportService = new \App\Services\RapportVariabelenService();
-                $content = $rapportService->vervangRapportVariabelen($content, auth()->user()->organisatie_id ?? null, $page->page_number);
+                $organisatieId = auth()->user()->organisatie_id ?? 1; // Fallback naar organisatie 1 voor preview
+                $content = $rapportService->vervangRapportVariabelen($content, $organisatieId, $page->page_number);
+                
+                \Log::info('🔍 Preview rapport variabelen vervangen', [
+                    'organisatie_id' => $organisatieId,
+                    'page_number' => $page->page_number,
+                    'content_length' => strlen($content),
+                    'contains_rapport_tag' => strpos($content, 'rapport.') !== false
+                ]);
                 
                 // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
                 $content = $this->hideCKEditorTableBorders($content);
@@ -723,6 +731,19 @@ class SjablonenController extends Controller
                 // Systeem variabelen  
                 $content = str_replace('{{datum.vandaag}}', date('d-m-Y'), $content);
                 $content = str_replace('{{datum.jaar}}', date('Y'), $content);
+                
+                // 🆕 RAPPORT VARIABELEN VERVANGEN
+                $rapportService = new \App\Services\RapportVariabelenService();
+                $organisatieId = $bikefit->klant->organisatie_id ?? auth()->user()->organisatie_id ?? 1;
+                $content = $rapportService->vervangRapportVariabelen($content, $organisatieId, $page->page_number);
+                
+                \Log::info('🔍 Bikefit rapport variabelen vervangen', [
+                    'organisatie_id' => $organisatieId,
+                    'page_number' => $page->page_number,
+                    'bikefit_id' => $bikefit->id,
+                    'contains_rapport_tag_before' => strpos($page->content ?? '', '{{rapport.') !== false,
+                    'contains_rapport_tag_after' => strpos($content, '{{rapport.') !== false
+                ]);
                 
                 // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
                 $content = $this->hideCKEditorTableBorders($content);
@@ -1164,6 +1185,18 @@ class SjablonenController extends Controller
                 
                 // Add mobility table if available
                 $content = str_replace('$mobility_table_report$', $this->generateMobilityTable($bikefit), $content);
+                
+                // 🆕 RAPPORT VARIABELEN VERVANGEN - MOET NA HTML COMPONENTEN!
+                $rapportService = new \App\Services\RapportVariabelenService();
+                $organisatieId = $bikefit->klant->organisatie_id ?? auth()->user()->organisatie_id ?? 1;
+                $content = $rapportService->vervangRapportVariabelen($content, $organisatieId, $page->page_number);
+                
+                \Log::info('🔍 Bikefit rapport variabelen vervangen', [
+                    'organisatie_id' => $organisatieId,
+                    'page_number' => $page->page_number,
+                    'bikefit_id' => $bikefit->id,
+                    'contains_rapport_tag_after' => strpos($content, '{{rapport.') !== false
+                ]);
                 
                 // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
                 $content = $this->hideCKEditorTableBorders($content);
