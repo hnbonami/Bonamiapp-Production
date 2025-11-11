@@ -73,6 +73,7 @@
                             required>
                         <option value="">Selecteer categorie</option>
                         <option value="bikefit" {{ old('categorie') == 'bikefit' ? 'selected' : '' }}>Bikefit</option>
+                        <option value="inspanningstest" {{ old('categorie') == 'inspanningstest' ? 'selected' : '' }}>Inspanningstest</option>
                         <option value="rapport" {{ old('categorie') == 'rapport' ? 'selected' : '' }}>Rapport</option>
                         <option value="algemeen" {{ old('categorie') == 'algemeen' ? 'selected' : '' }}>Algemeen</option>
                     </select>
@@ -84,11 +85,16 @@
                 <!-- Test Type -->
                 <div>
                     <label for="testtype" class="block text-sm font-medium text-gray-700">Test Type (optioneel)</label>
-                    <input type="text" 
-                           name="testtype" 
-                           id="testtype" 
-                           value="{{ old('testtype') }}"
-                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    <select name="testtype" 
+                            id="testtype" 
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Selecteer test type (optioneel)</option>
+                        <option value="professionele bikefit" {{ old('testtype') == 'professionele bikefit' ? 'selected' : '' }}>Professionele Bikefit</option>
+                        <option value="standaard bikefit" {{ old('testtype') == 'standaard bikefit' ? 'selected' : '' }}>Standaard Bikefit</option>
+                        <option value="Inspanningstest Fietsen" {{ old('testtype') == 'Inspanningstest Fietsen' ? 'selected' : '' }}>Inspanningstest Fietsen</option>
+                        <option value="Inspanningstest Lopen" {{ old('testtype') == 'Inspanningstest Lopen' ? 'selected' : '' }}>Inspanningstest Lopen</option>
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">Belangrijk: Dit koppelt het sjabloon aan het juiste type verslag</p>
                     @error('testtype')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
