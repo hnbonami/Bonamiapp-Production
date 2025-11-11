@@ -58,27 +58,40 @@ class RapportInstellingenController extends Controller
         $user = auth()->user();
         $organisatie = $user->organisatie;
         
+        // Log upload info voor debugging
+        \Log::info('📸 Upload attempt', [
+            'has_logo' => $request->hasFile('logo'),
+            'has_voorblad' => $request->hasFile('voorblad_foto'),
+            'logo_valid' => $request->hasFile('logo') ? $request->file('logo')->isValid() : null,
+            'voorblad_valid' => $request->hasFile('voorblad_foto') ? $request->file('voorblad_foto')->isValid() : null,
+            'logo_error' => $request->hasFile('logo') ? $request->file('logo')->getError() : null,
+            'voorblad_error' => $request->hasFile('voorblad_foto') ? $request->file('voorblad_foto')->getError() : null,
+            'logo_size' => $request->hasFile('logo') ? $request->file('logo')->getSize() : null,
+            'voorblad_size' => $request->hasFile('voorblad_foto') ? $request->file('voorblad_foto')->getSize() : null,
+        ]);
+        
+        // Validatie
         $validated = $request->validate([
-            'header_tekst' => 'nullable|string|max:1000',
-            'footer_tekst' => 'nullable|string|max:1000',
+            'header_tekst' => 'nullable|string|max:255',
+            'footer_tekst' => 'nullable|string|max:255',
+            'logo' => 'nullable|file|mimes:jpeg,jpg,png,svg|max:2048',
+            'voorblad_foto' => 'nullable|file|mimes:jpeg,jpg,png|max:20480',
             'inleidende_tekst' => 'nullable|string',
             'laatste_blad_tekst' => 'nullable|string',
             'disclaimer_tekst' => 'nullable|string',
             'primaire_kleur' => 'nullable|string|max:7',
             'secundaire_kleur' => 'nullable|string|max:7',
-            'lettertype' => 'required|in:Arial,Tahoma,Calibri,Helvetica',
-            'paginanummering_tonen' => 'boolean',
-            'paginanummering_positie' => 'required|in:rechtsonder,rechtsboven,linksonder,linksboven,midden',
+            'lettertype' => 'nullable|string|max:50',
             'contact_adres' => 'nullable|string|max:255',
             'contact_telefoon' => 'nullable|string|max:50',
             'contact_email' => 'nullable|email|max:255',
             'contact_website' => 'nullable|url|max:255',
-            'contactgegevens_in_footer' => 'boolean',
-            'qr_code_tonen' => 'boolean',
+            'contactgegevens_in_footer' => 'nullable|boolean',
+            'qr_code_tonen' => 'nullable|boolean',
             'qr_code_url' => 'nullable|url|max:255',
-            'qr_code_positie' => 'required|in:rechtsonder,linksboven,footer',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
-            'voorblad_foto' => 'nullable|image|mimes:jpeg,png,jpg|max:5120',
+            'qr_code_positie' => 'nullable|in:rechtsonder,linksboven,footer',
+            'paginanummering_tonen' => 'nullable|boolean',
+            'paginanummering_positie' => 'nullable|in:rechtsonder,rechtsboven,linksonder,linksboven,midden',
         ]);
 
         $instellingen = OrganisatieRapportInstelling::firstOrNew(
@@ -98,13 +111,40 @@ class RapportInstellingenController extends Controller
 
         // Upload voorblad foto
         if ($request->hasFile('voorblad_foto')) {
+            $file = $request->file('voorblad_foto');
+            
+            \Log::info('📸 Voorblad foto upload details', [
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+                'error' => $file->getError(),
+                'is_valid' => $file->isValid(),
+            ]);
+            
+            if (!$file->isValid()) {
+                \Log::error('❌ Voorblad foto upload FAILED', [
+                    'error_code' => $file->getError(),
+                    'error_message' => $file->getErrorMessage(),
+                ]);
+                
+                return back()->withErrors([
+                    'voorblad_foto' => 'Upload mislukt: ' . $file->getErrorMessage() . ' (Error code: ' . $file->getError() . ')'
+                ])->withInput();
+            }
+            
             // Verwijder oude foto
             if ($instellingen->voorblad_foto_path) {
                 Storage::disk('public')->delete($instellingen->voorblad_foto_path);
             }
             
-            $fotoPath = $request->file('voorblad_foto')->store('rapporten/voorbladfotos', 'public');
-            $validated['voorblad_foto_path'] = $fotoPath;
+            try {
+                $fotoPath = $file->store('rapporten/voorbladfotos', 'public');
+                $validated['voorblad_foto_path'] = $fotoPath;
+                \Log::info('✅ Voorblad foto uploaded', ['path' => $fotoPath]);
+            } catch (\Exception $e) {
+                \Log::error('❌ Storage failed', ['error' => $e->getMessage()]);
+                return back()->withErrors(['voorblad_foto' => 'Opslaan mislukt: ' . $e->getMessage()])->withInput();
+            }
         }
 
         $instellingen->fill($validated);
