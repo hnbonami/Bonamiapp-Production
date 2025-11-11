@@ -36,33 +36,74 @@ class SjablonenController extends Controller
         // Check of organisatie de feature "rapporten_opmaken" heeft
         $heeftRapportenOpmaken = $organisatie && $organisatie->hasFeature('rapporten_opmaken');
         
-        \Log::info('📋 Sjablonen Index', [
+        \Log::info('📋 Sjablonen Index START', [
             'user_role' => $user->role,
             'organisatie_id' => $organisatie->id ?? null,
             'heeft_rapporten_opmaken' => $heeftRapportenOpmaken
         ]);
         
+        // 🔥 EXTRA DEBUG: Check database kolommen
+        $columns = Schema::getColumnListing('sjablonen');
+        \Log::info('🗂️ Database kolommen sjablonen tabel', ['columns' => $columns]);
+        
         if ($user->role === 'superadmin') {
             // Superadmin ziet alle sjablonen van alle organisaties
-            $sjablonen = Sjabloon::where('is_actief', true)->orderBy('naam')->get();
+            $sjablonen = Sjabloon::withoutGlobalScopes()->whereRaw('is_actief = 1')->orderBy('naam')->get();
+            
+            \Log::info('✅ Superadmin - Alle sjablonen', [
+                'count' => $sjablonen->count()
+            ]);
         } elseif ($heeftRapportenOpmaken) {
             // Organisatie MET feature: eigen sjablonen + standaard sjablonen (org_id = 1)
-            $sjablonen = Sjabloon::where('is_actief', true)
+            
+            // 🔥 DEBUG: Check hoeveel sjablonen er in totaal zijn
+            $totalSjablonen = Sjabloon::withoutGlobalScopes()->whereRaw('is_actief = 1')->count();
+            $org1Sjablonen = Sjabloon::withoutGlobalScopes()->whereRaw('is_actief = 1')->where('organisatie_id', 1)->count();
+            $orgEigenSjablonen = Sjabloon::withoutGlobalScopes()->whereRaw('is_actief = 1')->where('organisatie_id', $organisatie->id)->count();
+            
+            \Log::info('🔍 DEBUG: Sjablonen count VOOR query', [
+                'organisatie_id' => $organisatie->id,
+                'total_actief' => $totalSjablonen,
+                'org_1_actief' => $org1Sjablonen,
+                'org_eigen_actief' => $orgEigenSjablonen,
+                'heeft_feature' => $heeftRapportenOpmaken
+            ]);
+            
+            $sjablonen = Sjabloon::withoutGlobalScopes()
+                ->whereRaw('is_actief = 1')
                 ->where(function($query) use ($organisatie) {
                     $query->where('organisatie_id', $organisatie->id)
                           ->orWhere('organisatie_id', 1); // Standaard sjablonen
                 })
                 ->orderBy('naam')
                 ->get();
+            
+            \Log::info('✅ Organisatie MET feature - Eigen + Standaard sjablonen', [
+                'count' => $sjablonen->count(),
+                'organisatie_id' => $organisatie->id,
+                'organisatie_naam' => $organisatie->naam,
+                'sjablonen_details' => $sjablonen->map(fn($s) => [
+                    'id' => $s->id,
+                    'naam' => $s->naam,
+                    'org_id' => $s->organisatie_id,
+                    'is_actief' => $s->is_actief
+                ])->toArray()
+            ]);
         } else {
-            // Organisatie ZONDER feature: alleen standaard sjablonen (read-only)
-            $sjablonen = Sjabloon::where('is_actief', true)
-                ->where(function($query) {
-                    $query->whereNull('organisatie_id')
-                          ->orWhere('organisatie_id', 1);
-                })
+            // Organisatie ZONDER feature: alleen standaard sjablonen (read-only, van Bonami organisatie_id = 1)
+            $sjablonen = Sjabloon::withoutGlobalScopes()
+                ->whereRaw('is_actief = 1')
+                ->where('organisatie_id', 1)
                 ->orderBy('naam')
                 ->get();
+            
+            \Log::info('✅ Organisatie ZONDER feature - Standaard sjablonen geladen', [
+                'count' => $sjablonen->count(),
+                'organisatie_id' => $organisatie->id,
+                'organisatie_naam' => $organisatie->naam,
+                'query' => "WHERE is_actief=1 AND organisatie_id=1",
+                'sjablonen_namen' => $sjablonen->pluck('naam')->toArray()
+            ]);
         }
         
         return view('sjablonen.index', compact('sjablonen', 'heeftRapportenOpmaken'));
@@ -894,21 +935,21 @@ class SjablonenController extends Controller
             'is_superadmin' => $user ? ($user->role === 'superadmin') : false
         ]);
         
-        // Base query
-        $query = Sjabloon::where('is_actief', true);
+        // Base query - gebruik withoutGlobalScopes om organisatie filter te omzeilen
+        $query = Sjabloon::withoutGlobalScopes()->whereRaw('is_actief = 1');
         
         if ($user && $user->role === 'superadmin') {
             // Superadmin: zoek in alle sjablonen
             // Geen extra filter
         } elseif ($heeftRapportenOpmaken) {
-            // Organisatie MET feature: alleen eigen sjablonen
-            $query->where('organisatie_id', $organisatie->id);
-        } else {
-            // Organisatie ZONDER feature: gebruik shared templates (superadmin sjablonen)
-            $query->where(function($q) {
-                $q->whereNull('organisatie_id')
-                  ->orWhere('organisatie_id', 1); // Aanname: organisatie_id 1 = superadmin
+            // Organisatie MET feature: eigen sjablonen + standaard sjablonen
+            $query->where(function($q) use ($organisatie) {
+                $q->where('organisatie_id', $organisatie->id)
+                  ->orWhere('organisatie_id', 1); // Standaard sjablonen
             });
+        } else {
+            // Organisatie ZONDER feature: alleen standaard sjablonen (organisatie_id = 1)
+            $query->where('organisatie_id', 1);
         }
         
         // First try to match both testtype and category (exact match)

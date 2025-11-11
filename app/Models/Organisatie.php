@@ -118,31 +118,26 @@ class Organisatie extends Model
      * @param string $featureKey De key van de feature (bijv. 'bikefits')
      * @return bool
      */
-    public function hasFeature(string $featureKey): bool
+    public function hasFeature(string $feature): bool
     {
-        // Superadmin organisatie heeft altijd alle features
-        if ($this->id === 1) {
-            \Log::info("✅ Organisatie {$this->id} is superadmin - heeft alle features");
-            return true;
-        }
-
-        $hasFeature = $this->features()
-            ->where('key', $featureKey)
-            ->where('organisatie_features.is_actief', true)
-            ->where(function($query) {
-                $query->whereNull('organisatie_features.expires_at')
-                      ->orWhere('organisatie_features.expires_at', '>', now());
-            })
+        $hasAccess = $this->features()
+            ->where('key', $feature)
+            ->wherePivot('is_actief', true)
             ->exists();
 
-        \Log::info("🔍 Feature check voor organisatie {$this->id} ({$this->naam})", [
-            'feature_key' => $featureKey,
-            'has_access' => $hasFeature,
+        \Log::info('🔍 Feature check voor organisatie ' . $this->id . ' (' . $this->naam . ')', [
+            'feature_key' => $feature,
+            'has_access' => $hasAccess,
             'total_features' => $this->features()->count(),
-            'active_features' => $this->features()->wherePivot('is_actief', true)->count()
+            'active_features' => $this->features()->wherePivot('is_actief', true)->count(),
+            'all_features' => $this->features()->get()->map(fn($f) => [
+                'key' => $f->key,
+                'naam' => $f->naam,
+                'is_actief' => $f->pivot->is_actief
+            ])->toArray()
         ]);
 
-        return $hasFeature;
+        return $hasAccess;
     }
 
     /**
