@@ -118,26 +118,23 @@ class Organisatie extends Model
      * @param string $featureKey De key van de feature (bijv. 'bikefits')
      * @return bool
      */
-    public function hasFeature(string $feature): bool
+    public function hasFeature(string $featureKey): bool
     {
-        $hasAccess = $this->features()
-            ->where('key', $feature)
-            ->wherePivot('is_actief', true)
-            ->exists();
-
         \Log::info('🔍 Feature check voor organisatie ' . $this->id . ' (' . $this->naam . ')', [
-            'feature_key' => $feature,
-            'has_access' => $hasAccess,
+            'feature_key' => $featureKey,
+            'has_access' => $this->features()
+                ->where('features.key', $featureKey)
+                ->wherePivot('is_actief', 1)
+                ->exists(),
             'total_features' => $this->features()->count(),
-            'active_features' => $this->features()->wherePivot('is_actief', true)->count(),
-            'all_features' => $this->features()->get()->map(fn($f) => [
-                'key' => $f->key,
-                'naam' => $f->naam,
-                'is_actief' => $f->pivot->is_actief
-            ])->toArray()
+            'active_features' => $this->features()->wherePivot('is_actief', 1)->count(),
+            'all_features' => $this->features()->get(['features.key', 'features.naam', 'features.is_actief'])->toArray()
         ]);
-
-        return $hasAccess;
+        
+        return $this->features()
+            ->where('features.key', $featureKey)
+            ->wherePivot('is_actief', 1)
+            ->exists();
     }
 
     /**

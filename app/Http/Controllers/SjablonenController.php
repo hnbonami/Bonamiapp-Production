@@ -47,43 +47,45 @@ class SjablonenController extends Controller
         \Log::info('🗂️ Database kolommen sjablonen tabel', ['columns' => $columns]);
         
         if ($user->role === 'superadmin') {
-            // Superadmin ziet ALLEEN sjablonen van organisatie 1 (Performance Pulse)
-            // Dit omvat zowel shared (App Sjablonen) als privé sjablonen
+            // Superadmin ziet ALLE sjablonen van organisatie 1 (Performance Pulse)
+            // Dit omvat zowel app sjablonen (is_app_sjabloon=1) als privé sjablonen (is_app_sjabloon=0)
             $sjablonen = Sjabloon::withoutGlobalScopes()
                 ->where('organisatie_id', 1)
                 ->orderBy('naam')
                 ->get();
             
-            \Log::info('✅ Superadmin - Alle sjablonen van organisatie 1 (Performance Pulse)', [
-                'count' => $sjablonen->count()
+            \Log::info('✅ Superadmin - Alle sjablonen van organisatie 1', [
+                'count' => $sjablonen->count(),
+                'app_sjablonen' => $sjablonen->where('is_app_sjabloon', 1)->count(),
+                'prive_sjablonen' => $sjablonen->where('is_app_sjabloon', 0)->count()
             ]);
         } elseif ($heeftRapportenOpmaken) {
-            // Organisatie MET feature: eigen sjablonen (actief + inactief) + standaard sjablonen (ALLEEN actief)
+            // Organisatie MET feature: eigen sjablonen (alle) + app sjablonen (is_app_sjabloon=1, actief)
             $sjablonen = Sjabloon::withoutGlobalScopes()
                 ->where(function($query) use ($organisatie) {
                     $query->where('organisatie_id', $organisatie->id) // Eigen sjablonen (alle)
                           ->orWhere(function($q) {
-                              $q->where('organisatie_id', 1)
-                                ->where('is_actief', 1); // Standaard sjablonen (alleen actief)
+                              $q->where('is_app_sjabloon', 1) // App sjablonen
+                                ->where('is_actief', 1); // alleen actieve
                           });
                 })
                 ->orderBy('naam')
                 ->get();
             
-            \Log::info('✅ Organisatie MET feature - Eigen (alle) + Standaard (actief)', [
+            \Log::info('✅ Organisatie MET feature - Eigen + App sjablonen', [
                 'count' => $sjablonen->count(),
                 'organisatie_id' => $organisatie->id,
                 'organisatie_naam' => $organisatie->naam
             ]);
         } else {
-            // Organisatie ZONDER feature: alleen actieve standaard sjablonen (organisatie_id = 1, is_actief = 1)
+            // Organisatie ZONDER feature: alleen actieve app sjablonen (is_app_sjabloon=1, is_actief=1)
             $sjablonen = Sjabloon::withoutGlobalScopes()
-                ->where('organisatie_id', 1)
+                ->where('is_app_sjabloon', 1)
                 ->where('is_actief', 1)
                 ->orderBy('naam')
                 ->get();
             
-            \Log::info('✅ Organisatie ZONDER feature - Standaard sjablonen (alleen actief)', [
+            \Log::info('✅ Organisatie ZONDER feature - Alleen app sjablonen', [
                 'count' => $sjablonen->count(),
                 'organisatie_id' => $organisatie->id,
                 'organisatie_naam' => $organisatie->naam
@@ -145,27 +147,56 @@ class SjablonenController extends Controller
         // Nieuwe sjablonen zijn standaard actief
         $data['is_actief'] = 1;
         
-        // Bepaal organisatie_id op basis van shared template toggle (alleen voor superadmin)
+        // 🔥 DEBUG: Log ALLE request data voor store
+        \Log::info('🔍 STORE DEBUG - Request data', [
+            'all_input' => $request->all(),
+            'is_shared_template_input' => $request->input('is_shared_template'),
+            'is_shared_template_has' => $request->has('is_shared_template'),
+            'is_shared_template_filled' => $request->filled('is_shared_template'),
+            'user_role' => $user->role,
+            'user_org_id' => $user->organisatie_id
+        ]);
+        
+        // Bepaal organisatie_id EN is_app_sjabloon op basis van toggle (voor superadmin)
         if ($user->role === 'superadmin') {
-            if ($request->has('is_shared_template') && $request->is_shared_template) {
-                // App Sjabloon AAN: maak het een shared template (organisatie_id = 1)
-                $data['organisatie_id'] = 1;
+            // ALTIJD organisatie ID 1 (Performance Pulse) voor superadmin
+            $data['organisatie_id'] = 1;
+            
+            // CHECKBOX WAARDE bepaalt of het een APP SJABLOON is
+            $isSharedTemplate = $request->input('is_shared_template');
+            
+            \Log::info('🔍 CHECKBOX WAARDE STORE', [
+                'raw_value' => $isSharedTemplate,
+                'type' => gettype($isSharedTemplate),
+                'is_1' => $isSharedTemplate == '1',
+                'is_true' => $isSharedTemplate === true,
+                'is_on' => $isSharedTemplate === 'on'
+            ]);
+            
+            // Check: als waarde is "1" of true of "on" = AANGEVINKT (App Sjabloon)
+            if ($isSharedTemplate == '1' || $isSharedTemplate === true || $isSharedTemplate === 'on') {
+                // App Sjabloon AAN: is_app_sjabloon = 1 (zichtbaar voor ALLE organisaties)
+                $data['is_app_sjabloon'] = 1;
                 \Log::info('✨ Creating APP SJABLOON (shared voor alle organisaties)', [
                     'naam' => $request->naam, 
+                    'organisatie_id' => 1,
+                    'is_app_sjabloon' => 1,
                     'is_actief' => $data['is_actief']
                 ]);
             } else {
-                // App Sjabloon UIT: zet op EIGEN organisatie van superadmin
-                $data['organisatie_id'] = $user->organisatie_id;
-                \Log::info('🔒 Creating PRIVÉ sjabloon voor eigen organisatie', [
+                // App Sjabloon UIT: is_app_sjabloon = 0 (PRIVÉ voor Performance Pulse)
+                $data['is_app_sjabloon'] = 0;
+                \Log::info('🔒 Creating PRIVÉ sjabloon voor Performance Pulse', [
                     'naam' => $request->naam, 
-                    'organisatie_id' => $user->organisatie_id,
+                    'organisatie_id' => 1,
+                    'is_app_sjabloon' => 0,
                     'is_actief' => $data['is_actief']
                 ]);
             }
         } else {
-            // Normale organisatie sjabloon
+            // Normale organisatie sjabloon (altijd privé)
             $data['organisatie_id'] = auth()->user()->organisatie_id;
+            $data['is_app_sjabloon'] = 0;
         }
         
         // Voeg user_id alleen toe als de kolom bestaat
@@ -174,10 +205,21 @@ class SjablonenController extends Controller
         }
 
         $sjabloon = Sjabloon::create($data);
+        
+        // 🔥 EXTRA DEBUG: Check wat er ECHT in de database staat
+        $freshSjabloon = Sjabloon::withoutGlobalScopes()->find($sjabloon->id);
+        \Log::info('🔍 OPGESLAGEN SJABLOON IN DB', [
+            'id' => $freshSjabloon->id,
+            'naam' => $freshSjabloon->naam,
+            'organisatie_id' => $freshSjabloon->organisatie_id,
+            'is_actief' => $freshSjabloon->is_actief
+        ]);
 
         $message = 'Sjabloon aangemaakt!';
-        if ($user->role === 'superadmin' && $data['organisatie_id'] == 1) {
-            $message = '✨ Standaard sjabloon succesvol aangemaakt! Dit sjabloon is nu zichtbaar voor alle organisaties.';
+        if ($user->role === 'superadmin' && $data['is_app_sjabloon'] == 1) {
+            $message = '✨ APP SJABLOON succesvol aangemaakt! Dit sjabloon is nu zichtbaar voor ALLE organisaties.';
+        } elseif ($user->role === 'superadmin' && $data['is_app_sjabloon'] == 0) {
+            $message = '🔒 PRIVÉ sjabloon succesvol aangemaakt voor Performance Pulse (alleen zichtbaar voor jouw organisatie).';
         }
 
         return redirect()->route('sjablonen.edit', $sjabloon)
@@ -411,59 +453,75 @@ class SjablonenController extends Controller
      */
     public function updateBasic(Request $request, $id)
     {
-        $this->checkAdminAccess();
+        $sjabloon = Sjabloon::withoutGlobalScopes()->findOrFail($id);
         
-        $user = auth()->user();
-        $sjabloon = Sjabloon::findOrFail($id);
-        
-        $request->validate([
+        $validated = $request->validate([
             'naam' => 'required|string|max:255',
-            'categorie' => 'required|string|max:255',
+            'categorie' => 'required|string',
             'testtype' => 'nullable|string|max:255',
             'beschrijving' => 'nullable|string',
-            'is_shared_template' => 'nullable|boolean',
-            'is_actief_checkbox' => 'nullable|boolean',
         ]);
-
-        // Update basis informatie
-        $sjabloon->update($request->only(['naam', 'categorie', 'testtype', 'beschrijving']));
         
-        // Superadmin: Update organisatie_id op basis van shared template checkbox
-        if ($user->role === 'superadmin') {
-            if ($request->has('is_shared_template') && $request->is_shared_template) {
-                // App Sjabloon AAN: maak het shared (organisatie_id = 1)
-                $previousOrgId = $sjabloon->organisatie_id;
-                $sjabloon->organisatie_id = 1;
-                \Log::info('✨ Updated to APP SJABLOON (shared)', [
+        // 🔥 DEBUG: Log ALLE request data
+        \Log::info('🔍 updateBasic DEBUG - VOLLEDIGE REQUEST', [
+            'sjabloon_id' => $sjabloon->id,
+            'oude_organisatie_id' => $sjabloon->organisatie_id,
+            'user_role' => auth()->user()->role,
+            'user_org_id' => auth()->user()->organisatie_id,
+            'request_all' => $request->all(),
+            'request_input_shared' => $request->input('is_shared_template'),
+            'request_has_shared' => $request->has('is_shared_template'),
+            'request_filled_shared' => $request->filled('is_shared_template'),
+        ]);
+        
+        // ✅ NIEUWE LOGICA MET is_app_sjabloon KOLOM
+        if (auth()->user()->role === 'superadmin') {
+            // Superadmin sjablonen zijn ALTIJD organisatie ID 1 (Performance Pulse)
+            $validated['organisatie_id'] = 1;
+            
+            // CHECKBOX bepaalt of het een APP SJABLOON is (zichtbaar voor iedereen) of PRIVÉ (alleen org 1)
+            $isSharedTemplate = $request->input('is_shared_template');
+            
+            \Log::info('🔍 CHECKBOX DEBUG UPDATE', [
+                'raw_value' => $isSharedTemplate,
+                'type' => gettype($isSharedTemplate),
+                'equals_1' => $isSharedTemplate == '1',
+                'equals_true' => $isSharedTemplate === true,
+                'equals_on' => $isSharedTemplate === 'on'
+            ]);
+            
+            // Check: waarde is "1" of true of "on" = AANGEVINKT (App Sjabloon)
+            if ($isSharedTemplate == '1' || $isSharedTemplate === true || $isSharedTemplate === 'on') {
+                $validated['is_app_sjabloon'] = 1;
+                \Log::info('🟣 SUPERADMIN UPDATE: ✅ App Sjabloon (voor ALLE organisaties)', [
                     'sjabloon_id' => $sjabloon->id,
-                    'previous_org' => $previousOrgId,
-                    'new_org' => 1,
-                    'is_actief' => $sjabloon->is_actief
+                    'naam' => $validated['naam'],
+                    'organisatie_id' => 1,
+                    'is_app_sjabloon' => 1,
+                    'checkbox_value' => $isSharedTemplate
                 ]);
             } else {
-                // App Sjabloon UIT: zet terug naar eigen organisatie van superadmin
-                $previousOrgId = $sjabloon->organisatie_id;
-                $sjabloon->organisatie_id = $user->organisatie_id;
-                \Log::info('🔒 Updated to PRIVÉ sjabloon (eigen organisatie)', [
+                // Waarde is "0" of null = UITGEVINKT (Privé Sjabloon voor Performance Pulse)
+                $validated['is_app_sjabloon'] = 0;
+                \Log::info('🔵 SUPERADMIN UPDATE: ❌ Privé Sjabloon (alleen Performance Pulse)', [
                     'sjabloon_id' => $sjabloon->id,
-                    'previous_org' => $previousOrgId,
-                    'new_org' => $user->organisatie_id,
-                    'is_actief' => $sjabloon->is_actief
+                    'naam' => $validated['naam'],
+                    'organisatie_id' => 1,
+                    'is_app_sjabloon' => 0,
+                    'checkbox_value' => $isSharedTemplate
                 ]);
             }
         }
         
-        \Log::info('💾 Sjabloon opgeslagen', [
+        $sjabloon->update($validated);
+        
+        \Log::info('✅ Sjabloon updated', [
             'sjabloon_id' => $sjabloon->id,
-            'organisatie_id' => $sjabloon->organisatie_id,
-            'is_actief' => $sjabloon->is_actief,
-            'is_shared' => $request->has('is_shared_template') && $request->is_shared_template
+            'organisatie_id_na_update' => $sjabloon->fresh()->organisatie_id
         ]);
         
-        $sjabloon->save();
-
-        return redirect()->route('sjablonen.edit', $sjabloon)
-                        ->with('success', 'Sjabloon informatie bijgewerkt! Nu kun je de inhoud bewerken.');
+        return redirect()->route('sjablonen.edit', $sjabloon->id)
+            ->with('success', 'Sjabloon informatie bijgewerkt!');
     }
 
     public function update(Request $request, Sjabloon $sjabloon)
@@ -932,14 +990,6 @@ class SjablonenController extends Controller
                 $organisatieId = $bikefit->klant->organisatie_id ?? auth()->user()->organisatie_id ?? 1;
                 $content = $rapportService->vervangRapportVariabelen($content, $organisatieId, $page->page_number);
                 
-                \Log::info('🔍 Bikefit rapport variabelen vervangen', [
-                    'organisatie_id' => $organisatieId,
-                    'page_number' => $page->page_number,
-                    'bikefit_id' => $bikefit->id,
-                    'contains_rapport_tag_before' => strpos($page->content ?? '', '{{rapport.') !== false,
-                    'contains_rapport_tag_after' => strpos($content, '{{rapport.') !== false
-                ]);
-                
                 // Verberg alle tabelranden voor layout tabellen (CKEditor tabellen zonder borders)
                 $content = $this->hideCKEditorTableBorders($content);
                 
@@ -1395,6 +1445,7 @@ class SjablonenController extends Controller
                 
                 // Add mobility table if available
                 $content = str_replace('$mobility_table_report$', $this->generateMobilityTable($bikefit), $content);
+                
                 
                 // 🆕 RAPPORT VARIABELEN VERVANGEN - MOET NA HTML COMPONENTEN!
                 $rapportService = new \App\Services\RapportVariabelenService();
@@ -1891,7 +1942,7 @@ class SjablonenController extends Controller
                     visibility: hidden !important;
                     font-size: 0px !important;
                     height: 0px !important;
-                                       opacity: 0 !important;
+                    opacity: 0 !important;
                 }
             </style>';
             

@@ -90,21 +90,23 @@
 
             @if(auth()->user()->role === 'superadmin')
                 <!-- Superadmin: App Sjabloon Toggle -->
-                <div class="mt-6 p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
-                    <label class="flex items-center cursor-pointer">
+                <div class="mb-4">
+                    <label class="flex items-center">
+                        {{-- ✅ HIDDEN FIELD TRICK: Checkbox uitgevinkt = "0" versturen, aangevinkt = "1" overschrijft --}}
+                        <input type="hidden" name="is_shared_template" value="0">
                         <input type="checkbox" 
                                name="is_shared_template" 
-                               id="is_shared_template" 
-                               value="1"
-                               {{ $sjabloon->organisatie_id == 1 ? 'checked' : '' }}
-                               class="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
-                        <span class="ml-3">
-                            <span class="text-sm font-semibold text-purple-900">✨ Maak dit een App Sjabloon</span>
-                            <span class="block text-xs text-purple-700 mt-1">
-                                App sjablonen zijn zichtbaar voor alle organisaties. Als je dit NIET aanvinkt, wordt het een privé sjabloon voor jouw organisatie.
-                            </span>
+                               value="1" 
+                               {{ old('is_shared_template', $sjabloon->is_app_sjabloon ?? 0) == 1 ? 'checked' : '' }}
+                               class="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
+                        <span class="ml-2 text-sm text-gray-600">
+                            <strong>App Sjabloon</strong> - Zichtbaar voor ALLE organisaties
                         </span>
                     </label>
+                    <p class="mt-1 text-xs text-gray-500">
+                        ✅ Aangevinkt = App Sjabloon (alle organisaties kunnen dit sjabloon gebruiken)<br>
+                        ❌ Uitgevinkt = Privé Sjabloon (alleen Performance Pulse kan dit sjabloon gebruiken)
+                    </p>
                 </div>
             @endif
             

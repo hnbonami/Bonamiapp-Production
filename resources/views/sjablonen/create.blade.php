@@ -118,17 +118,24 @@
                 <!-- Superadmin: App Sjabloon Toggle -->
                 <div class="mt-6 p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
                     <label class="flex items-center cursor-pointer">
-                        <input type="checkbox" 
-                               name="is_shared_template" 
-                               id="is_shared_template" 
-                               value="1"
-                               class="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
-                        <span class="ml-3">
-                            <span class="text-sm font-semibold text-purple-900">✨ Maak dit een App Sjabloon</span>
-                            <span class="block text-xs text-purple-700 mt-1">
-                                App sjablonen zijn zichtbaar voor alle organisaties. Als je dit NIET aanvinkt, wordt het een privé sjabloon voor jouw organisatie.
+                        {{-- ✅ HIDDEN FIELD TRICK: Checkbox uitgevinkt = "0" versturen, aangevinkt = "1" overschrijft --}}
+                        <input type="hidden" name="is_shared_template" value="0">
+                        
+                        <input 
+                            type="checkbox" 
+                            name="is_shared_template" 
+                            value="1"
+                            class="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                        >
+                        <div class="ml-3">
+                            <span class="text-sm font-semibold text-purple-900">
+                                ✨ App Sjabloon (Standaard voor alle organisaties)
                             </span>
-                        </span>
+                            <p class="text-xs text-purple-600 mt-1">
+                                ✅ Aangevinkt = Alle organisaties kunnen dit sjabloon gebruiken<br>
+                                ❌ Uitgevinkt = Alleen jouw organisatie ({{ auth()->user()->organisatie->naam }}) kan dit sjabloon gebruiken
+                            </p>
+                        </div>
                     </label>
                 </div>
             @endif

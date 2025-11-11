@@ -23,10 +23,10 @@ class Sjabloon extends Model
         'categorie',
         'testtype',
         'beschrijving',
-        'user_id',
         'organisatie_id',
-        'content',
-        'is_actief'
+        'user_id',
+        'is_actief',
+        'is_app_sjabloon'
     ];
 
     protected $casts = [
