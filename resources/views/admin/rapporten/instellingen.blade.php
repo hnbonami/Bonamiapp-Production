@@ -69,36 +69,6 @@
                         <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                     @enderror
                 </div>
-
-                <!-- Lettertype -->
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Lettertype</label>
-                    <select name="lettertype" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="Arial" {{ old('lettertype', $instellingen->lettertype) == 'Arial' ? 'selected' : '' }}>Arial</option>
-                        <option value="Tahoma" {{ old('lettertype', $instellingen->lettertype) == 'Tahoma' ? 'selected' : '' }}>Tahoma</option>
-                        <option value="Calibri" {{ old('lettertype', $instellingen->lettertype) == 'Calibri' ? 'selected' : '' }}>Calibri</option>
-                        <option value="Helvetica" {{ old('lettertype', $instellingen->lettertype) == 'Helvetica' ? 'selected' : '' }}>Helvetica</option>
-                    </select>
-                </div>
-
-                <!-- Paginanummering -->
-                <div class="mb-6">
-                    <label class="flex items-center mb-4">
-                        <input type="checkbox" name="paginanummering_tonen" value="1" 
-                               {{ old('paginanummering_tonen', $instellingen->paginanummering_tonen) ? 'checked' : '' }}
-                               class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <span class="ml-2 text-sm font-medium text-gray-700">Paginanummering tonen</span>
-                    </label>
-                    
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Positie paginanummering</label>
-                    <select name="paginanummering_positie" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                        <option value="rechtsonder" {{ old('paginanummering_positie', $instellingen->paginanummering_positie) == 'rechtsonder' ? 'selected' : '' }}>Rechtsonder</option>
-                        <option value="rechtsboven" {{ old('paginanummering_positie', $instellingen->paginanummering_positie) == 'rechtsboven' ? 'selected' : '' }}>Rechtsboven</option>
-                        <option value="linksonder" {{ old('paginanummering_positie', $instellingen->paginanummering_positie) == 'linksonder' ? 'selected' : '' }}>Linksonder</option>
-                        <option value="linksboven" {{ old('paginanummering_positie', $instellingen->paginanummering_positie) == 'linksboven' ? 'selected' : '' }}>Linksboven</option>
-                        <option value="midden" {{ old('paginanummering_positie', $instellingen->paginanummering_positie) == 'midden' ? 'selected' : '' }}>Midden</option>
-                    </select>
-                </div>
             </div>
         </div>
 
@@ -110,6 +80,18 @@
                 <!-- Logo Upload -->
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Logo (PNG, JPG, SVG - max 2MB)</label>
+                    
+                    <!-- Instructie box voor logo -->
+                    <div class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <h4 class="font-semibold text-green-900 mb-2">🎨 Logo richtlijnen:</h4>
+                        <ul class="text-sm text-green-800 space-y-1">
+                            <li>• <strong>Positie:</strong> Rechtsboven op elke pagina</li>
+                            <li>• <strong>Max breedte:</strong> 105px (wordt automatisch geschaald)</li>
+                            <li>• <strong>Formaat:</strong> Bij voorkeur PNG met transparante achtergrond</li>
+                            <li>• Gebruik een hoge resolutie voor scherpe print kwaliteit</li>
+                        </ul>
+                    </div>
+                    
                     @if($instellingen->logo_path)
                         <div class="mb-4 p-4 bg-gray-50 rounded-lg flex items-center justify-between">
                             <img src="{{ asset('storage/' . $instellingen->logo_path) }}" alt="Logo" class="h-16">
@@ -127,10 +109,23 @@
 
                 <!-- Voorblad Foto -->
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Voorblad Foto (PNG, JPG - max 5MB)</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Voorblad Foto (PNG, JPG - max 20MB)</label>
+                    
+                    <!-- Instructie box -->
+                    <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 class="font-semibold text-blue-900 mb-2">📐 Aanbevolen afmetingen:</h4>
+                        <ul class="text-sm text-blue-800 space-y-1">
+                            <li>• <strong>Breedte:</strong> 210mm (volledige A4 breedte)</li>
+                            <li>• <strong>Hoogte:</strong> 208mm (70% van A4 hoogte)</li>
+                            <li>• <strong>Verhouding:</strong> 210:208 (ongeveer vierkant)</li>
+                            <li>• De foto wordt automatisch aangepast aan deze afmetingen</li>
+                            <li>• Gebruik een foto met hoge resolutie voor beste kwaliteit</li>
+                        </ul>
+                    </div>
+                    
                     @if($instellingen->voorblad_foto_path)
                         <div class="mb-4 p-4 bg-gray-50 rounded-lg flex items-center justify-between">
-                            <img src="{{ asset('storage/' . $instellingen->voorblad_foto_path) }}" alt="Voorblad" class="h-32">
+                            <img src="{{ asset('storage/' . $instellingen->voorblad_foto_path) }}" alt="Voorblad" class="h-16" style="object-fit: cover; width: auto;">
                             <button type="button" onclick="deleteVoorbladFoto()" class="text-red-600 hover:text-red-800">
                                 🗑️ Verwijderen
                             </button>
