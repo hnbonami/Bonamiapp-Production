@@ -15,9 +15,15 @@ class SjablonenController extends Controller
      */
     private function checkAdminAccess()
     {
-        if (!in_array(auth()->user()->role, ['admin', 'organisatie_admin', 'superadmin'])) {
+        $user = auth()->user();
+        
+        if (!in_array($user->role, ['admin', 'organisatie_admin', 'superadmin'])) {
             abort(403, 'Geen toegang. Alleen administrators hebben toegang tot sjablonen beheer.');
         }
+
+        // Check of organisatie de feature heeft (voor bewerkingen)
+        // Lezen is altijd toegestaan, maar bewerken alleen met feature
+        // Deze check wordt per actie gedaan in de specifieke methods
     }
 
     public function index()
@@ -25,23 +31,59 @@ class SjablonenController extends Controller
         $this->checkAdminAccess();
         
         $user = auth()->user();
+        $organisatie = $user->organisatie;
         
-        // Superadmin ziet alle sjablonen van alle organisaties
-        $query = Sjabloon::where('is_actief', true);
+        // Check of organisatie de feature "rapporten_opmaken" heeft
+        $heeftRapportenOpmaken = $organisatie && $organisatie->hasFeature('rapporten_opmaken');
         
-        // Andere gebruikers zien alleen sjablonen van eigen organisatie
-        if ($user->role !== 'superadmin') {
-            $query->where('organisatie_id', $user->organisatie_id);
+        \Log::info('📋 Sjablonen Index', [
+            'user_role' => $user->role,
+            'organisatie_id' => $organisatie->id ?? null,
+            'heeft_rapporten_opmaken' => $heeftRapportenOpmaken
+        ]);
+        
+        if ($user->role === 'superadmin') {
+            // Superadmin ziet alle sjablonen van alle organisaties
+            $sjablonen = Sjabloon::where('is_actief', true)->orderBy('naam')->get();
+        } elseif ($heeftRapportenOpmaken) {
+            // Organisatie MET feature: eigen sjablonen + standaard sjablonen (org_id = 1)
+            $sjablonen = Sjabloon::where('is_actief', true)
+                ->where(function($query) use ($organisatie) {
+                    $query->where('organisatie_id', $organisatie->id)
+                          ->orWhere('organisatie_id', 1); // Standaard sjablonen
+                })
+                ->orderBy('naam')
+                ->get();
+        } else {
+            // Organisatie ZONDER feature: alleen standaard sjablonen (read-only)
+            $sjablonen = Sjabloon::where('is_actief', true)
+                ->where(function($query) {
+                    $query->whereNull('organisatie_id')
+                          ->orWhere('organisatie_id', 1);
+                })
+                ->orderBy('naam')
+                ->get();
         }
         
-        $sjablonen = $query->orderBy('naam')->get();
-        
-        return view('sjablonen.index', compact('sjablonen'));
+        return view('sjablonen.index', compact('sjablonen', 'heeftRapportenOpmaken'));
     }
 
     public function create()
     {
         $this->checkAdminAccess();
+        
+        $user = auth()->user();
+        $organisatie = $user->organisatie;
+        
+        // Check of organisatie de feature heeft
+        if ($user->role !== 'superadmin') {
+            $heeftFeature = $organisatie && $organisatie->hasFeature('rapporten_opmaken');
+            
+            if (!$heeftFeature) {
+                return redirect()->route('sjablonen.index')
+                    ->with('error', 'Je organisatie heeft geen toegang tot het aanmaken van eigen sjablonen. Gebruik de bestaande sjablonen van Performance Pulse.');
+            }
+        }
         
         return view('sjablonen.create');
     }
@@ -50,11 +92,25 @@ class SjablonenController extends Controller
     {
         $this->checkAdminAccess();
         
+        $user = auth()->user();
+        $organisatie = $user->organisatie;
+        
+        // Check of organisatie de feature heeft
+        if ($user->role !== 'superadmin') {
+            $heeftFeature = $organisatie && $organisatie->hasFeature('rapporten_opmaken');
+            
+            if (!$heeftFeature) {
+                return redirect()->route('sjablonen.index')
+                    ->with('error', 'Je organisatie heeft geen toegang tot het aanmaken van eigen sjablonen.');
+            }
+        }
+        
         $request->validate([
             'naam' => 'required|string|max:255',
             'categorie' => 'required|string|max:255',
             'testtype' => 'nullable|string|max:255',
             'beschrijving' => 'nullable|string',
+            'is_shared_template' => 'nullable|boolean',
         ]);
 
         // Bouw data array dynamisch op basis van aanwezige kolommen
@@ -64,8 +120,17 @@ class SjablonenController extends Controller
             'testtype' => $request->testtype,
             'beschrijving' => $request->beschrijving,
             'is_actief' => true,
-            'organisatie_id' => auth()->user()->organisatie_id,
         ];
+        
+        // Bepaal organisatie_id op basis van shared template toggle (alleen voor superadmin)
+        if ($user->role === 'superadmin' && $request->has('is_shared_template') && $request->is_shared_template) {
+            // Maak het een shared template (organisatie_id = 1 of NULL)
+            $data['organisatie_id'] = 1; // Standaard sjablonen krijgen organisatie_id 1
+            \Log::info('✨ Creating SHARED template', ['naam' => $request->naam]);
+        } else {
+            // Normale organisatie sjabloon
+            $data['organisatie_id'] = auth()->user()->organisatie_id;
+        }
         
         // Voeg user_id alleen toe als de kolom bestaat
         if (Schema::hasColumn('sjablonen', 'user_id')) {
@@ -74,8 +139,13 @@ class SjablonenController extends Controller
 
         $sjabloon = Sjabloon::create($data);
 
+        $message = 'Sjabloon aangemaakt!';
+        if ($user->role === 'superadmin' && $data['organisatie_id'] == 1) {
+            $message = '✨ Standaard sjabloon succesvol aangemaakt! Dit sjabloon is nu zichtbaar voor alle organisaties.';
+        }
+
         return redirect()->route('sjablonen.edit', $sjabloon)
-                        ->with('success', 'Sjabloon aangemaakt!');
+                        ->with('success', $message);
     }
 
     public function show($id)
@@ -811,21 +881,35 @@ class SjablonenController extends Controller
     public static function findMatchingTemplate($testtype, $category = null)
     {
         $user = auth()->user();
+        $organisatie = $user ? $user->organisatie : null;
         
-        // Base query met organisatie filter
-        $query = Sjabloon::where('is_actief', true);
-        
-        // Filter op organisatie (behalve voor superadmin)
-        if ($user && $user->role !== 'superadmin') {
-            $query->where('organisatie_id', $user->organisatie_id);
-        }
+        // Check of organisatie de feature heeft
+        $heeftRapportenOpmaken = $organisatie && $organisatie->hasFeature('rapporten_opmaken');
         
         \Log::info('🔍 Finding template', [
             'testtype' => $testtype,
             'category' => $category,
             'user_org' => $user ? $user->organisatie_id : null,
+            'heeft_rapporten_opmaken' => $heeftRapportenOpmaken,
             'is_superadmin' => $user ? ($user->role === 'superadmin') : false
         ]);
+        
+        // Base query
+        $query = Sjabloon::where('is_actief', true);
+        
+        if ($user && $user->role === 'superadmin') {
+            // Superadmin: zoek in alle sjablonen
+            // Geen extra filter
+        } elseif ($heeftRapportenOpmaken) {
+            // Organisatie MET feature: alleen eigen sjablonen
+            $query->where('organisatie_id', $organisatie->id);
+        } else {
+            // Organisatie ZONDER feature: gebruik shared templates (superadmin sjablonen)
+            $query->where(function($q) {
+                $q->whereNull('organisatie_id')
+                  ->orWhere('organisatie_id', 1); // Aanname: organisatie_id 1 = superadmin
+            });
+        }
         
         // First try to match both testtype and category (exact match)
         if ($testtype && $category) {
@@ -879,7 +963,8 @@ class SjablonenController extends Controller
         \Log::warning('❌ No template found', [
             'testtype' => $testtype,
             'category' => $category,
-            'user_org' => $user ? $user->organisatie_id : null
+            'user_org' => $user ? $user->organisatie_id : null,
+            'heeft_feature' => $heeftRapportenOpmaken
         ]);
         
         return null;

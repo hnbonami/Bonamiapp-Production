@@ -52,15 +52,48 @@
                 <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200">
                     <!-- Card Header -->
                     <div class="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $sjabloon->naam }}</h3>
-                        <div class="flex items-center space-x-2 mt-1">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {{ ucfirst($sjabloon->categorie) }}
-                            </span>
-                            @if($sjabloon->testtype)
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                    {{ $sjabloon->testtype }}
-                                </span>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">{{ $sjabloon->naam }}</h3>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        {{ ucfirst($sjabloon->categorie) }}
+                                    </span>
+                                    @if($sjabloon->testtype)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                            {{ $sjabloon->testtype }}
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
+                            
+                            @if(auth()->user()->role === 'superadmin')
+                                <!-- Superadmin: Toon shared badge -->
+                                @if(is_null($sjabloon->organisatie_id) || $sjabloon->organisatie_id == 1)
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-md">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"/>
+                                        </svg>
+                                        Standaard Sjabloon
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Organisatie: {{ $sjabloon->organisatie->naam ?? 'Onbekend' }}
+                                    </span>
+                                @endif
+                            @else
+                                <!-- Niet-superadmin: Toon alleen read-only badge als het een shared template is -->
+                                @if(!$heeftRapportenOpmaken && (is_null($sjabloon->organisatie_id) || $sjabloon->organisatie_id == 1))
+                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">
+                                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                        Alleen Lezen
+                                    </span>
+                                @endif
                             @endif
                         </div>
                     </div>
