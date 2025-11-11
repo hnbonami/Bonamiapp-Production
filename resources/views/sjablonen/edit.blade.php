@@ -315,6 +315,166 @@
                         </div>
                     @endforeach
                     
+                    <!-- 🆕 RAPPORT VARIABELEN - NIEUW TOEGEVOEGD -->
+                    <div class="mb-6">
+                        <h4 class="font-medium text-gray-900 mb-3">📄 Rapport Instellingen</h4>
+                        <div class="space-y-1">
+                            <div class="template-key p-3 rounded-lg border border-blue-200 bg-blue-50" onclick="insertKey('@{{ rapport.header }}')" title="Rapport header tekst">
+                                <div class="flex items-center">
+                                    <span class="text-blue-600 font-mono text-sm">📄</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Rapport Header</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.header }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-blue-200 bg-blue-50" onclick="insertKey('@{{ rapport.footer }}')" title="Rapport footer tekst">
+                                <div class="flex items-center">
+                                    <span class="text-blue-600 font-mono text-sm">📄</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Rapport Footer</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.footer }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-blue-200 bg-blue-50" onclick="insertKey('@{{ rapport.logo }}')" title="Organisatie logo (IMG tag)">
+                                <div class="flex items-center">
+                                    <span class="text-blue-600 font-mono text-sm">🖼️</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Logo</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.logo }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-blue-200 bg-blue-50" onclick="insertKey('@{{ rapport.voorblad_foto }}')" title="Voorblad foto (IMG tag)">
+                                <div class="flex items-center">
+                                    <span class="text-blue-600 font-mono text-sm">🖼️</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Voorblad Foto</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.voorblad_foto }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-blue-200 bg-blue-50" onclick="insertKey('@{{ rapport.primaire_kleur }}')" title="Primaire kleur (HEX)">
+                                <div class="flex items-center">
+                                    <span class="text-blue-600 font-mono text-sm">🎨</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Primaire Kleur</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.primaire_kleur }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-blue-200 bg-blue-50" onclick="insertKey('@{{ rapport.secundaire_kleur }}')" title="Secundaire kleur (HEX)">
+                                <div class="flex items-center">
+                                    <span class="text-blue-600 font-mono text-sm">🎨</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Secundaire Kleur</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.secundaire_kleur }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-blue-200 bg-blue-50" onclick="insertKey('@{{ rapport.lettertype }}')" title="Lettertype">
+                                <div class="flex items-center">
+                                    <span class="text-blue-600 font-mono text-sm">✍️</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Lettertype</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.lettertype }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-green-200 bg-green-50" onclick="insertKey('@{{ rapport.inleidende_tekst }}')" title="Inleidende tekst">
+                                <div class="flex items-center">
+                                    <span class="text-green-600 font-mono text-sm">📝</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Inleidende Tekst</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.inleidende_tekst }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-green-200 bg-green-50" onclick="insertKey('@{{ rapport.laatste_blad_tekst }}')" title="Laatste blad tekst">
+                                <div class="flex items-center">
+                                    <span class="text-green-600 font-mono text-sm">📝</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Laatste Blad Tekst</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.laatste_blad_tekst }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-green-200 bg-green-50" onclick="insertKey('@{{ rapport.disclaimer }}')" title="Disclaimer tekst">
+                                <div class="flex items-center">
+                                    <span class="text-green-600 font-mono text-sm">⚖️</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Disclaimer</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.disclaimer }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-purple-200 bg-purple-50" onclick="insertKey('@{{ rapport.contactgegevens }}')" title="Contactgegevens (HTML)">
+                                <div class="flex items-center">
+                                    <span class="text-purple-600 font-mono text-sm">📞</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Contactgegevens</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.contactgegevens }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-purple-200 bg-purple-50" onclick="insertKey('@{{ rapport.contact_adres }}')" title="Contact adres">
+                                <div class="flex items-center">
+                                    <span class="text-purple-600 font-mono text-sm">🏠</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Contact Adres</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.contact_adres }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-purple-200 bg-purple-50" onclick="insertKey('@{{ rapport.contact_telefoon }}')" title="Contact telefoon">
+                                <div class="flex items-center">
+                                    <span class="text-purple-600 font-mono text-sm">📱</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Contact Telefoon</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.contact_telefoon }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-purple-200 bg-purple-50" onclick="insertKey('@{{ rapport.contact_email }}')" title="Contact email">
+                                <div class="flex items-center">
+                                    <span class="text-purple-600 font-mono text-sm">📧</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Contact Email</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.contact_email }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-purple-200 bg-purple-50" onclick="insertKey('@{{ rapport.contact_website }}')" title="Contact website">
+                                <div class="flex items-center">
+                                    <span class="text-purple-600 font-mono text-sm">🌐</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Contact Website</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.contact_website }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-yellow-200 bg-yellow-50" onclick="insertKey('@{{ rapport.qr_code }}')" title="QR Code (IMG tag)">
+                                <div class="flex items-center">
+                                    <span class="text-yellow-600 font-mono text-sm">📱</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">QR Code</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.qr_code }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="template-key p-3 rounded-lg border border-yellow-200 bg-yellow-50" onclick="insertKey('@{{ rapport.paginanummer }}')" title="Paginanummer">
+                                <div class="flex items-center">
+                                    <span class="text-yellow-600 font-mono text-sm">🔢</span>
+                                    <div class="ml-2">
+                                        <div class="text-sm font-medium">Paginanummer</div>
+                                        <div class="text-xs text-gray-500">@{{ rapport.paginanummer }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Achtergronden Sectie -->
                     <div class="mb-6">
                         <h4 class="font-medium text-gray-900 mb-3 flex items-center justify-between">
