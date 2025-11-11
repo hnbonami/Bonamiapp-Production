@@ -49,7 +49,7 @@ class RapportVariabelenService
                 return [
                     'header' => $dbInstellingen->header_tekst ?? config('rapport.header'),
                     'footer' => $dbInstellingen->footer_tekst ?? config('rapport.footer'),
-                    'logo_html' => $dbInstellingen->logo_path ? '<div style="position: absolute; left: 0; right: 0; width: 210mm; display: flex; justify-content: flex-end; padding-right: 25mm;"><img src="' . asset('storage/' . $dbInstellingen->logo_path) . '" alt="Logo" style="max-width: 84px; height: auto;"></div><div style="height: 92px;"></div>' : '',
+                    'logo_html' => $dbInstellingen->logo_path ? '<div style="position: absolute; top: 20mm; right: -33mm;"><img src="' . asset('storage/' . $dbInstellingen->logo_path) . '" alt="Logo" style="max-width: 84px; height: auto;"></div><div style="height: 92px;"></div>' : '',
                     'voorblad_foto_html' => $dbInstellingen->voorblad_foto_path ? '<div style="position: relative; left: -20mm; width: 210mm; height: 208mm; overflow: hidden; margin: 20px 0;"><img src="' . asset('storage/' . $dbInstellingen->voorblad_foto_path) . '" alt="Voorblad" style="width: 210mm; height: 208mm; object-fit: cover; object-position: center;"></div>' : '',
                     'inleidende_tekst' => $dbInstellingen->inleidende_tekst ?? config('rapport.inleidende_tekst'),
                     'laatste_blad_tekst' => $dbInstellingen->laatste_blad_tekst ?? config('rapport.laatste_blad_tekst'),
