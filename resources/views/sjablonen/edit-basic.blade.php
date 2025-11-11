@@ -91,19 +91,37 @@
                 </div>
 
                 <!-- Beschrijving -->
-                <div class="mb-6">
-                    <label for="beschrijving" class="block text-sm font-medium text-gray-700 mb-2">
-                        Beschrijving (optioneel)
+                            <!-- Beschrijving -->
+            <div class="mt-6">
+                <label for="beschrijving" class="block text-sm font-medium text-gray-700">Beschrijving (optioneel)</label>
+                <textarea name="beschrijving" 
+                          id="beschrijving" 
+                          rows="4"
+                          class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ old('beschrijving', $sjabloon->beschrijving) }}</textarea>
+                @error('beschrijving')
+                    <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            @if(auth()->user()->role === 'superadmin')
+                <!-- Superadmin: Shared Template Toggle -->
+                <div class="mt-6 p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" 
+                               name="is_shared_template" 
+                               id="is_shared_template" 
+                               value="1"
+                               {{ old('is_shared_template', $sjabloon->organisatie_id == 1 && $sjabloon->is_actief == 1 ? 1 : 0) ? 'checked' : '' }}
+                               class="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500">
+                        <span class="ml-3">
+                            <span class="text-sm font-semibold text-purple-900">✨ Maak dit een Standaard Sjabloon</span>
+                            <span class="block text-xs text-purple-700 mt-1">
+                                Standaard sjablonen zijn zichtbaar voor alle organisaties en krijgen een speciale badge.
+                            </span>
+                        </span>
                     </label>
-                    <textarea id="beschrijving" 
-                              name="beschrijving" 
-                              rows="4"
-                              placeholder="Korte beschrijving van dit sjabloon..."
-                              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">{{ old('beschrijving', $sjabloon->beschrijving) }}</textarea>
-                    @error('beschrijving')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
                 </div>
+            @endif
 
                 <!-- Buttons -->
                 <div class="flex gap-4 pt-4">

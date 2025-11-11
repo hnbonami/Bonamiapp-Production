@@ -47,11 +47,20 @@ class SjablonenController extends Controller
         \Log::info('🗂️ Database kolommen sjablonen tabel', ['columns' => $columns]);
         
         if ($user->role === 'superadmin') {
-            // Superadmin ziet alle sjablonen van alle organisaties
-            $sjablonen = Sjabloon::withoutGlobalScopes()->whereRaw('is_actief = 1')->orderBy('naam')->get();
+            // Superadmin ziet:
+            // 1. Standaard sjablonen (organisatie_id = 1, is_actief = 1)
+            // 2. Eigen organisatie sjablonen (organisatie_id = superadmin's organisatie_id, is_actief = 0 of 1)
+            $sjablonen = Sjabloon::withoutGlobalScopes()
+                ->where(function($query) use ($user) {
+                    $query->where('organisatie_id', 1) // Standaard sjablonen (actief en inactief van org 1)
+                          ->orWhere('organisatie_id', $user->organisatie_id); // Eigen organisatie sjablonen
+                })
+                ->orderBy('naam')
+                ->get();
             
-            \Log::info('✅ Superadmin - Alle sjablonen', [
-                'count' => $sjablonen->count()
+            \Log::info('✅ Superadmin - Standaard + Eigen organisatie sjablonen', [
+                'count' => $sjablonen->count(),
+                'superadmin_org_id' => $user->organisatie_id
             ]);
         } elseif ($heeftRapportenOpmaken) {
             // Organisatie MET feature: eigen sjablonen + standaard sjablonen (org_id = 1)
@@ -165,9 +174,15 @@ class SjablonenController extends Controller
         
         // Bepaal organisatie_id op basis van shared template toggle (alleen voor superadmin)
         if ($user->role === 'superadmin' && $request->has('is_shared_template') && $request->is_shared_template) {
-            // Maak het een shared template (organisatie_id = 1 of NULL)
-            $data['organisatie_id'] = 1; // Standaard sjablonen krijgen organisatie_id 1
-            \Log::info('✨ Creating SHARED template', ['naam' => $request->naam]);
+            // Maak het een shared template (organisatie_id = 1)
+            $data['organisatie_id'] = 1;
+            \Log::info('✨ Creating SHARED template (zichtbaar voor alle organisaties)', ['naam' => $request->naam]);
+        } elseif ($user->role === 'superadmin' && (!$request->has('is_shared_template') || !$request->is_shared_template)) {
+            // Superadmin ZONDER vinkje: maak het privé voor Performance Pulse (organisatie ID 1, maar NIET gedeeld)
+            // We gebruiken een speciale marker om aan te geven dat dit NIET gedeeld moet worden
+            $data['organisatie_id'] = 1;
+            $data['is_actief'] = 0; // Zet op inactief zodat het NIET zichtbaar is voor andere organisaties
+            \Log::info('🔒 Creating PRIVATE template voor Performance Pulse (alleen zichtbaar in ID1)', ['naam' => $request->naam]);
         } else {
             // Normale organisatie sjabloon
             $data['organisatie_id'] = auth()->user()->organisatie_id;
@@ -199,8 +214,19 @@ class SjablonenController extends Controller
         $sjabloon = Sjabloon::findOrFail($id);
         
         // Check organisatie toegang (behalve voor superadmin)
-        if ($user->role !== 'superadmin' && $sjabloon->organisatie_id !== $user->organisatie_id) {
-            abort(403, 'Geen toegang tot sjablonen van andere organisatie');
+        if ($user->role !== 'superadmin') {
+            $organisatie = $user->organisatie;
+            $heeftRapportenOpmaken = $organisatie && $organisatie->hasFeature('rapporten_opmaken');
+            
+            // Toegang alleen als:
+            // 1. Eigen sjabloon (organisatie_id matches)
+            // 2. Standaard sjabloon (organisatie_id = 1 EN is_actief = 1)
+            $isEigenSjabloon = $sjabloon->organisatie_id === $user->organisatie_id;
+            $isStandaardSjabloon = $sjabloon->organisatie_id == 1 && $sjabloon->is_actief == 1;
+            
+            if (!$isEigenSjabloon && !$isStandaardSjabloon) {
+                abort(403, 'Geen toegang tot dit sjabloon');
+            }
         }
         
         $sjabloon->load('pages');
@@ -218,8 +244,26 @@ class SjablonenController extends Controller
         $sjabloon = Sjabloon::findOrFail($id);
         
         // Check organisatie toegang (behalve voor superadmin)
-        if ($user->role !== 'superadmin' && $sjabloon->organisatie_id !== $user->organisatie_id) {
-            abort(403, 'Geen toegang tot sjablonen van andere organisatie');
+        if ($user->role !== 'superadmin') {
+            $organisatie = $user->organisatie;
+            $heeftRapportenOpmaken = $organisatie && $organisatie->hasFeature('rapporten_opmaken');
+            
+            // Toegang alleen als:
+            // 1. Eigen sjabloon (organisatie_id matches)
+            // 2. Standaard sjabloon (organisatie_id = 1 EN is_actief = 1) - ALLEEN BEKIJKEN, NIET BEWERKEN
+            $isEigenSjabloon = $sjabloon->organisatie_id === $user->organisatie_id;
+            $isStandaardSjabloon = $sjabloon->organisatie_id == 1 && $sjabloon->is_actief == 1;
+            
+            if (!$isEigenSjabloon && !$isStandaardSjabloon) {
+                abort(403, 'Geen toegang tot dit sjabloon');
+            }
+            
+            // Als het een standaard sjabloon is EN gebruiker heeft GEEN rapporten_opmaken feature
+            // Dan mag deze NIET bewerken (redirect naar read-only view)
+            if ($isStandaardSjabloon && !$isEigenSjabloon && !$heeftRapportenOpmaken) {
+                return redirect()->route('sjablonen.show', $sjabloon)
+                    ->with('info', 'Standaard sjablonen kunnen niet worden bewerkt. Dupliceer het sjabloon om een eigen versie te maken.');
+            }
         }
         
         // Load pages from database
@@ -368,8 +412,12 @@ class SjablonenController extends Controller
         $sjabloon = Sjabloon::findOrFail($id);
         
         // Check organisatie toegang (behalve voor superadmin)
-        if ($user->role !== 'superadmin' && $sjabloon->organisatie_id !== $user->organisatie_id) {
-            abort(403, 'Geen toegang tot sjablonen van andere organisatie');
+        if ($user->role !== 'superadmin') {
+            $isEigenSjabloon = $sjabloon->organisatie_id === $user->organisatie_id;
+            
+            if (!$isEigenSjabloon) {
+                abort(403, 'Je kunt alleen je eigen sjablonen bewerken');
+            }
         }
         
         return view('sjablonen.edit-basic', compact('sjabloon'));
@@ -382,6 +430,7 @@ class SjablonenController extends Controller
     {
         $this->checkAdminAccess();
         
+        $user = auth()->user();
         $sjabloon = Sjabloon::findOrFail($id);
         
         $request->validate([
@@ -389,9 +438,27 @@ class SjablonenController extends Controller
             'categorie' => 'required|string|max:255',
             'testtype' => 'nullable|string|max:255',
             'beschrijving' => 'nullable|string',
+            'is_shared_template' => 'nullable|boolean',
         ]);
 
+        // Update basis informatie
         $sjabloon->update($request->only(['naam', 'categorie', 'testtype', 'beschrijving']));
+        
+        // Superadmin: Update shared template status
+        if ($user->role === 'superadmin') {
+            if ($request->has('is_shared_template') && $request->is_shared_template) {
+                // Maak het een shared template
+                $sjabloon->organisatie_id = 1;
+                $sjabloon->is_actief = 1;
+                \Log::info('✨ Updated to SHARED template', ['sjabloon_id' => $sjabloon->id]);
+            } else {
+                // Maak het privé voor Performance Pulse
+                $sjabloon->organisatie_id = 1;
+                $sjabloon->is_actief = 0;
+                \Log::info('🔒 Updated to PRIVATE template', ['sjabloon_id' => $sjabloon->id]);
+            }
+            $sjabloon->save();
+        }
 
         return redirect()->route('sjablonen.edit', $sjabloon)
                         ->with('success', 'Sjabloon informatie bijgewerkt! Nu kun je de inhoud bewerken.');
@@ -428,8 +495,12 @@ class SjablonenController extends Controller
             $sjabloon = Sjabloon::findOrFail($id);
             
             // Check organisatie toegang (behalve voor superadmin)
-            if ($user->role !== 'superadmin' && $sjabloon->organisatie_id !== $user->organisatie_id) {
-                abort(403, 'Geen toegang tot sjablonen van andere organisatie');
+            if ($user->role !== 'superadmin') {
+                $isEigenSjabloon = $sjabloon->organisatie_id === $user->organisatie_id;
+                
+                if (!$isEigenSjabloon) {
+                    abort(403, 'Je kunt alleen je eigen sjablonen verwijderen');
+                }
             }
             
             // Debug log met ID
@@ -467,8 +538,19 @@ class SjablonenController extends Controller
             $sjabloon = Sjabloon::findOrFail($id);
             
             // Check organisatie toegang (behalve voor superadmin)
-            if ($user->role !== 'superadmin' && $sjabloon->organisatie_id !== $user->organisatie_id) {
-                abort(403, 'Geen toegang tot sjablonen van andere organisatie');
+            if ($user->role !== 'superadmin') {
+                $organisatie = $user->organisatie;
+                $heeftRapportenOpmaken = $organisatie && $organisatie->hasFeature('rapporten_opmaken');
+                
+                // Toegang tot dupliceren als:
+                // 1. Eigen sjabloon
+                // 2. Standaard sjabloon (organisatie_id = 1)
+                $isEigenSjabloon = $sjabloon->organisatie_id === $user->organisatie_id;
+                $isStandaardSjabloon = $sjabloon->organisatie_id == 1 && $sjabloon->is_actief == 1;
+                
+                if (!$isEigenSjabloon && !$isStandaardSjabloon) {
+                    abort(403, 'Je kunt dit sjabloon niet dupliceren');
+                }
             }
             
             \Log::info('Duplicating sjabloon: ' . $sjabloon->id . ' (naam: ' . $sjabloon->naam . ')');
