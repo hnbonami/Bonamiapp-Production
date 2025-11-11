@@ -140,13 +140,10 @@ class SjablonenController extends Controller
         ]);
 
         // Bouw data array dynamisch op basis van aanwezige kolommen
-        $data = [
-            'naam' => $request->naam,
-            'categorie' => $request->categorie,
-            'testtype' => $request->testtype,
-            'beschrijving' => $request->beschrijving,
-            'is_actief' => $request->has('is_actief') && $request->is_actief ? 1 : 0,
-        ];
+        $data = $request->only(['naam', 'categorie', 'testtype', 'beschrijving']);
+        
+        // Nieuwe sjablonen zijn standaard actief
+        $data['is_actief'] = 1;
         
         // Bepaal organisatie_id op basis van shared template toggle (alleen voor superadmin)
         if ($user->role === 'superadmin') {
@@ -349,6 +346,9 @@ class SjablonenController extends Controller
                 (object)['placeholder' => '{{test.lichaamslengte_cm}}', 'display_name' => 'Lengte (cm)'],
                 (object)['placeholder' => '{{test.lichaamsgewicht_kg}}', 'display_name' => 'Gewicht (kg)'],
                 (object)['placeholder' => '{{test.bmi}}', 'display_name' => 'BMI'],
+                (object)['placeholder' => '{{test.lichaamslengte_cm}}', 'display_name' => 'Lengte (cm)'],
+                (object)['placeholder' => '{{test.lichaamsgewicht_kg}}', 'display_name' => 'Gewicht (kg)'],
+                (object)['placeholder' => '{{test.bmi}}', 'display_name' => 'BMI'],
                 (object)['placeholder' => '{{test.hartslag_rust_bpm}}', 'display_name' => 'Hartslag rust (bpm)'],
                 (object)['placeholder' => '{{test.maximale_hartslag_bpm}}', 'display_name' => 'Hartslag max (bpm)'],
                 (object)['placeholder' => '{{test.buikomtrek_cm}}', 'display_name' => 'Buikomtrek (cm)'],
@@ -427,9 +427,6 @@ class SjablonenController extends Controller
 
         // Update basis informatie
         $sjabloon->update($request->only(['naam', 'categorie', 'testtype', 'beschrijving']));
-        
-        // Update is_actief status (VOOR IEDEREEN - voordat we organisatie_id aanpassen)
-        $sjabloon->is_actief = $request->has('is_actief_checkbox') && $request->is_actief_checkbox ? 1 : 0;
         
         // Superadmin: Update organisatie_id op basis van shared template checkbox
         if ($user->role === 'superadmin') {
@@ -1945,6 +1942,46 @@ class SjablonenController extends Controller
                 $results[$field] = $customValue;
                 \Log::info("✅ Custom waarde toegepast in sjabloon: {$context}.{$field} = {$customValue}");
             }
+        }
+    }
+    
+    public function toggleActief(Request $request, $id)
+    {
+        try {
+            $sjabloon = Sjabloon::withoutGlobalScopes()->findOrFail($id);
+            
+            // Valideer input
+            $request->validate([
+                'is_actief' => 'required|boolean'
+            ]);
+            
+            // Update status
+            $sjabloon->is_actief = $request->is_actief;
+            $sjabloon->save();
+            
+            \Log::info('✅ Sjabloon actief status gewijzigd', [
+                'sjabloon_id' => $id,
+                'naam' => $sjabloon->naam,
+                'is_actief' => $request->is_actief,
+                'user_id' => auth()->id()
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'is_actief' => $sjabloon->is_actief,
+                'message' => 'Status bijgewerkt'
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('❌ Fout bij toggle actief', [
+                'sjabloon_id' => $id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Er is een fout opgetreden'
+            ], 500);
         }
     }
 }

@@ -102,37 +102,20 @@
             </div>
 
             <!-- Beschrijving -->
+                        <!-- Beschrijving -->
             <div class="mt-6">
                 <label for="beschrijving" class="block text-sm font-medium text-gray-700">Beschrijving (optioneel)</label>
                 <textarea name="beschrijving" 
                           id="beschrijving" 
-                          rows="4"
+                          rows="3" 
                           class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">{{ old('beschrijving') }}</textarea>
                 @error('beschrijving')
                     <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                 @enderror
             </div>
 
-                        <!-- Sjabloon Actief/Inactief Toggle -->
-            <div class="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                <label class="flex items-center cursor-pointer">
-                    <input type="checkbox" 
-                           name="is_actief" 
-                           id="is_actief" 
-                           value="1"
-                           checked
-                           class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                    <span class="ml-3">
-                        <span class="text-sm font-semibold text-blue-900">✓ Sjabloon Actief</span>
-                        <span class="block text-xs text-blue-700 mt-1">
-                            Inactieve sjablonen worden niet getoond in de sjablonen lijst en kunnen niet gebruikt worden voor rapporten.
-                        </span>
-                    </span>
-                </label>
-            </div>
-
             @if(auth()->user()->role === 'superadmin')
-                <!-- Superadmin: Shared Template Toggle (STANDAARD UITGESCHAKELD) -->
+                <!-- Superadmin: App Sjabloon Toggle -->
                 <div class="mt-6 p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
                     <label class="flex items-center cursor-pointer">
                         <input type="checkbox" 

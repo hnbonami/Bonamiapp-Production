@@ -868,6 +868,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('sjablonen/backgrounds/upload', [App\Http\Controllers\SjablonenController::class, 'uploadBackground'])->name('sjablonen.backgrounds.upload');
     Route::delete('sjablonen/backgrounds/{filename}', [App\Http\Controllers\SjablonenController::class, 'deleteBackground'])->name('sjablonen.backgrounds.delete');
     
+    // Toggle actief status route - NIEUW
+    Route::post('sjablonen/{sjabloon}/toggle-actief', [App\Http\Controllers\SjablonenController::class, 'toggleActief'])->name('sjablonen.toggle-actief');
+    
     // HOOFDROUTE - DEZE WERKTE AL!!!
     Route::resource('sjablonen', App\Http\Controllers\SjablonenController::class);
     
