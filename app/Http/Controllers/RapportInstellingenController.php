@@ -39,11 +39,68 @@ class RapportInstellingenController extends Controller
         $user = auth()->user();
         $organisatie = $user->organisatie;
         
-        // Haal bestaande instellingen op of maak nieuwe met defaults
+        // Bouw adres string uit organisatie gegevens
+        $adresString = null;
+        if ($organisatie->adres || $organisatie->postcode || $organisatie->plaats) {
+            $adresParts = array_filter([
+                $organisatie->adres,
+                $organisatie->postcode,
+                $organisatie->plaats
+            ]);
+            $adresString = implode(', ', $adresParts);
+        }
+        
+        // Haal bestaande instellingen op of maak nieuwe met defaults + organisatie gegevens
         $instellingen = OrganisatieRapportInstelling::firstOrCreate(
             ['organisatie_id' => $organisatie->id],
-            OrganisatieRapportInstelling::getDefaults()
+            array_merge(
+                OrganisatieRapportInstelling::getDefaults(),
+                [
+                    // Pre-fill met organisatiegegevens als deze nog niet bestaan
+                    'contact_adres' => $adresString,
+                    'contact_telefoon' => $organisatie->telefoon,
+                    'contact_email' => $organisatie->email,
+                    'contact_website' => null, // Website staat niet in organisaties tabel
+                ]
+            )
         );
+        
+        // SMART PRE-FILL: Als contactvelden nog leeg zijn, vul ze dan met organisatiegegevens
+        $isUpdated = false;
+        
+        if (empty($instellingen->contact_adres) && $adresString) {
+            $instellingen->contact_adres = $adresString;
+            $isUpdated = true;
+        }
+        
+        if (empty($instellingen->contact_telefoon) && $organisatie->telefoon) {
+            $instellingen->contact_telefoon = $organisatie->telefoon;
+            $isUpdated = true;
+        }
+        
+        // Email: vul ALTIJD in met organisatie email, behalve als er een custom email is ingesteld
+        if ($organisatie->email) {
+            $currentEmail = $instellingen->contact_email;
+            $isDefaultOrEmpty = empty($currentEmail) || $currentEmail === 'info@performancepulse.nl';
+            
+            // Als het leeg is of de default waarde heeft, gebruik organisatie email
+            if ($isDefaultOrEmpty) {
+                $instellingen->contact_email = $organisatie->email;
+                $isUpdated = true;
+            }
+        }
+        
+        // Sla automatisch op als we updates hebben gedaan
+        if ($isUpdated) {
+            $instellingen->save();
+            \Log::info('📝 Contactgegevens automatisch vooraf ingevuld', [
+                'organisatie_id' => $organisatie->id,
+                'organisatie_naam' => $organisatie->naam,
+                'adres' => $instellingen->contact_adres,
+                'telefoon' => $instellingen->contact_telefoon,
+                'email' => $instellingen->contact_email
+            ]);
+        }
         
         return view('admin.rapporten.instellingen', compact('instellingen', 'organisatie'));
     }

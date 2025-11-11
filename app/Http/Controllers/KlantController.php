@@ -168,10 +168,11 @@ class KlantController extends Controller
             });
         }
         
-        $klanten = $query->orderBy('created_at', 'desc')->paginate(15);
+        // Haal ALLE klanten op (geen paginering)
+        $klanten = $query->orderBy('created_at', 'desc')->get();
         
         \Log::info('✅ Klanten gevonden', [
-            'total' => $klanten->total(),
+            'total' => $klanten->count(),
             'eerste_3' => $klanten->take(3)->map(fn($k) => [
                 'id' => $k->id,
                 'naam' => $k->naam,
