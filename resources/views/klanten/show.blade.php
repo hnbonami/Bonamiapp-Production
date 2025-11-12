@@ -85,7 +85,7 @@
             <div>
                 <p class="text-sm font-medium text-gray-500">Status</p>
                 <p class="mt-1">
-                    <span class="px-2.5 py-1 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
+                    <span class="px-6 py-1.5 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
                 </p>
             </div>
         </div>
@@ -145,7 +145,7 @@
                     <div>
                         <p class="text-sm font-medium text-gray-500">Status</p>
                         <p class="mt-1">
-                            <span class="px-2.5 py-1 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
+                            <span class="px-6 py-1.5 inline-flex text-sm font-semibold rounded-full {{ ($klant->status ?? '') === 'Actief' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">{{ $klant->status ?? 'Onbekend' }}</span>
                         </p>
                     </div>
                 </div>
@@ -354,6 +354,7 @@ if (uploadModal) {
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medewerker</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tijdstempel</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
                             </tr>
                         </thead>
@@ -405,6 +406,13 @@ if (uploadModal) {
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {{ $test->user ? $test->user->name : 'Onbekend' }}
                         </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            @if($test->type === 'bikefit' || $test->type === 'inspanningstest')
+                                {{ $test->created_at ? $test->created_at->format('d-m-Y H:i') : 'Onbekend' }}
+                            @elseif($test->type === 'document')
+                                {{ $test->created_at ? $test->created_at->format('d-m-Y H:i') : 'Onbekend' }}
+                            @endif
+                        </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right align-top">
                             <div class="action-buttons flex flex-row flex-nowrap items-center justify-end gap-2">
                                 {{-- Preview/Download knoppen - ALTIJD zichtbaar voor iedereen --}}
@@ -454,6 +462,7 @@ if (uploadModal) {
                                     onclick="openEditUploadModal({{ $test->id }}, '{{ addslashes($test->titel ?? '') }}', '{{ addslashes($test->beschrijving ?? '') }}', '{{ $test->toegang ?? 'alle_medewerkers' }}')"
                                     aria-label="Bewerk" 
                                     class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-800" 
+                                    style="background-color: #ffedd5 !important; color: #c2410c !important;"
                                     title="Bewerk">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/>

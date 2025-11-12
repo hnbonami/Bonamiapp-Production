@@ -185,7 +185,26 @@ class KlantController extends Controller
 
     public function create()
     {
-        return view('klanten.create');
+        // Haal alle actieve klanten op van huidige organisatie voor referral dropdown
+        $availableReferringCustomers = Klant::where('organisatie_id', auth()->user()->organisatie_id)
+            ->where('status', 'Actief')
+            ->orderBy('naam')
+            ->orderBy('voornaam')
+            ->get()
+            ->map(function($klant) {
+                return [
+                    'id' => $klant->id,
+                    'name' => trim($klant->voornaam . ' ' . $klant->naam),
+                    'email' => $klant->email ?? 'Geen email'
+                ];
+            });
+        
+        \Log::info('📋 Klanten create view geladen', [
+            'available_referring_customers' => $availableReferringCustomers->count(),
+            'organisatie_id' => auth()->user()->organisatie_id
+        ]);
+        
+        return view('klanten.create', compact('availableReferringCustomers'));
     }
 
     public function store(Request $request)
