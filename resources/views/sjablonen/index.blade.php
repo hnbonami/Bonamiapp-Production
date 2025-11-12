@@ -80,11 +80,19 @@
                                     </span>
                                 @endif
                             @else
-                                <!-- Niet-superadmin: Toon App Sjablon badge voor shared templates -->
-                                @if($sjabloon->organisatie_id == 1)
-                                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold shadow-md" style="background: linear-gradient(135deg, #b4eda3ff 0%, #b4eda3ff 100%); color: black;">
-                                        App Sjabloon
+                                {{-- Badge logica: Toon App Sjabloon badge voor iedereen --}}
+                                @if($sjabloon->is_app_sjabloon == 1)
+                                    {{-- App Sjabloon badge (groen) --}}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        ✅ App Sjabloon
                                     </span>
+                                @else
+                                    {{-- Privé Sjabloon badge (oranje) - alleen tonen als het sjabloon van deze organisatie is --}}
+                                    @if($sjabloon->organisatie_id == auth()->user()->organisatie_id)
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                            🔒 Privé Sjabloon
+                                        </span>
+                                    @endif
                                 @endif
                             @endif
                         </div>
