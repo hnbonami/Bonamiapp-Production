@@ -146,7 +146,12 @@
                                 </script>
                             
                             @elseif($widget->type === 'image' && $widget->image_path)
-                                <img src="{{ asset('storage/' . $widget->image_path) }}" alt="{{ $widget->title }}" style="width:100%;height:auto;border-radius:8px;">
+                                @php
+                                    $imageUrl = app()->environment('production') 
+                                        ? asset('uploads/' . $widget->image_path)
+                                        : asset('storage/' . $widget->image_path);
+                                @endphp
+                                <img src="{{ $imageUrl }}" alt="{{ $widget->title }}" style="width:100%;height:auto;border-radius:8px;">
                             
                             @elseif($widget->type === 'button')
                                 <a href="{{ $widget->button_url }}" class="inline-flex items-center justify-center gap-2" style="background:#c8e1eb;color:#111;padding:0.8em 1.5em;border-radius:7px;text-decoration:none;font-weight:600;width:100%;text-align:center;">

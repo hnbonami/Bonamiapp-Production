@@ -157,7 +157,31 @@ class DashboardController extends Controller
 
         // Upload afbeelding indien aanwezig
         if ($request->hasFile('image')) {
-            $validated['image_path'] = $request->file('image')->store('widgets', 'public');
+            $image = $request->file('image');
+            $imageName = 'widget_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            
+            if (app()->environment('production')) {
+                // PRODUCTIE: Upload naar httpd.www/uploads/widgets
+                $destinationPath = base_path('../httpd.www/uploads/widgets');
+                
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+                
+                $image->move($destinationPath, $imageName);
+                $validated['image_path'] = 'widgets/' . $imageName;
+                
+                \Log::info('✅ Widget image uploaded to PRODUCTION', [
+                    'path' => $destinationPath . '/' . $imageName
+                ]);
+            } else {
+                // LOKAAL: Upload naar storage/app/public/widgets
+                $validated['image_path'] = $image->store('widgets', 'public');
+                
+                \Log::info('✅ Widget image uploaded to LOCAL', [
+                    'path' => $validated['image_path']
+                ]);
+            }
         }
 
         // Zet creator en organisatie
@@ -286,9 +310,41 @@ class DashboardController extends Controller
         if ($request->hasFile('image')) {
             // Verwijder oude afbeelding
             if ($widget->image_path) {
-                Storage::disk('public')->delete($widget->image_path);
+                if (app()->environment('production')) {
+                    $oldPath = base_path('../httpd.www/uploads/' . $widget->image_path);
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                    }
+                } else {
+                    Storage::disk('public')->delete($widget->image_path);
+                }
             }
-            $validated['image_path'] = $request->file('image')->store('widgets', 'public');
+            
+            $image = $request->file('image');
+            $imageName = 'widget_' . time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+            
+            if (app()->environment('production')) {
+                // PRODUCTIE: Upload naar httpd.www/uploads/widgets
+                $destinationPath = base_path('../httpd.www/uploads/widgets');
+                
+                if (!file_exists($destinationPath)) {
+                    mkdir($destinationPath, 0755, true);
+                }
+                
+                $image->move($destinationPath, $imageName);
+                $validated['image_path'] = 'widgets/' . $imageName;
+                
+                \Log::info('✅ Widget image updated in PRODUCTION', [
+                    'path' => $destinationPath . '/' . $imageName
+                ]);
+            } else {
+                // LOKAAL: Upload naar storage/app/public/widgets
+                $validated['image_path'] = $image->store('widgets', 'public');
+                
+                \Log::info('✅ Widget image updated in LOCAL', [
+                    'path' => $validated['image_path']
+                ]);
+            }
         }
 
         $widget->update($validated);
@@ -427,7 +483,14 @@ class DashboardController extends Controller
 
         // Verwijder afbeelding indien aanwezig
         if ($widget->image_path) {
-            Storage::disk('public')->delete($widget->image_path);
+            if (app()->environment('production')) {
+                $imagePath = base_path('../httpd.www/uploads/' . $widget->image_path);
+                if (file_exists($imagePath)) {
+                    unlink($imagePath);
+                }
+            } else {
+                Storage::disk('public')->delete($widget->image_path);
+            }
         }
 
         // Verwijder alle user layouts

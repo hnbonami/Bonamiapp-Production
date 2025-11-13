@@ -84,7 +84,12 @@
             <label for="image" style="display:block;font-weight:600;margin-bottom:0.5em;">Nieuwe Afbeelding</label>
             @if($widget->image_path)
                 <div style="margin-bottom:1em;">
-                    <img src="{{ asset('storage/' . $widget->image_path) }}" alt="Current image" style="max-width:300px;border-radius:8px;">
+                    @php
+                        $imageUrl = app()->environment('production') 
+                            ? asset('uploads/' . $widget->image_path)
+                            : asset('storage/' . $widget->image_path);
+                    @endphp
+                    <img src="{{ $imageUrl }}" alt="Current widget image" class="max-w-xs rounded-lg shadow-sm">
                 </div>
             @endif
             <input type="file" name="image" id="image" accept="image/*" style="width:100%;padding:0.8em;border:1px solid #d1d5db;border-radius:7px;">
