@@ -40,39 +40,51 @@ class DashboardWidgetPolicy
 
     /**
      * Bepaal of user een nieuwe widget mag aanmaken
+     * Admin, medewerker en superadmin kunnen widgets aanmaken
      */
     public function create(User $user): bool
     {
-        // Alleen admin, organisatie admin en superadmin mogen widgets aanmaken
-        return in_array($user->role, ['admin', 'organisatie_admin', 'superadmin']);
+        return in_array($user->role, ['admin', 'medewerker', 'superadmin']);
     }
 
     /**
      * Bepaal of user een widget mag bewerken
+     * Alleen de creator, admin en superadmin kunnen bewerken
      */
     public function update(User $user, DashboardWidget $widget): bool
     {
-        // Admin en superadmin mogen alles bewerken
-        if (in_array($user->role, ['admin', 'superadmin'])) {
+        // Superadmin kan alles
+        if ($user->isSuperAdmin()) {
             return true;
         }
         
-        // Anders, alleen de maker mag bewerken
-        return $user->id === $widget->created_by;
+        // Admin binnen eigen organisatie
+        if ($user->isBeheerder() && $user->organisatie_id === $widget->organisatie_id) {
+            return true;
+        }
+        
+        // Creator kan eigen widget bewerken
+        return $widget->created_by === $user->id;
     }
 
     /**
      * Bepaal of user een widget mag verwijderen
+     * Alleen de creator, admin en superadmin kunnen verwijderen
      */
     public function delete(User $user, DashboardWidget $widget): bool
     {
-        // Admin en superadmin mogen alles verwijderen
-        if (in_array($user->role, ['admin', 'superadmin'])) {
+        // Superadmin kan alles
+        if ($user->isSuperAdmin()) {
             return true;
         }
         
-        // Anders, alleen de maker mag verwijderen
-        return $user->id === $widget->created_by;
+        // Admin binnen eigen organisatie
+        if ($user->isBeheerder() && $user->organisatie_id === $widget->organisatie_id) {
+            return true;
+        }
+        
+        // Creator kan eigen widget verwijderen
+        return $widget->created_by === $user->id;
     }
 
     /**

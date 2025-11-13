@@ -25,21 +25,53 @@ class DashboardController extends Controller
             ->with('creator')
             ->get();
 
-        // Haal user-specific layouts op, of maak defaults aan
+        // Haal user-specific layouts op, of gebruik CREATOR/WIDGET defaults
         $layouts = $widgets->map(function ($widget) use ($user) {
-            $layout = DashboardUserLayout::firstOrCreate(
-                [
+            // ALTIJD de creator layout gebruiken als basis
+            $creatorLayout = DashboardUserLayout::where('widget_id', $widget->id)
+                ->where('user_id', $widget->created_by)
+                ->first();
+            
+            // Haal user layout op (als die bestaat)
+            $userLayout = DashboardUserLayout::where('user_id', $user->id)
+                ->where('widget_id', $widget->id)
+                ->first();
+            
+            // Bepaal welke layout te gebruiken
+            if ($userLayout && $user->id === $widget->created_by) {
+                // Creator gebruikt zijn eigen layout
+                $layout = $userLayout;
+            } elseif ($creatorLayout) {
+                // Niet-creators gebruiken ALTIJD de creator layout (live sync!)
+                $layout = new DashboardUserLayout([
                     'user_id' => $user->id,
                     'widget_id' => $widget->id,
-                ],
-                [
+                    'grid_x' => $creatorLayout->grid_x,
+                    'grid_y' => $creatorLayout->grid_y,
+                    'grid_width' => $creatorLayout->grid_width,
+                    'grid_height' => $creatorLayout->grid_height,
+                    'is_visible' => true,
+                ]);
+                
+                \Log::info('� Live sync: gebruiker ziet creator layout', [
+                    'widget_id' => $widget->id,
+                    'user_id' => $user->id,
+                    'creator_id' => $widget->created_by,
+                    'size' => $creatorLayout->grid_width . 'x' . $creatorLayout->grid_height,
+                    'creator_layout_updated_at' => $creatorLayout->updated_at
+                ]);
+            } else {
+                // Fallback: gebruik widget defaults
+                $layout = new DashboardUserLayout([
+                    'user_id' => $user->id,
+                    'widget_id' => $widget->id,
                     'grid_x' => $widget->grid_x ?? 0,
                     'grid_y' => $widget->grid_y ?? 0,
                     'grid_width' => $widget->grid_width ?? 4,
                     'grid_height' => $widget->grid_height ?? 3,
                     'is_visible' => true,
-                ]
-            );
+                ]);
+            }
 
             return [
                 'widget' => $widget,
@@ -51,7 +83,13 @@ class DashboardController extends Controller
             'user_id' => $user->id,
             'role' => $user->role,
             'organisatie_id' => $user->organisatie_id,
-            'widgets_count' => $widgets->count()
+            'widgets_count' => $widgets->count(),
+            'layouts_sample' => $layouts->take(2)->map(fn($l) => [
+                'widget_id' => $l['widget']->id,
+                'title' => $l['widget']->title,
+                'size' => $l['layout']->grid_width . 'x' . $l['layout']->grid_height,
+                'position' => $l['layout']->grid_x . ',' . $l['layout']->grid_y,
+            ])
         ]);
 
         return view('dashboard.index', compact('layouts'));
@@ -156,11 +194,24 @@ class DashboardController extends Controller
         $validated['content'] = $metricValue['formatted'];
     }        $widget = DashboardWidget::create($validated);
 
-        Log::info('Widget aangemaakt', [
+        // ⚡ BELANGRIJK: Maak direct een layout aan voor de creator met de widget defaults
+        // Zodat andere users (medewerkers/klanten) deze layout kunnen overnemen
+        DashboardUserLayout::create([
+            'user_id' => $user->id,
+            'widget_id' => $widget->id,
+            'grid_x' => $validated['grid_x'],
+            'grid_y' => $validated['grid_y'],
+            'grid_width' => $validated['grid_width'],
+            'grid_height' => $validated['grid_height'],
+            'is_visible' => true,
+        ]);
+
+        Log::info('Widget aangemaakt met creator layout', [
             'widget_id' => $widget->id,
             'type' => $widget->type,
             'user_id' => $user->id,
-            'organisatie_id' => $widget->organisatie_id
+            'organisatie_id' => $widget->organisatie_id,
+            'size' => $validated['grid_width'] . 'x' . $validated['grid_height']
         ]);
 
         return redirect()
@@ -208,6 +259,8 @@ class DashboardController extends Controller
             'background_color' => 'nullable|string',
             'text_color' => 'nullable|string',
             'visibility' => 'required|in:everyone,medewerkers,only_me',
+            'grid_width' => 'nullable|integer|min:1|max:12',
+            'grid_height' => 'nullable|integer|min:1|max:10',
         ]);
 
         // Medewerkers mogen geen 'everyone' visibility instellen (alleen admin)
@@ -239,6 +292,27 @@ class DashboardController extends Controller
         }
 
         $widget->update($validated);
+
+        // ⚡ BELANGRIJK: Update ook de creator layout als grid_width/height zijn gewijzigd
+        if (isset($validated['grid_width']) || isset($validated['grid_height'])) {
+            $layout = DashboardUserLayout::where('user_id', auth()->id())
+                ->where('widget_id', $widget->id)
+                ->first();
+            
+            if ($layout) {
+                // Update bestaande layout
+                $layout->update([
+                    'grid_width' => $validated['grid_width'] ?? $layout->grid_width,
+                    'grid_height' => $validated['grid_height'] ?? $layout->grid_height,
+                ]);
+                
+                Log::info('Widget layout bijgewerkt', [
+                    'widget_id' => $widget->id,
+                    'user_id' => auth()->id(),
+                    'new_size' => $validated['grid_width'] . 'x' . $validated['grid_height']
+                ]);
+            }
+        }
 
         Log::info('Widget bijgewerkt', [
             'widget_id' => $widget->id,
@@ -289,9 +363,28 @@ class DashboardController extends Controller
             ]
         );
 
+        // ⚡ BELANGRIJK: Als je de CREATOR bent, update ook de widget defaults
+        // Zodat andere users (medewerkers/klanten) de nieuwe grootte zien
+        if ($widget->created_by === $user->id) {
+            $widget->update([
+                'grid_x' => $validated['grid_x'],
+                'grid_y' => $validated['grid_y'],
+                'grid_width' => $validated['grid_width'],
+                'grid_height' => $validated['grid_height'],
+            ]);
+            
+            Log::info('Widget defaults bijgewerkt door creator', [
+                'widget_id' => $widget->id,
+                'user_id' => $user->id,
+                'position' => "{$validated['grid_x']},{$validated['grid_y']}",
+                'size' => "{$validated['grid_width']}x{$validated['grid_height']}"
+            ]);
+        }
+
         Log::info('Widget layout bijgewerkt', [
             'widget_id' => $widget->id,
             'user_id' => $user->id,
+            'is_creator' => $widget->created_by === $user->id,
             'position' => "{$validated['grid_x']},{$validated['grid_y']}",
             'size' => "{$validated['grid_width']}x{$validated['grid_height']}"
         ]);

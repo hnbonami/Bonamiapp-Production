@@ -36,28 +36,6 @@
             @php
                 $widget = $item['widget'];
                 $layout = $item['layout'];
-                
-                // ⚡ BELANGRIJKE FIX: Voor klanten, gebruik de MASTER grootte van de creator
-                // Als klant: zoek de originele layout van de widget creator (admin/medewerker)
-                if (auth()->user()->role === 'klant') {
-                    $masterLayout = \App\Models\DashboardUserLayout::where('widget_id', $widget->id)
-                        ->where('user_id', $widget->created_by) // ✅ CORRECT: created_by ipv user_id
-                        ->first();
-                    
-                    if ($masterLayout) {
-                        // Gebruik de master grootte van de creator
-                        $layout->grid_width = $masterLayout->grid_width ?? 4;
-                        $layout->grid_height = $masterLayout->grid_height ?? 3;
-                        $layout->grid_x = $masterLayout->grid_x ?? 0;
-                        $layout->grid_y = $masterLayout->grid_y ?? 0;
-                    } else {
-                        // Fallback: gebruik widget defaults als creator geen layout heeft
-                        $layout->grid_width = $widget->grid_width ?? 4;
-                        $layout->grid_height = $widget->grid_height ?? 3;
-                        $layout->grid_x = $widget->grid_x ?? 0;
-                        $layout->grid_y = $widget->grid_y ?? 0;
-                    }
-                }
             @endphp
             
             @if($layout->is_visible)
