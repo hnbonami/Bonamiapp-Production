@@ -1,4 +1,26 @@
 <x-app-layout>
+    @php
+        $user = auth()->user();
+        
+        // GEBRUIK KLANT AVATAR indien klant rol
+        if ($user->role === 'klant' && $user->klant_id) {
+            $klant = \App\Models\Klant::find($user->klant_id);
+            $avatar = $klant ? $klant->avatar_path : null;
+        } else {
+            // Voor beheerders/medewerkers
+            $avatar = $user->avatar_path ?? $user->avatar;
+        }
+        
+        // Genereer correcte avatar URL op basis van environment
+        if ($avatar) {
+            $avatarUrl = app()->environment('production') 
+                ? asset('uploads/' . $avatar)
+                : asset('storage/' . $avatar);
+        } else {
+            $avatarUrl = null;
+        }
+    @endphp
+    
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">

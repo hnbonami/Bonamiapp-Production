@@ -367,13 +367,22 @@
                         // Refresh user van DB om laatste avatar te krijgen
                         $user->refresh();
                         
-                        // GEBRUIK KLANT AVATAR - niet user avatar!
+                        // GEBRUIK KLANT AVATAR_PATH - niet user avatar!
                         if ($user->role === 'klant' && $user->klant_id) {
                             $klant = \App\Models\Klant::find($user->klant_id);
-                            $avatar = $klant ? $klant->avatar : null;
+                            $avatarPath = $klant ? $klant->avatar_path : null;
                         } else {
-                            // Voor beheerders/medewerkers: gebruik avatar_path of avatar kolom
-                            $avatar = $user->avatar_path ?? $user->avatar;
+                            // Voor beheerders/medewerkers: gebruik avatar_path kolom
+                            $avatarPath = $user->avatar_path;
+                        }
+                        
+                        // Genereer correcte avatar URL op basis van environment
+                        if ($avatarPath) {
+                            $avatarUrl = app()->environment('production') 
+                                ? asset('uploads/' . $avatarPath)
+                                : asset('storage/' . $avatarPath);
+                        } else {
+                            $avatarUrl = null;
                         }
                         
                         $voornaam = explode(' ', $user->name)[0] ?? '';
@@ -389,8 +398,8 @@
                         <button id="user-menu-button" class="flex items-center gap-2">
                             <!-- Avatar -->
                             <div class="relative">
-                                @if($avatar)
-                                    <img id="topbar-avatar" src="{{ asset('storage/'.$avatar) }}" alt="Avatar" class="object-cover" />
+                                @if($avatarUrl)
+                                    <img id="topbar-avatar" src="{{ $avatarUrl }}" alt="Avatar" class="object-cover" />
                                 @else
                                     <div id="topbar-avatar-placeholder" class="bg-gray-200 flex items-center justify-center text-gray-500 font-semibold">
                                         {{ strtoupper(substr($voornaam,0,1)) }}

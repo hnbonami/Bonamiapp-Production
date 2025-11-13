@@ -20,8 +20,8 @@
     <!-- Compacte Header met avatar en kerngegevens -->
     <div class="mb-6">
         @php
-            // AVATAR PATH - gebruik 'avatar' kolom uit database
-            $avatarPath = $klant->avatar;
+            // AVATAR PATH - gebruik 'avatar_path' kolom uit database (NIET avatar)
+            $avatarPath = $klant->avatar_path;
             $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
             
             // Genereer correcte avatar URL op basis van environment
@@ -35,7 +35,7 @@
             
             \Log::info('🖼️ Avatar debug show.blade', [
                 'klant_id' => $klant->id,
-                'avatar_from_model' => $avatarPath,
+                'avatar_path_from_model' => $avatarPath,
                 'avatar_url' => $avatarUrl ?? 'geen avatar',
                 'environment' => app()->environment()
             ]);

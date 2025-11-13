@@ -145,12 +145,40 @@ class MedewerkerController extends Controller
                 ]);
             }
 
-            // Handle avatar upload
+            // Handle avatar upload - EXACT ZELFDE ALS KLANTCONTROLLER
             $avatarPath = null;
-            if ($request->hasFile('avatar')) {
-                // Upload nieuwe avatar naar avatars/medewerkers subdirectory
-                $avatarPath = $request->file('avatar')->store('avatars/medewerkers', 'public_uploads');
-                \Log::info('✅ Avatar uploaded', ['path' => $avatarPath]);
+            if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
+                \Log::info('🖼️ Avatar upload gedetecteerd bij CREATE medewerker', [
+                    'file_original_name' => $request->file('avatar')->getClientOriginalName(),
+                    'file_size' => $request->file('avatar')->getSize()
+                ]);
+                
+                if (app()->environment('production')) {
+                    // PRODUCTIE: Upload direct naar httpd.www/uploads/avatars/medewerkers
+                    $uploadsPath = base_path('../httpd.www/uploads/avatars/medewerkers');
+                    if (!file_exists($uploadsPath)) {
+                        mkdir($uploadsPath, 0755, true);
+                    }
+                    
+                    $fileName = $request->file('avatar')->hashName();
+                    $request->file('avatar')->move($uploadsPath, $fileName);
+                    $avatarPath = 'avatars/medewerkers/' . $fileName;
+                    
+                    \Log::info('✅ Avatar opgeslagen in httpd.www/uploads bij CREATE medewerker', [
+                        'path' => $avatarPath,
+                        'full_path' => $uploadsPath . '/' . $fileName,
+                        'file_exists' => file_exists($uploadsPath . '/' . $fileName)
+                    ]);
+                } else {
+                    // LOKAAL: Upload naar storage/app/public
+                    $avatarPath = $request->file('avatar')->store('avatars/medewerkers', 'public');
+                    
+                    \Log::info('✅ Avatar opgeslagen in storage bij CREATE medewerker', [
+                        'path' => $avatarPath,
+                        'full_path' => storage_path('app/public/' . $avatarPath),
+                        'file_exists' => \Storage::disk('public')->exists($avatarPath)
+                    ]);
+                }
             }
 
             // Maak een nieuwe medewerker (User) aan met een tijdelijk wachtwoord
@@ -343,16 +371,56 @@ class MedewerkerController extends Controller
         }
 
         try {
-            // Handle avatar upload
+            // Handle avatar upload - EXACT ZELFDE ALS KLANTCONTROLLER
             $avatarPath = $medewerker->avatar_path;
-            if ($request->hasFile('avatar')) {
-                // Verwijder oude avatar als die bestaat
-                if ($avatarPath && \Storage::disk('public_uploads')->exists($avatarPath)) {
-                    \Storage::disk('public_uploads')->delete($avatarPath);
+            if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
+                \Log::info('🖼️ Avatar upload gedetecteerd bij UPDATE medewerker', [
+                    'medewerker_id' => $medewerker->id,
+                    'file_original_name' => $request->file('avatar')->getClientOriginalName(),
+                    'file_size' => $request->file('avatar')->getSize()
+                ]);
+                
+                if (app()->environment('production')) {
+                    // PRODUCTIE: Upload direct naar httpd.www/uploads/avatars/medewerkers
+                    $uploadsPath = base_path('../httpd.www/uploads/avatars/medewerkers');
+                    if (!file_exists($uploadsPath)) {
+                        mkdir($uploadsPath, 0755, true);
+                    }
+                    
+                    // Verwijder oude avatar
+                    if ($avatarPath) {
+                        $oldPath = base_path('../httpd.www/uploads/' . $avatarPath);
+                        if (file_exists($oldPath)) {
+                            unlink($oldPath);
+                            \Log::info('🗑️ Oude avatar verwijderd', ['path' => $avatarPath]);
+                        }
+                    }
+                    
+                    $fileName = $request->file('avatar')->hashName();
+                    $request->file('avatar')->move($uploadsPath, $fileName);
+                    $avatarPath = 'avatars/medewerkers/' . $fileName;
+                    
+                    \Log::info('✅ Avatar opgeslagen in httpd.www/uploads bij UPDATE medewerker', [
+                        'path' => $avatarPath,
+                        'full_path' => $uploadsPath . '/' . $fileName,
+                        'file_exists' => file_exists($uploadsPath . '/' . $fileName)
+                    ]);
+                } else {
+                    // LOKAAL: Upload naar storage/app/public
+                    // Verwijder oude avatar
+                    if ($avatarPath && \Storage::disk('public')->exists($avatarPath)) {
+                        \Storage::disk('public')->delete($avatarPath);
+                        \Log::info('🗑️ Oude avatar verwijderd', ['path' => $avatarPath]);
+                    }
+                    
+                    $avatarPath = $request->file('avatar')->store('avatars/medewerkers', 'public');
+                    
+                    \Log::info('✅ Avatar opgeslagen in storage bij UPDATE medewerker', [
+                        'path' => $avatarPath,
+                        'full_path' => storage_path('app/public/' . $avatarPath),
+                        'file_exists' => \Storage::disk('public')->exists($avatarPath)
+                    ]);
                 }
-                // Upload nieuwe avatar naar avatars/medewerkers subdirectory
-                $avatarPath = $request->file('avatar')->store('avatars/medewerkers', 'public_uploads');
-                \Log::info('✅ Avatar updated', ['path' => $avatarPath]);
             }
 
             $updateData = [

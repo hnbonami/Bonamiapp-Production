@@ -5,21 +5,30 @@
     <div class="flex items-center space-x-6">
         <div class="relative">
             @php
-                // GEBRUIK KLANT AVATAR - niet user avatar!
+                // GEBRUIK KLANT AVATAR_PATH - niet oude avatar kolom!
                 $user = Auth::user();
                 
                 // Refresh user van DB om zeker te zijn dat we laatste avatar hebben
                 $user->refresh();
                 
-                // Als user een klant is, haal avatar van klant record
+                // Als user een klant is, haal avatar_path van klant record
                 if ($user->role === 'klant' && $user->klant_id) {
                     $klant = \App\Models\Klant::find($user->klant_id);
-                    $avatarPath = $klant ? $klant->avatar : null;
+                    $avatarPath = $klant ? $klant->avatar_path : null;
                     $cacheKey = $klant ? ($klant->updated_at ? $klant->updated_at->timestamp : time()) : time();
                 } else {
-                    // Voor beheerders/medewerkers: gebruik user avatar (avatar_path kolom)
-                    $avatarPath = $user->avatar_path ?? $user->avatar;
+                    // Voor beheerders/medewerkers: gebruik user avatar_path kolom
+                    $avatarPath = $user->avatar_path;
                     $cacheKey = $user->updated_at ? $user->updated_at->timestamp : time();
+                }
+                
+                // Genereer correcte avatar URL op basis van environment
+                if ($avatarPath) {
+                    $avatarUrl = app()->environment('production') 
+                        ? asset('uploads/' . $avatarPath)
+                        : asset('storage/' . $avatarPath);
+                } else {
+                    $avatarUrl = null;
                 }
                 
                 $firstInitial = strtoupper(substr($user->name ?? 'U', 0, 1));
@@ -29,14 +38,15 @@
                     'user_role' => $user->role,
                     'klant_id' => $user->klant_id ?? 'geen',
                     'avatar_path' => $avatarPath ?? 'geen',
-                    'avatar_in_db' => $user->avatar_path ?? 'geen fallback',
-                    'cache_key' => $cacheKey
+                    'avatar_url' => $avatarUrl ?? 'geen',
+                    'cache_key' => $cacheKey,
+                    'environment' => app()->environment()
                 ]);
             @endphp
             
-            @if($avatarPath)
+            @if($avatarUrl)
                 <img class="user-avatar h-24 w-24 rounded-full object-cover border-4 border-gray-200" 
-                     src="{{ asset('storage/' . $avatarPath) }}?t={{ $cacheKey }}" 
+                     src="{{ $avatarUrl }}?t={{ $cacheKey }}" 
                      alt="Avatar"
                      id="profile-avatar-image">
             @else
