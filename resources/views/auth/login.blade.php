@@ -12,12 +12,16 @@
     
     // Achtergrondafbeelding - alleen tonen als deze bestaat in branding
     $loginBackgroundImage = ($branding && $branding->login_background_image) 
-        ? asset('storage/' . $branding->login_background_image) 
+        ? (app()->environment('production') 
+            ? asset('uploads/' . $branding->login_background_image)
+            : asset('storage/' . $branding->login_background_image))
         : null;
     
     // Achtergrond video - heeft voorrang boven afbeelding
     $loginBackgroundVideo = ($branding && $branding->login_background_video) 
-        ? asset('storage/' . $branding->login_background_video) 
+        ? (app()->environment('production') 
+            ? asset('uploads/' . $branding->login_background_video)
+            : asset('storage/' . $branding->login_background_video))
         : null;
 @endphp
 
