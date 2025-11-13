@@ -279,7 +279,18 @@ class KlantController extends Controller
             'niveau' => 'nullable|string|max:255',
             'club' => 'nullable|string|max:255',
             'herkomst' => 'nullable|string|max:255',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            // 🔥 NIEUW: Referral velden
+            'referral_source' => 'nullable|string|max:255',
+            'referring_customer_id' => 'nullable|exists:klanten,id',
+            'referral_notes' => 'nullable|string|max:1000',
+        ]);
+
+        \Log::info('🎯 KLANT STORE - Referral gegevens', [
+            'referral_source' => $request->referral_source,
+            'referring_customer_id' => $request->referring_customer_id,
+            'referral_notes' => $request->referral_notes,
+            'has_referring_customer' => $request->referring_customer_id ? 'YES' : 'NO'
         ]);
 
         // Verwijder avatar uit validated (is een file object)
@@ -344,16 +355,75 @@ class KlantController extends Controller
             ]
         ]);
         
+        // 🎉 REFERRAL SYSTEEM: Check of deze klant is doorverwezen
+        $referralEmailSent = false;
+        $referringCustomerName = null;
+        
+        if ($request->filled('referring_customer_id')) {
+            try {
+                $referringCustomer = Klant::find($request->referring_customer_id);
+                
+                if ($referringCustomer && $referringCustomer->email) {
+                    \Log::info('🤝 REFERRAL DETECTED - Sending thank you email', [
+                        'referring_customer_id' => $referringCustomer->id,
+                        'referring_customer_email' => $referringCustomer->email,
+                        'referring_customer_name' => $referringCustomer->voornaam . ' ' . $referringCustomer->naam,
+                        'new_customer_id' => $klant->id,
+                        'new_customer_name' => $klant->voornaam . ' ' . $klant->naam,
+                        'referral_source' => $request->referral_source,
+                        'referral_notes' => $request->referral_notes
+                    ]);
+                    
+                    // Verstuur bedankingsmail via EmailIntegrationService
+                    $emailService = app(\App\Services\EmailIntegrationService::class);
+                    $emailSent = $emailService->sendReferralThankYouEmail($referringCustomer, $klant);
+                    
+                    if ($emailSent) {
+                        $referralEmailSent = true;
+                        $referringCustomerName = $referringCustomer->voornaam . ' ' . $referringCustomer->naam;
+                        
+                        \Log::info('✅ Referral thank you email sent successfully', [
+                            'to' => $referringCustomer->email,
+                            'for_referring' => $klant->voornaam . ' ' . $klant->naam
+                        ]);
+                    } else {
+                        \Log::warning('⚠️ Referral thank you email failed to send', [
+                            'to' => $referringCustomer->email
+                        ]);
+                    }
+                } else {
+                    \Log::warning('⚠️ Referring customer not found or has no email', [
+                        'referring_customer_id' => $request->referring_customer_id,
+                        'customer_found' => $referringCustomer ? 'yes' : 'no',
+                        'has_email' => $referringCustomer && $referringCustomer->email ? 'yes' : 'no'
+                    ]);
+                }
+            } catch (\Exception $referralError) {
+                \Log::error('❌ Failed to send referral thank you email', [
+                    'error' => $referralError->getMessage(),
+                    'trace' => $referralError->getTraceAsString()
+                ]);
+            }
+        } else {
+            \Log::info('ℹ️ No referral detected for this customer', [
+                'referral_source' => $request->referral_source ?? 'none',
+                'referring_customer_id' => 'none'
+            ]);
+        }
+        
         // Maak user account aan als email is opgegeven
         if (!empty($klant->email)) {
             $existingUser = \App\Models\User::where('email', $klant->email)->first();
             
             if (!$existingUser) {
                 try {
+                    // 🔥 FIX: Genereer temporary password EERST
+                    $temporaryPassword = \Str::random(12);
+                    
                     $user = \App\Models\User::create([
                         'name' => $klant->naam,
                         'email' => $klant->email,
-                        'password' => \Hash::make(\Str::random(16)),
+                        'password' => \Hash::make($temporaryPassword),
                         'role' => 'klant',
                         'organisatie_id' => $klant->organisatie_id,
                         'status' => 'active',
@@ -363,17 +433,36 @@ class KlantController extends Controller
                     \Log::info('✅ User account aangemaakt voor klant', [
                         'klant_id' => $klant->id,
                         'user_id' => $user->id,
-                        'email' => $klant->email
+                        'email' => $klant->email,
+                        'password_length' => strlen($temporaryPassword)
                     ]);
                     
-                    // 🚀 AUTOMATISCHE WELCOME EMAIL
+                    // � FIX: Maak InvitationToken aan VOORDAT email wordt verstuurd!
+                    \App\Models\InvitationToken::create([
+                        'email' => $klant->email,
+                        'token' => \Str::random(60),
+                        'temporary_password' => $temporaryPassword,
+                        'type' => 'klant',
+                        'expires_at' => now()->addDays(7),
+                        'created_by' => auth()->id()
+                    ]);
+                    
+                    \Log::info('✅ InvitationToken aangemaakt voor klant', [
+                        'email' => $klant->email,
+                        'password_first_4' => substr($temporaryPassword, 0, 4),
+                        'token_saved_before_email' => true
+                    ]);
+                    
+                    // �🚀 AUTOMATISCHE WELCOME EMAIL (nu met wachtwoord in database!)
                     try {
                         $emailService = app(\App\Services\EmailIntegrationService::class);
-                        $emailSent = $emailService->sendCustomerWelcomeEmail($klant);
+                        // Geef temporary password mee als parameter voor extra zekerheid
+                        $emailSent = $emailService->sendCustomerWelcomeEmail($klant, null, $temporaryPassword);
                         
                         \Log::info('✅ Automatische welcome email verzonden', [
                             'klant_id' => $klant->id,
-                            'success' => $emailSent
+                            'success' => $emailSent,
+                            'password_provided_to_email_service' => true
                         ]);
                     } catch (\Exception $emailError) {
                         \Log::error('❌ Failed to send automatic welcome email', [
@@ -394,8 +483,21 @@ class KlantController extends Controller
         // FORCE FRESH DATA
         $klant = $klant->fresh();
         
+        // Bouw success message op basis van wat er is gebeurd
+        $successMessage = 'Klant succesvol aangemaakt';
+        
+        if (!empty($klant->email)) {
+            $successMessage .= ' en welcome email verzonden';
+        }
+        
+        if ($referralEmailSent && $referringCustomerName) {
+            $successMessage .= '. Bedankingsmail verzonden naar ' . $referringCustomerName . ' voor de doorverwijzing';
+        }
+        
+        $successMessage .= '.';
+        
         return redirect()->route('klanten.show', $klant->id)
-            ->with('success', 'Klant succesvol aangemaakt' . (!empty($klant->email) ? ' en welcome email verzonden.' : '.'));
+            ->with('success', $successMessage);
     }
     public function show(Klant $klant)
     {

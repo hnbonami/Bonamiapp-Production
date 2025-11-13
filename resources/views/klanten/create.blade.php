@@ -108,7 +108,9 @@
                                id="straatnaam" 
                                value="{{ old('straatnaam') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                               placeholder="Begin te typen voor suggesties...">
+                               placeholder="Begin te typen voor suggesties..."
+                               autocomplete="off">
+                        <div id="straatnaam-suggesties" class="hidden absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"></div>
                     </div>
 
                     <div class="mb-4">
@@ -130,13 +132,59 @@
                                placeholder="9000">
                     </div>
 
-                    <div class="mb-4 lg:col-span-3">
+                    <div class="mb-4 lg:col-span-2">
                         <label for="stad" class="block text-sm font-medium text-gray-700 mb-2">Stad</label>
                         <input type="text" 
                                name="stad" 
                                id="stad" 
                                value="{{ old('stad') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+
+                    <div class="mb-4 lg:col-span-2">
+                        <label for="land" class="block text-sm font-medium text-gray-700 mb-2">Land</label>
+                        <select name="land" 
+                                id="land" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="België" {{ old('land') == 'België' || old('land') == '' ? 'selected' : '' }}>België</option>
+                            <option value="Nederland" {{ old('land') == 'Nederland' ? 'selected' : '' }}>Nederland</option>
+                            <option value="Duitsland" {{ old('land') == 'Duitsland' ? 'selected' : '' }}>Duitsland</option>
+                            <option value="Frankrijk" {{ old('land') == 'Frankrijk' ? 'selected' : '' }}>Frankrijk</option>
+                            <option value="Luxemburg" {{ old('land') == 'Luxemburg' ? 'selected' : '' }}>Luxemburg</option>
+                            <option value="Verenigd Koninkrijk" {{ old('land') == 'Verenigd Koninkrijk' ? 'selected' : '' }}>Verenigd Koninkrijk</option>
+                            <option value="Spanje" {{ old('land') == 'Spanje' ? 'selected' : '' }}>Spanje</option>
+                            <option value="Italië" {{ old('land') == 'Italië' ? 'selected' : '' }}>Italië</option>
+                            <option value="Portugal" {{ old('land') == 'Portugal' ? 'selected' : '' }}>Portugal</option>
+                            <option value="Zwitserland" {{ old('land') == 'Zwitserland' ? 'selected' : '' }}>Zwitserland</option>
+                            <option value="Oostenrijk" {{ old('land') == 'Oostenrijk' ? 'selected' : '' }}>Oostenrijk</option>
+                            <option value="Polen" {{ old('land') == 'Polen' ? 'selected' : '' }}>Polen</option>
+                            <option value="Tsjechië" {{ old('land') == 'Tsjechië' ? 'selected' : '' }}>Tsjechië</option>
+                            <option value="Denemarken" {{ old('land') == 'Denemarken' ? 'selected' : '' }}>Denemarken</option>
+                            <option value="Zweden" {{ old('land') == 'Zweden' ? 'selected' : '' }}>Zweden</option>
+                            <option value="Noorwegen" {{ old('land') == 'Noorwegen' ? 'selected' : '' }}>Noorwegen</option>
+                            <option value="Finland" {{ old('land') == 'Finland' ? 'selected' : '' }}>Finland</option>
+                            <option value="Ierland" {{ old('land') == 'Ierland' ? 'selected' : '' }}>Ierland</option>
+                            <option value="Griekenland" {{ old('land') == 'Griekenland' ? 'selected' : '' }}>Griekenland</option>
+                            <option value="Kroatië" {{ old('land') == 'Kroatië' ? 'selected' : '' }}>Kroatië</option>
+                            <option value="Slovenië" {{ old('land') == 'Slovenië' ? 'selected' : '' }}>Slovenië</option>
+                            <option value="Roemenië" {{ old('land') == 'Roemenië' ? 'selected' : '' }}>Roemenië</option>
+                            <option value="Bulgarije" {{ old('land') == 'Bulgarije' ? 'selected' : '' }}>Bulgarije</option>
+                            <option value="Hongarije" {{ old('land') == 'Hongarije' ? 'selected' : '' }}>Hongarije</option>
+                            <option value="Slowakije" {{ old('land') == 'Slowakije' ? 'selected' : '' }}>Slowakije</option>
+                            <option value="Estland" {{ old('land') == 'Estland' ? 'selected' : '' }}>Estland</option>
+                            <option value="Letland" {{ old('land') == 'Letland' ? 'selected' : '' }}>Letland</option>
+                            <option value="Litouwen" {{ old('land') == 'Litouwen' ? 'selected' : '' }}>Litouwen</option>
+                            <option value="Cyprus" {{ old('land') == 'Cyprus' ? 'selected' : '' }}>Cyprus</option>
+                            <option value="Malta" {{ old('land') == 'Malta' ? 'selected' : '' }}>Malta</option>
+                            <option value="Verenigde Staten" {{ old('land') == 'Verenigde Staten' ? 'selected' : '' }}>Verenigde Staten</option>
+                            <option value="Canada" {{ old('land') == 'Canada' ? 'selected' : '' }}>Canada</option>
+                            <option value="Australië" {{ old('land') == 'Australië' ? 'selected' : '' }}>Australië</option>
+                            <option value="Nieuw-Zeeland" {{ old('land') == 'Nieuw-Zeeland' ? 'selected' : '' }}>Nieuw-Zeeland</option>
+                            <option value="Japan" {{ old('land') == 'Japan' ? 'selected' : '' }}>Japan</option>
+                            <option value="Zuid-Korea" {{ old('land') == 'Zuid-Korea' ? 'selected' : '' }}>Zuid-Korea</option>
+                            <option value="China" {{ old('land') == 'China' ? 'selected' : '' }}>China</option>
+                            <option value="Anders" {{ old('land') == 'Anders' ? 'selected' : '' }}>Anders</option>
+                        </select>
                     </div>
                 </div>
 
@@ -384,46 +432,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Postcode automatische invulling
+    // Straatnaam autocomplete en postcode automatische invulling
     const postcodeInput = document.getElementById('postcode');
     const stadInput = document.getElementById('stad');
+    const straatnaamInput = document.getElementById('straatnaam');
+    const straatnaamSuggesties = document.getElementById('straatnaam-suggesties');
     
+    // Postcode automatische invulling
     if (postcodeInput && stadInput) {
-        postcodeInput.addEventListener('input', async function() {
+        postcodeInput.addEventListener('input', function() {
             const postcode = this.value.replace(/\s/g, '');
             if (postcode.length === 4 && /^\d{4}$/.test(postcode)) {
-                try {
-                    // Nederlandse postcode API - gratis voor beperkt gebruik
-                    const response = await fetch(`https://api.postcode.nl/rest/addresses/postcode/${postcode}/1`, {
-                        headers: {
-                            'Authorization': 'Bearer YOUR_API_KEY' // Je moet hier een API key toevoegen
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        stadInput.value = data.city;
-                    } else {
-                        // Fallback voor veel voorkomende postcodes
-                        const belgianPostcodes = {
-                            '9000': 'Gent',
-                            '2000': 'Antwerpen', 
-                            '1000': 'Brussel',
-                            '8000': 'Brugge',
-                            '3500': 'Hasselt',
-                            '4000': 'Luik',
-                            '7000': 'Bergen',
-                            '5000': 'Namen'
-                        };
-                        
-                        if (belgianPostcodes[postcode]) {
-                            stadInput.value = belgianPostcodes[postcode];
-                        }
-                    }
-                } catch (error) {
-                    console.log('Postcode lookup failed, using fallback');
-                        // Uitgebreide Belgische postcodes database
-                        const belgianPostcodes = {
+                // Uitgebreide Belgische postcodes database
+                const belgianPostcodes = {
                             '9000': 'Gent', '9030': 'Mariakerke', '9031': 'Drongen', '9032': 'Wondelgem', '9040': 'Sint-Amandsberg', '9041': 'Oostakker', '9042': 'Desteldonk', '9050': 'Gentbrugge', '9051': 'Sint-Denijs-Westrem', '9052': 'Zwijnaarde', '9060': 'Zelzate', '9070': 'Destelbergen', '9080': 'Lochristi', '9090': 'Melle',
                             '9100': 'Sint-Niklaas', '9111': 'Belsele', '9112': 'Sinaai', '9120': 'Beveren', '9130': 'Kallo', '9140': 'Temse', '9150': 'Kruibeke', '9160': 'Lokeren', '9170': 'Sint-Gillis-Waas', '9180': 'Moerbeke', '9185': 'Wachtebeke', '9190': 'Stekene',
                             '9200': 'Dendermonde', '9220': 'Hamme', '9230': 'Wetteren', '9240': 'Zele', '9250': 'Waasmunster', '9260': 'Wichelen', '9270': 'Laarne', '9280': 'Lebbeke', '9290': 'Berlare',
@@ -449,27 +470,159 @@ document.addEventListener('DOMContentLoaded', function() {
                             '8900': 'Ieper', '8902': 'Zillebeke', '8904': 'Voormezele', '8906': 'Elverdinge', '8908': 'Vlamertinge', '8920': 'Langemark-Poelkapelle', '8930': 'Menen', '8940': 'Wervik', '8950': 'Heuvelland', '8956': 'Kemmel', '8957': 'Mesen', '8958': 'Loker', '8970': 'Poperinge', '8972': 'Proven', '8978': 'Watou', '8980': 'Zonnebeke',
                             '3000': 'Leuven', '3001': 'Heverlee', '3010': 'Kessel-Lo', '3012': 'Wilsele', '3018': 'Wijgmaal', '3020': 'Herent', '3040': 'Huldenberg', '3050': 'Oud-Heverlee', '3051': 'Sint-Joris-Weert', '3052': 'Blanden', '3053': 'Haasrode', '3054': 'Vaalbeek', '3060': 'Bertem', '3061': 'Leefdaal', '3070': 'Kortenberg', '3071': 'Erps-Kwerps', '3078': 'Everberg', '3080': 'Tervuren', '3090': 'Overijse', '3110': 'Rotselaar', '3118': 'Werchter', '3120': 'Tremelo', '3128': 'Baal', '3130': 'Begijnendijk', '3140': 'Keerbergen', '3150': 'Haacht', '3190': 'Boortmeerbeek', '3191': 'Hever', '3200': 'Aarschot', '3201': 'Langdorp', '3202': 'Rillaar', '3210': 'Lubbeek', '3211': 'Binkom', '3212': 'Pellenberg', '3220': 'Holsbeek', '3221': 'Nieuwrode', '3270': 'Scherpenheuvel-Zichem', '3271': 'Averbode', '3272': 'Messelbroek', '3290': 'Diest', '3293': 'Deurne', '3294': 'Molenstede', '3295': 'Kaggevinne', '3296': 'Webbekom',
                             '1500': 'Halle', '1502': 'Lembeek', '1540': 'Herne', '1547': 'Bever', '1560': 'Hoeilaart', '1570': 'Galmaarden', '1600': 'Sint-Pieters-Leeuw', '1601': 'Ruisbroek', '1620': 'Drogenbos', '1630': 'Linkebeek', '1640': 'Sint-Genesius-Rode', '1650': 'Beersel', '1651': 'Lot', '1652': 'Alsemberg', '1653': 'Dworp', '1654': 'Huizingen', '1700': 'Dilbeek', '1701': 'Itterbeek', '1702': 'Groot-Bijgaarden', '1703': 'Schepdaal', '1730': 'Asse', '1731': 'Zellik', '1740': 'Ternat', '1741': 'Wambeek', '1742': 'Ternat', '1745': 'Opwijk', '1750': 'Lennik', '1755': 'Gooik', '1760': 'Roosdaal', '1761': 'Borchtlombeek', '1770': 'Liedekerke', '1780': 'Wemmel', '1785': 'Merchtem', '1790': 'Affligem', '1800': 'Vilvoorde', '1804': 'Cargovil', '1820': 'Steenokkerzeel', '1830': 'Machelen', '1831': 'Diegem', '1840': 'Londerzeel', '1850': 'Grimbergen', '1860': 'Meise', '1870': 'Zemst', '1880': 'Kapelle-op-den-Bos', '1910': 'Kampenhout', '1930': 'Zaventem', '1931': 'Brucargo', '1932': 'Sint-Stevens-Woluwe', '1933': 'Sterrebeek', '1950': 'Kraainem', '1970': 'Wezembeek-Oppem'
-                        };                    if (belgianPostcodes[postcode]) {
-                        stadInput.value = belgianPostcodes[postcode];
-                    }
+                        };
+                
+                if (belgianPostcodes[postcode]) {
+                    stadInput.value = belgianPostcodes[postcode];
                 }
             }
         });
     }
 
-    // Straatnaam autocomplete (basis implementatie)
-    const straatnaamInput = document.getElementById('straatnaam');
-    if (straatnaamInput) {
+    // Straatnaam autocomplete
+    if (straatnaamInput && straatnaamSuggesties) {
         let timeout;
+        let selectedIndex = -1;
+        
         straatnaamInput.addEventListener('input', function() {
-            const query = this.value;
+            const query = this.value.trim();
+            const postcode = postcodeInput ? postcodeInput.value.trim() : '';
+            
             if (query.length > 2) {
                 clearTimeout(timeout);
                 timeout = setTimeout(() => {
-                    // Hier zou je een API kunnen aanroepen voor straatnamen
-                    // Voor nu een basis autocomplete implementatie
-                    console.log('Zoeken naar straatnamen met:', query);
+                    fetchStraatnamen(query, postcode);
                 }, 300);
+            } else {
+                straatnaamSuggesties.classList.add('hidden');
+            }
+        });
+        
+        // Keyboard navigation
+        straatnaamInput.addEventListener('keydown', function(e) {
+            const items = straatnaamSuggesties.querySelectorAll('.suggestie-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelection(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateSelection(items);
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                e.preventDefault();
+                items[selectedIndex].click();
+            } else if (e.key === 'Escape') {
+                straatnaamSuggesties.classList.add('hidden');
+            }
+        });
+        
+        function updateSelection(items) {
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('bg-indigo-100');
+                } else {
+                    item.classList.remove('bg-indigo-100');
+                }
+            });
+        }
+        
+        async function fetchStraatnamen(query, postcode) {
+            // Gebruik Laravel backend proxy voor BPost API
+            // Dit voorkomt CORS en rate limiting issues
+            
+            if (!postcode || postcode.length !== 4) {
+                console.log('Geen geldige postcode voor straatnaam lookup');
+                straatnaamSuggesties.classList.add('hidden');
+                return;
+            }
+            
+            try {
+                console.log('🔍 Zoeken naar straten via Laravel backend:', { query, postcode });
+                
+                // Call Laravel backend API proxy
+                const url = `/api/address/search-streets?query=${encodeURIComponent(query)}&postcode=${postcode}`;
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    console.log('✅ Gevonden straten:', data.straten);
+                    
+                    if (data.success && data.straten && data.straten.length > 0) {
+                        showSuggesties(data.straten);
+                    } else {
+                        // Geen resultaten van API - gebruik fallback
+                        useFallbackStraten(query, postcode);
+                    }
+                } else {
+                    console.log('⚠️ Backend API error, gebruik fallback');
+                    useFallbackStraten(query, postcode);
+                }
+            } catch (error) {
+                console.log('⚠️ Backend API exception, gebruik fallback:', error.message);
+                useFallbackStraten(query, postcode);
+            }
+        }
+        
+        function useFallbackStraten(query, postcode) {
+            // Fallback: uitgebreide lokale database voor veelvoorkomende straten
+            const belgischeStraten = {
+                '9000': ['Korenmarkt', 'Veldstraat', 'Kouter', 'Graslei', 'Korenlei', 'Sint-Baafsplein', 'Vrijdagmarkt', 'Nederkouter', 'Woodrow Wilsonplein', 'Zuid', 'Brabantdam', 'Coupure', 'Ketelvest', 'Dendermondsesteenweg', 'Kortrijksesteenweg', 'Antwerpsesteenweg', 'Steendam', 'Hoogpoort', 'Limburgstraat', 'Vlaanderenstraat'],
+                '2000': ['Meir', 'Groenplaats', 'Leysstraat', 'Schuttershofstraat', 'Kloosterstraat', 'Nationalestraat', 'De Keyserlei', 'Huidevettersstraat', 'Lange Nieuwstraat', 'Carnotstraat', 'Frankrijklei', 'Italië', 'Britselei', 'Amerikalei'],
+                '1000': ['Wetstraat', 'Louizalaan', 'Koninginnelaan', 'Europaplein', 'Belliardstraat', 'Louizaplein', 'Kruidtuinlaan', 'Kleine Ring', 'Grote Markt', 'Nieuwstraat', 'Anspachlaan', 'Rogierlaan'],
+                '8000': ['Markt', 'Steenstraat', 'Wollestraat', 'Noordzandstraat', 'Simon Stevinplein', 'Katelijnestraat', 'Hoogstraat', 'Langestraat', 'Geldmuntstraat', 'Vlamingstraat', 'Sint-Jakobstraat'],
+                '3000': ['Bondgenotenlaan', 'Tiensestraat', 'Naamsestraat', 'Grote Markt', 'Oude Markt', 'Muntstraat', 'Diestsestraat', 'Brusselsestraat', 'Mechelsestraat', 'Parkstraat', 'Vaartstraat']
+            };
+            
+            const straten = belgischeStraten[postcode] || [];
+            const gefilterd = straten.filter(straat => 
+                straat.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (gefilterd.length > 0) {
+                showSuggesties(gefilterd);
+            } else {
+                straatnaamSuggesties.innerHTML = '<div class="px-4 py-2 text-sm text-gray-500">Geen straten gevonden. Typ de volledige naam in.</div>';
+                straatnaamSuggesties.classList.remove('hidden');
+                
+                // Auto-hide na 2 seconden
+                setTimeout(() => {
+                    straatnaamSuggesties.classList.add('hidden');
+                }, 2000);
+            }
+        }
+        
+        function showSuggesties(suggesties) {
+            straatnaamSuggesties.innerHTML = '';
+            selectedIndex = -1;
+            
+            suggesties.forEach(suggestie => {
+                const div = document.createElement('div');
+                div.className = 'suggestie-item px-4 py-2 cursor-pointer hover:bg-indigo-100';
+                div.textContent = suggestie;
+                div.addEventListener('click', function() {
+                    straatnaamInput.value = suggestie;
+                    straatnaamSuggesties.classList.add('hidden');
+                });
+                straatnaamSuggesties.appendChild(div);
+            });
+            
+            straatnaamSuggesties.classList.remove('hidden');
+        }
+        
+        // Sluit suggesties bij klik buiten
+        document.addEventListener('click', function(e) {
+            if (!straatnaamInput.contains(e.target) && !straatnaamSuggesties.contains(e.target)) {
+                straatnaamSuggesties.classList.add('hidden');
             }
         });
     }

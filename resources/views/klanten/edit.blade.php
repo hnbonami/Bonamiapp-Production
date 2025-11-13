@@ -109,7 +109,9 @@
                                id="straatnaam" 
                                value="{{ old('straatnaam', $klant->straatnaam ?? $klant->adres ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                               placeholder="Begin te typen voor suggesties...">
+                               placeholder="Begin te typen voor suggesties..."
+                               autocomplete="off">
+                        <div id="straatnaam-suggesties" class="hidden absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"></div>
                     </div>
 
                     <div class="mb-4">
@@ -131,13 +133,59 @@
                                placeholder="9000">
                     </div>
 
-                    <div class="mb-4 lg:col-span-3">
+                    <div class="mb-4 lg:col-span-2">
                         <label for="stad" class="block text-sm font-medium text-gray-700 mb-2">Stad</label>
                         <input type="text" 
                                name="stad" 
                                id="stad" 
                                value="{{ old('stad', $klant->stad ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+
+                    <div class="mb-4 lg:col-span-2">
+                        <label for="land" class="block text-sm font-medium text-gray-700 mb-2">Land</label>
+                        <select name="land" 
+                                id="land" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="België" {{ old('land', $klant->land ?? 'België') == 'België' ? 'selected' : '' }}>België</option>
+                            <option value="Nederland" {{ old('land', $klant->land ?? '') == 'Nederland' ? 'selected' : '' }}>Nederland</option>
+                            <option value="Duitsland" {{ old('land', $klant->land ?? '') == 'Duitsland' ? 'selected' : '' }}>Duitsland</option>
+                            <option value="Frankrijk" {{ old('land', $klant->land ?? '') == 'Frankrijk' ? 'selected' : '' }}>Frankrijk</option>
+                            <option value="Luxemburg" {{ old('land', $klant->land ?? '') == 'Luxemburg' ? 'selected' : '' }}>Luxemburg</option>
+                            <option value="Verenigd Koninkrijk" {{ old('land', $klant->land ?? '') == 'Verenigd Koninkrijk' ? 'selected' : '' }}>Verenigd Koninkrijk</option>
+                            <option value="Spanje" {{ old('land', $klant->land ?? '') == 'Spanje' ? 'selected' : '' }}>Spanje</option>
+                            <option value="Italië" {{ old('land', $klant->land ?? '') == 'Italië' ? 'selected' : '' }}>Italië</option>
+                            <option value="Portugal" {{ old('land', $klant->land ?? '') == 'Portugal' ? 'selected' : '' }}>Portugal</option>
+                            <option value="Zwitserland" {{ old('land', $klant->land ?? '') == 'Zwitserland' ? 'selected' : '' }}>Zwitserland</option>
+                            <option value="Oostenrijk" {{ old('land', $klant->land ?? '') == 'Oostenrijk' ? 'selected' : '' }}>Oostenrijk</option>
+                            <option value="Polen" {{ old('land', $klant->land ?? '') == 'Polen' ? 'selected' : '' }}>Polen</option>
+                            <option value="Tsjechië" {{ old('land', $klant->land ?? '') == 'Tsjechië' ? 'selected' : '' }}>Tsjechië</option>
+                            <option value="Denemarken" {{ old('land', $klant->land ?? '') == 'Denemarken' ? 'selected' : '' }}>Denemarken</option>
+                            <option value="Zweden" {{ old('land', $klant->land ?? '') == 'Zweden' ? 'selected' : '' }}>Zweden</option>
+                            <option value="Noorwegen" {{ old('land', $klant->land ?? '') == 'Noorwegen' ? 'selected' : '' }}>Noorwegen</option>
+                            <option value="Finland" {{ old('land', $klant->land ?? '') == 'Finland' ? 'selected' : '' }}>Finland</option>
+                            <option value="Ierland" {{ old('land', $klant->land ?? '') == 'Ierland' ? 'selected' : '' }}>Ierland</option>
+                            <option value="Griekenland" {{ old('land', $klant->land ?? '') == 'Griekenland' ? 'selected' : '' }}>Griekenland</option>
+                            <option value="Kroatië" {{ old('land', $klant->land ?? '') == 'Kroatië' ? 'selected' : '' }}>Kroatië</option>
+                            <option value="Slovenië" {{ old('land', $klant->land ?? '') == 'Slovenië' ? 'selected' : '' }}>Slovenië</option>
+                            <option value="Roemenië" {{ old('land', $klant->land ?? '') == 'Roemenië' ? 'selected' : '' }}>Roemenië</option>
+                            <option value="Bulgarije" {{ old('land', $klant->land ?? '') == 'Bulgarije' ? 'selected' : '' }}>Bulgarije</option>
+                            <option value="Hongarije" {{ old('land', $klant->land ?? '') == 'Hongarije' ? 'selected' : '' }}>Hongarije</option>
+                            <option value="Slowakije" {{ old('land', $klant->land ?? '') == 'Slowakije' ? 'selected' : '' }}>Slowakije</option>
+                            <option value="Estland" {{ old('land', $klant->land ?? '') == 'Estland' ? 'selected' : '' }}>Estland</option>
+                            <option value="Letland" {{ old('land', $klant->land ?? '') == 'Letland' ? 'selected' : '' }}>Letland</option>
+                            <option value="Litouwen" {{ old('land', $klant->land ?? '') == 'Litouwen' ? 'selected' : '' }}>Litouwen</option>
+                            <option value="Cyprus" {{ old('land', $klant->land ?? '') == 'Cyprus' ? 'selected' : '' }}>Cyprus</option>
+                            <option value="Malta" {{ old('land', $klant->land ?? '') == 'Malta' ? 'selected' : '' }}>Malta</option>
+                            <option value="Verenigde Staten" {{ old('land', $klant->land ?? '') == 'Verenigde Staten' ? 'selected' : '' }}>Verenigde Staten</option>
+                            <option value="Canada" {{ old('land', $klant->land ?? '') == 'Canada' ? 'selected' : '' }}>Canada</option>
+                            <option value="Australië" {{ old('land', $klant->land ?? '') == 'Australië' ? 'selected' : '' }}>Australië</option>
+                            <option value="Nieuw-Zeeland" {{ old('land', $klant->land ?? '') == 'Nieuw-Zeeland' ? 'selected' : '' }}>Nieuw-Zeeland</option>
+                            <option value="Japan" {{ old('land', $klant->land ?? '') == 'Japan' ? 'selected' : '' }}>Japan</option>
+                            <option value="Zuid-Korea" {{ old('land', $klant->land ?? '') == 'Zuid-Korea' ? 'selected' : '' }}>Zuid-Korea</option>
+                            <option value="China" {{ old('land', $klant->land ?? '') == 'China' ? 'selected' : '' }}>China</option>
+                            <option value="Anders" {{ old('land', $klant->land ?? '') == 'Anders' ? 'selected' : '' }}>Anders</option>
+                        </select>
                     </div>
                 </div>
 
@@ -290,6 +338,106 @@ document.addEventListener('DOMContentLoaded', function() {
                 reader.readAsDataURL(file);
             } else {
                 nameEl.textContent = '{{ $currentAvatar ? "Huidige foto" : "Geen foto" }}';
+            }
+        });
+    }
+
+    // Straatnaam autocomplete
+    const straatnaamInput = document.getElementById('straatnaam');
+    const straatnaamSuggesties = document.getElementById('straatnaam-suggesties');
+    
+    if (straatnaamInput && straatnaamSuggesties) {
+        let timeout;
+        let selectedIndex = -1;
+        
+        straatnaamInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            const postcode = postcodeInput ? postcodeInput.value.trim() : '';
+            
+            if (query.length > 2) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    fetchStraatnamen(query, postcode);
+                }, 300);
+            } else {
+                straatnaamSuggesties.classList.add('hidden');
+            }
+        });
+        
+        // Keyboard navigation
+        straatnaamInput.addEventListener('keydown', function(e) {
+            const items = straatnaamSuggesties.querySelectorAll('.suggestie-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+                updateSelection(items);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateSelection(items);
+            } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                e.preventDefault();
+                items[selectedIndex].click();
+            } else if (e.key === 'Escape') {
+                straatnaamSuggesties.classList.add('hidden');
+            }
+        });
+        
+        function updateSelection(items) {
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('bg-indigo-100');
+                } else {
+                    item.classList.remove('bg-indigo-100');
+                }
+            });
+        }
+        
+        function fetchStraatnamen(query, postcode) {
+            // Belgische straten per postcode
+            const belgischeStraten = {
+                '9000': ['Korenmarkt', 'Veldstraat', 'Kouter', 'Graslei', 'Korenlei', 'Sint-Baafsplein', 'Vrijdagmarkt', 'Nederkouter', 'Woodrow Wilsonplein', 'Zuid', 'Brabantdam', 'Coupure', 'Ketelvest'],
+                '2000': ['Meir', 'Groenplaats', 'Leysstraat', 'Schuttershofstraat', 'Kloosterstraat', 'Nationalestraat', 'De Keyserlei', 'Huidevettersstraat'],
+                '1000': ['Wetstraat', 'Louizalaan', 'Koninginnelaan', 'Europaplein', 'Belliardstraat', 'Louizaplein', 'Kruidtuinlaan'],
+                '8000': ['Markt', 'Steenstraat', 'Wollestraat', 'Noordzandstraat', 'Simon Stevinplein', 'Katelijnestraat', 'Hoogstraat'],
+                '3000': ['Bondgenotenlaan', 'Tiensestraat', 'Naamsestraat', 'Grote Markt', 'Oude Markt', 'Muntstraat', 'Diestsestraat']
+            };
+            
+            const straten = belgischeStraten[postcode] || [];
+            const gefilterd = straten.filter(straat => 
+                straat.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            if (gefilterd.length > 0) {
+                showSuggesties(gefilterd);
+            } else {
+                straatnaamSuggesties.classList.add('hidden');
+            }
+        }
+        
+        function showSuggesties(suggesties) {
+            straatnaamSuggesties.innerHTML = '';
+            selectedIndex = -1;
+            
+            suggesties.forEach(suggestie => {
+                const div = document.createElement('div');
+                div.className = 'suggestie-item px-4 py-2 cursor-pointer hover:bg-indigo-100';
+                div.textContent = suggestie;
+                div.addEventListener('click', function() {
+                    straatnaamInput.value = suggestie;
+                    straatnaamSuggesties.classList.add('hidden');
+                });
+                straatnaamSuggesties.appendChild(div);
+            });
+            
+            straatnaamSuggesties.classList.remove('hidden');
+        }
+        
+        // Sluit suggesties bij klik buiten
+        document.addEventListener('click', function(e) {
+            if (!straatnaamInput.contains(e.target) && !straatnaamSuggesties.contains(e.target)) {
+                straatnaamSuggesties.classList.add('hidden');
             }
         });
     }

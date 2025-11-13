@@ -290,7 +290,7 @@ class EmailIntegrationService
     /**
      * Send customer welcome email (backward compatibility alias)
      */
-    public function sendCustomerWelcomeEmail($customer, $template = null)
+    public function sendCustomerWelcomeEmail($customer, $template = null, $temporaryPassword = null)
     {
         try {
             \Log::info('🎯 SENDING CUSTOMER WELCOME EMAIL', [
@@ -298,7 +298,9 @@ class EmailIntegrationService
                 'customer_email' => $customer->email,
                 'template_provided' => $template ? 'yes' : 'no',
                 'template_type' => is_array($template) ? 'array' : (is_object($template) ? get_class($template) : gettype($template)),
-                'template_id' => is_object($template) ? $template->id : 'none'
+                'template_id' => is_object($template) ? $template->id : 'none',
+                'temporary_password_provided' => $temporaryPassword ? 'YES' : 'NO',
+                'temporary_password_value' => $temporaryPassword ? '***' . substr($temporaryPassword, -3) : 'NONE'
             ]);
 
             
@@ -342,23 +344,32 @@ class EmailIntegrationService
 
             // Use the template subject and body_html from database
             $subject = $template ? $template->subject : 'Welkom bij ' . config('app.name', 'Bonami');
-            $content = $this->processCustomerWelcomeTemplate($template, $customer);
+            $content = $this->processCustomerWelcomeTemplate($template, $customer, $temporaryPassword);
             
             // Vervang ook placeholders in het onderwerp (subject)
             if ($template && $template->subject) {
-                // Haal temporary password op voor subject
-                $temporaryPassword = 'N/A';
-                try {
-                    $invitationToken = \App\Models\InvitationToken::where('email', $customer->email)
-                                                                 ->where('type', 'klant')
-                                                                 ->latest()
-                                                                 ->first();
-                    if ($invitationToken && $invitationToken->temporary_password) {
-                        $temporaryPassword = $invitationToken->temporary_password;
+                // 🔥 FIX: Gebruik temporary password uit parameter of database
+                $subjectPassword = $temporaryPassword; // Gebruik dezelfde als voor content!
+                
+                if (!$subjectPassword || $subjectPassword === 'N/A') {
+                    try {
+                        $invitationToken = \App\Models\InvitationToken::where('email', $customer->email)
+                                                                     ->where('type', 'klant')
+                                                                     ->latest()
+                                                                     ->first();
+                        if ($invitationToken && $invitationToken->temporary_password) {
+                            $subjectPassword = $invitationToken->temporary_password;
+                        }
+                    } catch (\Exception $e) {
+                        $subjectPassword = 'N/A';
                     }
-                } catch (\Exception $e) {
-                    // Geen probleem, gebruik N/A
                 }
+                
+                \Log::info('🔍 SUBJECT PASSWORD PROCESSING', [
+                    'password_param' => $temporaryPassword ? '***' . substr($temporaryPassword, -3) : 'NONE',
+                    'subject_password' => $subjectPassword ? '***' . substr($subjectPassword, -3) : 'N/A',
+                    'from_parameter' => $temporaryPassword && $temporaryPassword !== 'N/A' ? 'YES' : 'NO'
+                ]);
                 
                 // Haal organisatie-info op voor subject placeholders
                 $organisatieInfo = $this->getOrganisatieInfo($customer);
@@ -367,8 +378,8 @@ class EmailIntegrationService
                 $subject = str_replace('@{{voornaam}}', $customer->voornaam ?? 'Onbekend', $subject);
                 $subject = str_replace('@{{naam}}', $customer->naam ?? 'Onbekend', $subject);
                 $subject = str_replace('@{{email}}', $customer->email ?? '', $subject);
-                $subject = str_replace('@{{temporary_password}}', $temporaryPassword, $subject);
-                $subject = str_replace('@{{wachtwoord}}', $temporaryPassword, $subject);
+                $subject = str_replace('@{{temporary_password}}', $subjectPassword, $subject);
+                $subject = str_replace('@{{wachtwoord}}', $subjectPassword, $subject);
                 $subject = str_replace('@{{bedrijf_naam}}', $organisatieInfo['bedrijf_naam'], $subject);
                 $subject = str_replace('@{{datum}}', now()->format('d-m-Y'), $subject);
                 
@@ -381,7 +392,7 @@ class EmailIntegrationService
                 \Log::info('✅ CUSTOMER SUBJECT PLACEHOLDERS VERVANGEN', [
                     'original_subject' => $template->subject ?? 'none',
                     'processed_subject' => $subject,
-                    'temporary_password_used' => $temporaryPassword,
+                    'temporary_password_used' => $subjectPassword,
                     'organisatie_used' => $organisatieInfo['bedrijf_naam']
                 ]);
             }
@@ -713,7 +724,7 @@ class EmailIntegrationService
     /**
      * Process customer welcome template
      */
-    private function processCustomerWelcomeTemplate($template, $customer)
+    private function processCustomerWelcomeTemplate($template, $customer, $temporaryPassword = null)
     {
         // Haal organisatie-info op voor dynamische vervanging
         $organisatieInfo = $this->getOrganisatieInfo($customer);
@@ -725,20 +736,46 @@ class EmailIntegrationService
         // Use body_html from the EmailTemplate model
         $content = $template->body_html ?? $template->content ?? $template->inhoud ?? 'Welkom bij ons systeem!';
 
-        // Get the temporary password from the latest invitation token for this customer
-        $temporaryPassword = 'N/A';
-        try {
-            $invitationToken = \App\Models\InvitationToken::where('email', $customer->email)
-                                                         ->where('type', 'klant')
-                                                         ->latest()
-                                                         ->first();
-            if ($invitationToken && $invitationToken->temporary_password) {
-                $temporaryPassword = $invitationToken->temporary_password;
+        // 🔥 FIX: Als temporary password niet meegegeven is, haal het op uit de database
+        if (!$temporaryPassword) {
+            \Log::info('🔍 TEMPORARY PASSWORD NOT PROVIDED - FETCHING FROM DATABASE', [
+                'customer_email' => $customer->email
+            ]);
+            
+            try {
+                $invitationToken = \App\Models\InvitationToken::where('email', $customer->email)
+                                                             ->where('type', 'klant')
+                                                             ->latest()
+                                                             ->first();
+                if ($invitationToken && $invitationToken->temporary_password) {
+                    $temporaryPassword = $invitationToken->temporary_password;
+                    \Log::info('✅ TEMPORARY PASSWORD FOUND IN DATABASE', [
+                        'password_length' => strlen($temporaryPassword),
+                        'last_3_chars' => '***' . substr($temporaryPassword, -3),
+                        'token_created_at' => $invitationToken->created_at->format('Y-m-d H:i:s')
+                    ]);
+                } else {
+                    \Log::warning('⚠️ NO INVITATION TOKEN FOUND FOR CUSTOMER', [
+                        'customer_email' => $customer->email,
+                        'token_exists' => $invitationToken ? 'yes' : 'no',
+                        'has_password' => $invitationToken && $invitationToken->temporary_password ? 'yes' : 'no',
+                        'all_tokens_count' => \App\Models\InvitationToken::where('email', $customer->email)->count()
+                    ]);
+                    $temporaryPassword = 'N/A';
+                }
+            } catch (\Exception $e) {
+                \Log::error('❌ ERROR RETRIEVING TEMPORARY PASSWORD', [
+                    'customer_email' => $customer->email,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                $temporaryPassword = 'N/A';
             }
-        } catch (\Exception $e) {
-            \Log::warning('Could not retrieve temporary password for customer email template', [
-                'customer_email' => $customer->email,
-                'error' => $e->getMessage()
+        } else {
+            \Log::info('✅ TEMPORARY PASSWORD PROVIDED AS PARAMETER', [
+                'password_length' => strlen($temporaryPassword),
+                'last_3_chars' => '***' . substr($temporaryPassword, -3),
+                'source' => 'PARAMETER (fresh from controller)'
             ]);
         }
 
@@ -748,10 +785,12 @@ class EmailIntegrationService
             'voornaam' => $customer->voornaam,
             'naam' => $customer->naam,
             'email' => $customer->email,
-            'temporary_password' => $temporaryPassword,
+            'temporary_password_final' => $temporaryPassword,
+            'temporary_password_is_na' => $temporaryPassword === 'N/A',
             'organisatie_info' => $organisatieInfo,
             'contains_voornaam_placeholder' => strpos($content, '@{{voornaam}}') !== false,
-            'contains_temp_password_placeholder' => strpos($content, '@{{temporary_password}}') !== false
+            'contains_temp_password_placeholder' => strpos($content, '@{{temporary_password}}') !== false,
+            'contains_wachtwoord_placeholder' => strpos($content, '@{{wachtwoord}}') !== false
         ]);
 
         // Vervang placeholders stap voor stap voor betere debugging
@@ -1304,14 +1343,16 @@ class EmailIntegrationService
 
     /**
      * Send customer referral thank you email - NIEUWE FUNCTIONALITEIT
-     * Voorzichtig toegevoegd zonder bestaande systeem te verstoren
+     * Verstuurt automatische bedankmail naar klant die iemand heeft doorverwezen
      */
     public function sendReferralThankYouEmail($referringCustomer, $referredCustomer)
     {
         try {
             \Log::info('🎉 SENDING REFERRAL THANK YOU EMAIL', [
                 'referring_customer' => $referringCustomer->email,
-                'referred_customer' => $referredCustomer->email
+                'referring_customer_name' => $referringCustomer->voornaam . ' ' . $referringCustomer->naam,
+                'referred_customer' => $referredCustomer->email,
+                'referred_customer_name' => $referredCustomer->voornaam . ' ' . $referredCustomer->naam
             ]);
 
             // Haal organisatie ID op
@@ -1321,28 +1362,96 @@ class EmailIntegrationService
             $template = EmailTemplate::findTemplateWithFallback('referral_thank_you', $organisatieId);
             
             if (!$template) {
-                \Log::warning('⚠️ No active referral thank you template found');
+                \Log::warning('⚠️ No active referral thank you template found', [
+                    'organisatie_id' => $organisatieId
+                ]);
                 return false;
             }
 
-            // Bereid variabelen voor
+            \Log::info('✅ Found referral thank you template', [
+                'template_id' => $template->id,
+                'template_name' => $template->name,
+                'is_default' => $template->isDefaultTemplate()
+            ]);
+
+            // Haal organisatie-info op voor dynamische placeholders
+            $organisatieInfo = $this->getOrganisatieInfo($referringCustomer);
+
+            // Bereid variabelen voor email template
             $variables = [
                 'voornaam' => $referringCustomer->voornaam,
                 'naam' => $referringCustomer->naam,
                 'email' => $referringCustomer->email,
                 'referred_customer_name' => $referredCustomer->voornaam . ' ' . $referredCustomer->naam,
+                'referred_customer_voornaam' => $referredCustomer->voornaam,
                 'referred_customer_email' => $referredCustomer->email,
                 'referral_date' => now()->format('d-m-Y'),
                 'datum' => now()->format('d-m-Y'),
                 'tijd' => now()->format('H:i'),
-                'bedrijf_naam' => config('app.name', 'Bonami'),
-                'website_url' => config('app.url', 'https://bonami-sportcoaching.be'),
+                'jaar' => now()->format('Y'),
+                'bedrijf_naam' => $organisatieInfo['bedrijf_naam'],
+                'website_url' => $organisatieInfo['website_url'],
+                'email_from_name' => $organisatieInfo['email_from_name'],
+                'email_signature' => $organisatieInfo['email_signature'],
                 'email_id' => 'REF-' . $referringCustomer->id . '-' . $referredCustomer->id . '-' . time(),
-                'unsubscribe_url' => $this->generateSafeRoute('unsubscribe', ['email' => $referringCustomer->email, 'token' => $this->generateUnsubscribeToken($referringCustomer->email)])
+                'unsubscribe_url' => $this->generateSafeRoute('unsubscribe', [
+                    'email' => $referringCustomer->email, 
+                    'token' => $this->generateUnsubscribeToken($referringCustomer->email)
+                ])
             ];
             
             $subject = $template->renderSubject($variables);
             $body = $template->renderBody($variables);
+            
+            \Log::info('📧 Email content prepared', [
+                'subject' => $subject,
+                'body_length' => strlen($body)
+            ]);
+            
+            // BELANGRIJK: Haal organisatie op voor correcte afzendernaam
+            $organisatie = null;
+            if ($referringCustomer && method_exists($referringCustomer, 'organisatie')) {
+                $organisatie = $referringCustomer->organisatie;
+            } elseif ($referringCustomer && property_exists($referringCustomer, 'organisatie')) {
+                $organisatie = $referringCustomer->organisatie;
+            }
+            
+            // Bepaal afzendernaam op basis van organisatie
+            $fromName = config('mail.from.name', 'Performance Pulse');
+            // BELANGRIJK: Gebruik ALTIJD het email adres uit .env - dit mag niet overschreven worden!
+            $fromEmail = config('mail.from.address');
+            
+            if ($organisatie) {
+                $organisatie->refresh(); // Haal nieuwste data op
+                
+                // Gebruik ALLEEN de NAAM van de organisatie (NIET het email adres!)
+                if (!empty($organisatie->email_from_name)) {
+                    $fromName = $organisatie->email_from_name;
+                } elseif (!empty($organisatie->bedrijf_naam)) {
+                    $fromName = $organisatie->bedrijf_naam;
+                } elseif (!empty($organisatie->naam)) {
+                    $fromName = $organisatie->naam;
+                }
+                
+                \Log::info('🎯 EMAIL AFZENDERNAAM INGESTELD (Referral)', [
+                    'from_name' => $fromName,
+                    'from_email' => $fromEmail,
+                    'organisatie_id' => $organisatie->id,
+                    'organisatie_naam' => $organisatie->naam,
+                    'email_from_name_db' => $organisatie->email_from_name,
+                    'bedrijf_naam_db' => $organisatie->bedrijf_naam,
+                    'note' => 'Email adres is ALTIJD uit .env (SMTP account)'
+                ]);
+            } else {
+                \Log::warning('⚠️ GEEN ORGANISATIE - DEFAULT AFZENDER GEBRUIKT (Referral)', [
+                    'from_name' => $fromName,
+                    'from_email' => $fromEmail
+                ]);
+            }
+            
+            // Configureer Mail met organisatie-specifieke afzender
+            Config::set('mail.from.name', $fromName);
+            // Email adres blijft altijd hetzelfde (uit .env)
             
             // Verstuur email
             Mail::html($body, function ($message) use ($referringCustomer, $subject) {
@@ -1350,13 +1459,15 @@ class EmailIntegrationService
                         ->subject($subject);
             });
             
+            \Log::info('✅ Email sent successfully');
+            
             // Log de email (gebruikt bestaand systeem)
             try {
                 EmailLog::create([
                     'recipient_email' => $referringCustomer->email,
                     'recipient_name' => $referringCustomer->voornaam . ' ' . $referringCustomer->naam,
                     'subject' => $subject,
-                    'body_html' => $body ?? '', // 🔥 FIX: body_html is verplicht
+                    'body_html' => $body ?? '',
                     'email_template_id' => $template->id,
                     'trigger_name' => 'referral_thank_you',
                     'status' => 'sent',
@@ -1367,13 +1478,13 @@ class EmailIntegrationService
             } catch (\Exception $logError) {
                 \Log::warning('Failed to log referral email (but email was sent): ' . $logError->getMessage());
                 
-                // Fallback: direct DB insert (bestaand systeem)
+                // Fallback: direct DB insert
                 try {
                     \DB::table('email_logs')->insert([
                         'recipient_email' => $referringCustomer->email,
                         'recipient_name' => $referringCustomer->voornaam . ' ' . $referringCustomer->naam,
                         'subject' => $subject,
-                        'body_html' => $body ?? '', // 🔥 FIX: body_html is verplicht
+                        'body_html' => $body ?? '',
                         'email_template_id' => $template->id,
                         'trigger_name' => 'referral_thank_you',
                         'status' => 'sent',
@@ -1387,16 +1498,17 @@ class EmailIntegrationService
                 }
             }
             
-            // Update trigger statistics (gebruikt bestaand systeem)
+            // Update trigger statistics
             $this->updateTriggerStats('referral_thank_you', true);
             
-            \Log::info('✅ Referral thank you email sent successfully');
+            \Log::info('🎉 Referral thank you email process completed successfully');
             return true;
             
         } catch (\Exception $e) {
-            \Log::error('❌ Failed to send referral thank you email: ' . $e->getMessage(), [
+            \Log::error('❌ Failed to send referral thank you email', [
                 'referring_customer' => $referringCustomer->email ?? 'unknown',
                 'referred_customer' => $referredCustomer->email ?? 'unknown',
+                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             
