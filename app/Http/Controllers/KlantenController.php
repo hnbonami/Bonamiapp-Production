@@ -229,16 +229,16 @@ class KlantenController extends Controller
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
-        // Handle avatar upload - GEFIXED!
+        // Handle avatar upload - GEFIXED MET KLANTEN SUBDIRECTORY!
         if ($request->hasFile('avatar')) {
             // Verwijder oude avatar
-            if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
-                \Storage::disk('public')->delete($klant->avatar_path);
+            if ($klant->avatar && \Storage::disk('public')->exists($klant->avatar)) {
+                \Storage::disk('public')->delete($klant->avatar);
             }
             
-            // Upload nieuwe avatar
+            // Upload nieuwe avatar naar avatars/klanten subdirectory
             $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
-            $validatedData['avatar_path'] = $avatarPath;
+            $validatedData['avatar'] = $avatarPath; // NIET avatar_path maar avatar!
             
             \Log::info('✅ Avatar uploaded in KlantenController', ['path' => $avatarPath]);
         }
@@ -267,25 +267,26 @@ class KlantenController extends Controller
 
         try {
             // Verwijder oude avatar
-            if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
-                \Storage::disk('public')->delete($klant->avatar_path);
-                \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar_path]);
+            if ($klant->avatar && \Storage::disk('public')->exists($klant->avatar)) {
+                \Storage::disk('public')->delete($klant->avatar);
+                \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
             }
 
-            // Upload nieuwe avatar
+            // Upload nieuwe avatar naar avatars/klanten subdirectory
             $path = $request->file('avatar')->store('avatars/klanten', 'public');
             
-            // Update direct op database - geen cache
+            // Update direct op database - gebruik 'avatar' kolom (niet avatar_path!)
             \DB::table('klanten')
                 ->where('id', $klant->id)
                 ->update([
-                    'avatar_path' => $path,
+                    'avatar' => $path,
                     'updated_at' => now()
                 ]);
             
-            \Log::info('✅ Avatar bijgewerkt via DB', [
+            \Log::info('✅ Avatar bijgewerkt via DB in KlantenController', [
                 'klant_id' => $klant->id,
-                'nieuwe_path' => $path
+                'nieuwe_path' => $path,
+                'file_exists' => file_exists(storage_path('app/public/' . $path))
             ]);
             
             // Clear model cache
@@ -295,7 +296,7 @@ class KlantenController extends Controller
                            ->with('success', 'Profielfoto succesvol bijgewerkt!');
             
         } catch (\Exception $e) {
-            \Log::error('❌ Avatar update failed', [
+            \Log::error('❌ Avatar update failed in KlantenController', [
                 'error' => $e->getMessage(),
                 'klant_id' => $klant->id
             ]);

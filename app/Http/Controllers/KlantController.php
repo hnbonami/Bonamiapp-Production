@@ -59,6 +59,13 @@ class KlantController extends Controller
         // FORCE FRESH DATA - haal altijd verse gegevens op
         $klant = $klant->fresh();
         
+        // DEBUG: Check avatar in edit
+        \Log::info('🔍 Klant edit - avatar check', [
+            'klant_id' => $klant->id,
+            'avatar_from_model' => $klant->avatar,
+            'avatar_from_db' => \DB::table('klanten')->where('id', $klant->id)->value('avatar')
+        ]);
+        
         return view('klanten.edit', compact('klant'));
     }
 
@@ -98,14 +105,14 @@ class KlantController extends Controller
             ]);
             
             // Verwijder oude avatar
-            if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
-                \Storage::disk('public')->delete($klant->avatar_path);
-                \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar_path]);
+            if ($klant->avatar && \Storage::disk('public')->exists($klant->avatar)) {
+                \Storage::disk('public')->delete($klant->avatar);
+                \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
             }
             
-            // Upload nieuwe avatar
+            // Upload nieuwe avatar naar avatars/klanten subdirectory
             $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
-            $validatedData['avatar_path'] = $avatarPath;
+            $validatedData['avatar'] = $avatarPath;
             
             \Log::info('✅ Avatar opgeslagen in storage', [
                 'path' => $avatarPath,
@@ -122,17 +129,20 @@ class KlantController extends Controller
             ->update($updateData);
         
         // Verificatie
-        $dbCheck = \DB::table('klanten')->where('id', $klant->id)->first(['avatar_path', 'voornaam', 'naam']);
+        $dbCheck = \DB::table('klanten')->where('id', $klant->id)->first(['avatar', 'voornaam', 'naam']);
         
         \Log::info('✅ Klant bijgewerkt in DB', [
             'klant_id' => $klant->id,
-            'avatar_in_update' => isset($updateData['avatar_path']),
-            'avatar_path_saved' => $updateData['avatar_path'] ?? 'geen',
+            'avatar_in_update' => isset($updateData['avatar']),
+            'avatar_path_saved' => $updateData['avatar'] ?? 'geen',
             'db_verification' => [
-                'avatar_path' => $dbCheck->avatar_path,
+                'avatar' => $dbCheck->avatar,
                 'naam' => $dbCheck->voornaam . ' ' . $dbCheck->naam
             ]
         ]);
+
+        // FORCE FRESH DATA - haal de klant opnieuw op
+        $klant = $klant->fresh();
 
         return redirect()->route('klanten.show', $klant->id)->with('success', 'Klant succesvol bijgewerkt!');
     }
@@ -246,7 +256,12 @@ class KlantController extends Controller
 
         if ($request->hasFile('avatar')) {
             $path = $request->file('avatar')->store('avatars/klanten', 'public');
-            $validated['avatar_path'] = $path;
+            $validated['avatar'] = $path;
+            
+            \Log::info('✅ Avatar opgeslagen bij create', [
+                'path' => $path,
+                'file_exists' => \Storage::disk('public')->exists($path)
+            ]);
         }
 
         \Log::info('🔥 Creating klant with data:', $validated);
@@ -308,12 +323,23 @@ class KlantController extends Controller
         // FORCE FRESH DATA - haal altijd verse gegevens op
         $klant = $klant->fresh();
         
-        // DEBUG: Check avatar_path
+        // Genereer avatar URL - GEBRUIK CUSTOM ROUTE IN PLAATS VAN asset()
+        $avatarPath = $klant->avatar;
+        $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
+        
+        // Extract filename van het pad (avatars/klanten/FILENAME.png -> FILENAME.png)
+        if ($avatarPath) {
+            $filename = basename($avatarPath);
+            $avatarUrl = route('avatar.serve', ['filename' => $filename]) . '?v=' . $cacheKey;
+        } else {
+            $avatarUrl = null;
+        }
+        
         \Log::info('🔍 Klant show - avatar check', [
             'klant_id' => $klant->id,
-            'avatar_path_from_model' => $klant->avatar_path,
-            'avatar_path_from_db' => \DB::table('klanten')->where('id', $klant->id)->value('avatar_path'),
-            'db_columns' => \DB::select('SHOW COLUMNS FROM klanten WHERE Field = "avatar_path"')
+            'avatar_path' => $avatarPath,
+            'avatar_url' => $avatarUrl,
+            'cache_key' => $cacheKey,
         ]);
         
         // Laad gerelateerde data met correcte relatie namen
@@ -322,7 +348,7 @@ class KlantController extends Controller
         // Maak user beschikbaar voor de view
         $user = auth()->user();
 
-        return view('klanten.show', compact('klant', 'user'));
+        return view('klanten.show', compact('klant', 'user', 'avatarUrl', 'cacheKey'));
     }
     public function sendInvitation(Request $request, Klant $klant)
     {
@@ -344,46 +370,60 @@ class KlantController extends Controller
     public function updateAvatar(Request $request, Klant $klant)
     {
         $request->validate([
-            'avatar' => 'required|image|max:5120',
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         try {
             // Verwijder oude avatar indien aanwezig
-            if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
-                \Storage::disk('public')->delete($klant->avatar_path);
-                \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar_path]);
+            if ($klant->avatar) {
+                $oldPath = storage_path('app/public/' . $klant->avatar);
+                if (file_exists($oldPath)) {
+                    unlink($oldPath);
+                }
             }
+
+            // Zorg ervoor dat de klanten directory bestaat
+            $avatarDir = storage_path('app/public/avatars/klanten');
+            if (!is_dir($avatarDir)) {
+                mkdir($avatarDir, 0755, true);
+            }
+
+            // Upload nieuwe avatar DIRECT naar storage/app/public/avatars/klanten/
+            $file = $request->file('avatar');
+            $filename = \Illuminate\Support\Str::random(40) . '.' . $file->getClientOriginalExtension();
             
-            // Upload nieuwe avatar
-            $path = $request->file('avatar')->store('avatars/klanten', 'public');
+            // Gebruik Laravel Storage facade - sla op in avatars/klanten subdirectory
+            $path = $file->storeAs('avatars/klanten', $filename, 'public');
             
-            // Update direct op database - geen cache
-            \DB::table('klanten')
-                ->where('id', $klant->id)
-                ->update([
-                    'avatar_path' => $path,
-                    'updated_at' => now()
-                ]);
-            
-            \Log::info('✅ Avatar bijgewerkt via DB (KlantController)', [
+            // Update database met het relatieve pad
+            $klant->avatar = $path;
+            $klant->save();
+
+            \Log::info('✅ Avatar geüpload', [
                 'klant_id' => $klant->id,
-                'nieuwe_path' => $path,
-                'file_exists' => \Storage::disk('public')->exists($path)
+                'filename' => $filename,
+                'path' => $path,
+                'full_path' => storage_path('app/public/' . $path),
+                'file_exists' => file_exists(storage_path('app/public/' . $path)),
             ]);
-            
-            // Clear model cache
-            $klant = $klant->fresh();
-        
-            return redirect()->route('klanten.show', $klant->id)
-                           ->with('success', 'Profielfoto succesvol bijgewerkt!');
-            
+
+            return response()->json([
+                'success' => true,
+                'avatar_url' => asset('storage/' . $path),
+                'message' => 'Avatar succesvol geüpload!'
+            ]);
+
         } catch (\Exception $e) {
-            \Log::error('❌ Avatar update failed', [
+            \Log::error('❌ Avatar upload gefaald', [
+                'klant_id' => $klant->id,
                 'error' => $e->getMessage(),
-                'klant_id' => $klant->id
+                'trace' => $e->getTraceAsString(),
             ]);
-            
-            return redirect()->back()->with('error', 'Fout bij uploaden avatar: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Avatar upload mislukt: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -463,9 +503,6 @@ class KlantController extends Controller
                 'user_id' => $user->id,
                 'email' => $klant->email
             ]);
-            
-            // Optioneel: stuur uitnodigingsmail (implementeer dit later indien gewenst)
-            // $user->sendEmailVerificationNotification();
             
             return $user;
             

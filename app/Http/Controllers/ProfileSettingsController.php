@@ -142,8 +142,8 @@ class ProfileSettingsController extends Controller
             Storage::disk('public')->delete($user->avatar_path);
         }
 
-        // Upload nieuwe avatar
-        $path = $request->file('avatar')->store('avatars', 'public');
+        // Upload nieuwe avatar naar avatars/medewerkers subdirectory
+        $path = $request->file('avatar')->store('avatars/medewerkers', 'public');
         
         // Update user avatar
         $user->update(['avatar_path' => $path]);

@@ -188,8 +188,8 @@
                 <!-- Profielfoto -->
                 <div class="mb-6">
                     @php
-                        // Direct van klant object - al fresh in controller
-                        $currentAvatar = $klant->avatar_path;
+                        // Gebruik correcte avatar kolom (niet avatar_path)
+                        $currentAvatar = $klant->avatar;
                         $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
                     @endphp
                     <label class="block text-sm font-medium text-gray-700 mb-2">{{ $currentAvatar ? 'Nieuwe profielfoto' : 'Profielfoto' }}</label>

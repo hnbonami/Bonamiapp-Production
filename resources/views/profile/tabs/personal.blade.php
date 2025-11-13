@@ -5,8 +5,8 @@
     <div class="flex items-center space-x-6">
         <div class="relative">
             @php
-                // EXACT dezelfde avatar logica als topbar en show pagina
-                $avatarPath = Auth::user()->avatar_path ?? null;
+                // Gebruik correcte avatar kolom (niet avatar_path)
+                $avatarPath = Auth::user()->avatar ?? null;
                 $firstInitial = strtoupper(substr(Auth::user()->name ?? 'U', 0, 1));
             @endphp
             

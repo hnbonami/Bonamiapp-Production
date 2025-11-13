@@ -20,12 +20,12 @@
     <!-- Compacte Header met avatar en kerngegevens -->
     <div class="mb-6">
         @php
-            // AVATAR PATH - EENMALIG DECLAREREN BOVENAAN
-            $avatarPath = $klant->avatar_path;
+            // AVATAR PATH - gebruik 'avatar' kolom uit database
+            $avatarPath = $klant->avatar; // <-- NIET avatar_path maar avatar!
             $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
             \Log::info('🖼️ Avatar debug show.blade', [
                 'klant_id' => $klant->id,
-                'avatar_path' => $avatarPath,
+                'avatar_from_model' => $klant->avatar,
                 'full_url' => $avatarPath ? asset('storage/' . $avatarPath) : 'geen avatar',
                 'file_exists' => $avatarPath ? \Storage::disk('public')->exists($avatarPath) : false
             ]);
@@ -327,6 +327,36 @@ if (uploadModal) {
         }
     });
 }
+
+// Avatar upload handlers - direct submit bij file select
+document.addEventListener('DOMContentLoaded', function() {
+    // Mobile avatar upload
+    const avatarUploadMobile = document.getElementById('avatar-upload');
+    if (avatarUploadMobile) {
+        avatarUploadMobile.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const form = this.closest('form');
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+    }
+    
+    // Desktop avatar upload
+    const avatarUploadDesktop = document.getElementById('avatar-upload-desktop');
+    if (avatarUploadDesktop) {
+        avatarUploadDesktop.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const form = this.closest('form');
+                if (form) {
+                    form.submit();
+                }
+            }
+        });
+    }
+    });
+});
 </script>
 
 <div style="margin-top:2em;">
@@ -349,15 +379,15 @@ if (uploadModal) {
     @if($testen->count())
         <div class="overflow-x-auto bg-white/80 rounded-xl shadow border border-gray-100">
             <table class="min-w-full divide-y divide-gray-200">
-                                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medewerker</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tijdstempel</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
-                            </tr>
-                        </thead>
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Datum</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medewerker</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tijdstempel</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acties</th>
+                    </tr>
+                </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
                     @foreach($testen as $test)
                     <tr>

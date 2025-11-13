@@ -128,17 +128,14 @@
                 <td class="px-6 py-4 whitespace-nowrap text-gray-900">
                     <div class="flex items-center gap-3">
                         @php
-                            // Gebruik avatar_path van klant zelf of van gekoppelde user
-                            $avatarPath = null;
-                            if ($klant->avatar_path) {
-                                $avatarPath = $klant->avatar_path;
-                            } elseif ($klant->user && $klant->user->avatar_path) {
-                                $avatarPath = $klant->user->avatar_path;
-                            }
+                            // Gebruik avatar kolom met cache-busting timestamp
+                            $avatarPath = $klant->avatar ?? null;
+                            $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
+                            $avatarUrl = $avatarPath ? asset('storage/' . $avatarPath) . '?v=' . $cacheKey : null;
                         @endphp
                         
-                        @if($avatarPath)
-                            <img src="{{ asset('storage/' . $avatarPath) }}" alt="Avatar" class="w-9 h-9 rounded-full object-cover flex-none" style="aspect-ratio:1/1;" />
+                        @if($avatarUrl)
+                            <img src="{{ $avatarUrl }}" alt="Avatar" class="w-9 h-9 rounded-full object-cover flex-none" style="aspect-ratio:1/1;" />
                         @else
                             <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold flex-none" style="aspect-ratio:1/1;">
                                 {{ strtoupper(substr($klant->voornaam,0,1)) }}

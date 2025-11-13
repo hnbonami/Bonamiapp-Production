@@ -16,6 +16,10 @@
 
     RewriteEngine On
 
+    # Allow storage files to be served directly (MUST BE FIRST!)
+    RewriteCond %{REQUEST_URI} ^/storage/
+    RewriteRule ^ - [L]
+
     # Allow templates route explicitly
     RewriteRule ^templates$ index.php [L]
 

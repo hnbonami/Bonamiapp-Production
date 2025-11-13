@@ -41,18 +41,43 @@ class AvatarController extends Controller
             'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
         
-        // Delete old avatar if exists
-        if ($klant->avatar_path) {
-            Storage::disk('public')->delete($klant->avatar_path);
+        try {
+            // Verwijder oude avatar indien aanwezig
+            if ($klant->avatar && \Storage::disk('public')->exists($klant->avatar)) {
+                \Storage::disk('public')->delete($klant->avatar);
+                \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
+            }
+
+            // Upload nieuwe avatar naar avatars/klanten subdirectory (GEFIXED!)
+            $path = $request->file('avatar')->store('avatars/klanten', 'public');
+            
+            // Update klant record
+            $klant->avatar = $path;
+            $klant->save();
+
+            \Log::info('✅ Avatar uploaded via AvatarController', [
+                'klant_id' => $klant->id,
+                'path' => $path,
+                'file_exists' => file_exists(storage_path('app/public/' . $path))
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'avatar_url' => asset('storage/' . $path),
+                'message' => 'Avatar succesvol geüpload'
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Avatar upload failed in AvatarController', [
+                'error' => $e->getMessage(),
+                'klant_id' => $klant->id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Avatar upload mislukt: ' . $e->getMessage()
+            ], 500);
         }
-        
-        // Store new avatar
-        $avatarPath = $request->file('avatar')->store('avatars', 'public');
-        
-        // Sync avatar between klant and user
-        $klant->syncAvatarWithUser($avatarPath);
-        
-        return redirect()->back()->with('success', 'Klant profielfoto bijgewerkt!');
     }
 
     /**
