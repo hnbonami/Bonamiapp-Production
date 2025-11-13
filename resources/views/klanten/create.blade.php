@@ -188,7 +188,7 @@
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Profielfoto</label>
                     <div class="flex items-center gap-4">
-                        <!-- Avatar Preview -->
+                        <!-- Avatar Preview - EXACT ZELFDE ALS EDIT -->
                         <div class="relative flex-shrink-0" style="width:80px;height:80px;">
                             <label for="avatarInput" style="cursor:pointer;display:block;position:relative;">
                                 <div id="avatarPreviewContainer" class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:80px;height:80px;font-size:32px;">

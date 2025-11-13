@@ -38,17 +38,13 @@
             <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Logo</h3>
                 
-                @if($organisatie->logo_path)
+                @if($branding && $branding->logo_pad)
                     <div class="mb-4 p-4 bg-gray-50 rounded-lg">
                         <p class="text-sm text-gray-600 mb-2">Huidige logo:</p>
-                        <img src="{{ $organisatie->logo_url }}" alt="Logo" class="max-h-20 mb-2">
-                        <form action="{{ route('admin.branding.deleteLogo') }}" method="POST" class="inline">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-red-600 text-sm hover:underline" onclick="return confirm('Logo verwijderen?')">
-                                🗑️ Verwijderen
-                            </button>
-                        </form>
+                        <img src="{{ asset('storage/' . $branding->logo_pad) }}" alt="Logo" class="max-h-20 mb-2">
+                        <button type="button" onclick="deleteLogo()" class="text-red-600 text-sm hover:underline">
+                            🗑️ Verwijderen
+                        </button>
                     </div>
                 @endif
                 
@@ -321,5 +317,32 @@ document.querySelectorAll('input[type="color"]').forEach(colorPicker => {
         textInput.value = this.value.toUpperCase();
     });
 });
+
+// Verwijder logo functie
+function deleteLogo() {
+    if (!confirm('Logo verwijderen?')) return;
+    
+    fetch('{{ route("branding.deleteFile") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            field: 'logo_pad'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Fout: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Fout bij verwijderen: ' + error);
+    });
+}
 </script>
 @endsection

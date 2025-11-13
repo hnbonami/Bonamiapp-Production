@@ -188,17 +188,26 @@
                 <!-- Profielfoto -->
                 <div class="mb-6">
                     @php
-                        // Gebruik correcte avatar kolom (niet avatar_path)
+                        // AVATAR PATH - EXACT ZELFDE ALS SHOW.BLADE.PHP
                         $currentAvatar = $klant->avatar;
                         $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
+                        
+                        // Genereer correcte avatar URL op basis van environment
+                        if ($currentAvatar) {
+                            $avatarUrl = app()->environment('production') 
+                                ? asset('uploads/' . $currentAvatar)
+                                : asset('storage/' . $currentAvatar);
+                        } else {
+                            $avatarUrl = null;
+                        }
                     @endphp
                     <label class="block text-sm font-medium text-gray-700 mb-2">{{ $currentAvatar ? 'Nieuwe profielfoto' : 'Profielfoto' }}</label>
                     <div class="flex items-center gap-4">
                         <!-- Avatar Preview met bestaande foto -->
                         <div class="relative flex-shrink-0" style="width:80px;height:80px;">
                             <label for="avatarInput" style="cursor:pointer;display:block;position:relative;">
-                                @if($currentAvatar)
-                                    <img id="avatarPreviewImg" src="{{ asset('storage/' . $currentAvatar) }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:80px;height:80px;" />
+                                @if($avatarUrl)
+                                    <img id="avatarPreviewImg" src="{{ $avatarUrl }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:80px;height:80px;" />
                                 @else
                                     <div id="avatarPreviewContainer" class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:80px;height:80px;font-size:32px;">
                                         {{ strtoupper(substr($klant->voornaam ?? '?', 0, 1)) }}

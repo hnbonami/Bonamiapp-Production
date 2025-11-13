@@ -131,7 +131,16 @@
                             // Gebruik avatar kolom met cache-busting timestamp
                             $avatarPath = $klant->avatar ?? null;
                             $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
-                            $avatarUrl = $avatarPath ? asset('storage/' . $avatarPath) . '?v=' . $cacheKey : null;
+                            
+                            // Genereer correcte avatar URL op basis van environment
+                            if ($avatarPath) {
+                                $avatarUrl = app()->environment('production') 
+                                    ? asset('uploads/' . $avatarPath)
+                                    : asset('storage/' . $avatarPath);
+                                $avatarUrl .= '?v=' . $cacheKey;
+                            } else {
+                                $avatarUrl = null;
+                            }
                         @endphp
                         
                         @if($avatarUrl)
