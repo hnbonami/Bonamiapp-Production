@@ -83,6 +83,31 @@
     @csrf
     @method('PATCH')
     
+    @php
+        // Voor klanten: haal gegevens van klant record
+        // Voor beheerders/medewerkers: gebruik user gegevens
+        if ($user->role === 'klant' && $user->klant_id) {
+            $klantData = \App\Models\Klant::find($user->klant_id);
+            $voornaamValue = $klantData->voornaam ?? '';
+            $achternaamValue = $klantData->naam ?? '';
+            $emailValue = $klantData->email ?? $user->email;
+            $telefoonValue = $klantData->telefoonnummer ?? $klantData->telefoon ?? '';
+            $geboortedatumValue = $klantData->geboortedatum ?? null;
+            $adresValue = $klantData->adres ?? '';
+            $stadValue = $klantData->stad ?? '';
+            $postcodeValue = $klantData->postcode ?? '';
+        } else {
+            $voornaamValue = $user->first_name ?? '';
+            $achternaamValue = $user->last_name ?? '';
+            $emailValue = $user->email;
+            $telefoonValue = $user->telefoonnummer ?? '';
+            $geboortedatumValue = $user->geboortedatum ?? null;
+            $adresValue = $user->adres ?? '';
+            $stadValue = $user->stad ?? '';
+            $postcodeValue = $user->postcode ?? '';
+        }
+    @endphp
+    
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <!-- First Name -->
         <div>
@@ -90,7 +115,7 @@
                 Voornaam <span class="text-red-500">*</span>
             </label>
             <input type="text" name="first_name" id="first_name" 
-                   value="{{ old('first_name', $user->first_name ?? '') }}"
+                   value="{{ old('first_name', $voornaamValue) }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                    required>
         </div>
@@ -101,7 +126,7 @@
                 Achternaam <span class="text-red-500">*</span>
             </label>
             <input type="text" name="last_name" id="last_name" 
-                   value="{{ old('last_name', $user->last_name ?? '') }}"
+                   value="{{ old('last_name', $achternaamValue) }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                    required>
         </div>
@@ -112,7 +137,7 @@
                 E-mailadres <span class="text-red-500">*</span>
             </label>
             <input type="email" name="email" id="email" 
-                   value="{{ old('email', $user->email) }}"
+                   value="{{ old('email', $emailValue) }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                    required>
         </div>
@@ -123,7 +148,7 @@
                 Telefoonnummer
             </label>
             <input type="tel" name="phone" id="phone" 
-                   value="{{ $user->telefoonnummer }}"
+                   value="{{ old('phone', $telefoonValue) }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                    placeholder="+32 123 45 67 89">
         </div>
@@ -133,11 +158,11 @@
             <label for="birth_date" class="block text-sm font-medium text-gray-700 mb-2">
                 Geboortedatum
             </label>
-                                                <input type="date" 
-                                           id="geboortedatum" 
-                                           name="geboortedatum" 
-                                           value="@if($user->geboortedatum){{ is_string($user->geboortedatum) ? $user->geboortedatum : $user->geboortedatum->format('Y-m-d') }}@endif" 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            <input type="date" 
+                   id="geboortedatum" 
+                   name="geboortedatum" 
+                   value="{{ old('geboortedatum', $geboortedatumValue ? (is_string($geboortedatumValue) ? $geboortedatumValue : $geboortedatumValue->format('Y-m-d')) : '') }}" 
+                   class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
         </div>
 
         <!-- Address -->
@@ -147,7 +172,7 @@
             </label>
             <textarea name="address" id="address" rows="2"
                       class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Straat en huisnummer">{{ $user->adres }}</textarea>
+                      placeholder="Straat en huisnummer">{{ old('address', $adresValue) }}</textarea>
         </div>
 
         <!-- City -->
@@ -156,7 +181,7 @@
                 Stad
             </label>
             <input type="text" name="city" id="city" 
-                   value="{{ $user->stad }}"
+                   value="{{ old('city', $stadValue) }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
         </div>
 
@@ -166,7 +191,7 @@
                 Postcode
             </label>
             <input type="text" name="postal_code" id="postal_code" 
-                   value="{{ $user->postcode }}"
+                   value="{{ old('postal_code', $postcodeValue) }}"
                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                    placeholder="1000">
         </div>
