@@ -4,38 +4,51 @@ namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class SecureFileUpload
 {
     /**
      * Valideer en upload een avatar afbeelding
+     * EXACT HETZELFDE SYSTEEM ALS KlantController->update()
      */
-    public static function uploadAvatar(UploadedFile $file, ?string $oldPath = null): string
+    public static function uploadAvatar(UploadedFile $file, ?string $oldAvatarPath = null): string
     {
-        // Validatie regels uit config
-        $allowedMimes = config('security.uploads.allowed_mimes.images');
-        $maxSize = config('security.uploads.max_size.avatar');
-        $dimensions = config('security.uploads.dimensions.avatar');
+        \Log::info('🔵 uploadAvatar START', [
+            'has_file' => !!$file,
+            'old_path' => $oldAvatarPath,
+            'mime_type' => $file->getMimeType(),
+            'size' => $file->getSize()
+        ]);
         
-        // Extra mime type check
-        $mimeType = $file->getMimeType();
-        $allowedMimeTypes = config('security.uploads.mime_types.images');
-        
-        if (!in_array($mimeType, $allowedMimeTypes)) {
-            throw new \Exception('Ongeldig bestandstype gedetecteerd.');
+        // Verwijder oude avatar indien aanwezig (EXACT ZOALS KLANTCONTROLLER)
+        if ($oldAvatarPath && \Storage::disk('public')->exists($oldAvatarPath)) {
+            \Storage::disk('public')->delete($oldAvatarPath);
+            \Log::info('🗑️ Oude avatar verwijderd', ['path' => $oldAvatarPath]);
         }
-        
-        // Delete oude bestand
-        if ($oldPath && Storage::disk('public')->exists($oldPath)) {
-            Storage::disk('public')->delete($oldPath);
+
+        // Zorg ervoor dat de klanten directory bestaat
+        $avatarDir = storage_path('app/public/avatars/klanten');
+        if (!is_dir($avatarDir)) {
+            mkdir($avatarDir, 0755, true);
         }
+
+        // Upload nieuwe avatar DIRECT naar storage/app/public/avatars/klanten/
+        // EXACT ZOALS KLANTCONTROLLER: gebruik storeAs()
+        $filename = \Illuminate\Support\Str::random(40) . '.' . $file->getClientOriginalExtension();
         
-        // Genereer veilige bestandsnaam
-        $extension = $file->getClientOriginalExtension();
-        $filename = 'avatar_' . uniqid() . '_' . time() . '.' . $extension;
+        // Gebruik Laravel Storage facade - sla op in avatars/klanten subdirectory
+        $path = $file->storeAs('avatars/klanten', $filename, 'public');
         
-        // Upload naar veilige locatie
-        return $file->storeAs('avatars', $filename, 'public');
+        \Log::info('✅ Avatar geüpload', [
+            'klant_id' => 'via_service',
+            'filename' => $filename,
+            'path' => $path,
+            'full_path' => storage_path('app/public/' . $path),
+            'file_exists' => file_exists(storage_path('app/public/' . $path)),
+        ]);
+
+        return $path;
     }
     
     /**

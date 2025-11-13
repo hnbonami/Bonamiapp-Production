@@ -225,8 +225,8 @@
             <!-- Uitnodiging Card -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-center gap-2 mb-2">
-                    <div style="background:#bbf7d0;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2">
+                    <div style="background:#c8e1eb;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2">
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                             <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
@@ -236,7 +236,7 @@
                 <p class="text-xs text-gray-600 mb-3">Profieluitnodiging versturen</p>
                 <form action="{{ route('klanten.invite', $klant) }}" method="POST" onsubmit="return confirm('Uitnodiging versturen naar {{ $klant->email }}?')">
                     @csrf
-                    <button type="submit" class="block w-full text-center hover:bg-green-200 transition-colors" style="background:#bbf7d0;color:#15803d;padding:0.5rem 0.75rem;border-radius:6px;font-weight:600;font-size:0.813rem;border:none;cursor:pointer;">
+                    <button type="submit" class="block w-full text-center hover:bg-blue-200 transition-colors" style="background:#c8e1eb;color:#111;padding:0.5rem 0.75rem;border-radius:6px;font-weight:600;font-size:0.813rem;border:none;cursor:pointer;">
                         Versturen
                     </button>
                 </form>
@@ -355,7 +355,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    });
 });
 </script>
 

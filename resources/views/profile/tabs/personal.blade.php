@@ -8,30 +8,37 @@
                 // GEBRUIK KLANT AVATAR - niet user avatar!
                 $user = Auth::user();
                 
+                // Refresh user van DB om zeker te zijn dat we laatste avatar hebben
+                $user->refresh();
+                
                 // Als user een klant is, haal avatar van klant record
                 if ($user->role === 'klant' && $user->klant_id) {
                     $klant = \App\Models\Klant::find($user->klant_id);
                     $avatarPath = $klant ? $klant->avatar : null;
+                    $cacheKey = $klant ? ($klant->updated_at ? $klant->updated_at->timestamp : time()) : time();
                 } else {
-                    // Voor beheerders/medewerkers: gebruik user avatar
-                    $avatarPath = $user->avatar;
+                    // Voor beheerders/medewerkers: gebruik user avatar (avatar_path kolom)
+                    $avatarPath = $user->avatar_path ?? $user->avatar;
+                    $cacheKey = $user->updated_at ? $user->updated_at->timestamp : time();
                 }
                 
                 $firstInitial = strtoupper(substr($user->name ?? 'U', 0, 1));
-                $cacheKey = time();
                 
                 \Log::info('🖼️ Avatar debug personal.blade', [
                     'user_id' => $user->id,
                     'user_role' => $user->role,
                     'klant_id' => $user->klant_id ?? 'geen',
-                    'avatar_path' => $avatarPath ?? 'geen'
+                    'avatar_path' => $avatarPath ?? 'geen',
+                    'avatar_in_db' => $user->avatar_path ?? 'geen fallback',
+                    'cache_key' => $cacheKey
                 ]);
             @endphp
             
             @if($avatarPath)
                 <img class="user-avatar h-24 w-24 rounded-full object-cover border-4 border-gray-200" 
                      src="{{ asset('storage/' . $avatarPath) }}?t={{ $cacheKey }}" 
-                     alt="Avatar">
+                     alt="Avatar"
+                     id="profile-avatar-image">
             @else
                 <div class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-200">
                     <span class="text-3xl font-semibold text-gray-600">{{ $firstInitial }}</span>
@@ -51,32 +58,54 @@
             <p class="text-sm text-gray-600">Upload een profielfoto. Maximaal 2MB, JPG, PNG of GIF.</p>
             
             @php
-                // Voor klanten: gebruik klanten.update route (zelfde als op show pagina)
-                // Voor beheerders/medewerkers: gebruik profile.update.avatar
-                if ($user->role === 'klant' && $user->klant_id) {
-                    $klantRecord = \App\Models\Klant::find($user->klant_id);
-                    $uploadRoute = route('klanten.update', $klantRecord);
-                } else {
-                    $uploadRoute = route('profile.update.avatar');
-                }
+                // Voor ALLE gebruikers: gebruik profile.update.avatar route
+                // Deze route werkt voor klanten, medewerkers én beheerders
+                $uploadRoute = route('profile.update.avatar');
+                
+                \Log::info('🔧 Avatar upload route debug', [
+                    'user_id' => $user->id,
+                    'user_role' => $user->role ?? $user->rol ?? 'onbekend',
+                    'klant_id' => $user->klant_id ?? 'geen',
+                    'upload_route' => $uploadRoute
+                ]);
             @endphp
             
             <form class="mt-2" action="{{ $uploadRoute }}" method="POST" enctype="multipart/form-data" id="avatar-upload-form">
                 @csrf
-                @if($user->role === 'klant' && $user->klant_id)
-                    @method('PUT')
-                    {{-- Hidden fields voor klanten update (zoals op show pagina) --}}
-                    <input type="hidden" name="voornaam" value="{{ $klantRecord->voornaam ?? '' }}">
-                    <input type="hidden" name="naam" value="{{ $klantRecord->naam ?? '' }}">
-                    <input type="hidden" name="email" value="{{ $klantRecord->email ?? '' }}">
-                    <input type="hidden" name="geslacht" value="{{ $klantRecord->geslacht ?? '' }}">
-                    <input type="hidden" name="status" value="{{ $klantRecord->status ?? '' }}">
-                @endif
-                <input type="file" id="avatar-upload" name="avatar" accept="image/*" class="hidden" onchange="this.form.submit()">
+                @method('POST')
+                <input type="file" id="avatar-upload" name="avatar" accept="image/*" class="hidden" onchange="handleAvatarUpload(this)">
             </form>
         </div>
     </div>
 </div>
+
+<script>
+// Avatar upload handler met force reload
+function handleAvatarUpload(input) {
+    if (input.files && input.files[0]) {
+        console.log('📸 Avatar geselecteerd, uploading...');
+        
+        // Maak een FormData object
+        const formData = new FormData(input.closest('form'));
+        
+        // Submit met fetch en dan force reload
+        fetch(input.closest('form').action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        }).then(response => {
+            console.log('✅ Upload complete, reloading page...');
+            // Force complete page reload om cache te clearen
+            window.location.href = window.location.href + '?refresh=' + Date.now();
+        }).catch(error => {
+            console.error('❌ Upload error:', error);
+            alert('Upload mislukt. Probeer het opnieuw.');
+        });
+    }
+}
+</script>
 
 <!-- Personal Information Form -->
 <form class="ajax-form" action="{{ route('profile.update.personal') }}" method="POST">
@@ -84,10 +113,16 @@
     @method('PATCH')
     
     @php
-        // Voor klanten: haal gegevens van klant record
-        // Voor beheerders/medewerkers: gebruik user gegevens
-        if ($user->role === 'klant' && $user->klant_id) {
+        // Voor ALLE gebruikers: haal gegevens van klant record als die bestaat
+        // Anders gebruik user gegevens als fallback
+        $klantData = null;
+        
+        if ($user->klant_id) {
             $klantData = \App\Models\Klant::find($user->klant_id);
+        }
+        
+        if ($klantData) {
+            // Gebruik klant gegevens (voor klanten, medewerkers én beheerders met klant_id)
             $voornaamValue = $klantData->voornaam ?? '';
             $achternaamValue = $klantData->naam ?? '';
             $emailValue = $klantData->email ?? $user->email;
@@ -96,15 +131,28 @@
             $adresValue = $klantData->adres ?? '';
             $stadValue = $klantData->stad ?? '';
             $postcodeValue = $klantData->postcode ?? '';
+            
+            \Log::info('📋 Personal tab - Data van klant record', [
+                'user_id' => $user->id,
+                'klant_id' => $klantData->id,
+                'voornaam' => $voornaamValue,
+                'achternaam' => $achternaamValue
+            ]);
         } else {
+            // Fallback: gebruik user gegevens (voor users zonder klant_id)
             $voornaamValue = $user->first_name ?? '';
             $achternaamValue = $user->last_name ?? '';
             $emailValue = $user->email;
-            $telefoonValue = $user->telefoonnummer ?? '';
+            $telefoonValue = $user->telefoonnummer ?? $user->telefoon ?? '';
             $geboortedatumValue = $user->geboortedatum ?? null;
             $adresValue = $user->adres ?? '';
             $stadValue = $user->stad ?? '';
             $postcodeValue = $user->postcode ?? '';
+            
+            \Log::info('📋 Personal tab - Data van user record (geen klant gekoppeld)', [
+                'user_id' => $user->id,
+                'email' => $emailValue
+            ]);
         }
     @endphp
     

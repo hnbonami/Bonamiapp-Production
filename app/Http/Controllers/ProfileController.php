@@ -38,6 +38,59 @@ class ProfileController extends Controller
     public function update(ProfileUpdateRequest $request)
     {
         $user = $request->user();
+        
+        \Log::info('🔄 Profile update gestart', [
+            'user_id' => $user->id,
+            'has_avatar' => $request->hasFile('avatar'),
+            'klant_id' => $user->klant_id ?? 'geen'
+        ]);
+        
+        // Avatar upload - update KLANT record voor alle gebruikers met klant_id
+        if ($request->hasFile('avatar') && $user->klant_id) {
+            $request->validate([
+                'avatar' => SecureFileUpload::getAvatarValidationRules()
+            ], [
+                'avatar.required' => 'Selecteer een afbeelding om te uploaden.',
+                'avatar.image' => 'Het bestand moet een afbeelding zijn.',
+                'avatar.mimes' => 'Alleen JPG, JPEG, PNG, GIF en WebP bestanden zijn toegestaan.',
+                'avatar.max' => 'De afbeelding mag maximaal 2MB groot zijn.',
+                'avatar.dimensions' => 'De afbeelding moet minimaal 100x100 pixels zijn en maximaal 4000x4000 pixels.'
+            ]);
+
+            try {
+                // Haal klant record op
+                $klant = \App\Models\Klant::findOrFail($user->klant_id);
+                
+                // Upload avatar en update klant record
+                $path = SecureFileUpload::uploadAvatar(
+                    $request->file('avatar'),
+                    $klant->avatar // Gebruik klant->avatar in plaats van user->avatar_path
+                );
+                
+                $klant->avatar = $path;
+                $klant->touch(); // Update timestamp voor cache busting
+                $klant->save();
+                
+                \Log::info('✅ Avatar succesvol geüpload via profile', [
+                    'user_id' => $user->id,
+                    'klant_id' => $klant->id,
+                    'avatar_path' => $path
+                ]);
+                
+                // Force full page redirect om cache te clearen
+                return redirect()->route('profile.edit', ['tab' => 'personal'])
+                    ->with('success', 'Profielfoto succesvol bijgewerkt');
+                
+            } catch (\Exception $e) {
+                \Log::error('❌ Avatar upload gefaald', [
+                    'user_id' => $user->id,
+                    'error' => $e->getMessage()
+                ]);
+                return back()->withErrors(['avatar' => $e->getMessage()]);
+            }
+        }
+        
+        // Update andere user velden indien nodig
         $user->fill($request->validated());
 
         // If separate first/last names were provided, keep a combined display name in `name`
@@ -54,41 +107,10 @@ class ProfileController extends Controller
             $user->email_verified_at = null;
         }
 
-        // Handle avatar delete flag
-        if ($request->input('avatar_delete') == '1') {
-            if ($user->avatar_path) {
-                try { @unlink(storage_path('app/public/' . $user->avatar_path)); } catch(\Throwable $e) {}
-            }
-            $user->avatar_path = null;
-        }
-
-                // Avatar upload met veilige service class
-        if ($request->hasFile('avatar')) {
-            $request->validate([
-                'avatar' => SecureFileUpload::getAvatarValidationRules()
-            ], [
-                'avatar.required' => 'Selecteer een afbeelding om te uploaden.',
-                'avatar.image' => 'Het bestand moet een afbeelding zijn.',
-                'avatar.mimes' => 'Alleen JPG, JPEG, PNG, GIF en WebP bestanden zijn toegestaan.',
-                'avatar.max' => 'De afbeelding mag maximaal 2MB groot zijn.',
-                'avatar.dimensions' => 'De afbeelding moet minimaal 100x100 pixels zijn en maximaal 4000x4000 pixels.'
-            ]);
-
-            try {
-                $path = SecureFileUpload::uploadAvatar(
-                    $request->file('avatar'),
-                    $user->avatar_path
-                );
-                $user->avatar_path = $path;
-            } catch (\Exception $e) {
-                return back()->withErrors(['avatar' => $e->getMessage()]);
-            }
-        }
-
         $user->save();
 
         // Redirect met success message in plaats van JSON
-        return redirect()->back()->with('success', 'Profielfoto succesvol bijgewerkt');
+        return redirect()->back()->with('success', 'Profiel succesvol bijgewerkt');
     }
 
     /**

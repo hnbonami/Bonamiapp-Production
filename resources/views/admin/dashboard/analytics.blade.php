@@ -169,8 +169,8 @@
         </div>
         
         <div class="kpi-card bg-gradient-to-br from-orange-50 to-white border border-orange-200 rounded-lg shadow-sm p-4 hover:shadow-md transition cursor-move" draggable="true" data-kpi-id="commissie">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-orange-600 uppercase tracking-wide">Commissie</span>
+            <div class="flex items-center justify-between mb-2"> 
+                <span class="text-xs font-medium text-orange-600 uppercase tracking-wide">Commissie organisatie</span>
                 <div class="flex items-center gap-2">
                     <span class="text-xl">🏢</span>
                     <button class="text-gray-400 hover:text-gray-600 transition-colors" title="Sleep om te verplaatsen">
@@ -187,7 +187,7 @@
         
         <div class="kpi-card bg-gradient-to-br from-green-50 to-white border border-green-200 rounded-lg shadow-sm p-4 hover:shadow-md transition cursor-move" draggable="true" data-kpi-id="medewerker">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-green-600 uppercase tracking-wide">Medewerkers</span>
+                <span class="text-xs font-medium text-green-600 uppercase tracking-wide">Medewerker</span>
                 <div class="flex items-center gap-2">
                     <span class="text-xl">👥</span>
                     <button class="text-gray-400 hover:text-gray-600 transition-colors" title="Sleep om te verplaatsen">

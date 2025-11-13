@@ -214,4 +214,79 @@ class UserController extends Controller
         
         return $roleFeatures;
     }
+    
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+
+        try {
+            $user = auth()->user();
+            
+            \Log::info('🎯 USERCONTROLLER UPDATE AVATAR', [
+                'user_id' => $user->id,
+                'has_avatar' => $request->hasFile('avatar'),
+                'oude_avatar' => $user->avatar
+            ]);
+
+            // EXACT HETZELFDE SYSTEEM ALS KLANTCONTROLLER
+            if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
+                // Verwijder oude avatar
+                if ($user->avatar && \Storage::disk('public')->exists($user->avatar)) {
+                    \Storage::disk('public')->delete($user->avatar);
+                    \Log::info('🗑️ Oude avatar verwijderd', ['path' => $user->avatar]);
+                }
+                
+                // Zorg ervoor dat de directory bestaat
+                $avatarDir = storage_path('app/public/avatars/klanten');
+                if (!is_dir($avatarDir)) {
+                    mkdir($avatarDir, 0755, true);
+                }
+                
+                // Upload nieuwe avatar - EXACT ZOALS KLANTCONTROLLER
+                $file = $request->file('avatar');
+                $filename = \Illuminate\Support\Str::random(40) . '.' . $file->getClientOriginalExtension();
+                $avatarPath = $file->storeAs('avatars/klanten', $filename, 'public');
+                
+                \Log::info('✅ Avatar opgeslagen in storage', [
+                    'path' => $avatarPath,
+                    'full_path' => storage_path('app/public/' . $avatarPath),
+                    'file_exists' => \Storage::disk('public')->exists($avatarPath)
+                ]);
+                
+                // Update database
+                $user->avatar = $avatarPath;
+                $user->save();
+                
+                \Log::info('✅ User avatar bijgewerkt in DB', [
+                    'user_id' => $user->id,
+                    'avatar_path' => $avatarPath
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'avatar_url' => asset('storage/' . $avatarPath),
+                    'message' => 'Avatar succesvol geüpload!'
+                ]);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Geen geldig bestand ontvangen'
+            ], 400);
+
+        } catch (\Exception $e) {
+            \Log::error('❌ Avatar upload gefaald', [
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Avatar upload mislukt: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -364,13 +364,16 @@
                     @php
                         $user = Auth::user();
                         
+                        // Refresh user van DB om laatste avatar te krijgen
+                        $user->refresh();
+                        
                         // GEBRUIK KLANT AVATAR - niet user avatar!
                         if ($user->role === 'klant' && $user->klant_id) {
                             $klant = \App\Models\Klant::find($user->klant_id);
                             $avatar = $klant ? $klant->avatar : null;
                         } else {
-                            // Voor beheerders/medewerkers: gebruik user avatar
-                            $avatar = $user->avatar;
+                            // Voor beheerders/medewerkers: gebruik avatar_path of avatar kolom
+                            $avatar = $user->avatar_path ?? $user->avatar;
                         }
                         
                         $voornaam = explode(' ', $user->name)[0] ?? '';
