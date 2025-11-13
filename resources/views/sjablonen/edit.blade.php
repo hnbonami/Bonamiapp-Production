@@ -490,9 +490,16 @@
                                 </div>
                             </div>
                             @php
-                                // Scan de public/backgrounds directory voor alle afbeeldingen
-                                $backgroundsPath = public_path('backgrounds');
+                                // Scan de juiste backgrounds directory op basis van environment
                                 $backgrounds = [];
+                                
+                                if (app()->environment('production')) {
+                                    // PRODUCTIE: Scan httpd.www/uploads/backgrounds
+                                    $backgroundsPath = base_path('../httpd.www/uploads/backgrounds');
+                                } else {
+                                    // LOKAAL: Scan public/backgrounds
+                                    $backgroundsPath = public_path('backgrounds');
+                                }
                                 
                                 if (file_exists($backgroundsPath)) {
                                     $files = scandir($backgroundsPath);
@@ -506,8 +513,13 @@
                             @endphp
                             
                             @foreach($backgrounds as $background)
+                                @php
+                                    $backgroundUrl = app()->environment('production') 
+                                        ? asset('uploads/backgrounds/' . $background)
+                                        : asset('backgrounds/' . $background);
+                                @endphp
                                 <div class="background-option relative" onclick="setPageBackground('{{ $background }}')" title="Achtergrond {{ $background }}">
-                                    <img src="/backgrounds/{{ $background }}" alt="Background {{ $background }}" class="w-full aspect-[210/297] object-cover">
+                                    <img src="{{ $backgroundUrl }}" alt="Background {{ $background }}" class="w-full aspect-[210/297] object-cover">
                                     <button onclick="deleteBackground('{{ $background }}', event)" class="delete-btn" title="Verwijderen">×</button>
                                 </div>
                             @endforeach
@@ -680,7 +692,13 @@
             const overlayElement = document.getElementById('overlay-' + pageId);
             if (overlayElement) {
                 if (imageName) {
-                    overlayElement.style.backgroundImage = `url('/backgrounds/${imageName}')`;
+                    // Gebruik correcte path op basis van environment
+                    const isProduction = {{ app()->environment('production') ? 'true' : 'false' }};
+                    const backgroundPath = isProduction 
+                        ? '/uploads/backgrounds/' + imageName 
+                        : '/backgrounds/' + imageName;
+                    
+                    overlayElement.style.backgroundImage = `url('${backgroundPath}')`;
                     document.getElementById('a4-page-' + pageId).dataset.background = imageName;
                 } else {
                     overlayElement.style.backgroundImage = '';

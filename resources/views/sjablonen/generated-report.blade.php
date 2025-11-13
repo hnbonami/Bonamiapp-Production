@@ -621,12 +621,35 @@
                     </div>
                 </div>
             @else
+                @php
+                    // Genereer correcte background URL op basis van environment
+                    $backgroundUrl = null;
+                    if ($page['background_image']) {
+                        $backgroundUrl = app()->environment('production') 
+                            ? asset('uploads/backgrounds/' . $page['background_image'])
+                            : asset('backgrounds/' . $page['background_image']);
+                    }
+                @endphp
+                @php
+                    // Fix alle storage URLs in content naar uploads voor productie
+                    $pageContent = $page['content'];
+                    if (app()->environment('production')) {
+                        // Vervang alle /storage/ URLs naar /uploads/
+                        $pageContent = str_replace('/storage/rapporten/', '/uploads/rapporten/', $pageContent);
+                        $pageContent = str_replace('src="/storage/', 'src="/uploads/', $pageContent);
+                        $pageContent = str_replace("src='/storage/", "src='/uploads/", $pageContent);
+                        
+                        // Ook voor volledige URLs
+                        $currentDomain = request()->getSchemeAndHttpHost();
+                        $pageContent = str_replace($currentDomain . '/storage/', $currentDomain . '/uploads/', $pageContent);
+                    }
+                @endphp
                 <div class="report-page" 
-                     @if($page['background_image'])
-                         style="background-image: url('/backgrounds/{{ $page['background_image'] }}');"
+                     @if($backgroundUrl)
+                         style="background-image: url('{{ $backgroundUrl }}');"
                      @endif>
                     <div class="page-content">
-                        {!! $page['content'] !!}
+                        {!! $pageContent !!}
                     </div>
                 </div>
             @endif

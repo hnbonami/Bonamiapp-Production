@@ -50,19 +50,31 @@ class OrganisatieRapportInstelling extends Model
     }
 
     /**
-     * Get logo URL voor gebruik in rapporten
+     * Haal logo URL op met correcte environment check
      */
     public function getLogoUrlAttribute()
     {
-        return $this->logo_path ? asset('storage/' . $this->logo_path) : null;
+        if (!$this->logo_path) {
+            return null;
+        }
+        
+        return app()->environment('production') 
+            ? asset('uploads/' . $this->logo_path)
+            : asset('storage/' . $this->logo_path);
     }
-
+    
     /**
-     * Get voorblad foto URL
+     * Haal voorblad foto URL op met correcte environment check
      */
     public function getVoorbladFotoUrlAttribute()
     {
-        return $this->voorblad_foto_path ? asset('storage/' . $this->voorblad_foto_path) : null;
+        if (!$this->voorblad_foto_path) {
+            return null;
+        }
+        
+        return app()->environment('production') 
+            ? asset('uploads/' . $this->voorblad_foto_path)
+            : asset('storage/' . $this->voorblad_foto_path);
     }
 
     /**

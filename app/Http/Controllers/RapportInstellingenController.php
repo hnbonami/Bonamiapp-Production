@@ -157,13 +157,40 @@ class RapportInstellingenController extends Controller
 
         // Upload logo
         if ($request->hasFile('logo')) {
+            \Log::info('🖼️ Logo upload gedetecteerd', [
+                'file_name' => $request->file('logo')->getClientOriginalName(),
+                'file_size' => $request->file('logo')->getSize()
+            ]);
+            
             // Verwijder oude logo
             if ($instellingen->logo_path) {
-                Storage::disk('public')->delete($instellingen->logo_path);
+                $this->deleteOldFile($instellingen->logo_path);
             }
             
-            $logoPath = $request->file('logo')->store('rapporten/logos', 'public');
+            if (app()->environment('production')) {
+                // PRODUCTIE: Upload direct naar httpd.www/uploads/rapporten/logos
+                $uploadsPath = base_path('../httpd.www/uploads/rapporten/logos');
+                if (!file_exists($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                $fileName = time() . '_logo.' . $request->file('logo')->getClientOriginalExtension();
+                $request->file('logo')->move($uploadsPath, $fileName);
+                $logoPath = 'rapporten/logos/' . $fileName;
+            } else {
+                // LOKAAL: Upload naar storage/app/public
+                $logoPath = $request->file('logo')->store('rapporten/logos', 'public');
+            }
+            
             $validated['logo_path'] = $logoPath;
+            
+            \Log::info('✅ Logo opgeslagen', [
+                'path' => $logoPath,
+                'environment' => app()->environment(),
+                'file_exists' => app()->environment('production') 
+                    ? file_exists(base_path('../httpd.www/uploads/' . $logoPath))
+                    : Storage::disk('public')->exists($logoPath)
+            ]);
         }
 
         // Upload voorblad foto
@@ -191,13 +218,34 @@ class RapportInstellingenController extends Controller
             
             // Verwijder oude foto
             if ($instellingen->voorblad_foto_path) {
-                Storage::disk('public')->delete($instellingen->voorblad_foto_path);
+                $this->deleteOldFile($instellingen->voorblad_foto_path);
             }
             
             try {
-                $fotoPath = $file->store('rapporten/voorbladfotos', 'public');
+                if (app()->environment('production')) {
+                    // PRODUCTIE: Upload direct naar httpd.www/uploads/rapporten/voorbladfotos
+                    $uploadsPath = base_path('../httpd.www/uploads/rapporten/voorbladfotos');
+                    if (!file_exists($uploadsPath)) {
+                        mkdir($uploadsPath, 0755, true);
+                    }
+                    
+                    $fileName = time() . '_voorblad.' . $file->getClientOriginalExtension();
+                    $file->move($uploadsPath, $fileName);
+                    $fotoPath = 'rapporten/voorbladfotos/' . $fileName;
+                } else {
+                    // LOKAAL: Upload naar storage/app/public
+                    $fotoPath = $file->store('rapporten/voorbladfotos', 'public');
+                }
+                
                 $validated['voorblad_foto_path'] = $fotoPath;
-                \Log::info('✅ Voorblad foto uploaded', ['path' => $fotoPath]);
+                
+                \Log::info('✅ Voorblad foto uploaded', [
+                    'path' => $fotoPath,
+                    'environment' => app()->environment(),
+                    'file_exists' => app()->environment('production') 
+                        ? file_exists(base_path('../httpd.www/uploads/' . $fotoPath))
+                        : Storage::disk('public')->exists($fotoPath)
+                ]);
             } catch (\Exception $e) {
                 \Log::error('❌ Storage failed', ['error' => $e->getMessage()]);
                 return back()->withErrors(['voorblad_foto' => 'Opslaan mislukt: ' . $e->getMessage()])->withInput();
@@ -222,7 +270,7 @@ class RapportInstellingenController extends Controller
         $instellingen = OrganisatieRapportInstelling::where('organisatie_id', $user->organisatie_id)->first();
         
         if ($instellingen && $instellingen->logo_path) {
-            Storage::disk('public')->delete($instellingen->logo_path);
+            $this->deleteOldFile($instellingen->logo_path);
             $instellingen->logo_path = null;
             $instellingen->save();
         }
@@ -241,12 +289,35 @@ class RapportInstellingenController extends Controller
         $instellingen = OrganisatieRapportInstelling::where('organisatie_id', $user->organisatie_id)->first();
         
         if ($instellingen && $instellingen->voorblad_foto_path) {
-            Storage::disk('public')->delete($instellingen->voorblad_foto_path);
+            $this->deleteOldFile($instellingen->voorblad_foto_path);
             $instellingen->voorblad_foto_path = null;
             $instellingen->save();
         }
 
         return response()->json(['success' => true, 'message' => 'Voorblad foto verwijderd']);
+    }
+    
+    /**
+     * Helper: verwijder oud bestand
+     */
+    private function deleteOldFile($path)
+    {
+        if (!$path) {
+            return;
+        }
+        
+        if (app()->environment('production')) {
+            // PRODUCTIE: Verwijder uit httpd.www/uploads/
+            $fullPath = base_path('../httpd.www/uploads/' . $path);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+        } else {
+            // LOKAAL: Gebruik Storage facade
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
+        }
     }
 
     /**
@@ -262,10 +333,10 @@ class RapportInstellingenController extends Controller
         if ($instellingen) {
             // Verwijder uploads
             if ($instellingen->logo_path) {
-                Storage::disk('public')->delete($instellingen->logo_path);
+                $this->deleteOldFile($instellingen->logo_path);
             }
             if ($instellingen->voorblad_foto_path) {
-                Storage::disk('public')->delete($instellingen->voorblad_foto_path);
+                $this->deleteOldFile($instellingen->voorblad_foto_path);
             }
             
             // Reset naar defaults

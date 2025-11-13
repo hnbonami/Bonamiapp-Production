@@ -94,7 +94,12 @@
                     
                     @if($instellingen->logo_path)
                         <div class="mb-4 p-4 bg-gray-50 rounded-lg flex items-center justify-between">
-                            <img src="{{ asset('storage/' . $instellingen->logo_path) }}" alt="Logo" class="h-16">
+                            @php
+                                $logoUrl = app()->environment('production') 
+                                    ? asset('uploads/' . $instellingen->logo_path)
+                                    : asset('storage/' . $instellingen->logo_path);
+                            @endphp
+                            <img src="{{ $logoUrl }}" alt="Logo" class="h-16">
                             <button type="button" onclick="deleteLogo()" class="text-red-600 hover:text-red-800">
                                 🗑️ Verwijderen
                             </button>
@@ -125,7 +130,12 @@
                     
                     @if($instellingen->voorblad_foto_path)
                         <div class="mb-4 p-4 bg-gray-50 rounded-lg flex items-center justify-between">
-                            <img src="{{ asset('storage/' . $instellingen->voorblad_foto_path) }}" alt="Voorblad" class="h-16" style="object-fit: cover; width: auto;">
+                            @php
+                                $voorbladUrl = app()->environment('production') 
+                                    ? asset('uploads/' . $instellingen->voorblad_foto_path)
+                                    : asset('storage/' . $instellingen->voorblad_foto_path);
+                            @endphp
+                            <img src="{{ $voorbladUrl }}" alt="Voorblad" class="h-16" style="object-fit: cover; width: auto;">
                             <button type="button" onclick="deleteVoorbladFoto()" class="text-red-600 hover:text-red-800">
                                 🗑️ Verwijderen
                             </button>
