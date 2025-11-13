@@ -44,6 +44,15 @@ class BrandingController extends Controller
         // Haal branding configuratie op of maak aan
         $branding = OrganisatieBranding::getOrCreateForOrganisatie($organisatie->id);
         
+        // DEBUG: Log branding data
+        \Log::info('🎨 Branding data geladen', [
+            'organisatie_id' => $organisatie->id,
+            'logo_pad' => $branding->logo_pad,
+            'login_background_image' => $branding->login_background_image,
+            'login_background_video' => $branding->login_background_video,
+            'all_branding_data' => $branding->toArray()
+        ]);
+        
         return view('branding.index', compact('organisatie', 'branding'));
     }
     
@@ -140,7 +149,8 @@ class BrandingController extends Controller
             }
             
             if (app()->environment('production')) {
-                $uploadsPath = base_path('../httpd.www/storage/branding/logos');
+                // PRODUCTIE: Upload direct naar httpd.www/uploads/branding/logos
+                $uploadsPath = base_path('../httpd.www/uploads/branding/logos');
                 if (!file_exists($uploadsPath)) {
                     mkdir($uploadsPath, 0755, true);
                 }
@@ -149,10 +159,20 @@ class BrandingController extends Controller
                 $request->file('logo')->move($uploadsPath, $fileName);
                 $logoPath = 'branding/logos/' . $fileName;
             } else {
+                // LOKAAL: Upload naar storage/app/public
                 $logoPath = $request->file('logo')->store('branding/logos', 'public');
             }
             
             $branding->logo_pad = $logoPath;
+            
+            \Log::info('🏢 Logo geüpload', [
+                'organisatie_id' => $organisatie->id,
+                'path' => $logoPath,
+                'environment' => app()->environment(),
+                'file_exists_check' => app()->environment('production') 
+                    ? file_exists(base_path('../httpd.www/uploads/' . $logoPath))
+                    : \Storage::disk('public')->exists($logoPath),
+            ]);
         }
         
         if ($request->hasFile('logo_klein')) {
@@ -161,7 +181,8 @@ class BrandingController extends Controller
             }
             
             if (app()->environment('production')) {
-                $uploadsPath = base_path('../httpd.www/storage/branding/logos');
+                // PRODUCTIE: Upload direct naar httpd.www/uploads/branding/logos
+                $uploadsPath = base_path('../httpd.www/uploads/branding/logos');
                 if (!file_exists($uploadsPath)) {
                     mkdir($uploadsPath, 0755, true);
                 }
@@ -170,8 +191,14 @@ class BrandingController extends Controller
                 $request->file('logo_klein')->move($uploadsPath, $fileName);
                 $validated['logo_klein_pad'] = 'branding/logos/' . $fileName;
             } else {
+                // LOKAAL: Upload naar storage/app/public
                 $validated['logo_klein_pad'] = $request->file('logo_klein')->store('branding/logos', 'public');
             }
+            
+            \Log::info('🏢 Klein logo geüpload', [
+                'organisatie_id' => $organisatie->id,
+                'path' => $validated['logo_klein_pad'],
+            ]);
         }
         
         if ($request->hasFile('rapport_logo')) {
@@ -180,7 +207,8 @@ class BrandingController extends Controller
             }
             
             if (app()->environment('production')) {
-                $uploadsPath = base_path('../httpd.www/storage/branding/rapporten');
+                // PRODUCTIE: Upload direct naar httpd.www/uploads/branding/rapporten
+                $uploadsPath = base_path('../httpd.www/uploads/branding/rapporten');
                 if (!file_exists($uploadsPath)) {
                     mkdir($uploadsPath, 0755, true);
                 }
@@ -189,8 +217,14 @@ class BrandingController extends Controller
                 $request->file('rapport_logo')->move($uploadsPath, $fileName);
                 $validated['rapport_logo_pad'] = 'branding/rapporten/' . $fileName;
             } else {
+                // LOKAAL: Upload naar storage/app/public
                 $validated['rapport_logo_pad'] = $request->file('rapport_logo')->store('branding/rapporten', 'public');
             }
+            
+            \Log::info('📄 Rapport logo geüpload', [
+                'organisatie_id' => $organisatie->id,
+                'path' => $validated['rapport_logo_pad'],
+            ]);
         }
                 
         
@@ -201,7 +235,8 @@ class BrandingController extends Controller
             }
             
             if (app()->environment('production')) {
-                $uploadsPath = base_path('../httpd.www/storage/branding/login');
+                // PRODUCTIE: Upload direct naar httpd.www/uploads/branding/login
+                $uploadsPath = base_path('../httpd.www/uploads/branding/login');
                 if (!file_exists($uploadsPath)) {
                     mkdir($uploadsPath, 0755, true);
                 }
@@ -210,10 +245,20 @@ class BrandingController extends Controller
                 $request->file('login_background_image')->move($uploadsPath, $fileName);
                 $path = 'branding/login/' . $fileName;
             } else {
+                // LOKAAL: Upload naar storage/app/public
                 $path = $request->file('login_background_image')->store('branding/login', 'public');
             }
             
             $branding->login_background_image = $path;
+            
+            \Log::info('🖼️ Login achtergrond afbeelding geüpload', [
+                'organisatie_id' => $organisatie->id,
+                'path' => $path,
+                'environment' => app()->environment(),
+                'file_exists_check' => app()->environment('production') 
+                    ? file_exists(base_path('../httpd.www/uploads/' . $path))
+                    : \Storage::disk('public')->exists($path),
+            ]);
         }
         
         // Upload login achtergrond video
@@ -223,7 +268,8 @@ class BrandingController extends Controller
             }
             
             if (app()->environment('production')) {
-                $uploadsPath = base_path('../httpd.www/storage/branding/login_videos');
+                // PRODUCTIE: Upload direct naar httpd.www/uploads/branding/login_videos
+                $uploadsPath = base_path('../httpd.www/uploads/branding/login_videos');
                 if (!file_exists($uploadsPath)) {
                     mkdir($uploadsPath, 0755, true);
                 }
@@ -232,6 +278,7 @@ class BrandingController extends Controller
                 $request->file('login_background_video')->move($uploadsPath, $fileName);
                 $path = 'branding/login_videos/' . $fileName;
             } else {
+                // LOKAAL: Upload naar storage/app/public
                 $path = $request->file('login_background_video')->store('branding/login_videos', 'public');
             }
             
@@ -240,6 +287,12 @@ class BrandingController extends Controller
             \Log::info('📹 Login video geüpload', [
                 'organisatie_id' => $organisatie->id,
                 'path' => $path,
+                'environment' => app()->environment(),
+                'full_production_path' => app()->environment('production') ? base_path('../httpd.www/uploads/' . $path) : null,
+                'full_local_path' => !app()->environment('production') ? storage_path('app/public/' . $path) : null,
+                'file_exists_check' => app()->environment('production') 
+                    ? file_exists(base_path('../httpd.www/uploads/' . $path))
+                    : \Storage::disk('public')->exists($path),
                 'user_id' => auth()->id(),
             ]);
         }

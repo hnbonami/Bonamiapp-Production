@@ -41,7 +41,12 @@
                 @if($branding && $branding->logo_pad)
                     <div class="mb-4 p-4 bg-gray-50 rounded-lg">
                         <p class="text-sm text-gray-600 mb-2">Huidige logo:</p>
-                        <img src="{{ asset('storage/' . $branding->logo_pad) }}" alt="Logo" class="max-h-20 mb-2">
+                        @php
+                            $logoUrl = app()->environment('production') 
+                                ? asset('uploads/' . $branding->logo_pad)
+                                : asset('storage/' . $branding->logo_pad);
+                        @endphp
+                        <img src="{{ $logoUrl }}" alt="Logo" class="max-h-20 mb-2">
                         <button type="button" onclick="deleteLogo()" class="text-red-600 text-sm hover:underline">
                             🗑️ Verwijderen
                         </button>
@@ -90,7 +95,12 @@
                         <label class="block text-sm font-medium text-gray-700 mb-2">Login Logo</label>
                         @if($branding && $branding->login_logo)
                             <div class="mb-3 p-3 bg-gray-50 rounded-lg">
-                                <img src="{{ asset('storage/' . $branding->login_logo) }}" alt="Login logo" class="h-16 w-auto mb-2">
+                                @php
+                                    $loginLogoUrl = app()->environment('production') 
+                                        ? asset('uploads/' . $branding->login_logo)
+                                        : asset('storage/' . $branding->login_logo);
+                                @endphp
+                                <img src="{{ $loginLogoUrl }}" alt="Login logo" class="h-16 w-auto mb-2">
                                 <p class="text-xs text-gray-500">Huidige logo</p>
                             </div>
                         @endif
@@ -106,15 +116,25 @@
                         @if($branding && $branding->login_background_image)
                             <div class="mb-3 p-3 bg-gray-50 rounded-lg">
                                 <p class="text-xs text-gray-600 mb-2">Huidige afbeelding:</p>
-                                <img src="{{ asset('storage/' . $branding->login_background_image) }}" alt="Login achtergrond" class="h-32 w-auto mb-2 object-cover rounded">
+                                @php
+                                    $bgImageUrl = app()->environment('production') 
+                                        ? asset('uploads/' . $branding->login_background_image)
+                                        : asset('storage/' . $branding->login_background_image);
+                                @endphp
+                                <img src="{{ $bgImageUrl }}" alt="Login achtergrond" class="h-32 w-auto mb-2 object-cover rounded">
                             </div>
                         @endif
                         
                         @if($branding && $branding->login_background_video)
                             <div class="mb-3 p-3 bg-gray-50 rounded-lg">
                                 <p class="text-xs text-gray-600 mb-2">Huidige video:</p>
+                                @php
+                                    $bgVideoUrl = app()->environment('production') 
+                                        ? asset('uploads/' . $branding->login_background_video)
+                                        : asset('storage/' . $branding->login_background_video);
+                                @endphp
                                 <video class="h-32 w-auto mb-2 rounded" muted loop>
-                                    <source src="{{ asset('storage/' . $branding->login_background_video) }}" type="video/mp4">
+                                    <source src="{{ $bgVideoUrl }}" type="video/mp4">
                                 </video>
                                 <p class="text-xs text-gray-500">{{ basename($branding->login_background_video) }}</p>
                             </div>

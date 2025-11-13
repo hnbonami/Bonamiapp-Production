@@ -57,10 +57,15 @@
                         {{-- Main Logo --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Hoofdlogo</label>
-                            @if($branding->logo_path)
+                            @if($branding->logo_pad)
                                 <div class="mb-2">
-                                    <img src="{{ $branding->logo_url }}" alt="Logo" class="h-16 w-auto object-contain border rounded p-2 bg-gray-50">
-                                    <button type="button" onclick="deleteFile('logo_path')" class="text-red-600 text-xs mt-1 hover:underline">Verwijderen</button>
+                                    @php
+                                        $logoUrl = app()->environment('production') 
+                                            ? asset('uploads/' . $branding->logo_pad)
+                                            : asset('storage/' . $branding->logo_pad);
+                                    @endphp
+                                    <img src="{{ $logoUrl }}" alt="Logo" class="h-16 w-auto object-contain border rounded p-2 bg-gray-50">
+                                    <button type="button" onclick="deleteFile('logo_pad')" class="text-red-600 text-xs mt-1 hover:underline">Verwijderen</button>
                                 </div>
                             @endif
                             <input type="file" name="logo" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
@@ -251,20 +256,40 @@
                         <p class="text-xs text-gray-500 mb-3">Kies tussen een foto of video voor de rechterkant van het login scherm</p>
                         
                         @if($branding->login_background_image)
-                            <div class="mb-2">
-                                <img src="{{ asset('storage/' . $branding->login_background_image) }}" 
+                            <div class="mb-2 p-3 bg-gray-50 border rounded-lg">
+                                @php
+                                    $bgImageUrl = app()->environment('production') 
+                                        ? asset('uploads/' . $branding->login_background_image)
+                                        : asset('storage/' . $branding->login_background_image);
+                                @endphp
+                                <p class="text-xs font-medium text-gray-700 mb-2">Huidige afbeelding:</p>
+                                <img src="{{ $bgImageUrl }}" 
                                      alt="Login Achtergrond" 
-                                     class="h-16 w-auto object-cover rounded border border-gray-200 bg-gray-50">
-                                <p class="text-xs text-gray-500 mt-1">Huidige afbeelding</p>
+                                     class="h-32 w-auto object-cover rounded border border-gray-200 bg-white mb-2">
+                                <p class="text-xs text-gray-500">{{ basename($branding->login_background_image) }}</p>
+                                <p class="text-xs text-blue-600 mt-1">✓ Afbeelding geladen van: {{ $bgImageUrl }}</p>
                             </div>
                         @endif
                         
                         @if($branding->login_background_video)
-                            <div class="mb-2">
-                                <video class="h-16 w-auto rounded border border-gray-200 bg-gray-50" muted>
-                                    <source src="{{ asset('storage/' . $branding->login_background_video) }}" type="video/mp4">
+                            <div class="mb-2 p-3 bg-gray-50 border rounded-lg">
+                                @php
+                                    $bgVideoUrl = app()->environment('production') 
+                                        ? asset('uploads/' . $branding->login_background_video)
+                                        : asset('storage/' . $branding->login_background_video);
+                                @endphp
+                                <p class="text-xs font-medium text-gray-700 mb-2">Huidige video:</p>
+                                <video class="h-32 w-auto rounded border border-gray-200 bg-black mb-2" controls muted>
+                                    <source src="{{ $bgVideoUrl }}" type="video/mp4">
+                                    Je browser ondersteunt geen HTML5 video.
                                 </video>
-                                <p class="text-xs text-gray-500 mt-1">Huidige video: {{ basename($branding->login_background_video) }}</p>
+                                <p class="text-xs text-gray-500 mb-1">{{ basename($branding->login_background_video) }}</p>
+                                <p class="text-xs text-blue-600">✓ Video geladen van: {{ $bgVideoUrl }}</p>
+                                <p class="text-xs text-orange-600 mt-1">⚠️ Als video niet afspeelt, check bestandslocatie in server</p>
+                            </div>
+                        @else
+                            <div class="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                <p class="text-xs text-yellow-800">ℹ️ Geen video geüpload</p>
                             </div>
                         @endif
                         

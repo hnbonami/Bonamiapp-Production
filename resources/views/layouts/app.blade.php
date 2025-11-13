@@ -585,7 +585,12 @@
             <!-- Logo Sidebar - WIJZIGBAAR via branding -->
             <div class="flex items-center justify-center py-4 px-3 border-b border-gray-100">
                 @if(isset($organisatieBranding) && $organisatieBranding && $organisatieBranding->logo_pad)
-                    <img src="{{ asset('storage/' . $organisatieBranding->logo_pad) }}" alt="Organisatie Logo" style="height: 80px; width: auto;">
+                    @php
+                        $sidebarLogoUrl = app()->environment('production') 
+                            ? asset('uploads/' . $organisatieBranding->logo_pad)
+                            : asset('storage/' . $organisatieBranding->logo_pad);
+                    @endphp
+                    <img src="{{ $sidebarLogoUrl }}" alt="Organisatie Logo" style="height: 80px; width: auto;">
                 @else
                     <img src="{{ asset('images/performancepulse-logo.png') }}" alt="Performancepulse" style="height: 80px; width: auto;">
                 @endif
