@@ -129,43 +129,99 @@ class ProfileSettingsController extends Controller
         }
     }
     
+    /**
+     * Update avatar - EXACT ZOALS MEDEWERKERCONTROLLER
+     */
     public function updateAvatar(Request $request)
     {
+        $user = Auth::user();
+        
         $request->validate([
-            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
-
-        $user = auth()->user();
-
-        // Verwijder oude avatar als die bestaat
-        if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
-        }
-
-        // Upload nieuwe avatar naar avatars/medewerkers subdirectory
-        $path = $request->file('avatar')->store('avatars/medewerkers', 'public');
         
-        // Update user avatar
-        $user->update(['avatar_path' => $path]);
-
-        // Update gekoppelde klant record indien aanwezig
-        if ($user->role === 'klant') {
-            $klant = \App\Models\Klant::where('email', $user->email)->first();
-            if ($klant) {
-                $klant->update(['avatar_path' => $path]);
-            }
-        }
-        
-        // Log de actie
-        \Log::info('🖼️ Avatar bijgewerkt', [
+        \Log::info('🖼️ Avatar upload gedetecteerd via ProfileSettingsController', [
             'user_id' => $user->id,
-            'user_email' => $user->email,
             'user_role' => $user->role,
-            'avatar_path' => $path
+            'klant_id' => $user->klant_id ?? 'geen',
+            'file_original_name' => $request->file('avatar')->getClientOriginalName(),
+            'file_size' => $request->file('avatar')->getSize()
         ]);
-
-        // Redirect terug naar instellingen pagina met success message
-        return redirect()->route('profile.settings')->with('success', 'Profielfoto succesvol bijgewerkt!');
+        
+        // VOOR KLANTEN: update klant record
+        if ($user->role === 'klant' && $user->klant_id) {
+            $klant = \App\Models\Klant::findOrFail($user->klant_id);
+            
+            if (app()->environment('production')) {
+                // PRODUCTIE: Upload naar httpd.www/uploads/avatars/klanten
+                $uploadsPath = base_path('../httpd.www/uploads/avatars/klanten');
+                if (!file_exists($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                // Verwijder oude avatar
+                if ($klant->avatar_path) {
+                    $oldPath = base_path('../httpd.www/uploads/' . $klant->avatar_path);
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                    }
+                }
+                
+                $fileName = $request->file('avatar')->hashName();
+                $request->file('avatar')->move($uploadsPath, $fileName);
+                $avatarPath = 'avatars/klanten/' . $fileName;
+            } else {
+                // LOKAAL: Upload naar storage/app/public
+                if ($klant->avatar_path && \Storage::disk('public')->exists($klant->avatar_path)) {
+                    \Storage::disk('public')->delete($klant->avatar_path);
+                }
+                
+                $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
+            }
+            
+            // Update klant record
+            \DB::table('klanten')
+                ->where('id', $klant->id)
+                ->update(['avatar_path' => $avatarPath, 'updated_at' => now()]);
+        } 
+        // VOOR MEDEWERKERS/BEHEERDERS: update user record  
+        else {
+            if (app()->environment('production')) {
+                // PRODUCTIE: Upload naar httpd.www/uploads/avatars/medewerkers
+                $uploadsPath = base_path('../httpd.www/uploads/avatars/medewerkers');
+                if (!file_exists($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                // Verwijder oude avatar
+                if ($user->avatar_path) {
+                    $oldPath = base_path('../httpd.www/uploads/' . $user->avatar_path);
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                    }
+                }
+                
+                $fileName = $request->file('avatar')->hashName();
+                $request->file('avatar')->move($uploadsPath, $fileName);
+                $avatarPath = 'avatars/medewerkers/' . $fileName;
+            } else {
+                // LOKAAL: Upload naar storage/app/public
+                if ($user->avatar_path && \Storage::disk('public')->exists($user->avatar_path)) {
+                    \Storage::disk('public')->delete($user->avatar_path);
+                }
+                
+                $avatarPath = $request->file('avatar')->store('avatars/medewerkers', 'public');
+            }
+            
+            // Update user record
+            $user->update(['avatar_path' => $avatarPath]);
+        }
+        
+        // Return JSON response (voor AJAX)
+        return response()->json([
+            'success' => true,
+            'message' => 'Profielfoto succesvol bijgewerkt'
+        ]);
     }
     
     public function updatePassword(Request $request)
