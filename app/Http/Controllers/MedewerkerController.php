@@ -149,7 +149,7 @@ class MedewerkerController extends Controller
             $avatarPath = null;
             if ($request->hasFile('avatar')) {
                 // Upload nieuwe avatar naar avatars/medewerkers subdirectory
-                $avatarPath = $request->file('avatar')->store('avatars/medewerkers', 'public');
+                $avatarPath = $request->file('avatar')->store('avatars/medewerkers', 'public_uploads');
                 \Log::info('✅ Avatar uploaded', ['path' => $avatarPath]);
             }
 
@@ -347,11 +347,11 @@ class MedewerkerController extends Controller
             $avatarPath = $medewerker->avatar_path;
             if ($request->hasFile('avatar')) {
                 // Verwijder oude avatar als die bestaat
-                if ($avatarPath && \Storage::disk('public')->exists($avatarPath)) {
-                    \Storage::disk('public')->delete($avatarPath);
+                if ($avatarPath && \Storage::disk('public_uploads')->exists($avatarPath)) {
+                    \Storage::disk('public_uploads')->delete($avatarPath);
                 }
                 // Upload nieuwe avatar naar avatars/medewerkers subdirectory
-                $avatarPath = $request->file('avatar')->store('avatars/medewerkers', 'public');
+                $avatarPath = $request->file('avatar')->store('avatars/medewerkers', 'public_uploads');
                 \Log::info('✅ Avatar updated', ['path' => $avatarPath]);
             }
 

@@ -30,10 +30,8 @@ return [
     'disks' => [
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
-            'serve' => true,
+            'root' => storage_path('app'),
             'throw' => false,
-            'report' => false,
         ],
 
         'public' => [
@@ -65,6 +63,47 @@ return [
         'backups' => [
             'driver' => 'local',
             'root' => '/Users/hannesbonami/Backups/bonami_laravel',
+        ],
+
+        'public_uploads' => [
+            'driver' => 'local',
+            'root' => env('APP_ENV') === 'production' 
+                ? '/customers/5/a/2/hannesbonami.be/httpd.www/public/uploads'
+                : base_path('public/uploads'),  // GEBRUIK base_path() in plaats van public_path()
+            'url' => env('APP_URL').'/uploads',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        // Specifieke disks voor verschillende upload types
+        'avatars' => [
+            'driver' => 'local',
+            'root' => env('APP_ENV') === 'production'
+                ? '/customers/5/a/2/hannesbonami.be/httpd.www/public/uploads/avatars'
+                : base_path('public/uploads/avatars'),  // GEBRUIK base_path()
+            'url' => env('APP_URL').'/uploads/avatars',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        'logos' => [
+            'driver' => 'local',
+            'root' => env('APP_ENV') === 'production'
+                ? '/customers/5/a/2/hannesbonami.be/httpd.www/public/uploads/logos'
+                : base_path('public/uploads/logos'),  // GEBRUIK base_path()
+            'url' => env('APP_URL').'/uploads/logos',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
+        'backgrounds' => [
+            'driver' => 'local',
+            'root' => env('APP_ENV') === 'production'
+                ? '/customers/5/a/2/hannesbonami.be/httpd.www/public/uploads/backgrounds'
+                : base_path('public/uploads/backgrounds'),  // GEBRUIK base_path()
+            'url' => env('APP_URL').'/uploads/backgrounds',
+            'visibility' => 'public',
+            'throw' => false,
         ],
     ],
 

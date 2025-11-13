@@ -21,13 +21,23 @@
     <div class="mb-6">
         @php
             // AVATAR PATH - gebruik 'avatar' kolom uit database
-            $avatarPath = $klant->avatar; // <-- NIET avatar_path maar avatar!
+            $avatarPath = $klant->avatar;
             $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
+            
+            // Genereer correcte avatar URL op basis van environment
+            if ($avatarPath) {
+                $avatarUrl = app()->environment('production') 
+                    ? asset('uploads/' . $avatarPath)
+                    : asset('storage/' . $avatarPath);
+            } else {
+                $avatarUrl = null;
+            }
+            
             \Log::info('🖼️ Avatar debug show.blade', [
                 'klant_id' => $klant->id,
-                'avatar_from_model' => $klant->avatar,
-                'full_url' => $avatarPath ? asset('storage/' . $avatarPath) : 'geen avatar',
-                'file_exists' => $avatarPath ? \Storage::disk('public')->exists($avatarPath) : false
+                'avatar_from_model' => $avatarPath,
+                'avatar_url' => $avatarUrl ?? 'geen avatar',
+                'environment' => app()->environment()
             ]);
         @endphp
         
@@ -44,8 +54,8 @@
                     <input type="hidden" name="geslacht" value="{{ $klant->geslacht }}">
                     <input type="hidden" name="status" value="{{ $klant->status }}">
                     <label for="avatar-upload" style="cursor: pointer; display: block; position: relative;">
-                        @if($avatarPath)
-                            <img src="{{ asset('storage/' . $avatarPath) }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                        @if($avatarUrl)
+                            <img src="{{ $avatarUrl }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
                         @else
                             <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:120px;height:120px;font-size:48px;">
                                 {{ strtoupper(substr($klant->voornaam,0,1)) }}
@@ -103,8 +113,8 @@
                     <input type="hidden" name="geslacht" value="{{ $klant->geslacht }}">
                     <input type="hidden" name="status" value="{{ $klant->status }}">
                     <label for="avatar-upload-desktop" style="cursor: pointer; display: block; position: relative;">
-                        @if($avatarPath)
-                            <img src="{{ asset('storage/' . $avatarPath) }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
+                        @if($avatarUrl)
+                            <img src="{{ $avatarUrl }}?t={{ $cacheKey }}" alt="Avatar" class="rounded-lg object-cover" style="width:120px;height:120px;" />
                         @else
                             <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:120px;height:120px;font-size:48px;">
                                 {{ strtoupper(substr($klant->voornaam,0,1)) }}

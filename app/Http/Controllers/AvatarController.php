@@ -43,13 +43,13 @@ class AvatarController extends Controller
         
         try {
             // Verwijder oude avatar indien aanwezig
-            if ($klant->avatar && \Storage::disk('public')->exists($klant->avatar)) {
-                \Storage::disk('public')->delete($klant->avatar);
+            if ($klant->avatar && \Storage::disk('public_uploads')->exists($klant->avatar)) {
+                \Storage::disk('public_uploads')->delete($klant->avatar);
                 \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
             }
 
             // Upload nieuwe avatar naar avatars/klanten subdirectory (GEFIXED!)
-            $path = $request->file('avatar')->store('avatars/klanten', 'public');
+            $path = $request->file('avatar')->store('avatars/klanten', 'public_uploads');
             
             // Update klant record
             $klant->avatar = $path;

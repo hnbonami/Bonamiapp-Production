@@ -80,7 +80,7 @@ class Klant extends Model
         'is_active',
         'opmerking_bool',
         'is_gesynchroniseerd',
-        'avatar'             // TOEGEVOEGD
+        'avatar_path'        // GEFIXED: was 'avatar', moet 'avatar_path' zijn
     ];
 
     public function bikefits()
@@ -180,14 +180,39 @@ class Klant extends Model
     }
 
     /**
-     * Get avatar URL with fallback
+     * Accessor: lees avatar_path kolom via ->avatar property (backwards compatibility)
+     */
+    public function getAvatarAttribute()
+    {
+        return $this->attributes['avatar_path'] ?? null;
+    }
+    
+    /**
+     * Mutator: schrijf naar avatar_path kolom via ->avatar property (backwards compatibility)
+     */
+    public function setAvatarAttribute($value)
+    {
+        $this->attributes['avatar_path'] = $value;
+    }
+
+    /**
+     * Get avatar URL met fallback - werkt lokaal en online
      */
     public function getAvatarUrlAttribute()
     {
-        if ($this->avatar_path) {
-            return asset('storage/' . $this->avatar_path);
+        $avatarPath = $this->attributes['avatar_path'] ?? null;
+        
+        if (!$avatarPath) {
+            return null; // Geen default avatar, laat blade de initiaal tonen
         }
-        return null;
+        
+        // Avatar path is relatief (avatars/klanten/abc.jpg)
+        // Bepaal correcte URL op basis van environment
+        if (app()->environment('production')) {
+            return asset('uploads/' . $avatarPath);
+        } else {
+            return asset('storage/' . $avatarPath);
+        }
     }
 
     /**

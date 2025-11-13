@@ -107,21 +107,50 @@ class KlantController extends Controller
                 'file_size' => $request->file('avatar')->getSize()
             ]);
             
-            // Verwijder oude avatar
-            if ($klant->avatar && \Storage::disk('public')->exists($klant->avatar)) {
-                \Storage::disk('public')->delete($klant->avatar);
-                \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
+            if (app()->environment('production')) {
+                // PRODUCTIE: Upload direct naar httpd.www/uploads/avatars/klanten (NIET httpd.private!)
+                // One.com gebruikt httpd.www als public directory
+                $uploadsPath = base_path('../httpd.www/uploads/avatars/klanten');
+                if (!file_exists($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                // Verwijder oude avatar
+                if ($klant->avatar) {
+                    $oldPath = base_path('../httpd.www/uploads/' . $klant->avatar);
+                    if (file_exists($oldPath)) {
+                        unlink($oldPath);
+                        \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
+                    }
+                }
+                
+                $fileName = $request->file('avatar')->hashName();
+                $request->file('avatar')->move($uploadsPath, $fileName);
+                $avatarPath = 'avatars/klanten/' . $fileName;
+                
+                \Log::info('✅ Avatar opgeslagen in httpd.www/uploads', [
+                    'path' => $avatarPath,
+                    'full_path' => $uploadsPath . '/' . $fileName,
+                    'file_exists' => file_exists($uploadsPath . '/' . $fileName)
+                ]);
+            } else {
+                // LOKAAL: Upload naar storage/app/public
+                // Verwijder oude avatar
+                if ($klant->avatar && \Storage::disk('public')->exists($klant->avatar)) {
+                    \Storage::disk('public')->delete($klant->avatar);
+                    \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
+                }
+                
+                $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
+                
+                \Log::info('✅ Avatar opgeslagen in storage', [
+                    'path' => $avatarPath,
+                    'full_path' => storage_path('app/public/' . $avatarPath),
+                    'file_exists' => \Storage::disk('public')->exists($avatarPath)
+                ]);
             }
             
-            // Upload nieuwe avatar naar avatars/klanten subdirectory
-            $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
-            $validated['avatar'] = $avatarPath;
-            
-            \Log::info('✅ Avatar opgeslagen in storage', [
-                'path' => $avatarPath,
-                'full_path' => storage_path('app/public/' . $avatarPath),
-                'file_exists' => \Storage::disk('public')->exists($avatarPath)
-            ]);
+            $validated['avatar_path'] = $avatarPath;
         }
 
         // Update via DB
@@ -132,14 +161,14 @@ class KlantController extends Controller
             ->update($updateData);
         
         // Verificatie
-        $dbCheck = \DB::table('klanten')->where('id', $klant->id)->first(['avatar', 'voornaam', 'naam']);
+        $dbCheck = \DB::table('klanten')->where('id', $klant->id)->first(['avatar_path', 'voornaam', 'naam']);
         
         \Log::info('✅ Klant bijgewerkt in DB', [
             'klant_id' => $klant->id,
-            'avatar_in_update' => isset($updateData['avatar']),
-            'avatar_path_saved' => $updateData['avatar'] ?? 'geen',
+            'avatar_in_update' => isset($updateData['avatar_path']),
+            'avatar_path_saved' => $updateData['avatar_path'] ?? 'geen',
             'db_verification' => [
-                'avatar' => $dbCheck->avatar,
+                'avatar_path' => $dbCheck->avatar_path,
                 'naam' => $dbCheck->voornaam . ' ' . $dbCheck->naam
             ]
         ]);
@@ -267,31 +296,50 @@ class KlantController extends Controller
                 'file_size' => $request->file('avatar')->getSize()
             ]);
             
-            // Upload naar avatars/klanten subdirectory
-            $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
-            $validated['avatar'] = $avatarPath;
+            if (app()->environment('production')) {
+                // PRODUCTIE: Upload direct naar httpd.www/uploads/avatars/klanten (NIET httpd.private!)
+                $uploadsPath = base_path('../httpd.www/uploads/avatars/klanten');
+                if (!file_exists($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                $fileName = $request->file('avatar')->hashName();
+                $request->file('avatar')->move($uploadsPath, $fileName);
+                $avatarPath = 'avatars/klanten/' . $fileName;
+                
+                \Log::info('✅ Avatar opgeslagen in httpd.www/uploads bij CREATE', [
+                    'path' => $avatarPath,
+                    'full_path' => $uploadsPath . '/' . $fileName,
+                    'file_exists' => file_exists($uploadsPath . '/' . $fileName)
+                ]);
+            } else {
+                // LOKAAL: Upload naar storage/app/public
+                $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
+                
+                \Log::info('✅ Avatar opgeslagen in storage bij CREATE', [
+                    'path' => $avatarPath,
+                    'full_path' => storage_path('app/public/' . $avatarPath),
+                    'file_exists' => \Storage::disk('public')->exists($avatarPath)
+                ]);
+            }
             
-            \Log::info('✅ Avatar opgeslagen in storage bij CREATE', [
-                'path' => $avatarPath,
-                'full_path' => storage_path('app/public/' . $avatarPath),
-                'file_exists' => \Storage::disk('public')->exists($avatarPath)
-            ]);
+            $validated['avatar_path'] = $avatarPath;
         }
 
-        \Log::info('🔥 Creating klant with data:', array_merge($validated, ['has_avatar' => isset($validated['avatar'])]));
+        \Log::info('🔥 Creating klant with data:', array_merge($validated, ['has_avatar' => isset($validated['avatar_path'])]));
         
         // Maak klant aan
         $klant = Klant::create($validated);
         
         // Verificatie direct na create
-        $dbCheck = \DB::table('klanten')->where('id', $klant->id)->first(['avatar', 'voornaam', 'naam']);
+        $dbCheck = \DB::table('klanten')->where('id', $klant->id)->first(['avatar_path', 'voornaam', 'naam']);
         
         \Log::info('✅ Klant aangemaakt in DB', [
             'klant_id' => $klant->id,
-            'avatar_in_create' => isset($validated['avatar']),
-            'avatar_path_saved' => $validated['avatar'] ?? 'geen',
+            'avatar_in_create' => isset($validated['avatar_path']),
+            'avatar_path_saved' => $validated['avatar_path'] ?? 'geen',
             'db_verification' => [
-                'avatar' => $dbCheck->avatar,
+                'avatar_path' => $dbCheck->avatar_path,
                 'naam' => $dbCheck->voornaam . ' ' . $dbCheck->naam
             ]
         ]);
@@ -358,11 +406,24 @@ class KlantController extends Controller
         $avatarPath = $klant->avatar;
         $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
         
+        // Bepaal juiste disk op basis van environment
+        $disk = app()->environment('production') ? 'avatars' : 'public';
+        
+        // Voor productie: avatar pad in DB is 'avatars/klanten/file.png'
+        // Maar in 'avatars' disk moeten we 'klanten/file.png' checken
+        $checkPath = $avatarPath;
+        if (app()->environment('production') && $avatarPath) {
+            $checkPath = str_replace('avatars/', '', $avatarPath);
+        }
+        
         \Log::info('🔍 Klant show - avatar check', [
             'klant_id' => $klant->id,
             'avatar_from_model' => $avatarPath,
-            'avatar_exists_in_storage' => $avatarPath ? \Storage::disk('public')->exists($avatarPath) : false,
+            'disk' => $disk,
+            'check_path' => $checkPath,
+            'avatar_exists_in_storage' => $avatarPath ? \Storage::disk($disk)->exists($checkPath) : false,
             'cache_key' => $cacheKey,
+            'environment' => app()->environment(),
         ]);
         
         // Laad gerelateerde data met correcte relatie namen
@@ -397,42 +458,70 @@ class KlantController extends Controller
         ]);
 
         try {
-            // Verwijder oude avatar indien aanwezig
-            if ($klant->avatar) {
-                $oldPath = storage_path('app/public/' . $klant->avatar);
-                if (file_exists($oldPath)) {
-                    unlink($oldPath);
-                }
-            }
-
-            // Zorg ervoor dat de klanten directory bestaat
-            $avatarDir = storage_path('app/public/avatars/klanten');
-            if (!is_dir($avatarDir)) {
-                mkdir($avatarDir, 0755, true);
-            }
-
-            // Upload nieuwe avatar DIRECT naar storage/app/public/avatars/klanten/
             $file = $request->file('avatar');
             $filename = \Illuminate\Support\Str::random(40) . '.' . $file->getClientOriginalExtension();
             
-            // Gebruik Laravel Storage facade - sla op in avatars/klanten subdirectory
-            $path = $file->storeAs('avatars/klanten', $filename, 'public');
+            if (app()->environment('production')) {
+                // PRODUCTIE: gebruik 'avatars' disk
+                $disk = 'avatars';
+                
+                // Verwijder oude avatar
+                if ($klant->avatar) {
+                    // Avatar pad is relatief: avatars/klanten/file.png
+                    // Maar in 'avatars' disk moeten we alleen 'klanten/file.png' gebruiken
+                    $oldFile = str_replace('avatars/', '', $klant->avatar);
+                    if (\Storage::disk($disk)->exists($oldFile)) {
+                        \Storage::disk($disk)->delete($oldFile);
+                        \Log::info('🗑️ Oude avatar verwijderd', ['path' => $oldFile]);
+                    }
+                }
+                
+                // Upload naar 'klanten' subdir in 'avatars' disk
+                $storedPath = $file->storeAs('klanten', $filename, $disk);
+                
+                // Database pad: avatars/klanten/file.png (voor URL generatie)
+                $dbPath = 'avatars/klanten/' . $filename;
+                
+                // Avatar URL: https://hannesbonami.be/uploads/avatars/klanten/file.png
+                $avatarUrl = asset('uploads/' . $dbPath);
+                
+            } else {
+                // LOKAAL: gebruik 'public' disk
+                $disk = 'public';
+                
+                // Verwijder oude avatar
+                if ($klant->avatar && \Storage::disk($disk)->exists($klant->avatar)) {
+                    \Storage::disk($disk)->delete($klant->avatar);
+                    \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
+                }
+                
+                // Upload naar avatars/klanten in 'public' disk
+                $storedPath = $file->storeAs('avatars/klanten', $filename, $disk);
+                
+                // Database pad: avatars/klanten/file.png
+                $dbPath = $storedPath;
+                
+                // Avatar URL: http://localhost/storage/avatars/klanten/file.png
+                $avatarUrl = asset('storage/' . $dbPath);
+            }
             
-            // Update database met het relatieve pad
-            $klant->avatar = $path;
+            // Update database
+            $klant->avatar = $dbPath;
             $klant->save();
 
             \Log::info('✅ Avatar geüpload', [
                 'klant_id' => $klant->id,
                 'filename' => $filename,
-                'path' => $path,
-                'full_path' => storage_path('app/public/' . $path),
-                'file_exists' => file_exists(storage_path('app/public/' . $path)),
+                'stored_path' => $storedPath,
+                'db_path' => $dbPath,
+                'avatar_url' => $avatarUrl,
+                'disk' => $disk,
+                'environment' => app()->environment(),
             ]);
 
             return response()->json([
                 'success' => true,
-                'avatar_url' => asset('storage/' . $path),
+                'avatar_url' => $avatarUrl,
                 'message' => 'Avatar succesvol geüpload!'
             ]);
 
