@@ -133,46 +133,108 @@ class BrandingController extends Controller
             $validated['dark_sidebar_achtergrond'] = $request->input('dark_sidebar_achtergrond');
         }
         
-                // Handle logo upload
+        // Handle logo upload
         if ($request->hasFile('logo')) {
-            // Verwijder oude logo als die bestaat
             if ($branding->logo_pad) {
-                Storage::delete('public/' . $branding->logo_pad);
+                $this->deleteOldFile($branding->logo_pad);
             }
             
-            $logoPath = $request->file('logo')->store('branding/logos', 'public');
-            $branding->logo_pad = $logoPath; // Alleen logo_pad gebruiken (database kolom)
+            if (app()->environment('production')) {
+                $uploadsPath = base_path('../httpd.www/storage/branding/logos');
+                if (!file_exists($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                $fileName = time() . '_logo.' . $request->file('logo')->getClientOriginalExtension();
+                $request->file('logo')->move($uploadsPath, $fileName);
+                $logoPath = 'branding/logos/' . $fileName;
+            } else {
+                $logoPath = $request->file('logo')->store('branding/logos', 'public');
+            }
+            
+            $branding->logo_pad = $logoPath;
         }
         
         if ($request->hasFile('logo_klein')) {
-            $this->deleteOldFile($branding->logo_klein_pad);
-            $validated['logo_klein_pad'] = $request->file('logo_klein')->store('branding/logos', 'public');
+            if ($branding->logo_klein_pad) {
+                $this->deleteOldFile($branding->logo_klein_pad);
+            }
+            
+            if (app()->environment('production')) {
+                $uploadsPath = base_path('../httpd.www/storage/branding/logos');
+                if (!file_exists($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                $fileName = time() . '_klein.' . $request->file('logo_klein')->getClientOriginalExtension();
+                $request->file('logo_klein')->move($uploadsPath, $fileName);
+                $validated['logo_klein_pad'] = 'branding/logos/' . $fileName;
+            } else {
+                $validated['logo_klein_pad'] = $request->file('logo_klein')->store('branding/logos', 'public');
+            }
         }
         
         if ($request->hasFile('rapport_logo')) {
-            $this->deleteOldFile($branding->rapport_logo_pad);
-            $validated['rapport_logo_pad'] = $request->file('rapport_logo')->store('branding/rapporten', 'public');
+            if ($branding->rapport_logo_pad) {
+                $this->deleteOldFile($branding->rapport_logo_pad);
+            }
+            
+            if (app()->environment('production')) {
+                $uploadsPath = base_path('../httpd.www/storage/branding/rapporten');
+                if (!file_exists($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                $fileName = time() . '_rapport.' . $request->file('rapport_logo')->getClientOriginalExtension();
+                $request->file('rapport_logo')->move($uploadsPath, $fileName);
+                $validated['rapport_logo_pad'] = 'branding/rapporten/' . $fileName;
+            } else {
+                $validated['rapport_logo_pad'] = $request->file('rapport_logo')->store('branding/rapporten', 'public');
+            }
         }
+                
         
         // Upload login achtergrond afbeelding
         if ($request->hasFile('login_background_image')) {
-            // Verwijder oude afbeelding
             if ($branding->login_background_image) {
-                Storage::disk('public')->delete($branding->login_background_image);
+                $this->deleteOldFile($branding->login_background_image);
             }
             
-            $path = $request->file('login_background_image')->store('branding/login', 'public');
+            if (app()->environment('production')) {
+                $uploadsPath = base_path('../httpd.www/storage/branding/login');
+                if (!file_exists($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                $fileName = time() . '_login_bg.' . $request->file('login_background_image')->getClientOriginalExtension();
+                $request->file('login_background_image')->move($uploadsPath, $fileName);
+                $path = 'branding/login/' . $fileName;
+            } else {
+                $path = $request->file('login_background_image')->store('branding/login', 'public');
+            }
+            
             $branding->login_background_image = $path;
         }
         
         // Upload login achtergrond video
         if ($request->hasFile('login_background_video')) {
-            // Verwijder oude video
             if ($branding->login_background_video) {
-                Storage::disk('public')->delete($branding->login_background_video);
+                $this->deleteOldFile($branding->login_background_video);
             }
             
-            $path = $request->file('login_background_video')->store('branding/login_videos', 'public');
+            if (app()->environment('production')) {
+                $uploadsPath = base_path('../httpd.www/storage/branding/login_videos');
+                if (!file_exists($uploadsPath)) {
+                    mkdir($uploadsPath, 0755, true);
+                }
+                
+                $fileName = time() . '_login_video.' . $request->file('login_background_video')->getClientOriginalExtension();
+                $request->file('login_background_video')->move($uploadsPath, $fileName);
+                $path = 'branding/login_videos/' . $fileName;
+            } else {
+                $path = $request->file('login_background_video')->store('branding/login_videos', 'public');
+            }
+            
             $branding->login_background_video = $path;
             
             \Log::info('📹 Login video geüpload', [
@@ -353,8 +415,21 @@ class BrandingController extends Controller
      */
     private function deleteOldFile($path)
     {
-        if ($path && Storage::disk('public')->exists($path)) {
-            Storage::disk('public')->delete($path);
+        if (!$path) {
+            return;
+        }
+        
+        if (app()->environment('production')) {
+            // PRODUCTIE: Verwijder uit httpd.www/storage/
+            $fullPath = base_path('../httpd.www/storage/' . $path);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+        } else {
+            // LOKAAL: Gebruik Storage facade
+            if (Storage::disk('public')->exists($path)) {
+                Storage::disk('public')->delete($path);
+            }
         }
     }
 }
