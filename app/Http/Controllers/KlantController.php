@@ -77,24 +77,27 @@ class KlantController extends Controller
         ]);
         
         // VALIDATIE MET ALLE JUISTE VELDEN + AVATAR
-        $validatedData = $request->validate([
+        $validated = $request->validate([
             'voornaam' => 'required|string|max:255',
             'naam' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
+            'email' => 'nullable|email|max:255',
             'telefoonnummer' => 'nullable|string|max:20',
             'geboortedatum' => 'nullable|date',
-            'geslacht' => 'nullable|in:Man,Vrouw,X',
+            'geslacht' => 'required|in:Man,Vrouw,Anders',
+            'status' => 'required|in:Actief,Inactief',
             'straatnaam' => 'nullable|string|max:255',
-            'huisnummer' => 'nullable|string|max:10',
+            'huisnummer' => 'nullable|string|max:20',
             'postcode' => 'nullable|string|max:10',
             'stad' => 'nullable|string|max:255',
-            'status' => 'required|in:Actief,Inactief',
-            'notities' => 'nullable|string',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'sport' => 'nullable|string|max:255',
+            'niveau' => 'nullable|string|max:255',
+            'club' => 'nullable|string|max:255',
+            'herkomst' => 'nullable|string|max:255',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
         // Verwijder avatar uit validatedData (is een file object, niet een string)
-        unset($validatedData['avatar']);
+        unset($validated['avatar']);
 
         // Handle avatar upload - ALLEEN als er een nieuwe is
         if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
@@ -112,7 +115,7 @@ class KlantController extends Controller
             
             // Upload nieuwe avatar naar avatars/klanten subdirectory
             $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
-            $validatedData['avatar'] = $avatarPath;
+            $validated['avatar'] = $avatarPath;
             
             \Log::info('✅ Avatar opgeslagen in storage', [
                 'path' => $avatarPath,
@@ -122,7 +125,7 @@ class KlantController extends Controller
         }
 
         // Update via DB
-        $updateData = array_merge($validatedData, ['updated_at' => now()]);
+        $updateData = array_merge($validated, ['updated_at' => now()]);
         
         \DB::table('klanten')
             ->where('id', $klant->id)
@@ -234,39 +237,64 @@ class KlantController extends Controller
         $validated = $request->validate([
             'voornaam' => 'required|string|max:255',
             'naam' => 'required|string|max:255',
-            'email' => 'required|email',
-            'telefoon' => 'nullable|string|max:20',
+            'email' => 'nullable|email|max:255|unique:klanten,email',
+            'telefoonnummer' => 'nullable|string|max:20',
             'geboortedatum' => 'nullable|date',
-            'geslacht' => 'nullable|in:Man,Vrouw,Anders',
-            'straat' => 'nullable|string|max:255',
-            'huisnummer' => 'nullable|string|max:10',
+            'geslacht' => 'required|in:Man,Vrouw,Anders',
+            'status' => 'required|in:Actief,Inactief',
+            'straatnaam' => 'nullable|string|max:255',
+            'huisnummer' => 'nullable|string|max:20',
             'postcode' => 'nullable|string|max:10',
-            'stad' => 'nullable|string|max:100',
-            'land' => 'nullable|string|max:100',
-            'status' => 'nullable|in:Actief,Inactief',
-            'notities' => 'nullable|string',
-            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'stad' => 'nullable|string|max:255',
+            'sport' => 'nullable|string|max:255',
+            'niveau' => 'nullable|string|max:255',
+            'club' => 'nullable|string|max:255',
+            'herkomst' => 'nullable|string|max:255',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        $validated['organisatie_id'] = auth()->user()->organisatie_id;
-        $validated['name'] = $validated['voornaam'] . ' ' . $validated['naam'];
-        $validated['role'] = 'klant';
-        $validated['password'] = \Hash::make(\Illuminate\Support\Str::random(12));
-        $validated['status'] = $validated['status'] ?? 'Actief';
+        // Verwijder avatar uit validated (is een file object)
+        unset($validated['avatar']);
 
-        if ($request->hasFile('avatar')) {
-            $path = $request->file('avatar')->store('avatars/klanten', 'public');
-            $validated['avatar'] = $path;
+        // Voeg organisatie_id toe
+        $validated['organisatie_id'] = auth()->user()->organisatie_id;
+
+        // Handle avatar upload - EXACT ZELFDE ALS UPDATE
+        $avatarPath = null;
+        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
+            \Log::info('🖼️ Avatar upload gedetecteerd bij CREATE', [
+                'file_original_name' => $request->file('avatar')->getClientOriginalName(),
+                'file_size' => $request->file('avatar')->getSize()
+            ]);
             
-            \Log::info('✅ Avatar opgeslagen bij create', [
-                'path' => $path,
-                'file_exists' => \Storage::disk('public')->exists($path)
+            // Upload naar avatars/klanten subdirectory
+            $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
+            $validated['avatar'] = $avatarPath;
+            
+            \Log::info('✅ Avatar opgeslagen in storage bij CREATE', [
+                'path' => $avatarPath,
+                'full_path' => storage_path('app/public/' . $avatarPath),
+                'file_exists' => \Storage::disk('public')->exists($avatarPath)
             ]);
         }
 
-        \Log::info('🔥 Creating klant with data:', $validated);
+        \Log::info('🔥 Creating klant with data:', array_merge($validated, ['has_avatar' => isset($validated['avatar'])]));
         
+        // Maak klant aan
         $klant = Klant::create($validated);
+        
+        // Verificatie direct na create
+        $dbCheck = \DB::table('klanten')->where('id', $klant->id)->first(['avatar', 'voornaam', 'naam']);
+        
+        \Log::info('✅ Klant aangemaakt in DB', [
+            'klant_id' => $klant->id,
+            'avatar_in_create' => isset($validated['avatar']),
+            'avatar_path_saved' => $validated['avatar'] ?? 'geen',
+            'db_verification' => [
+                'avatar' => $dbCheck->avatar,
+                'naam' => $dbCheck->voornaam . ' ' . $dbCheck->naam
+            ]
+        ]);
         
         // Maak user account aan als email is opgegeven
         if (!empty($klant->email)) {
@@ -315,6 +343,9 @@ class KlantController extends Controller
             }
         }
         
+        // FORCE FRESH DATA
+        $klant = $klant->fresh();
+        
         return redirect()->route('klanten.show', $klant->id)
             ->with('success', 'Klant succesvol aangemaakt' . (!empty($klant->email) ? ' en welcome email verzonden.' : '.'));
     }
@@ -323,22 +354,14 @@ class KlantController extends Controller
         // FORCE FRESH DATA - haal altijd verse gegevens op
         $klant = $klant->fresh();
         
-        // Genereer avatar URL - GEBRUIK CUSTOM ROUTE IN PLAATS VAN asset()
+        // Avatar path ophalen - SIMPEL en direct
         $avatarPath = $klant->avatar;
         $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
         
-        // Extract filename van het pad (avatars/klanten/FILENAME.png -> FILENAME.png)
-        if ($avatarPath) {
-            $filename = basename($avatarPath);
-            $avatarUrl = route('avatar.serve', ['filename' => $filename]) . '?v=' . $cacheKey;
-        } else {
-            $avatarUrl = null;
-        }
-        
         \Log::info('🔍 Klant show - avatar check', [
             'klant_id' => $klant->id,
-            'avatar_path' => $avatarPath,
-            'avatar_url' => $avatarUrl,
+            'avatar_from_model' => $avatarPath,
+            'avatar_exists_in_storage' => $avatarPath ? \Storage::disk('public')->exists($avatarPath) : false,
             'cache_key' => $cacheKey,
         ]);
         
@@ -348,7 +371,7 @@ class KlantController extends Controller
         // Maak user beschikbaar voor de view
         $user = auth()->user();
 
-        return view('klanten.show', compact('klant', 'user', 'avatarUrl', 'cacheKey'));
+        return view('klanten.show', compact('klant', 'user', 'cacheKey'));
     }
     public function sendInvitation(Request $request, Klant $klant)
     {

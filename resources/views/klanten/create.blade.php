@@ -331,20 +331,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     const input = document.getElementById('avatarInput');
     const nameEl = document.getElementById('avatarFileName');
-    const previewContainer = document.getElementById('avatarPreviewContainer');
     const voornaamInput = document.getElementById('voornaam');
     
-    // Update preview placeholder met voornaam
-    if (voornaamInput) {
-        voornaamInput.addEventListener('input', function() {
-            const voornaam = this.value.trim();
-            if (voornaam && !input.files.length) {
-                previewContainer.textContent = voornaam.charAt(0).toUpperCase();
-            }
-        });
-    }
-    
-    // Handle file selection
+    // Handle file selection - EXACT ZELFDE ALS EDIT
     if (input) {
         input.addEventListener('change', function() {
             const file = this.files && this.files[0];
@@ -354,15 +343,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Show image preview
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    previewContainer.innerHTML = `<img src="${e.target.result}" alt="Preview" class="rounded-lg object-cover" style="width:80px;height:80px;" />`;
+                    // Check of er al een preview img bestaat
+                    let previewImg = document.getElementById('avatarPreviewImg');
+                    const previewContainer = document.getElementById('avatarPreviewContainer');
+                    const label = input.parentElement;
+                    
+                    if (previewContainer) {
+                        // Vervang placeholder door image
+                        previewContainer.remove();
+                        const img = document.createElement('img');
+                        img.id = 'avatarPreviewImg';
+                        img.src = e.target.result;
+                        img.alt = 'Preview';
+                        img.className = 'rounded-lg object-cover';
+                        img.style.cssText = 'width:80px;height:80px;';
+                        label.insertBefore(img, label.firstChild);
+                    } else if (previewImg) {
+                        // Update bestaande image
+                        previewImg.src = e.target.result;
+                    }
                 };
                 reader.readAsDataURL(file);
             } else {
                 nameEl.textContent = 'Geen bestand gekozen';
-                const voornaam = voornaamInput ? voornaamInput.value.trim() : '';
-                previewContainer.innerHTML = voornaam ? voornaam.charAt(0).toUpperCase() : '?';
-                previewContainer.className = 'rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold';
-                previewContainer.style.cssText = 'width:80px;height:80px;font-size:32px;';
+            }
+        });
+    }
+    
+    // Update placeholder met voornaam als die wordt ingevuld
+    if (voornaamInput) {
+        voornaamInput.addEventListener('input', function() {
+            const voornaam = this.value.trim();
+            const previewContainer = document.getElementById('avatarPreviewContainer');
+            
+            // Alleen updaten als er geen foto is en geen nieuwe file geselecteerd
+            if (previewContainer && !input.files.length) {
+                const firstLetter = voornaam ? voornaam.charAt(0).toUpperCase() : '?';
+                previewContainer.textContent = firstLetter;
             }
         });
     }

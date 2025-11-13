@@ -79,7 +79,8 @@ class Klant extends Model
         'opmerkingen',
         'is_active',
         'opmerking_bool',
-        'is_gesynchroniseerd'
+        'is_gesynchroniseerd',
+        'avatar'             // TOEGEVOEGD
     ];
 
     public function bikefits()

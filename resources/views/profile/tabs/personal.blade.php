@@ -140,8 +140,11 @@ function handleAvatarUpload(input) {
             ]);
         } else {
             // Fallback: gebruik user gegevens (voor users zonder klant_id)
-            $voornaamValue = $user->first_name ?? '';
-            $achternaamValue = $user->last_name ?? '';
+            // Split name kolom in voornaam en achternaam
+            $nameParts = explode(' ', $user->name ?? '', 2);
+            $voornaamValue = $nameParts[0] ?? '';
+            $achternaamValue = $nameParts[1] ?? '';
+            
             $emailValue = $user->email;
             $telefoonValue = $user->telefoonnummer ?? $user->telefoon ?? '';
             $geboortedatumValue = $user->geboortedatum ?? null;
@@ -151,7 +154,10 @@ function handleAvatarUpload(input) {
             
             \Log::info('📋 Personal tab - Data van user record (geen klant gekoppeld)', [
                 'user_id' => $user->id,
-                'email' => $emailValue
+                'email' => $emailValue,
+                'name_in_db' => $user->name,
+                'voornaam_split' => $voornaamValue,
+                'achternaam_split' => $achternaamValue
             ]);
         }
     @endphp

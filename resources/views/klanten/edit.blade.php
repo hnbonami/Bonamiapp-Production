@@ -31,7 +31,7 @@
                         <input type="text" 
                                name="voornaam" 
                                id="voornaam" 
-                               value="{{ old('voornaam', $klant->voornaam) }}" 
+                               value="{{ old('voornaam', $klant->voornaam ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
                                required>
                     </div>
@@ -41,7 +41,7 @@
                         <input type="text" 
                                name="naam" 
                                id="naam" 
-                               value="{{ old('naam', $klant->naam) }}" 
+                               value="{{ old('naam', $klant->naam ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
                                required>
                     </div>
@@ -51,7 +51,7 @@
                         <input type="email" 
                                name="email" 
                                id="email" 
-                               value="{{ old('email', $klant->email) }}" 
+                               value="{{ old('email', $klant->email ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
@@ -60,7 +60,7 @@
                         <input type="tel" 
                                name="telefoonnummer" 
                                id="telefoonnummer" 
-                               value="{{ old('telefoonnummer', $klant->telefoonnummer) }}" 
+                               value="{{ old('telefoonnummer', $klant->telefoonnummer ?? $klant->telefoon ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                     
@@ -80,9 +80,9 @@
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
                                 required>
                             <option value="">Selecteer geslacht</option>
-                            <option value="Man" {{ old('geslacht', $klant->geslacht) == 'Man' ? 'selected' : '' }}>Man</option>
-                            <option value="Vrouw" {{ old('geslacht', $klant->geslacht) == 'Vrouw' ? 'selected' : '' }}>Vrouw</option>
-                            <option value="Anders" {{ old('geslacht', $klant->geslacht) == 'Anders' ? 'selected' : '' }}>Anders</option>
+                            <option value="Man" {{ old('geslacht', $klant->geslacht ?? '') == 'Man' ? 'selected' : '' }}>Man</option>
+                            <option value="Vrouw" {{ old('geslacht', $klant->geslacht ?? '') == 'Vrouw' ? 'selected' : '' }}>Vrouw</option>
+                            <option value="Anders" {{ old('geslacht', $klant->geslacht ?? '') == 'Anders' ? 'selected' : '' }}>Anders</option>
                         </select>
                     </div>
 
@@ -92,8 +92,8 @@
                                 id="status" 
                                 class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" 
                                 required>
-                            <option value="Actief" {{ old('status', $klant->status) == 'Actief' ? 'selected' : '' }}>Actief</option>
-                            <option value="Inactief" {{ old('status', $klant->status) == 'Inactief' ? 'selected' : '' }}>Inactief</option>
+                            <option value="Actief" {{ old('status', $klant->status ?? 'Actief') == 'Actief' ? 'selected' : '' }}>Actief</option>
+                            <option value="Inactief" {{ old('status', $klant->status ?? 'Actief') == 'Inactief' ? 'selected' : '' }}>Inactief</option>
                         </select>
                     </div>
                 </div>
@@ -107,7 +107,7 @@
                         <input type="text" 
                                name="straatnaam" 
                                id="straatnaam" 
-                               value="{{ old('straatnaam', $klant->straatnaam) }}" 
+                               value="{{ old('straatnaam', $klant->straatnaam ?? $klant->adres ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                placeholder="Begin te typen voor suggesties...">
                     </div>
@@ -117,7 +117,7 @@
                         <input type="text" 
                                name="huisnummer" 
                                id="huisnummer" 
-                               value="{{ old('huisnummer', $klant->huisnummer) }}" 
+                               value="{{ old('huisnummer', $klant->huisnummer ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
@@ -126,7 +126,7 @@
                         <input type="text" 
                                name="postcode" 
                                id="postcode" 
-                               value="{{ old('postcode', $klant->postcode) }}" 
+                               value="{{ old('postcode', $klant->postcode ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                placeholder="9000">
                     </div>
@@ -136,7 +136,7 @@
                         <input type="text" 
                                name="stad" 
                                id="stad" 
-                               value="{{ old('stad', $klant->stad) }}" 
+                               value="{{ old('stad', $klant->stad ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                 </div>
@@ -150,7 +150,7 @@
                         <input type="text" 
                                name="sport" 
                                id="sport" 
-                               value="{{ old('sport', $klant->sport) }}" 
+                               value="{{ old('sport', $klant->sport ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
@@ -159,7 +159,7 @@
                         <input type="text" 
                                name="niveau" 
                                id="niveau" 
-                               value="{{ old('niveau', $klant->niveau) }}" 
+                               value="{{ old('niveau', $klant->niveau ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
@@ -168,7 +168,7 @@
                         <input type="text" 
                                name="club" 
                                id="club" 
-                               value="{{ old('club', $klant->club) }}" 
+                               value="{{ old('club', $klant->club ?? '') }}" 
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                 </div>
@@ -181,7 +181,7 @@
                     <input type="text" 
                            name="herkomst" 
                            id="herkomst" 
-                           value="{{ old('herkomst', $klant->herkomst) }}" 
+                           value="{{ old('herkomst', $klant->herkomst ?? '') }}" 
                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
 
