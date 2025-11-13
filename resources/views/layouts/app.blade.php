@@ -494,26 +494,6 @@
             @endif
             @endhasFeature
             
-            {{-- Instagram - alleen tonen als feature actief is --}}
-            @hasFeature('instagram')
-            @if(Auth::user() && Auth::user()->isBeheerder())
-                <a href="/instagram" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('instagram*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
-                    Instagram
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\InstagramPost::count() }}</span>
-                </a>
-            @endif
-            @endhasFeature
-            
-            {{-- Nieuwsbrief - alleen tonen als feature actief is --}}
-            @hasFeature('nieuwsbrief')
-            @if(Auth::user() && Auth::user()->isBeheerder())
-                <a href="/nieuwsbrieven" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ (request()->is('nieuwsbrieven*') || request()->is('newsletters*') || request()->is('nieuwsbrief*')) ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
-                    Nieuwsbrief
-                    <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Newsletter::count() }}</span>
-                </a>
-            @endif
-            @endhasFeature
-            
             {{-- Sjablonen - alleen tonen als feature actief is --}}
             @hasFeature('sjablonen')
             @if(Auth::user() && Auth::user()->isBeheerder())
@@ -647,34 +627,6 @@
                     <svg width="22" height="22" fill="none" viewBox="0 0 20 20"><rect x="4" y="8" width="12" height="7" rx="2" stroke="#9bb3bd" stroke-width="1.5"/><path d="M8 8V6.5A2.5 2.5 0 0 1 10.5 4h-1A2.5 2.5 0 0 1 12 6.5V8" stroke="#9bb3bd" stroke-width="1.5"/></svg>
                     <span class="font-medium text-[17px]">Medewerkers</span>
                     <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\User::where('role', '!=', 'klant')->where('organisatie_id', auth()->user()->organisatie_id)->count() }}</span>
-                </a>
-                @endif
-                @endhasFeature
-                
-                {{-- Instagram - alleen tonen als feature actief is --}}
-                @hasFeature('instagram')
-                @if(Auth::user() && Auth::user()->isBeheerder())
-                <a href="/instagram" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ request()->is('instagram*') ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ request()->is('instagram*') ? 'background:#f6fbfe' : '' }}">
-                    @if(request()->is('instagram*'))
-                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
-                    @endif
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9bb3bd" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17" cy="7" r="1"/></svg>
-                    <span class="font-medium text-[17px]">Instagram</span>
-                    <span class="ml-px inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\InstagramPost::count() }}</span>
-                </a>
-                @endif
-                @endhasFeature
-                
-                {{-- Nieuwsbrief - alleen tonen als feature actief is --}}
-                @hasFeature('nieuwsbrief')
-                @if(Auth::user() && Auth::user()->isBeheerder())
-                <a href="/nieuwsbrieven" class="relative flex items-center gap-3 pl-24 pr-3 py-2 transition-colors {{ (request()->is('nieuwsbrieven*') || request()->is('newsletters*') || request()->is('nieuwsbrief*')) ? 'text-gray-900' : 'text-gray-700 hover:text-gray-900' }}" style="padding-left:48px;{{ (request()->is('nieuwsbrieven*') || request()->is('newsletters*') || request()->is('nieuwsbrief*')) ? 'background:#f6fbfe' : '' }}">
-                    @if(request()->is('nieuwsbrief*') || request()->is('nieuwsbrieven*') || request()->is('newsletters*'))
-                        <span style="position:absolute;left:0;top:0;bottom:0;width:5px;background:#c1dfeb;"></span>
-                    @endif
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9bb3bd" stroke-width="1.5"><path d="M4 6h16v12H4z"/><path d="M4 6l8 6 8-6"/></svg>
-                    <span class="font-medium text-[17px]">Nieuwsbrief</span>
-                    <span class="ml-px inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-[#c1dfeb] text-[#08474f] rounded-full">{{ \App\Models\Newsletter::count() }}</span>
                 </a>
                 @endif
                 @endhasFeature
