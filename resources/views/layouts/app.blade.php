@@ -362,10 +362,21 @@
             <div class="topbar-user">
                 @auth
                     @php
-                        $avatar = Auth::user()->avatar_path ?? null;
-                        $voornaam = explode(' ', Auth::user()->name)[0] ?? '';
-                        $isStaff = Auth::user() && in_array(Auth::user()->role, ['admin', 'medewerker']);
+                        $user = Auth::user();
+                        
+                        // GEBRUIK KLANT AVATAR - niet user avatar!
+                        if ($user->role === 'klant' && $user->klant_id) {
+                            $klant = \App\Models\Klant::find($user->klant_id);
+                            $avatar = $klant ? $klant->avatar : null;
+                        } else {
+                            // Voor beheerders/medewerkers: gebruik user avatar
+                            $avatar = $user->avatar;
+                        }
+                        
+                        $voornaam = explode(' ', $user->name)[0] ?? '';
+                        $isStaff = $user && in_array($user->role, ['admin', 'medewerker']);
                         $unreadNotes = $isStaff ? \App\Models\StaffNote::where('is_new', true)->count() : 0;
+                        $cacheKey = time();
                     @endphp
                     
                     <!-- Dark Mode Toggle -->

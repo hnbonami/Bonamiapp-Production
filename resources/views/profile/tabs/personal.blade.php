@@ -5,14 +5,32 @@
     <div class="flex items-center space-x-6">
         <div class="relative">
             @php
-                // Gebruik correcte avatar kolom (niet avatar_path)
-                $avatarPath = Auth::user()->avatar ?? null;
-                $firstInitial = strtoupper(substr(Auth::user()->name ?? 'U', 0, 1));
+                // GEBRUIK KLANT AVATAR - niet user avatar!
+                $user = Auth::user();
+                
+                // Als user een klant is, haal avatar van klant record
+                if ($user->role === 'klant' && $user->klant_id) {
+                    $klant = \App\Models\Klant::find($user->klant_id);
+                    $avatarPath = $klant ? $klant->avatar : null;
+                } else {
+                    // Voor beheerders/medewerkers: gebruik user avatar
+                    $avatarPath = $user->avatar;
+                }
+                
+                $firstInitial = strtoupper(substr($user->name ?? 'U', 0, 1));
+                $cacheKey = time();
+                
+                \Log::info('🖼️ Avatar debug personal.blade', [
+                    'user_id' => $user->id,
+                    'user_role' => $user->role,
+                    'klant_id' => $user->klant_id ?? 'geen',
+                    'avatar_path' => $avatarPath ?? 'geen'
+                ]);
             @endphp
             
             @if($avatarPath)
                 <img class="user-avatar h-24 w-24 rounded-full object-cover border-4 border-gray-200" 
-                     src="{{ asset('storage/' . $avatarPath) }}" 
+                     src="{{ asset('storage/' . $avatarPath) }}?t={{ $cacheKey }}" 
                      alt="Avatar">
             @else
                 <div class="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-200">
@@ -31,8 +49,29 @@
         <div>
             <h3 class="text-lg font-medium text-gray-900">Profielfoto</h3>
             <p class="text-sm text-gray-600">Upload een profielfoto. Maximaal 2MB, JPG, PNG of GIF.</p>
-            <form class="ajax-form mt-2" action="{{ route('profile.update.avatar') }}" method="POST" enctype="multipart/form-data">
+            
+            @php
+                // Voor klanten: gebruik klanten.update route (zelfde als op show pagina)
+                // Voor beheerders/medewerkers: gebruik profile.update.avatar
+                if ($user->role === 'klant' && $user->klant_id) {
+                    $klantRecord = \App\Models\Klant::find($user->klant_id);
+                    $uploadRoute = route('klanten.update', $klantRecord);
+                } else {
+                    $uploadRoute = route('profile.update.avatar');
+                }
+            @endphp
+            
+            <form class="mt-2" action="{{ $uploadRoute }}" method="POST" enctype="multipart/form-data" id="avatar-upload-form">
                 @csrf
+                @if($user->role === 'klant' && $user->klant_id)
+                    @method('PUT')
+                    {{-- Hidden fields voor klanten update (zoals op show pagina) --}}
+                    <input type="hidden" name="voornaam" value="{{ $klantRecord->voornaam ?? '' }}">
+                    <input type="hidden" name="naam" value="{{ $klantRecord->naam ?? '' }}">
+                    <input type="hidden" name="email" value="{{ $klantRecord->email ?? '' }}">
+                    <input type="hidden" name="geslacht" value="{{ $klantRecord->geslacht ?? '' }}">
+                    <input type="hidden" name="status" value="{{ $klantRecord->status ?? '' }}">
+                @endif
                 <input type="file" id="avatar-upload" name="avatar" accept="image/*" class="hidden" onchange="this.form.submit()">
             </form>
         </div>
