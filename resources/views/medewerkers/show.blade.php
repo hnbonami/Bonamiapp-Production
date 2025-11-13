@@ -7,15 +7,26 @@
     <!-- Header met avatar en kerngegevens -->
     <div class="flex items-start mb-6" style="gap:3.75rem;">
         <div class="flex flex-col items-start gap-2">
-            @if($medewerker->avatar_path)
-                <img src="{{ asset('storage/'.$medewerker->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover flex-none" style="width:200px;height:200px;" />
+            @php
+                // Genereer correcte avatar URL
+                if ($medewerker->avatar_path) {
+                    $avatarUrl = app()->environment('production') 
+                        ? asset('uploads/' . $medewerker->avatar_path)
+                        : asset('storage/' . $medewerker->avatar_path);
+                } else {
+                    $avatarUrl = null;
+                }
+            @endphp
+            @if($avatarUrl)
+                <img src="{{ $avatarUrl }}" alt="Avatar" class="rounded-lg object-cover flex-none" style="width:200px;height:200px;" />
             @else
                 <div class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold flex-none" style="width:200px;height:200px;font-size:72px;">
                     {{ strtoupper(substr($medewerker->voornaam,0,1)) }}
                 </div>
             @endif
-            <form method="POST" action="{{ route('medewerkers.avatar', $medewerker->id) }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('medewerkers.update', $medewerker->id) }}" enctype="multipart/form-data">
                 @csrf
+                @method('PUT')
                 <input type="file" name="avatar" id="avatarMedewerkerInline" accept="image/*" style="display:none;">
                 <div class="flex items-center gap-2">
                     <button type="button" id="avatarCamBtnMedewerkerInline" aria-label="Maak foto" title="Maak foto" class="bg-gray-100 text-gray-800 rounded-full" style="width:36px;height:36px;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 3px #e0e7ff;">

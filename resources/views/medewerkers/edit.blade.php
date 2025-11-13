@@ -258,8 +258,18 @@
                         <!-- Avatar Preview met bestaande foto -->
                         <div class="relative flex-shrink-0" style="width:80px;height:80px;">
                             <label for="avatarInput" style="cursor:pointer;display:block;position:relative;">
-                                @if($medewerker->avatar_path)
-                                    <img id="avatarPreviewImg" src="{{ asset('storage/' . $medewerker->avatar_path) }}" alt="Avatar" class="rounded-lg object-cover" style="width:80px;height:80px;" />
+                                @php
+                                    // Genereer correcte avatar URL
+                                    if ($medewerker->avatar_path) {
+                                        $avatarUrl = app()->environment('production') 
+                                            ? asset('uploads/' . $medewerker->avatar_path)
+                                            : asset('storage/' . $medewerker->avatar_path);
+                                    } else {
+                                        $avatarUrl = null;
+                                    }
+                                @endphp
+                                @if($avatarUrl)
+                                    <img id="avatarPreviewImg" src="{{ $avatarUrl }}" alt="Avatar" class="rounded-lg object-cover" style="width:80px;height:80px;" />
                                 @else
                                     <div id="avatarPreviewContainer" class="rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-semibold" style="width:80px;height:80px;font-size:32px;">
                                         {{ strtoupper(substr($medewerker->voornaam ?? '?', 0, 1)) }}
