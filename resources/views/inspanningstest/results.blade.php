@@ -108,6 +108,12 @@
     const verticalLinePluginResults = {
         id: 'verticalLinesResults',
         afterDatasetsDraw(chart) {
+            // Check of deze grafiek de plugin moet overslaan
+            if (chart.canvas.dataset.skipVerticalLines === 'true') {
+                console.log('⏭️ Vertical line plugin overgeslagen voor deze grafiek');
+                return;
+            }
+            
             const { ctx, chartArea: { top, bottom, left, right }, scales, data } = chart;
             const { lt1Vermogen, lt2Vermogen } = window.drempelwaardenResults;
             

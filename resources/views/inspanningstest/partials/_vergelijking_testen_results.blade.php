@@ -682,8 +682,12 @@ document.addEventListener('DOMContentLoaded', function() {
         xAxisLabel = 'Tempo (mm:ss/100m)';
     }
 
-    // Maak grafiek
+    // Maak grafiek (zonder verticale lijn plugin)
     const ctx = document.getElementById('vergelijkingGrafiek').getContext('2d');
+    
+    // Voeg een marker toe aan de canvas zodat de plugin weet deze grafiek over te slaan
+    ctx.canvas.dataset.skipVerticalLines = 'true';
+    
     const vergelijkingChart = new Chart(ctx, {
         type: 'scatter',
         data: { datasets: genereerDatasets() },
@@ -695,6 +699,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 intersect: false,
             },
             plugins: {
+                // Schakel de verticale lijn plugin uit voor deze grafiek
+                verticalLinePlugin: false,
                 legend: { 
                     display: true, 
                     position: 'top',
