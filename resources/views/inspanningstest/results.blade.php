@@ -11,15 +11,48 @@
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
             <div class="p-6">
                 <div class="flex justify-between items-start">
-                    <div>
-                        <h1 class="text-3xl font-extrabold text-gray-900">Inspanningstest Resultaten - {{ $klant->voornaam}} {{ $klant->naam }}</h1>
-                        <p class="text-lg text-gray-600 mt-2">{{ $klant->naam }} - {{ \Carbon\Carbon::parse($inspanningstest->datum)->format('d-m-Y') }}</p>
+                    <div class="flex items-start gap-4">
+                        @php
+                            // Haal rapport instellingen op voor het logo van de organisatie
+                            $rapportInstellingen = null;
+                            try {
+                                if (class_exists(\App\Models\OrganisatieRapportInstelling::class)) {
+                                    $organisatieId = auth()->user()->organisatie_id ?? null;
+                                    if ($organisatieId) {
+                                        $rapportInstellingen = \App\Models\OrganisatieRapportInstelling::where('organisatie_id', $organisatieId)->first();
+                                    }
+                                }
+                            } catch (\Exception $e) {
+                                \Log::error('Logo laden mislukt', ['error' => $e->getMessage()]);
+                            }
+                        @endphp
+                        
+                        @if($rapportInstellingen && $rapportInstellingen->logo_path)
+                            <div class="flex-shrink-0">
+                                @php
+                                    $logoUrl = app()->environment('production') 
+                                        ? asset('uploads/' . $rapportInstellingen->logo_path)
+                                        : asset('storage/' . $rapportInstellingen->logo_path);
+                                @endphp
+                                <img src="{{ $logoUrl }}" 
+                                     alt="Logo" 
+                                     class="h-16 w-auto object-contain"
+                                     onerror="console.error('Logo niet gevonden:', '{{ $logoUrl }}'); this.style.display='none';">
+                            </div>
+                        @endif
+                        
+                        <div>
+                            <h1 class="text-3xl font-extrabold text-gray-900">Inspanningstest Resultaten - {{ $klant->voornaam}} {{ $klant->naam }}</h1>
+                            <p class="text-lg text-gray-600 mt-2">
+                                Test aangemaakt op {{ $inspanningstest->created_at->format('d-m-Y \o\m H:i') }} door {{ auth()->user()->organisatie->naam ?? 'Onbekende organisatie' }}
+                            </p>
+                        </div>
                     </div>
                     <div class="flex gap-3">
                         <a href="{{ route('klanten.show', $klant->id) }}" 
                            class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm hover:opacity-80 transition" 
                            style="background-color: #c8e1eb;">
-                            Terug naar Klant
+                            Terug 
                         </a>
                     </div>
                 </div>
@@ -49,12 +82,11 @@
 
         <!-- Rapport Generatie Knop - Onderaan Pagina -->
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
-            <div class="p-6 text-center">
-                <h3 class="text-xl font-bold text-gray-900 mb-4">📄 Rapport Genereren</h3>
-                <p class="text-gray-600 mb-6">Genereer een professioneel rapport op basis van de sjablonen</p>
+            <div class="p-6 text-left">
                 <a href="{{ route('inspanningstest.sjabloon-rapport', ['klant' => $klant->id, 'test' => $inspanningstest->id]) }}" 
-                   class="inline-block rounded-full px-8 py-3 bg-green-500 text-white font-bold text-lg hover:bg-green-600 transition shadow-lg">
-                    📄 Genereer Rapport
+                   class="inline-block rounded-full px-4 py-2 text-gray-800 font-bold text-lg hover:opacity-80 transition shadow-lg"
+                   style="background-color: #c8e1eb;">
+                    Printable Rapport
                 </a>
             </div>
         </div>
