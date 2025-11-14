@@ -108,6 +108,23 @@ class SjabloonHelper
     }
 
     /**
+     * Vervang placeholders in sjabloon HTML voor inspanningstesten
+     */
+    public static function vervangInspanningstestPlaceholders($html, $inspanningstest, $klant)
+    {
+        // Test Vergelijking Partial
+        if (strpos($html, '{{INSPANNINGSTEST_VERGELIJKING}}') !== false) {
+            $vergelijkingHtml = view('inspanningstest.partials._vergelijking_testen_report', [
+                'inspanningstest' => $inspanningstest,
+                'klant' => $klant
+            ])->render();
+            $html = str_replace('{{INSPANNINGSTEST_VERGELIJKING}}', $vergelijkingHtml, $html);
+        }
+
+        return $html;
+    }
+
+    /**
      * Get all available testtypes
      */
     public static function getAvailableTesttypes()

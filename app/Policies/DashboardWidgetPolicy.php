@@ -40,11 +40,11 @@ class DashboardWidgetPolicy
 
     /**
      * Bepaal of user een nieuwe widget mag aanmaken
-     * Admin, medewerker en superadmin kunnen widgets aanmaken
+     * Admin, organisatie_admin, medewerker en superadmin kunnen widgets aanmaken
      */
     public function create(User $user): bool
     {
-        return in_array($user->role, ['admin', 'medewerker', 'superadmin']);
+        return in_array($user->role, ['admin', 'organisatie_admin', 'medewerker', 'superadmin', 'super_admin']);
     }
 
     /**

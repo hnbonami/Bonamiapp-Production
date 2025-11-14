@@ -20,6 +20,7 @@ class DashboardWidget extends Model
         'image_path',
         'button_text',
         'button_url',
+        'button_color', // Knop kleur
         'background_color',
         'text_color',
         'grid_x',

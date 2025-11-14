@@ -285,14 +285,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Toon custom URL veld
                 customUrlField.style.display = 'block';
                 customUrlInput.required = true;
-                hiddenUrlInput.disabled = true;
-                customUrlInput.disabled = false;
+                customUrlInput.name = 'button_url'; // Zorg dat custom input de juiste name heeft
+                hiddenUrlInput.name = ''; // Disable hidden input
             } else {
                 // Verberg custom URL veld en gebruik pre-defined URL
                 customUrlField.style.display = 'none';
                 customUrlInput.required = false;
-                customUrlInput.disabled = true;
-                hiddenUrlInput.disabled = false;
+                customUrlInput.name = ''; // Disable custom input
+                hiddenUrlInput.name = 'button_url'; // Enable hidden input
                 hiddenUrlInput.value = this.value;
             }
         });

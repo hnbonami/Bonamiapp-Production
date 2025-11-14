@@ -77,6 +77,9 @@
         <!-- Trainingszones Tabel -->
         @include('inspanningstest.partials._trainingszones_results')
 
+        <!-- Test Vergelijking (alleen als er meerdere testen zijn) -->
+        @include('inspanningstest.partials._vergelijking_testen_results')
+
         <!-- AI Analyse -->
         @include('inspanningstest.partials._ai_analyse_results')
 

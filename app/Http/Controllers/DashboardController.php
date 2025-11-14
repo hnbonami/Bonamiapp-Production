@@ -129,6 +129,7 @@ class DashboardController extends Controller
             'image' => 'nullable|image|max:2048',
             'button_text' => 'nullable|string|max:255',
             'button_url' => 'nullable|string|max:255',
+            'button_color' => 'nullable|string', // Knop kleur validatie
             'background_color' => 'nullable|string',
             'text_color' => 'nullable|string',
             'grid_width' => 'nullable|integer|min:1|max:12',
@@ -280,6 +281,7 @@ class DashboardController extends Controller
             'image' => 'nullable|image|max:2048',
             'button_text' => 'nullable|string|max:255',
             'button_url' => 'nullable|string|max:255',
+            'button_color' => 'nullable|string', // Knop kleur validatie
             'background_color' => 'nullable|string',
             'text_color' => 'nullable|string',
             'visibility' => 'required|in:everyone,medewerkers,only_me',
