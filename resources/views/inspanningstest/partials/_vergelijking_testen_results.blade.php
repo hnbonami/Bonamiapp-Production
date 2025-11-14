@@ -337,73 +337,54 @@
                             </td>
                         </tr>
 
-                        {{-- Max Hartslag --}}
+                        {{-- Max Hartslag (uit laatste testresultaat, zoals drempelwaarden partial) --}}
                         @php
-                            $oudsteMaxHR = $vergelijkbareTesten->last() ? $vergelijkbareTesten->last()->max_hartslag : null;
-                            $huidigeMaxHR = $inspanningstest->max_hartslag;
+                            // Functie om max hartslag uit testresultaten te halen
+                            function getMaxHartslagFromTest($test) {
+                                $testresultaten = $test->testresultaten ?? [];
+                                
+                                // Check of testresultaten een string is (JSON) en decode indien nodig
+                                if (is_string($testresultaten)) {
+                                    $testresultaten = json_decode($testresultaten, true) ?? [];
+                                }
+                                
+                                // Converteer naar array
+                                $testresultaten = is_array($testresultaten) ? $testresultaten : [];
+                                
+                                // Haal max hartslag uit laatste testresultaat
+                                if (count($testresultaten) > 0) {
+                                    $laatsteStap = end($testresultaten);
+                                    $maxHartslag = $laatsteStap['hartslag'] ?? null;
+                                    
+                                    // Fallback naar ingevuld veld als niet in testresultaten
+                                    if (!$maxHartslag) {
+                                        $maxHartslag = $test->max_hartslag ?? $test->maximale_hartslag_bpm ?? null;
+                                    }
+                                    
+                                    return $maxHartslag;
+                                }
+                                
+                                // Fallback
+                                return $test->max_hartslag ?? $test->maximale_hartslag_bpm ?? null;
+                            }
+                            
+                            // Haal max hartslag op voor oudste en huidige test
+                            $oudsteMaxHR = $vergelijkbareTesten->last() ? getMaxHartslagFromTest($vergelijkbareTesten->last()) : null;
+                            $huidigeMaxHR = getMaxHartslagFromTest($inspanningstest);
                             $deltaMaxHR = ($oudsteMaxHR && $huidigeMaxHR) ? (($huidigeMaxHR - $oudsteMaxHR) / $oudsteMaxHR) * 100 : null;
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm font-medium text-gray-900">Max Hartslag</td>
                             @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
                                 <td class="px-4 py-3 text-sm text-center text-gray-700">
-                                    {{ $test->max_hartslag ? number_format($test->max_hartslag, 0) . ' bpm' : '-' }}
+                                    @php
+                                        $maxHR = getMaxHartslagFromTest($test);
+                                    @endphp
+                                    {{ $maxHR ? number_format($maxHR, 0) . ' bpm' : '-' }}
                                 </td>
                             @endforeach
                             <td class="px-4 py-3 text-sm text-center font-bold text-purple-700 bg-purple-50">
                                 {{ $huidigeMaxHR ? number_format($huidigeMaxHR, 0) . ' bpm' : '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-sm text-center font-semibold {{ $deltaMaxHR > 0 ? 'text-green-600' : ($deltaMaxHR < 0 ? 'text-red-600' : 'text-gray-500') }}">
-                                {{ $deltaMaxHR !== null ? ($deltaMaxHR > 0 ? '+' : '') . number_format($deltaMaxHR, 1) . '%' : '-' }}
-                            </td>
-                            <td class="px-4 py-3 text-center text-xl">→</td>
-                        </tr>
-
-                        {{-- VO2max (alleen voor fietstesten) --}}
-                        @if(!$isLooptest && !$isZwemtest)
-                            @php
-                                $oudsteVO2 = $vergelijkbareTesten->last() ? $vergelijkbareTesten->last()->vo2max : null;
-                                $huidigeVO2 = $inspanningstest->vo2max;
-                                $deltaVO2 = ($oudsteVO2 && $huidigeVO2) ? (($huidigeVO2 - $oudsteVO2) / $oudsteVO2) * 100 : null;
-                            @endphp
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 text-sm font-medium text-gray-900">VO2max</td>
-                                @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
-                                    <td class="px-4 py-3 text-sm text-center text-gray-700">
-                                        {{ $test->vo2max ? number_format($test->vo2max, 1) . ' ml/kg/min' : '-' }}
-                                    </td>
-                                @endforeach
-                                <td class="px-4 py-3 text-sm text-center font-bold text-purple-700 bg-purple-50">
-                                    {{ $huidigeVO2 ? number_format($huidigeVO2, 1) . ' ml/kg/min' : '-' }}
-                                </td>
-                                <td class="px-4 py-3 text-sm text-center font-semibold {{ $deltaVO2 > 0 ? 'text-green-600' : ($deltaVO2 < 0 ? 'text-red-600' : 'text-gray-500') }}">
-                                    {{ $deltaVO2 !== null ? ($deltaVO2 > 0 ? '+' : '') . number_format($deltaVO2, 1) . '%' : '-' }}
-                                </td>
-                                <td class="px-4 py-3 text-center text-xl">
-                                    @if($deltaVO2 > 5) 📈
-                                    @elseif($deltaVO2 > 0) ↗️
-                                    @elseif($deltaVO2 < -5) 📉
-                                    @elseif($deltaVO2 < 0) ↘️
-                                    @else →
-                                    @endif
-                                </td>
-                            </tr>
-                        @endif
-                    </tbody>
-                        @php
-                            $oudsteMaxHR = $vergelijkbareTesten->last() ? $vergelijkbareTesten->last()->max_hartslag : null;
-                            $huidigeMaxHR = $inspanningstest->max_hartslag;
-                            $deltaMaxHR = ($oudsteMaxHR && $huidigeMaxHR) ? (($huidigeMaxHR - $oudsteMaxHR) / $oudsteMaxHR) * 100 : null;
-                        @endphp
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm font-medium text-gray-900">Max Hartslag</td>
-                            @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
-                                <td class="px-4 py-3 text-sm text-center text-gray-700">
-                                    {{ $test->max_hartslag ? $test->max_hartslag . ' bpm' : '-' }}
-                                </td>
-                            @endforeach
-                            <td class="px-4 py-3 text-sm text-center font-bold text-purple-700 bg-purple-50">
-                                {{ $huidigeMaxHR ? $huidigeMaxHR . ' bpm' : '-' }}
                             </td>
                             <td class="px-4 py-3 text-sm text-center font-semibold {{ $deltaMaxHR > 0 ? 'text-green-600' : ($deltaMaxHR < 0 ? 'text-red-600' : 'text-gray-500') }}">
                                 {{ $deltaMaxHR !== null ? ($deltaMaxHR > 0 ? '+' : '') . number_format($deltaMaxHR, 1) . '%' : '-' }}
