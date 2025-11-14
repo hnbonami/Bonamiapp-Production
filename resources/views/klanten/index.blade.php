@@ -19,8 +19,8 @@
 </div>
 
 <!-- Actions: moved here from topbar -->
-<div style="display:flex;gap:0.7em;align-items:center;margin:1.2em 0;">
-    <a href="{{ route('klanten.create') }}" style="background:#c8e1eb;color:#111;padding:0.5em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;">+ Klant toevoegen</a>
+<div style="display:flex;flex-wrap:wrap;gap:0.7em;align-items:center;margin:1.2em 0;">
+    <a href="{{ route('klanten.create') }}" style="background:#c8e1eb;color:#111;padding:0.5em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;white-space:nowrap;">+ Klant toevoegen</a>
     <a href="{{ route('klanten.export') }}" 
        class="inline-flex items-center justify-center" 
        style="background:#c8e1eb;color:#111;padding:0.7em 0.9em;border-radius:7px;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;text-decoration:none;"
@@ -32,62 +32,67 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15V3"/>
         </svg>
     </a>
-    <select 
-        id="sorteerKlanten" 
-        style="padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;background:#fff;cursor:pointer;margin-left:auto;"
-    >
-        <option value="naam-asc">Naam (A-Z)</option>
-        <option value="naam-desc">Naam (Z-A)</option>
-        <option value="voornaam-asc">Voornaam (A-Z)</option>
-        <option value="voornaam-desc">Voornaam (Z-A)</option>
-        <option value="datum-nieuw" selected>Nieuwste eerst</option>
-        <option value="datum-oud">Oudste eerst</option>
-        <option value="status-actief">Status: Actief eerst</option>
-        <option value="status-inactief">Status: Inactief eerst</option>
-    </select>
-    <input 
-        type="text" 
-        id="searchKlanten" 
-        placeholder="Zoek klant..." 
-        value="{{ request('zoek') }}"
-        style="padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:180px;box-shadow:0 1px 3px #f3f4f6;" 
-        autocomplete="off"
-    />
     
-    {{-- Kolom visibility toggle --}}
-    <div style="position:relative;">
-        <button id="kolom-toggle-btn" type="button" 
-                style="display:flex;align-items:center;gap:0.5em;padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;">
-            <svg style="width:18px;height:18px;color:#4b5563;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
-            </svg>
-            <span style="font-weight:600;color:#374151;">Kolommen</span>
-        </button>
+    <!-- Responsive break: zoek, sorteer en kolommen op nieuwe regel op mobile -->
+    <div style="display:flex;gap:0.7em;width:100%;flex-wrap:wrap;margin-top:0.5em;">
+        <input 
+            type="text" 
+            id="searchKlanten" 
+            placeholder="Zoek klant..." 
+            value="{{ request('zoek') }}"
+            style="padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;flex:1;min-width:180px;box-shadow:0 1px 3px #f3f4f6;" 
+            autocomplete="off"
+        />
         
-        <div id="kolom-toggle-dropdown" style="display:none;position:absolute;right:0;margin-top:0.5em;width:240px;background:#fff;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);border:1px solid #e5e7eb;z-index:10;">
-            <div style="padding:0.75em;">
-                <div style="font-size:0.85em;font-weight:600;color:#374151;margin-bottom:0.5em;">Toon kolommen:</div>
-                <div style="display:flex;flex-direction:column;gap:0.5em;">
-                    <label style="display:flex;align-items:center;cursor:pointer;">
-                        <input type="checkbox" class="kolom-toggle" data-kolom="naam" checked style="margin-right:0.5em;cursor:pointer;">
-                        <span style="font-size:0.85em;color:#374151;">Naam</span>
-                    </label>
-                    <label style="display:flex;align-items:center;cursor:pointer;">
-                        <input type="checkbox" class="kolom-toggle" data-kolom="voornaam" checked style="margin-right:0.5em;cursor:pointer;">
-                        <span style="font-size:0.85em;color:#374151;">Voornaam</span>
-                    </label>
-                    <label style="display:flex;align-items:center;cursor:pointer;">
-                        <input type="checkbox" class="kolom-toggle" data-kolom="email" checked style="margin-right:0.5em;cursor:pointer;">
-                        <span style="font-size:0.85em;color:#374151;">E-mailadres</span>
-                    </label>
-                    <label style="display:flex;align-items:center;cursor:pointer;">
-                        <input type="checkbox" class="kolom-toggle" data-kolom="datum" style="margin-right:0.5em;cursor:pointer;">
-                        <span style="font-size:0.85em;color:#374151;">Datum toegevoegd</span>
-                    </label>
-                    <label style="display:flex;align-items:center;cursor:pointer;">
-                        <input type="checkbox" class="kolom-toggle" data-kolom="status" checked style="margin-right:0.5em;cursor:pointer;">
-                        <span style="font-size:0.85em;color:#374151;">Status</span>
-                    </label>
+        <select 
+            id="sorteerKlanten" 
+            style="padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;background:#fff;cursor:pointer;flex:1;min-width:180px;"
+        >
+            <option value="naam-asc">Naam (A-Z)</option>
+            <option value="naam-desc">Naam (Z-A)</option>
+            <option value="voornaam-asc">Voornaam (A-Z)</option>
+            <option value="voornaam-desc">Voornaam (Z-A)</option>
+            <option value="datum-nieuw" selected>Nieuwste eerst</option>
+            <option value="datum-oud">Oudste eerst</option>
+            <option value="status-actief">Status: Actief eerst</option>
+            <option value="status-inactief">Status: Inactief eerst</option>
+        </select>
+        
+        {{-- Kolom visibility toggle --}}
+        <div style="position:relative;">
+            <button id="kolom-toggle-btn" type="button" 
+                    style="display:flex;align-items:center;gap:0.5em;padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;white-space:nowrap;">
+                <svg style="width:18px;height:18px;color:#4b5563;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                </svg>
+                <span style="font-weight:600;color:#374151;">Kolommen</span>
+            </button>
+            
+            <div id="kolom-toggle-dropdown" style="display:none;position:absolute;right:0;margin-top:0.5em;width:240px;background:#fff;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);border:1px solid #e5e7eb;z-index:10;">
+                <div style="padding:0.75em;">
+                    <div style="font-size:0.85em;font-weight:600;color:#374151;margin-bottom:0.5em;">Toon kolommen:</div>
+                    <div style="display:flex;flex-direction:column;gap:0.5em;">
+                        <label style="display:flex;align-items:center;cursor:pointer;">
+                            <input type="checkbox" class="kolom-toggle" data-kolom="naam" checked style="margin-right:0.5em;cursor:pointer;">
+                            <span style="font-size:0.85em;color:#374151;">Naam</span>
+                        </label>
+                        <label style="display:flex;align-items:center;cursor:pointer;">
+                            <input type="checkbox" class="kolom-toggle" data-kolom="voornaam" checked style="margin-right:0.5em;cursor:pointer;">
+                            <span style="font-size:0.85em;color:#374151;">Voornaam</span>
+                        </label>
+                        <label style="display:flex;align-items:center;cursor:pointer;">
+                            <input type="checkbox" class="kolom-toggle" data-kolom="email" checked style="margin-right:0.5em;cursor:pointer;">
+                            <span style="font-size:0.85em;color:#374151;">E-mailadres</span>
+                        </label>
+                        <label style="display:flex;align-items:center;cursor:pointer;">
+                            <input type="checkbox" class="kolom-toggle" data-kolom="datum" style="margin-right:0.5em;cursor:pointer;">
+                            <span style="font-size:0.85em;color:#374151;">Datum toegevoegd</span>
+                        </label>
+                        <label style="display:flex;align-items:center;cursor:pointer;">
+                            <input type="checkbox" class="kolom-toggle" data-kolom="status" checked style="margin-right:0.5em;cursor:pointer;">
+                            <span style="font-size:0.85em;color:#374151;">Status</span>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>

@@ -299,12 +299,12 @@
                 <!-- Submit buttons -->
                 <div class="mt-8 flex gap-3 justify-start">
                     <a href="{{ route('medewerkers.index') }}" 
-                       class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200" 
+                       class="px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200 rounded-lg" 
                        style="background-color: #c8e1eb;">
                         Terug
                     </a>
                     <button type="submit" 
-                            class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200" 
+                            class="px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200 rounded-lg" 
                             style="background-color: #c8e1eb;">
                         Wijzigingen Opslaan
                     </button>

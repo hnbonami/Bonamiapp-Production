@@ -13,33 +13,17 @@
     </div>
 @endif
 
-<!-- Header met titel en tegel -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2em;">
-    <h2 class="text-2xl font-bold">Medewerkerslijst</h2>
-    
-    <!-- Aantal medewerkers tegel -->
-    <div style="background:#fff;border-radius:18px;box-shadow:0 2px 8px #e5e7eb;padding:1.1em 1.2em;display:flex;align-items:center;gap:0.6em;">
-        <span style="background:#e0f2fe;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <svg width="22" height="22" fill="none" viewBox="0 0 16 16">
-                <circle cx="8" cy="8" r="8" fill="#e0f2fe"/>
-                <g>
-                    <circle cx="8" cy="6" r="2" fill="#0284c7"/>
-                    <path d="M4 13c0-2.2 1.8-4 4-4s4 1.8 4 4" stroke="#0ea5e9" stroke-width="1.5" fill="none"/>
-                    <circle cx="11.5" cy="7" r="1" fill="#38bdf8"/>
-                    <path d="M12.5 11.5c0-1 0.8-1.8 1.8-1.8" stroke="#7dd3fc" stroke-width="1" fill="none"/>
-                </g>
-            </svg>
-        </span>
-        <div style="color:#222;font-size:1.5em;font-weight:700;letter-spacing:-0.5px;line-height:1;">{{ $medewerkers->count() }}</div>
-    </div>
+<!-- Header met titel -->
+<div style="margin-bottom:2em;">
+    <h2 class="text-2xl font-bold">Medewerkerslijst ({{ $medewerkers->count() }})</h2>
 </div>
 
 <!-- Actions: moved here from topbar -->
-<div style="display:flex;gap:0.7em;align-items:center;margin:1.2em 0;">
-    <a href="{{ route('medewerkers.create') }}" style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;">+ Medewerker toevoegen</a>
+<div style="display:flex;flex-wrap:wrap;gap:0.7em;align-items:center;margin:1.2em 0;">
+    <a href="{{ route('medewerkers.create') }}" style="background:#c8e1eb;color:#111;padding:0.5em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;white-space:nowrap;">+ Medewerker toevoegen</a>
     <button type="button" 
             class="inline-flex items-center justify-center" 
-            style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;border:none;cursor:pointer;"
+            style="background:#c8e1eb;color:#111;padding:0.7em 0.9em;border-radius:7px;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;border:none;cursor:pointer;"
             aria-label="Export Excel" 
             title="Export Excel">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,18 +33,35 @@
         </svg>
     </button>
     
-    <input 
-        type="text" 
-        id="searchMedewerkers" 
-        placeholder="Zoek medewerker..." 
-        value="{{ request('zoek') }}"
-        style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:180px;box-shadow:0 1px 3px #f3f4f6;margin-left:auto;" 
-        autocomplete="off"
-    />
+    <!-- Responsive break: zoek, sorteer en kolommen op nieuwe regel op mobile -->
+    <div style="display:flex;gap:0.7em;width:100%;flex-wrap:wrap;margin-top:0.5em;">
+        <input 
+            type="text" 
+            id="searchMedewerkers" 
+            placeholder="Zoek medewerker..." 
+            value="{{ request('zoek') }}"
+            style="padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;flex:1;min-width:180px;box-shadow:0 1px 3px #f3f4f6;" 
+            autocomplete="off"
+        />
+        
+        <select 
+            id="sorteerMedewerkers" 
+            style="padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;background:#fff;cursor:pointer;flex:1;min-width:180px;"
+        >
+            <option value="naam-asc">Naam (A-Z)</option>
+            <option value="naam-desc">Naam (Z-A)</option>
+            <option value="voornaam-asc">Voornaam (A-Z)</option>
+            <option value="voornaam-desc">Voornaam (Z-A)</option>
+            <option value="rol-admin">Rol: Admin eerst</option>
+            <option value="rol-medewerker">Rol: Medewerker eerst</option>
+            <option value="status-actief">Status: Actief eerst</option>
+            <option value="status-inactief">Status: Inactief eerst</option>
+        </select>
+        
         {{-- Kolom visibility toggle --}}
         <div style="position:relative;">
             <button id="kolom-toggle-btn" type="button" 
-                    style="display:flex;align-items:center;gap:0.5em;padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;">
+                    style="display:flex;align-items:center;gap:0.5em;padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;white-space:nowrap;">
                 <svg style="width:18px;height:18px;color:#4b5563;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
                 </svg>
@@ -96,6 +97,7 @@
             </div>
         </div>
     </div>
+</div>
 
     <!-- Medewerkers Table -->
     <div class="overflow-x-auto bg-white/80 rounded-xl shadow border border-gray-100">
@@ -362,6 +364,65 @@ document.getElementById('searchMedewerkers').addEventListener('input', function(
         const tekst = rij.textContent.toLowerCase();
         rij.style.display = tekst.includes(zoekterm) ? '' : 'none';
     });
+});
+
+// Sorteerfunctie
+document.getElementById('sorteerMedewerkers').addEventListener('change', function(e) {
+    const sorteerType = e.target.value;
+    const tbody = document.querySelector('tbody');
+    const rijen = Array.from(tbody.querySelectorAll('tr'));
+    
+    rijen.sort((a, b) => {
+        let veldA, veldB;
+        
+        switch(sorteerType) {
+            case 'naam-asc':
+                veldA = a.cells[0].textContent.trim().toLowerCase();
+                veldB = b.cells[0].textContent.trim().toLowerCase();
+                return veldA.localeCompare(veldB);
+            
+            case 'naam-desc':
+                veldA = a.cells[0].textContent.trim().toLowerCase();
+                veldB = b.cells[0].textContent.trim().toLowerCase();
+                return veldB.localeCompare(veldA);
+            
+            case 'voornaam-asc':
+                veldA = a.cells[1].textContent.trim().toLowerCase();
+                veldB = b.cells[1].textContent.trim().toLowerCase();
+                return veldA.localeCompare(veldB);
+            
+            case 'voornaam-desc':
+                veldA = a.cells[1].textContent.trim().toLowerCase();
+                veldB = b.cells[1].textContent.trim().toLowerCase();
+                return veldB.localeCompare(veldA);
+            
+            case 'rol-admin':
+                veldA = a.cells[3].textContent.trim();
+                veldB = b.cells[3].textContent.trim();
+                return veldA.includes('Administrator') ? -1 : 1;
+            
+            case 'rol-medewerker':
+                veldA = a.cells[3].textContent.trim();
+                veldB = b.cells[3].textContent.trim();
+                return veldA.includes('Medewerker') ? -1 : 1;
+            
+            case 'status-actief':
+                veldA = a.cells[4].textContent.trim();
+                veldB = b.cells[4].textContent.trim();
+                return veldA.includes('Actief') ? -1 : 1;
+            
+            case 'status-inactief':
+                veldA = a.cells[4].textContent.trim();
+                veldB = b.cells[4].textContent.trim();
+                return veldA.includes('Actief') ? 1 : -1;
+        }
+    });
+    
+    // Verwijder alle rijen
+    rijen.forEach(rij => tbody.removeChild(rij));
+    
+    // Voeg gesorteerde rijen toe
+    rijen.forEach(rij => tbody.appendChild(rij));
 });
 </script>
 @endsection
