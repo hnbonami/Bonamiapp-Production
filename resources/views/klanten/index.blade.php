@@ -13,33 +13,17 @@
     </div>
 @endif
 
-<!-- Header met titel en tegel -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2em;">
-    <h2 class="text-2xl font-bold">Klantenlijst</h2>
-    
-    <!-- Aantal klanten tegel -->
-    <div style="background:#fff;border-radius:18px;box-shadow:0 2px 8px #e5e7eb;padding:1.1em 1.2em;display:flex;align-items:center;gap:0.6em;">
-        <span style="background:#fef3e2;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            <svg width="22" height="22" fill="none" viewBox="0 0 16 16">
-                <circle cx="8" cy="8" r="8" fill="#fef3e2"/>
-                <g>
-                    <circle cx="5.75" cy="7" r="1.1" fill="#ea580c"/>
-                    <circle cx="10.25" cy="7" r="1.1" fill="#ea580c"/>
-                    <circle cx="8" cy="5.75" r="1.5" fill="#ea580c"/>
-                    <path d="M4.25 11c0-1.05 1.75-1.75 3.75-1.75s3.75 0.7 3.75 1.75v0.7a0.7 0.7 0 0 1-0.7 0.7H4.95a0.7 0.7 0 0 1-0.7-0.7V11z" fill="#fdba74"/>
-                </g>
-            </svg>
-        </span>
-        <div style="color:#222;font-size:1.5em;font-weight:700;letter-spacing:-0.5px;line-height:1;">{{ $klanten->count() }}</div>
-    </div>
+<!-- Header met titel -->
+<div style="margin-bottom:2em;">
+    <h2 class="text-2xl font-bold">Klantenlijst ({{ $klanten->count() }})</h2>
 </div>
 
 <!-- Actions: moved here from topbar -->
 <div style="display:flex;gap:0.7em;align-items:center;margin:1.2em 0;">
-    <a href="{{ route('klanten.create') }}" style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;">+ Klant toevoegen</a>
+    <a href="{{ route('klanten.create') }}" style="background:#c8e1eb;color:#111;padding:0.5em 0.9em;border-radius:7px;text-decoration:none;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;">+ Klant toevoegen</a>
     <a href="{{ route('klanten.export') }}" 
        class="inline-flex items-center justify-center" 
-       style="background:#c8e1eb;color:#111;padding:0.25em 0.9em;border-radius:7px;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;text-decoration:none;"
+       style="background:#c8e1eb;color:#111;padding:0.7em 0.9em;border-radius:7px;font-weight:600;font-size:0.95em;box-shadow:0 1px 3px #e0e7ff;text-decoration:none;"
        aria-label="Export Excel" 
        title="Export Excel">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -50,7 +34,7 @@
     </a>
     <select 
         id="sorteerKlanten" 
-        style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;background:#fff;cursor:pointer;margin-left:auto;"
+        style="padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;background:#fff;cursor:pointer;margin-left:auto;"
     >
         <option value="naam-asc">Naam (A-Z)</option>
         <option value="naam-desc">Naam (Z-A)</option>
@@ -66,14 +50,14 @@
         id="searchKlanten" 
         placeholder="Zoek klant..." 
         value="{{ request('zoek') }}"
-        style="padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:180px;box-shadow:0 1px 3px #f3f4f6;" 
+        style="padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;font-size:0.95em;width:180px;box-shadow:0 1px 3px #f3f4f6;" 
         autocomplete="off"
     />
     
     {{-- Kolom visibility toggle --}}
     <div style="position:relative;">
         <button id="kolom-toggle-btn" type="button" 
-                style="display:flex;align-items:center;gap:0.5em;padding:0.25em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;">
+                style="display:flex;align-items:center;gap:0.5em;padding:0.5em 0.9em;border:1.2px solid #d1d5db;border-radius:7px;background:#fff;cursor:pointer;font-size:0.95em;box-shadow:0 1px 3px #f3f4f6;">
             <svg style="width:18px;height:18px;color:#4b5563;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
             </svg>
