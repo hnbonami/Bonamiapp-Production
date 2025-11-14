@@ -128,7 +128,7 @@
                     <thead>
                         <tr class="bg-white">
                             <th class="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Metric</th>
-                            @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
+                            @foreach($vergelijkbareTesten->reverse() as $test)
                                 <th class="px-4 py-3 text-center text-xs font-bold text-gray-700">
                                     {{ \Carbon\Carbon::parse($test->datum)->format('d-m-Y') }}
                                 </th>
@@ -186,7 +186,7 @@
                             <td class="px-4 py-3 text-sm font-medium text-gray-900">
                                 LT1 {{ $isLooptest || $isZwemtest ? 'Snelheid' : 'Vermogen' }}
                             </td>
-                            @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
+                            @foreach($vergelijkbareTesten->reverse() as $test)
                                 <td class="px-4 py-3 text-sm text-center text-gray-700">
                                     @php
                                         if ($isLooptest || $isZwemtest) {
@@ -225,7 +225,7 @@
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm font-medium text-gray-900">LT1 Hartslag</td>
-                            @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
+                            @foreach($vergelijkbareTesten->reverse() as $test)
                                 <td class="px-4 py-3 text-sm text-center text-gray-700">
                                     {{ $test->aerobe_drempel_hartslag ? number_format($test->aerobe_drempel_hartslag, 0) . ' bpm' : '-' }}
                                 </td>
@@ -277,7 +277,7 @@
                             <td class="px-4 py-3 text-sm font-medium text-gray-900">
                                 LT2 {{ $isLooptest || $isZwemtest ? 'Snelheid' : 'Vermogen' }}
                             </td>
-                            @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
+                            @foreach($vergelijkbareTesten->reverse() as $test)
                                 <td class="px-4 py-3 text-sm text-center text-gray-700">
                                     @php
                                         if ($isLooptest || $isZwemtest) {
@@ -316,7 +316,7 @@
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm font-medium text-gray-900">LT2 Hartslag</td>
-                            @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
+                            @foreach($vergelijkbareTesten->reverse() as $test)
                                 <td class="px-4 py-3 text-sm text-center text-gray-700">
                                     {{ $test->anaerobe_drempel_hartslag ? number_format($test->anaerobe_drempel_hartslag, 0) . ' bpm' : '-' }}
                                 </td>
@@ -376,7 +376,7 @@
                             <td class="px-4 py-3 text-sm font-medium text-gray-900">
                                 Max {{ $isLooptest || $isZwemtest ? 'Snelheid' : 'Vermogen' }}
                             </td>
-                            @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
+                            @foreach($vergelijkbareTesten->reverse() as $test)
                                 <td class="px-4 py-3 text-sm text-center text-gray-700">
                                     @php
                                         $maxWaarde = getMaxVermogenFromTest($test, $isLooptest, $isZwemtest);
