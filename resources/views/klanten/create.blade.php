@@ -101,18 +101,56 @@
                 <h3 class="text-xl font-bold mt-6 mb-4">Adresgegevens</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div class="mb-4 lg:col-span-2">
-                        <label for="straatnaam" class="block text-sm font-medium text-gray-700 mb-2">Straatnaam</label>
+                    <!-- EERST: Postcode (verplicht voor straatnaam autocomplete) -->
+                    <div class="mb-4">
+                        <label for="postcode" class="block text-sm font-medium text-gray-700 mb-2">
+                            Postcode <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               name="postcode" 
+                               id="postcode" 
+                               value="{{ old('postcode') }}" 
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                               placeholder="9000"
+                               required>
+                        <p class="mt-1 text-xs text-gray-500">
+                            Vul eerst postcode in om straten te zoeken
+                        </p>
+                    </div>
+
+                    <!-- DAARNA: Stad (automatisch ingevuld) -->
+                    <div class="mb-4 lg:col-span-3">
+                        <label for="stad" class="block text-sm font-medium text-gray-700 mb-2">
+                            Stad <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" 
+                               name="stad" 
+                               id="stad" 
+                               value="{{ old('stad') }}" 
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                               required>
+                    </div>
+
+                    <!-- Straatnaam LINKS (3 kolommen breed) -->
+                    <div class="mb-4 lg:col-span-3 relative">
+                        <label for="straatnaam" class="block text-sm font-medium text-gray-700 mb-2">
+                            Straatnaam
+                            <span id="street-lock-icon" class="ml-2 text-xs text-amber-600">
+                                🔒 Vul eerst postcode in
+                            </span>
+                        </label>
                         <input type="text" 
                                name="straatnaam" 
                                id="straatnaam" 
                                value="{{ old('straatnaam') }}" 
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                               placeholder="Begin te typen voor suggesties..."
-                               autocomplete="off">
+                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
+                               placeholder="Vul eerst de postcode in..."
+                               autocomplete="off"
+                               disabled>
                         <div id="straatnaam-suggesties" class="hidden absolute z-10 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"></div>
                     </div>
 
+                    <!-- Huisnummer RECHTS (1 kolom breed) -->
                     <div class="mb-4">
                         <label for="huisnummer" class="block text-sm font-medium text-gray-700 mb-2">Huisnummer</label>
                         <input type="text" 
@@ -122,26 +160,8 @@
                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
 
-                    <div class="mb-4">
-                        <label for="postcode" class="block text-sm font-medium text-gray-700 mb-2">Postcode</label>
-                        <input type="text" 
-                               name="postcode" 
-                               id="postcode" 
-                               value="{{ old('postcode') }}" 
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                               placeholder="9000">
-                    </div>
-
-                    <div class="mb-4 lg:col-span-2">
-                        <label for="stad" class="block text-sm font-medium text-gray-700 mb-2">Stad</label>
-                        <input type="text" 
-                               name="stad" 
-                               id="stad" 
-                               value="{{ old('stad') }}" 
-                               class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    </div>
-
-                    <div class="mb-4 lg:col-span-2">
+                    <!-- Land ERONDER (volledige breedte) -->
+                    <div class="mb-4 lg:col-span-4">
                         <label for="land" class="block text-sm font-medium text-gray-700 mb-2">Land</label>
                         <select name="land" 
                                 id="land" 
@@ -437,10 +457,53 @@ document.addEventListener('DOMContentLoaded', function() {
     const stadInput = document.getElementById('stad');
     const straatnaamInput = document.getElementById('straatnaam');
     const straatnaamSuggesties = document.getElementById('straatnaam-suggesties');
+    const streetLockIcon = document.getElementById('street-lock-icon');
     
-    // Postcode automatische invulling
+    // ENABLE/DISABLE straatveld op basis van postcode
+    function checkPostcodeAndEnableStreet() {
+        const postcode = postcodeInput.value.trim();
+        
+        if (postcode.length === 4 && /^\d{4}$/.test(postcode)) {
+            // Postcode is geldig → UNLOCK straatveld
+            straatnaamInput.disabled = false;
+            straatnaamInput.placeholder = 'Begin met typen...';
+            straatnaamInput.classList.remove('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
+            
+            if (streetLockIcon) {
+                streetLockIcon.innerHTML = '<span class="text-green-600">✅ Postcode ingevuld</span>';
+            }
+            
+            // Auto-focus naar straatveld voor betere UX
+            setTimeout(() => {
+                straatnaamInput.focus();
+            }, 200);
+        } else {
+            // Postcode is NOG NIET geldig → LOCK straatveld
+            straatnaamInput.disabled = true;
+            straatnaamInput.placeholder = 'Vul eerst de postcode in...';
+            straatnaamInput.value = ''; // Clear any existing value
+            straatnaamInput.classList.add('bg-gray-100', 'cursor-not-allowed', 'text-gray-500');
+            
+            if (streetLockIcon) {
+                streetLockIcon.innerHTML = '<span class="text-amber-600">🔒 Vul eerst postcode in</span>';
+            }
+            
+            // Hide suggesties
+            if (straatnaamSuggesties) {
+                straatnaamSuggesties.classList.add('hidden');
+            }
+        }
+    }
+    
+    // Check bij page load (voor old() values)
+    if (postcodeInput && straatnaamInput) {
+        checkPostcodeAndEnableStreet();
+    }
+    
+    // Postcode automatische invulling + straatveld unlock
     if (postcodeInput && stadInput) {
         postcodeInput.addEventListener('input', function() {
+            checkPostcodeAndEnableStreet(); // CHECK EERST OF STRAAT ENABLED MOET WORDEN
             const postcode = this.value.replace(/\s/g, '');
             if (postcode.length === 4 && /^\d{4}$/.test(postcode)) {
                 // Uitgebreide Belgische postcodes database
