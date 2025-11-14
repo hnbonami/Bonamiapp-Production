@@ -408,7 +408,7 @@
             </div>
         </div>
 
-        {{-- Interpretatie Box --}}
+        {{-- Korte Interpretatie Box --}}
         <div class="mt-6 bg-gradient-to-r from-yellow-50 to-amber-50 border-l-4 p-6 rounded-lg" style="border-left-color: #c8e1eb;">
             <h4 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <svg class="w-5 h-5 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
@@ -439,6 +439,84 @@
                 <p class="pt-2 border-t border-yellow-200 text-xs text-gray-600">
                     <strong>Tip:</strong> Een curve die naar rechts verschuift betekent dat je bij dezelfde hartslag/lactaat harder kunt werken - een duidelijk teken van vooruitgang!
                 </p>
+            </div>
+        </div>
+
+        {{-- UITGEBREIDE INTERPRETATIE SECTIE --}}
+        <div class="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 p-6 rounded-lg shadow-md">
+            <h4 class="font-bold text-gray-900 mb-4 flex items-center gap-2 text-xl">
+                <svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                </svg>
+                💡 Uitgebreide Progressie Analyse
+            </h4>
+            
+            <div class="space-y-6">
+                {{-- LT1 Analyse --}}
+                @if(isset($deltaLT1) && $deltaLT1 !== null)
+                <div class="bg-white rounded-lg p-5 shadow-sm">
+                    <h5 class="font-bold text-lg text-gray-900 mb-3">
+                        Aerobe Basiscapaciteit (LT1): <strong class="{{ $deltaLT1 > 5 ? 'text-green-600' : ($deltaLT1 < -3 ? 'text-red-600' : 'text-blue-600') }}">{{ $deltaLT1 > 0 ? '+' : '' }}{{ number_format($deltaLT1, 1) }}%</strong>
+                    </h5>
+                    <div class="text-gray-700 leading-relaxed space-y-3">
+                        @if($deltaLT1 > 10)
+                            <p><strong class="text-green-700">Exceptionele verbetering!</strong> Je LT1 is met {{ number_format($deltaLT1, 1) }}% gestegen. Dit is buitengewoon en wijst op fundamentele cardiovasculaire adaptaties.</p>
+                        @elseif($deltaLT1 > 5)
+                            <p><strong class="text-green-700">Uitstekende verbetering!</strong> Je LT1 is met {{ number_format($deltaLT1, 1) }}% gestegen. Je basisuithoudingsvermogen is significant verbeterd.</p>
+                        @elseif($deltaLT1 > 0)
+                            <p><strong class="text-blue-700">Positieve ontwikkeling.</strong> Je LT1 is met {{ number_format($deltaLT1, 1) }}% gestegen.</p>
+                        @elseif($deltaLT1 < -5)
+                            <p><strong class="text-red-700">Significante daling.</strong> Je LT1 is gedaald met {{ number_format(abs($deltaLT1), 1) }}%. Dit vraagt aandacht en mogelijk herstel.</p>
+                        @else
+                            <p>Je aerobe basiscapaciteit is stabiel gebleven.</p>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
+                {{-- LT2 Analyse --}}
+                @if(isset($deltaLT2) && $deltaLT2 !== null)
+                <div class="bg-white rounded-lg p-5 shadow-sm">
+                    <h5 class="font-bold text-lg text-gray-900 mb-3">
+                        Anaerobe Capaciteit (LT2): <strong class="{{ $deltaLT2 > 8 ? 'text-green-600' : ($deltaLT2 < -5 ? 'text-red-600' : 'text-blue-600') }}">{{ $deltaLT2 > 0 ? '+' : '' }}{{ number_format($deltaLT2, 1) }}%</strong>
+                    </h5>
+                    <div class="text-gray-700 leading-relaxed space-y-3">
+                        @if($deltaLT2 > 10)
+                            <p><strong class="text-green-700">Fenomenale verbetering!</strong> Je LT2 is met {{ number_format($deltaLT2, 1) }}% gestegen. Dit is zeldzaam en zeer significant!</p>
+                        @elseif($deltaLT2 > 8)
+                            <p><strong class="text-green-700">Uitstekende verbetering!</strong> Je LT2 is met {{ number_format($deltaLT2, 1) }}% gestegen. Je lactaatbuffering is aanzienlijk verbeterd.</p>
+                        @elseif($deltaLT2 > 0)
+                            <p><strong class="text-blue-700">Positieve ontwikkeling.</strong> Je LT2 is met {{ number_format($deltaLT2, 1) }}% gestegen.</p>
+                        @elseif($deltaLT2 < -5)
+                            <p><strong class="text-red-700">Daling gedetecteerd.</strong> Je LT2 is gedaald met {{ number_format(abs($deltaLT2), 1) }}%. Check herstel en trainingsbelasting.</p>
+                        @else
+                            <p>Je anaerobe capaciteit is stabiel.</p>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
+                {{-- Max Capaciteit Analyse --}}
+                @if(isset($deltaMax) && $deltaMax !== null)
+                <div class="bg-white rounded-lg p-5 shadow-sm">
+                    <h5 class="font-bold text-lg text-gray-900 mb-3">
+                        Maximale Capaciteit: <strong class="{{ $deltaMax > 10 ? 'text-green-600' : ($deltaMax < -5 ? 'text-red-600' : 'text-blue-600') }}">{{ $deltaMax > 0 ? '+' : '' }}{{ number_format($deltaMax, 1) }}%</strong>
+                    </h5>
+                    <div class="text-gray-700 leading-relaxed space-y-3">
+                        @if($deltaMax > 10)
+                            <p><strong class="text-green-700">Exceptionele verbetering!</strong> Je piekprestatie is met {{ number_format($deltaMax, 1) }}% gestegen. Dit toont grote vooruitgang in je VO2max.</p>
+                        @elseif($deltaMax > 5)
+                            <p><strong class="text-green-700">Sterke verbetering!</strong> Je piekprestatie is met {{ number_format($deltaMax, 1) }}% gestegen.</p>
+                        @elseif($deltaMax > 0)
+                            <p><strong class="text-blue-700">Positieve ontwikkeling.</strong> Je piekprestatie is met {{ number_format($deltaMax, 1) }}% verbeterd.</p>
+                        @elseif($deltaMax < -5)
+                            <p><strong class="text-red-700">Daling gedetecteerd.</strong> Dit kan wijzen op vermoeidheid of ondertraining.</p>
+                        @else
+                            <p>Je maximale capaciteit is stabiel.</p>
+                        @endif
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
