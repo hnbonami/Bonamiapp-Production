@@ -566,55 +566,110 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Voeg drempellijnen toe voor alle zichtbare testen
+        console.log('🔍 Start drempellijnen toevoegen voor', alleTesten.filter((t, i) => t.visible || i === 0).length, 'zichtbare testen');
+        
         alleTesten.forEach((test, testIndex) => {
-            if (!test.visible && testIndex !== 0) return;
+            if (!test.visible && testIndex !== 0) {
+                console.log('⏭️ Skip test', testIndex, '- niet zichtbaar');
+                return;
+            }
 
-            // Haal drempelwaarden op voor deze test
-            const lt1Value = isLooptest || isZwemtest ? test.lt1_snelheid : test.lt1_vermogen;
-            const lt2Value = isLooptest || isZwemtest ? test.lt2_snelheid : test.lt2_vermogen;
+            // Haal drempelwaarden op voor deze test (met fallback)
+            const lt1Value = isLooptest || isZwemtest 
+                ? (test.lt1_snelheid || test.lt1_vermogen)  // Gebruik snelheid, fallback naar vermogen
+                : test.lt1_vermogen;
+            const lt2Value = isLooptest || isZwemtest 
+                ? (test.lt2_snelheid || test.lt2_vermogen)  // Gebruik snelheid, fallback naar vermogen
+                : test.lt2_vermogen;
+            
+            console.log(`📍 Test ${testIndex} (${test.datum}):`, {
+                isLooptest,
+                lt1_snelheid: test.lt1_snelheid,
+                lt1_vermogen: test.lt1_vermogen,
+                lt2_snelheid: test.lt2_snelheid,
+                lt2_vermogen: test.lt2_vermogen,
+                lt1Value,
+                lt2Value
+            });
 
             // Bepaal Y-as range voor drempellijnen
-            const minY = 40; // Minimale hartslag
-            const maxY = 200; // Maximale hartslag
+            // Voor hartslag: 80 tot 200, voor lactaat: 0 tot 20
+            const hartslagMin = 80;
+            const hartslagMax = 200;
+            const lactaatMin = 0;
+            const lactaatMax = 20;
 
-            // LT1 drempellijn (gestippeld)
-            if (lt1Value !== null && !isNaN(lt1Value)) {
+            // Opacity: huidige test volle kleur, oudere testen transparanter
+            const opacity = testIndex === 0 ? 0.8 : 0.5;
+            
+            // Converteer hex kleur naar rgba voor opacity
+            function hexToRgba(hex, alpha) {
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+
+            const kleurRgba = hexToRgba(test.kleur, opacity);
+
+            console.log(`🔎 Checking drempellijnen voor test ${testIndex}:`, {
+                lt1Value,
+                lt2Value,
+                'lt1Value !== null': lt1Value !== null,
+                '!isNaN(lt1Value)': !isNaN(lt1Value),
+                'Will add LT1?': lt1Value !== null && !isNaN(lt1Value),
+                'Will add LT2?': lt2Value !== null && !isNaN(lt2Value)
+            });
+
+            // LT1 drempellijn (lange streepjes) - alleen op lactaat-as
+            if (lt1Value !== null && !isNaN(lt1Value) && lt1Value > 0) {
+                console.log(`✅ LT1 lijn toevoegen voor test ${testIndex}, waarde: ${lt1Value}`);
                 datasets.push({
-                    label: test.label + ' - LT1',
+                    type: 'line',
+                    label: `${test.datum} - LT1 (${lt1Value.toFixed(1)})`,
                     data: [
-                        { x: lt1Value, y: minY },
-                        { x: lt1Value, y: maxY }
+                        { x: lt1Value, y: lactaatMin },
+                        { x: lt1Value, y: lactaatMax }
                     ],
-                    borderColor: test.kleur,
+                    borderColor: kleurRgba,
                     backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [8, 4],
+                    borderWidth: testIndex === 0 ? 3 : 2,
+                    borderDash: [10, 5],
                     pointRadius: 0,
+                    pointHoverRadius: 0,
                     showLine: true,
-                    yAxisID: 'y',
-                    fill: false
+                    yAxisID: 'y1', // Plot op lactaat-as
+                    fill: false,
+                    order: 100 - testIndex,
+                    tension: 0
                 });
             }
 
-            // LT2 drempellijn (stippellijn met grotere stippen)
+            // LT2 drempellijn (korte streepjes) - alleen op lactaat-as
             if (lt2Value !== null && !isNaN(lt2Value)) {
                 datasets.push({
-                    label: test.label + ' - LT2',
+                    type: 'line',
+                    label: `${test.datum} - LT2 (${lt2Value.toFixed(1)})`,
                     data: [
-                        { x: lt2Value, y: minY },
-                        { x: lt2Value, y: maxY }
+                        { x: lt2Value, y: lactaatMin },
+                        { x: lt2Value, y: lactaatMax }
                     ],
-                    borderColor: test.kleur,
+                    borderColor: kleurRgba,
                     backgroundColor: 'transparent',
-                    borderWidth: 2,
-                    borderDash: [4, 4],
+                    borderWidth: testIndex === 0 ? 3 : 2,
+                    borderDash: [5, 5],
                     pointRadius: 0,
+                    pointHoverRadius: 0,
                     showLine: true,
-                    yAxisID: 'y',
-                    fill: false
+                    yAxisID: 'y1', // Plot op lactaat-as
+                    fill: false,
+                    order: 100 - testIndex,
+                    tension: 0
                 });
             }
         });
+
+        console.log('📊 Totaal datasets (incl. drempellijnen):', datasets.length);
 
         return datasets;
     }
