@@ -448,11 +448,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                     id="analyse_methode"
                                     class="mt-1 block w-48 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                 <option value="">Selecteer methode</option>
-                                <option value="dmax" {{ old('analyse_methode') == 'dmax' ? 'selected' : '' }}>D-max</option>
-                                <option value="dmax_modified" {{ old('analyse_methode') == 'dmax_modified' ? 'selected' : '' }}>D-max Modified</option>
-                                <option value="lactaat_steady_state" {{ old('analyse_methode') == 'lactaat_steady_state' ? 'selected' : '' }}>Lactaat Steady State</option>
-                                <option value="hartslag_deflectie" {{ old('analyse_methode') == 'hartslag_deflectie' ? 'selected' : '' }}>Hartslagdeflectie</option>
-                                <option value="handmatig" {{ old('analyse_methode') == 'handmatig' ? 'selected' : '' }}>Handmatig</option>
+                                <option value="dmax" {{ old('analyse_methode', $inspanningstest->analyse_methode) == 'dmax' ? 'selected' : '' }}>D-max</option>
+                                <option value="dmax_modified" {{ old('analyse_methode', $inspanningstest->analyse_methode) == 'dmax_modified' ? 'selected' : '' }}>D-max Modified</option>
+                                <option value="lactaat_steady_state" {{ old('analyse_methode', $inspanningstest->analyse_methode) == 'lactaat_steady_state' ? 'selected' : '' }}>Lactaat Steady State</option>
+                                <option value="hartslag_deflectie" {{ old('analyse_methode', $inspanningstest->analyse_methode) == 'hartslag_deflectie' ? 'selected' : '' }}>Hartslagdeflectie</option>
+                                <option value="handmatig" {{ old('analyse_methode', $inspanningstest->analyse_methode) == 'handmatig' ? 'selected' : '' }}>Handmatig</option>
                             </select>
                         </div>
                         
@@ -469,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                        max="2.0" 
                                        name="dmax_modified_threshold" 
                                        id="dmax_modified_threshold"
-                                       value="{{ old('dmax_modified_threshold', '0.4') }}"
+                                       value="{{ old('dmax_modified_threshold', $inspanningstest->dmax_modified_threshold ?? '0.4') }}"
                                        class="w-20 rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-center">
                                 <span class="text-sm text-gray-600">mmol/L</span>
                             </div>
@@ -513,7 +513,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
 
                         <div class="mb-4">
-                            <label for="aerobe_drempel_hartslag" class="block text-sm font-medium text-gray-700 mb-2">Aërobe drempel - Hartslag (bpm)</label>
+                            <label for="aerobe_drempel_hartslag" id="label_aerobe_drempel_hartslag" class="block text-sm font-medium text-gray-700 mb-2">Aërobe drempel - Hartslag (bpm)</label>
                             <input type="number" 
                                    step="1"
                                    name="aerobe_drempel_hartslag" 
@@ -567,14 +567,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             </p>
                         </div>
                         
-                        <textarea name="complete_ai_analyse" 
-                                  id="complete_ai_analyse"
-                                  rows="20"
-                                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono"
-                                  placeholder="Klik op 'Genereer Complete Analyse' om een uitgebreide AI-analyse te krijgen van alle testparameters, inclusief populatievergelijkingen, prestatieclassificatie, fysiologische interpretatie en specifieke trainingsadvies op basis van je doelstellingen...">{{ old('complete_ai_analyse') }}</textarea>
-                    </div>
-
-                    <!-- Trainingszones Configuratie - NIEUWE SECTIE -->
+        <textarea name="complete_ai_analyse" 
+                  id="complete_ai_analyse"
+                  rows="20"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm font-mono"
+                  placeholder="Klik op 'Genereer Complete Analyse' om een uitgebreide AI-analyse te krijgen van alle testparameters, inclusief populatievergelijkingen, prestatieclassificatie, fysiologische interpretatie en specifieke trainingsadvies op basis van je doelstellingen...">{{ old('complete_ai_analyse', $inspanningstest->complete_ai_analyse) }}</textarea>
+    </div>                    <!-- Trainingszones Configuratie - NIEUWE SECTIE -->
                     <h3 class="text-xl font-bold mt-8 mb-4">Trainingszones Berekening</h3>
                     
                     <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
@@ -1584,6 +1582,41 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTrainingszones();
     }, 500); // Kleine delay om ervoor te zorgen dat alles geladen is
     
+    // 📊 AUTOMATISCH GRAFIEK GENEREREN bij laden pagina (ALS analyse methode ingevuld is)
+    setTimeout(() => {
+        const analyseMethode = document.getElementById('analyse_methode')?.value;
+        console.log('📊 === CHECK GRAFIEK AUTO-LOAD ===');
+        console.log('📊 analyse_methode value:', analyseMethode);
+        console.log('📊 currentTableType:', currentTableType);
+        console.log('📊 existingTestresultaten:', existingTestresultaten?.length || 0);
+        
+        if (analyseMethode && analyseMethode !== '') {
+            console.log('✅ Analyse methode gevonden:', analyseMethode);
+            
+            // Check of testresultaten beschikbaar zijn
+            if (existingTestresultaten && existingTestresultaten.length > 0) {
+                console.log('✅ Testresultaten beschikbaar, genereer grafiek...');
+                handleAnalyseMethodeChange();
+                console.log('✅ Grafiek generatie voltooid');
+            } else {
+                console.log('⚠️ Geen testresultaten beschikbaar voor grafiek');
+            }
+        } else {
+            console.log('📊 Geen analyse methode opgeslagen - grafiek niet automatisch genereren');
+        }
+    }, 1500); // 1.5 seconden delay - NA zones EN tabel laden
+    
+    // 🧠 AUTOMATISCH AI ANALYSE TONEN bij laden pagina
+    setTimeout(() => {
+        const aiTextarea = document.getElementById('complete_ai_analyse');
+        if (aiTextarea && aiTextarea.value && aiTextarea.value.trim() !== '') {
+            console.log('🧠 AI Analyse gevonden (lengte:', aiTextarea.value.length, 'karakters)');
+            console.log('✅ AI Analyse wordt getoond in textarea');
+        } else {
+            console.log('📝 Geen AI analyse opgeslagen');
+        }
+    }, 200);
+    
     // NIEUWE FUNCTIONALITEIT: Event listeners voor trainingszones (VEILIG)
     const zonesMethodeSelect = document.getElementById('zones_methode');
     const zonesAantalSelect = document.getElementById('zones_aantal');
@@ -1646,9 +1679,11 @@ function handleAnalyseMethodeChange() {
     const grafiekInstructies = document.getElementById('grafiek-instructies');
     const dmaxModifiedConfig = document.getElementById('dmax-modified-config');
     
-    console.log('Analyse methode gewijzigd naar:', selectedMethod);
-    console.log('Container gevonden:', !!grafiekContainer);
-    console.log('Instructies gevonden:', !!grafiekInstructies);
+    console.log('📊 handleAnalyseMethodeChange() aangeroepen');
+    console.log('📊 Geselecteerde methode:', selectedMethod);
+    console.log('📊 Container gevonden:', !!grafiekContainer);
+    console.log('📊 Instructies gevonden:', !!grafiekInstructies);
+    console.log('📊 CurrentTableType:', currentTableType);
     
     // Toon/verberg D-max Modified configuratie
     if (selectedMethod === 'dmax_modified') {
@@ -1656,15 +1691,18 @@ function handleAnalyseMethodeChange() {
         console.log('✅ D-max Modified configuratie getoond');
     } else {
         dmaxModifiedConfig.style.display = 'none';
-        console.log('❌ D-max Modified configuratie verborgen');
     }
     
     if (selectedMethod && selectedMethod !== '') {
+        console.log('✅ Methode geselecteerd, toon grafiek container');
         grafiekContainer.style.display = 'block';
         grafiekInstructies.style.display = 'block';
-        console.log('Container en instructies zichtbaar gemaakt voor methode:', selectedMethod);
+        
+        // Genereer grafiek
+        console.log('📊 Roep generateChart() aan...');
         generateChart();
     } else {
+        console.log('❌ Geen methode, verberg containers');
         grafiekContainer.style.display = 'none';
         grafiekInstructies.style.display = 'none';
         dmaxModifiedConfig.style.display = 'none';
