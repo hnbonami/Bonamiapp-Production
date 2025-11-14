@@ -632,13 +632,20 @@ document.addEventListener('DOMContentLoaded', function() {
         const datasets = [];
 
         alleTesten.forEach((test, testIndex) => {
-            if (!test.visible && testIndex !== 0) return; // Skip onzichtbare testen (behalve huidige)
+            if (!test.visible && testIndex !== 0) {
+                console.log(`⏭️ Skip test ${testIndex} - niet zichtbaar`);
+                return; // Skip onzichtbare testen (behalve huidige)
+            }
+
+            console.log(`✅ Genereer dataset voor test ${testIndex} (${test.datum})`);
 
             let testresultaten = test.testresultaten;
             if (typeof testresultaten === 'string') {
                 testresultaten = JSON.parse(testresultaten);
             }
             testresultaten = Array.isArray(testresultaten) ? testresultaten : [];
+
+            console.log(`   Testresultaten stappen: ${testresultaten.length}`);
 
             // Bereken snelheid voor looptesten
             const testresultatenMetSnelheid = testresultaten.map(stap => {
@@ -662,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     x: xVal,
                     y: parseFloat(stap.hartslag) || 0
                 };
-            });
+            }).filter(point => point.x > 0 && point.y > 0); // Filter lege datapunten
 
             // Lactaat dataset
             const lactaatData = testresultatenMetSnelheid.map(stap => {
@@ -673,37 +680,46 @@ document.addEventListener('DOMContentLoaded', function() {
                     x: xVal,
                     y: parseFloat(stap.lactaat) || 0
                 };
-            });
+            }).filter(point => point.x > 0 && point.y > 0); // Filter lege datapunten
 
-            // Voeg hartslag dataset toe
-            datasets.push({
-                label: test.label + ' - Hartslag',
-                data: hartslagData,
-                borderColor: test.kleur,
-                backgroundColor: test.kleur + '20',
-                borderWidth: testIndex === 0 ? 3 : 2,
-                tension: 0.4,
-                yAxisID: 'y',
-                pointRadius: testIndex === 0 ? 5 : 3,
-                pointHoverRadius: 7,
-                showLine: true,
-                borderDash: testIndex === 0 ? [] : [5, 5]
-            });
+            console.log(`   Test ${testIndex}: ${hartslagData.length} hartslag punten, ${lactaatData.length} lactaat punten`);
 
-            // Voeg lactaat dataset toe
-            datasets.push({
-                label: test.label + ' - Lactaat',
-                data: lactaatData,
-                borderColor: test.kleur,
-                backgroundColor: test.kleur + '20',
-                borderWidth: testIndex === 0 ? 3 : 2,
-                tension: 0.4,
-                yAxisID: 'y1',
-                pointRadius: testIndex === 0 ? 5 : 3,
-                pointHoverRadius: 7,
-                showLine: true,
-                borderDash: testIndex === 0 ? [] : [2, 2]
-            });
+            // Voeg alleen datasets toe als er data is
+            if (hartslagData.length > 0) {
+                // Voeg hartslag dataset toe
+                datasets.push({
+                    label: test.label + ' - Hartslag',
+                    data: hartslagData,
+                    borderColor: test.kleur,
+                    backgroundColor: test.kleur + '20',
+                    borderWidth: testIndex === 0 ? 3 : 2,
+                    tension: 0.4,
+                    yAxisID: 'y',
+                    pointRadius: testIndex === 0 ? 5 : 3,
+                    pointHoverRadius: 7,
+                    showLine: true,
+                    borderDash: testIndex === 0 ? [] : [5, 5]
+                });
+                console.log(`   ✅ Hartslag dataset toegevoegd voor test ${testIndex}`);
+            }
+
+            if (lactaatData.length > 0) {
+                // Voeg lactaat dataset toe
+                datasets.push({
+                    label: test.label + ' - Lactaat',
+                    data: lactaatData,
+                    borderColor: test.kleur,
+                    backgroundColor: test.kleur + '20',
+                    borderWidth: testIndex === 0 ? 3 : 2,
+                    tension: 0.4,
+                    yAxisID: 'y1',
+                    pointRadius: testIndex === 0 ? 5 : 3,
+                    pointHoverRadius: 7,
+                    showLine: true,
+                    borderDash: testIndex === 0 ? [] : [2, 2]
+                });
+                console.log(`   ✅ Lactaat dataset toegevoegd voor test ${testIndex}`);
+            }
         });
 
         // Voeg drempellijnen toe voor alle zichtbare testen
@@ -848,47 +864,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     display: true, 
                     position: 'top',
                     labels: {
-                        font: { size: 11 },
+                        font: { size: 10 },
                         usePointStyle: true,
                         boxWidth: 8,
-                        padding: 10,
+                        padding: 8,
                         filter: function(legendItem, chartData) {
-                            // Verberg drempellijnen in de legende
+                            // Verberg ALLEEN drempellijnen in de legende
                             const dataset = chartData.datasets[legendItem.datasetIndex];
                             return !dataset.skipLegend;
-                        },
-                        generateLabels: function(chart) {
-                            const datasets = chart.data.datasets;
-                            const labels = [];
-                            const seenTests = new Set();
-                            
-                            // Groepeer per test datum - toon alleen 1 item per test
-                            datasets.forEach((dataset, i) => {
-                                if (dataset.skipLegend) return; // Skip drempellijnen
-                                
-                                // Extract test datum uit label (bijv. "Huidige test (14-11-2025) - Hartslag")
-                                const match = dataset.label.match(/(.*?)\s*-\s*(Hartslag|Lactaat)/);
-                                if (!match) return;
-                                
-                                const testNaam = match[1].trim();
-                                
-                                // Voeg alleen toe als we deze test nog niet hebben gezien
-                                if (!seenTests.has(testNaam)) {
-                                    seenTests.add(testNaam);
-                                    
-                                    labels.push({
-                                        text: testNaam,
-                                        fontColor: '#1f2937',
-                                        fillStyle: dataset.borderColor,
-                                        strokeStyle: dataset.borderColor,
-                                        lineWidth: 2,
-                                        hidden: false,
-                                        datasetIndex: i
-                                    });
-                                }
-                            });
-                            
-                            return labels;
                         }
                     }
                 },
