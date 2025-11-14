@@ -355,19 +355,61 @@
                                 // Converteer naar array
                                 $testresultaten = is_array($testresultaten) ? $testresultaten : [];
                                 
+                                // DEBUG logging
+                                \Log::info('getMaxVermogenFromTest - Test ID: ' . $test->id, [
+                                    'isLooptest' => $isLooptest,
+                                    'isZwemtest' => $isZwemtest,
+                                    'aantal_stappen' => count($testresultaten)
+                                ]);
+                                
                                 // Haal max vermogen/snelheid uit laatste testresultaat
                                 if (count($testresultaten) > 0) {
                                     $laatsteStap = end($testresultaten);
                                     
-                                    // Voor looptesten/zwemtesten: gebruik snelheid
+                                    \Log::info('Laatste stap data:', $laatsteStap);
+                                    
+                                    // Voor looptesten/zwemtesten: bereken snelheid uit afstand en tijd
                                     if ($isLooptest || $isZwemtest) {
-                                        return $laatsteStap['snelheid'] ?? $laatsteStap['vermogen'] ?? null;
+                                        // Probeer eerst directe snelheid veld
+                                        if (isset($laatsteStap['snelheid']) && $laatsteStap['snelheid'] > 0) {
+                                            \Log::info('Snelheid gevonden in veld:', ['snelheid' => $laatsteStap['snelheid']]);
+                                            return floatval($laatsteStap['snelheid']);
+                                        }
+                                        
+                                        // Bereken snelheid uit afstand en tijd
+                                        $afstand = floatval($laatsteStap['afstand'] ?? 0);
+                                        $tijdMin = floatval($laatsteStap['tijd_min'] ?? 0);
+                                        $tijdSec = floatval($laatsteStap['tijd_sec'] ?? 0);
+                                        
+                                        if ($afstand > 0 && ($tijdMin > 0 || $tijdSec > 0)) {
+                                            $tijdUren = ($tijdMin + ($tijdSec / 60)) / 60;
+                                            $snelheidKmh = ($afstand / 1000) / $tijdUren;
+                                            \Log::info('Snelheid berekend:', [
+                                                'afstand' => $afstand,
+                                                'tijd_min' => $tijdMin,
+                                                'tijd_sec' => $tijdSec,
+                                                'snelheid_kmh' => $snelheidKmh
+                                            ]);
+                                            return $snelheidKmh;
+                                        }
+                                        
+                                        // Fallback naar vermogen veld
+                                        if (isset($laatsteStap['vermogen']) && $laatsteStap['vermogen'] > 0) {
+                                            \Log::info('Fallback naar vermogen:', ['vermogen' => $laatsteStap['vermogen']]);
+                                            return floatval($laatsteStap['vermogen']);
+                                        }
+                                        
+                                        \Log::warning('Geen snelheid of vermogen gevonden voor looptest');
+                                        return null;
                                     } else {
                                         // Voor fietstesten: gebruik vermogen
-                                        return $laatsteStap['vermogen'] ?? null;
+                                        $vermogen = floatval($laatsteStap['vermogen'] ?? 0);
+                                        \Log::info('Vermogen voor fietstest:', ['vermogen' => $vermogen]);
+                                        return $vermogen > 0 ? $vermogen : null;
                                     }
                                 }
                                 
+                                \Log::warning('Geen testresultaten gevonden');
                                 return null;
                             }
                             
@@ -375,6 +417,12 @@
                             $oudsteMax = $vergelijkbareTesten->last() ? getMaxVermogenFromTest($vergelijkbareTesten->last(), $isLooptest, $isZwemtest) : null;
                             $huidigeMax = getMaxVermogenFromTest($inspanningstest, $isLooptest, $isZwemtest);
                             $deltaMax = ($oudsteMax && $huidigeMax) ? (($huidigeMax - $oudsteMax) / $oudsteMax) * 100 : null;
+                            
+                            \Log::info('Max waarden vergelijking:', [
+                                'oudsteMax' => $oudsteMax,
+                                'huidigeMax' => $huidigeMax,
+                                'deltaMax' => $deltaMax
+                            ]);
                         @endphp
                         <tr class="hover:bg-gray-50">
                             <td class="px-4 py-3 text-sm font-medium text-gray-900">
