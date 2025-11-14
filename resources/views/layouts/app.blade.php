@@ -464,16 +464,6 @@
                 @endif
             @endif
             
-            @if(Auth::user() && (Auth::user()->isBeheerder() || Auth::user()->isMedewerker()))
-                <a href="/staff-notes" class="flex items-center justify-between px-6 py-3 text-gray-900 font-medium hover:bg-gray-50 {{ request()->is('staff-notes*') ? 'bg-blue-50 border-l-4 border-blue-500' : '' }}">
-                    Notities
-                    @php $unreadNotes = \App\Models\StaffNote::where('is_new', true)->count(); @endphp
-                    @if($unreadNotes > 0)
-                        <span class="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium bg-red-500 text-white rounded-full">{{ $unreadNotes }}</span>
-                    @endif
-                </a>
-            @endif
-            
             {{-- Klanten - alleen tonen als feature actief is --}}
             @hasFeature('klantenbeheer')
             @if(Auth::user() && !Auth::user()->isKlant())

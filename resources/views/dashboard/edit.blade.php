@@ -76,6 +76,11 @@
             <label for="button_url" style="display:block;font-weight:600;margin-bottom:0.5em;">URL *</label>
             <input type="text" name="button_url" id="button_url" value="{{ old('button_url', $widget->button_url) }}" required style="width:100%;padding:0.8em;border:1px solid #d1d5db;border-radius:7px;" placeholder="/klanten/create">
         </div>
+        <div style="margin-bottom:1.5em;">
+            <label for="button_color" style="display:block;font-weight:600;margin-bottom:0.5em;">Knop Kleur</label>
+            <input type="color" name="button_color" id="button_color" value="{{ old('button_color', $widget->button_color ?? '#c8e1eb') }}" style="width:100%;height:45px;border:1px solid #d1d5db;border-radius:7px;">
+            <small style="color:#6b7280;display:block;margin-top:0.5em;">Standaard: #c8e1eb (lichtblauw)</small>
+        </div>
         @endif
 
         <!-- Image Upload -->

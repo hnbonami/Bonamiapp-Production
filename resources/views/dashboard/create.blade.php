@@ -121,14 +121,27 @@
             </div>
             <div style="margin-bottom:1.5em;">
                 <label for="button-url" style="display:block;font-weight:600;margin-bottom:0.5em;">URL *</label>
-                <select name="button_url" id="button-url" style="width:100%;padding:0.8em;border:1px solid #d1d5db;border-radius:7px;">
+                <select name="button_url_select" id="button-url-select" style="width:100%;padding:0.8em;border:1px solid #d1d5db;border-radius:7px;">
                     <option value="">-- Kies een pagina --</option>
                     <option value="/klanten">Klanten Overzicht</option>
                     <option value="/klanten/create">Nieuwe Klant</option>
                     <option value="/bikefits">Bikefits Overzicht</option>
                     <option value="/inspanningstesten">Inspanningstesten</option>
                     <option value="/testzadels">Testzadels</option>
+                    <option value="custom">✏️ Custom URL (typ zelf in)</option>
                 </select>
+            </div>
+            <div id="custom-url-field" style="display:none;margin-bottom:1.5em;">
+                <label for="button-url-custom" style="display:block;font-weight:600;margin-bottom:0.5em;">Custom URL *</label>
+                <input type="text" name="button_url" id="button-url-custom" value="{{ old('button_url') }}" style="width:100%;padding:0.8em;border:1px solid #d1d5db;border-radius:7px;" placeholder="/mijn-custom-pagina">
+                <small style="color:#6b7280;display:block;margin-top:0.5em;">Begin met / voor interne links, of https:// voor externe links</small>
+            </div>
+            <!-- Hidden input voor pre-defined URLs -->
+            <input type="hidden" name="button_url" id="button-url-hidden" value="{{ old('button_url') }}">
+            <div style="margin-bottom:1.5em;">
+                <label for="button_color" style="display:block;font-weight:600;margin-bottom:0.5em;">Knop Kleur</label>
+                <input type="color" name="button_color" id="button_color" value="{{ old('button_color', '#c8e1eb') }}" style="width:100%;height:45px;border:1px solid #d1d5db;border-radius:7px;">
+                <small style="color:#6b7280;display:block;margin-top:0.5em;">Standaard: #c8e1eb (lichtblauw)</small>
             </div>
         </div>
 
@@ -259,6 +272,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize op basis van huidige selectie
     toggleTypeFields();
+    
+    // Button URL toggle tussen pre-defined en custom
+    const buttonUrlSelect = document.getElementById('button-url-select');
+    const customUrlField = document.getElementById('custom-url-field');
+    const customUrlInput = document.getElementById('button-url-custom');
+    const hiddenUrlInput = document.getElementById('button-url-hidden');
+    
+    if (buttonUrlSelect && customUrlField) {
+        buttonUrlSelect.addEventListener('change', function() {
+            if (this.value === 'custom') {
+                // Toon custom URL veld
+                customUrlField.style.display = 'block';
+                customUrlInput.required = true;
+                hiddenUrlInput.disabled = true;
+                customUrlInput.disabled = false;
+            } else {
+                // Verberg custom URL veld en gebruik pre-defined URL
+                customUrlField.style.display = 'none';
+                customUrlInput.required = false;
+                customUrlInput.disabled = true;
+                hiddenUrlInput.disabled = false;
+                hiddenUrlInput.value = this.value;
+            }
+        });
+    }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
