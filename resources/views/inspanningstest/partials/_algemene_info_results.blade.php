@@ -196,7 +196,7 @@
                 </div>
                 
                 {{-- Hartslag Rust --}}
-                <div class="bg-red-50 rounded-lg p-3">
+                <div class="bg-gray-50 rounded-lg p-3">
                     <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Hartslag Rust</p>
                     <p class="text-lg font-bold text-red-700">
                         {{ $inspanningstest->hartslag_rust_bpm ?? '-' }}
@@ -207,7 +207,7 @@
                 </div>
                 
                 {{-- Hartslag Max --}}
-                <div class="bg-red-50 rounded-lg p-3">
+                <div class="bg-gray-50 rounded-lg p-3">
                     <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Hartslag Max</p>
                     <p class="text-lg font-bold text-red-700">
                         {{ $inspanningstest->maximale_hartslag_bpm ?? '-' }}
@@ -228,6 +228,127 @@
                     </p>
                 </div>
             </div>
+            
+            {{-- Interpretatie Samenvatting --}}
+            @php
+                $bmi = $inspanningstest->bmi;
+                $vetperc = $inspanningstest->vetpercentage;
+                $buikomtrek = $inspanningstest->buikomtrek_cm;
+                $hartslagRust = $inspanningstest->hartslag_rust_bpm;
+                $hartslagMax = $inspanningstest->maximale_hartslag_bpm;
+                $geslacht = strtolower($klant->geslacht ?? '');
+                $leeftijd = $klant->geboortedatum ? \Carbon\Carbon::parse($klant->geboortedatum)->age : null;
+                
+                $interpretaties = [];
+                
+                // BMI interpretatie
+                if ($bmi) {
+                    if ($bmi < 18.5) {
+                        $interpretaties[] = '📊 <strong>BMI (' . number_format($bmi, 1) . '):</strong> Ondergewicht - geleidelijk gewicht aankomen kan prestaties en gezondheid ten goede komen.';
+                    } elseif ($bmi < 25) {
+                        $interpretaties[] = '📊 <strong>BMI (' . number_format($bmi, 1) . '):</strong> Gezond gewicht - optimaal voor sportprestaties.';
+                    } elseif ($bmi < 30) {
+                        $interpretaties[] = '📊 <strong>BMI (' . number_format($bmi, 1) . '):</strong> Licht overgewicht - gewichtsoptimalisatie kan prestaties en uithoudingsvermogen verbeteren.';
+                    } else {
+                        $interpretaties[] = '📊 <strong>BMI (' . number_format($bmi, 1) . '):</strong> Obesitas - gewichtsverlies sterk aanbevolen voor gezondheid en sportprestaties.';
+                    }
+                }
+                
+                // Vetpercentage interpretatie
+                if ($vetperc) {
+                    if ($geslacht === 'man' || $geslacht === 'm') {
+                        if ($vetperc < 6) {
+                            $interpretaties[] = '💪 <strong>Vetpercentage (' . $vetperc . '%):</strong> Zeer laag (elite atleet niveau) - let op voldoende voedingsinname voor herstel.';
+                        } elseif ($vetperc < 14) {
+                            $interpretaties[] = '💪 <strong>Vetpercentage (' . $vetperc . '%):</strong> Uitstekend voor competitieve sporters - optimaal voor topprestaties.';
+                        } elseif ($vetperc < 18) {
+                            $interpretaties[] = '💪 <strong>Vetpercentage (' . $vetperc . '%):</strong> Goed voor recreatieve sporters - gezond en sportief niveau.';
+                        } elseif ($vetperc < 25) {
+                            $interpretaties[] = '💪 <strong>Vetpercentage (' . $vetperc . '%):</strong> Gemiddeld - verfijning van voeding en training kan dit optimaliseren.';
+                        } else {
+                            $interpretaties[] = '💪 <strong>Vetpercentage (' . $vetperc . '%):</strong> Verhoogd - focus op vetverlies via gecombineerde training en voeding aanbevolen.';
+                        }
+                    } else {
+                        if ($vetperc < 14) {
+                            $interpretaties[] = '💪 <strong>Vetpercentage (' . $vetperc . '%):</strong> Zeer laag (elite atlete niveau) - let op voldoende voedingsinname en hormonale balans.';
+                        } elseif ($vetperc < 21) {
+                            $interpretaties[] = '💪 <strong>Vetpercentage (' . $vetperc . '%):</strong> Uitstekend voor competitieve sporters - optimaal voor topprestaties.';
+                        } elseif ($vetperc < 25) {
+                            $interpretaties[] = '💪 <strong>Vetpercentage (' . $vetperc . '%):</strong> Goed voor recreatieve sporters - gezond en sportief niveau.';
+                        } elseif ($vetperc < 32) {
+                            $interpretaties[] = '💪 <strong>Vetpercentage (' . $vetperc . '%):</strong> Gemiddeld - verfijning van voeding en training kan dit optimaliseren.';
+                        } else {
+                            $interpretaties[] = '💪 <strong>Vetpercentage (' . $vetperc . '%):</strong> Verhoogd - focus op vetverlies via gecombineerde training en voeding aanbevolen.';
+                        }
+                    }
+                }
+                
+                // Buikomtrek interpretatie
+                if ($buikomtrek) {
+                    if ($geslacht === 'man' || $geslacht === 'm') {
+                        if ($buikomtrek < 94) {
+                            $interpretaties[] = '📏 <strong>Buikomtrek (' . $buikomtrek . ' cm):</strong> Gezond - geen verhoogd risico op metabole complicaties.';
+                        } elseif ($buikomtrek < 102) {
+                            $interpretaties[] = '📏 <strong>Buikomtrek (' . $buikomtrek . ' cm):</strong> Verhoogd risico - aandacht voor buikvet reductie aanbevolen.';
+                        } else {
+                            $interpretaties[] = '📏 <strong>Buikomtrek (' . $buikomtrek . ' cm):</strong> Sterk verhoogd risico - buikvet reductie prioriteit voor gezondheid.';
+                        }
+                    } else {
+                        if ($buikomtrek < 80) {
+                            $interpretaties[] = '📏 <strong>Buikomtrek (' . $buikomtrek . ' cm):</strong> Gezond - geen verhoogd risico op metabole complicaties.';
+                        } elseif ($buikomtrek < 88) {
+                            $interpretaties[] = '📏 <strong>Buikomtrek (' . $buikomtrek . ' cm):</strong> Verhoogd risico - aandacht voor buikvet reductie aanbevolen.';
+                        } else {
+                            $interpretaties[] = '📏 <strong>Buikomtrek (' . $buikomtrek . ' cm):</strong> Sterk verhoogd risico - buikvet reductie prioriteit voor gezondheid.';
+                        }
+                    }
+                }
+                
+                // Hartslag rust interpretatie
+                if ($hartslagRust) {
+                    if ($hartslagRust < 60) {
+                        $interpretaties[] = '❤️ <strong>Hartslag rust (' . $hartslagRust . ' bpm):</strong> Uitstekend (goed getraind hart) - indicator van goede cardiovasculaire fitheid.';
+                    } elseif ($hartslagRust < 70) {
+                        $interpretaties[] = '❤️ <strong>Hartslag rust (' . $hartslagRust . ' bpm):</strong> Goed - gezond en actief niveau.';
+                    } elseif ($hartslagRust < 80) {
+                        $interpretaties[] = '❤️ <strong>Hartslag rust (' . $hartslagRust . ' bpm):</strong> Gemiddeld - ruimte voor verbetering door regelmatige cardiotraining.';
+                    } else {
+                        $interpretaties[] = '❤️ <strong>Hartslag rust (' . $hartslagRust . ' bpm):</strong> Verhoogd - regelmatige cardiotraining sterk aanbevolen.';
+                    }
+                }
+                
+                // Hartslag max interpretatie
+                if ($hartslagMax && $leeftijd) {
+                    $verwachteMax = 220 - $leeftijd;
+                    $verschil = $hartslagMax - $verwachteMax;
+                    if (abs($verschil) < 10) {
+                        $interpretaties[] = '🔥 <strong>Hartslag max (' . $hartslagMax . ' bpm):</strong> Normaal voor leeftijd (verwacht: ~' . $verwachteMax . ' bpm).';
+                    } elseif ($verschil > 0) {
+                        $interpretaties[] = '🔥 <strong>Hartslag max (' . $hartslagMax . ' bpm):</strong> Hoger dan gemiddeld voor leeftijd - mogelijk genetisch.';
+                    } else {
+                        $interpretaties[] = '🔥 <strong>Hartslag max (' . $hartslagMax . ' bpm):</strong> Lager dan gemiddeld voor leeftijd - mogelijk genetisch.';
+                    }
+                }
+            @endphp
+            
+            @if(count($interpretaties) > 0)
+            <div class="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border-l-4" style="border-color: #1976d2;">
+                <h5 class="text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Interpretatie & Aanbevelingen
+                </h5>
+                <div class="space-y-2 text-sm text-gray-700 leading-relaxed">
+                    @foreach($interpretaties as $interpretatie)
+                        <p class="flex items-start gap-2">
+                            <span class="mt-0.5">•</span>
+                            <span>{!! $interpretatie !!}</span>
+                        </p>
+                    @endforeach
+                </div>
+            </div>
+            @endif
         </div>
     </div>
 </div>

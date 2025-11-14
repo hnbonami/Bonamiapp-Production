@@ -460,8 +460,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                                     </a>
                                 @elseif($test->type === 'inspanningstest')
-                                    <a href="{{ route('inspanningstest.sjabloon-rapport', ['klant' => $klant->id, 'test' => $test->id]) }}" aria-label="Bekijk Rapport" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" title="Bekijk Rapport">
+                                    {{-- Results pagina knop - ALTIJD zichtbaar voor iedereen --}}
+                                    <a href="{{ route('inspanningstest.results', ['klant' => $klant->id, 'test' => $test->id]) }}" aria-label="Bekijk Resultaten" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" title="Bekijk Resultaten">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                    </a>
+                                    {{-- Rapport printen knop - ALTIJD zichtbaar voor iedereen --}}
+                                    <a href="{{ route('inspanningstest.sjabloon-rapport', ['klant' => $klant->id, 'test' => $test->id]) }}" aria-label="Print Rapport" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-green-100 text-green-600" title="Print Rapport">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" class="w-4 h-4"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 14h12v8H6z"/></svg>
                                     </a>
                                 @elseif($test->type === 'document')
                                     <a href="{{ route('klanten.documenten.download', [$klant, $test]) }}" aria-label="Download Document" class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-800" title="Download Document">
