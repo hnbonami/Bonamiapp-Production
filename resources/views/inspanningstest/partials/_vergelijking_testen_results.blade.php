@@ -19,19 +19,23 @@
 @endphp
 
 @if($toonVergelijking)
-<div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6 mb-6">
-    <div class="p-6">
-        <div class="flex items-center gap-3 mb-4">
-            <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div class="bg-white rounded-lg shadow-md overflow-hidden mt-6 mb-6" style="border: 2px solid #c8e1eb;">
+    {{-- Header --}}
+    <div class="px-6 py-4" style="background-color: #c8e1eb; border-bottom: 2px solid #a8c1cb;">
+        <div class="flex items-center gap-3">
+            <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                <svg class="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                 </svg>
             </div>
             <div>
-                <h3 class="text-2xl font-bold text-gray-900">🔄 Test Vergelijking</h3>
-                <p class="text-sm text-gray-600">Vergelijk je progressie over meerdere {{ $inspanningstest->testtype }} testen</p>
+                <h3 class="text-xl font-bold text-gray-900">Test Vergelijking</h3>
+                <p class="text-sm text-gray-700 mt-1">Vergelijk je progressie over meerdere {{ $inspanningstest->testtype }} testen</p>
             </div>
         </div>
+    </div>
+    
+    <div class="p-6">
 
         {{-- Test Selector --}}
         <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg p-4 mb-6 border border-purple-200">
