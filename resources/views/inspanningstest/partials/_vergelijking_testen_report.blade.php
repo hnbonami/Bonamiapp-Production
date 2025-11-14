@@ -205,6 +205,64 @@
             </tr>
         </thead>
         <tbody>
+            {{-- LT1 Vermogen/Snelheid --}}
+            @php
+                $oudsteLT1 = $geselecteerdeTesten->last() ? 
+                    ($isLooptest || $isZwemtest ? $geselecteerdeTesten->last()->aerobe_drempel_snelheid : $geselecteerdeTesten->last()->aerobe_drempel_vermogen) : null;
+                $huidigeLT1 = $isLooptest || $isZwemtest ? $inspanningstest->aerobe_drempel_snelheid : $inspanningstest->aerobe_drempel_vermogen;
+                $deltaLT1 = ($oudsteLT1 && $huidigeLT1) ? (($huidigeLT1 - $oudsteLT1) / $oudsteLT1) * 100 : null;
+            @endphp
+            <tr>
+                <td style="text-align: left; font-weight: 600;">LT1 {{ $isLooptest || $isZwemtest ? 'Snelheid' : 'Vermogen' }}</td>
+                @foreach($geselecteerdeTesten->reverse() as $test)
+                    @php
+                        $waarde = $isLooptest || $isZwemtest ? $test->aerobe_drempel_snelheid : $test->aerobe_drempel_vermogen;
+                    @endphp
+                    <td>{{ $waarde ? ($isLooptest || $isZwemtest ? number_format($waarde, 1) . ' km/h' : $waarde . 'W') : '-' }}</td>
+                @endforeach
+                <td style="background-color: #ede9fe; font-weight: 700; color: #5b21b6;">
+                    {{ $huidigeLT1 ? ($isLooptest || $isZwemtest ? number_format($huidigeLT1, 1) . ' km/h' : $huidigeLT1 . 'W') : '-' }}
+                </td>
+                <td class="{{ $deltaLT1 > 0 ? 'rapport-delta-positief' : ($deltaLT1 < 0 ? 'rapport-delta-negatief' : 'rapport-delta-neutraal') }}">
+                    {{ $deltaLT1 !== null ? ($deltaLT1 > 0 ? '+' : '') . number_format($deltaLT1, 1) . '%' : '-' }}
+                </td>
+                <td style="font-size: 14px;">
+                    @if($deltaLT1 > 5) 📈
+                    @elseif($deltaLT1 > 0) ↗️
+                    @elseif($deltaLT1 < -5) 📉
+                    @elseif($deltaLT1 < 0) ↘️
+                    @else →
+                    @endif
+                </td>
+            </tr>
+
+            {{-- LT1 Hartslag --}}
+            @php
+                $oudsteLT1HR = $geselecteerdeTesten->last() ? $geselecteerdeTesten->last()->aerobe_drempel_hartslag : null;
+                $huidigeLT1HR = $inspanningstest->aerobe_drempel_hartslag;
+                $deltaLT1HR = ($oudsteLT1HR && $huidigeLT1HR) ? (($huidigeLT1HR - $oudsteLT1HR) / $oudsteLT1HR) * 100 : null;
+            @endphp
+            <tr>
+                <td style="text-align: left; font-weight: 600;">LT1 Hartslag</td>
+                @foreach($geselecteerdeTesten->reverse() as $test)
+                    <td>{{ $test->aerobe_drempel_hartslag ? $test->aerobe_drempel_hartslag . ' bpm' : '-' }}</td>
+                @endforeach
+                <td style="background-color: #ede9fe; font-weight: 700; color: #5b21b6;">
+                    {{ $huidigeLT1HR ? $huidigeLT1HR . ' bpm' : '-' }}
+                </td>
+                <td class="{{ $deltaLT1HR > 0 ? 'rapport-delta-positief' : ($deltaLT1HR < 0 ? 'rapport-delta-negatief' : 'rapport-delta-neutraal') }}">
+                    {{ $deltaLT1HR !== null ? ($deltaLT1HR > 0 ? '+' : '') . number_format($deltaLT1HR, 1) . '%' : '-' }}
+                </td>
+                <td style="font-size: 14px;">
+                    @if($deltaLT1HR > 3) 📈
+                    @elseif($deltaLT1HR > 0) ↗️
+                    @elseif($deltaLT1HR < -3) 📉
+                    @elseif($deltaLT1HR < 0) ↘️
+                    @else →
+                    @endif
+                </td>
+            </tr>
+
             {{-- LT2 Vermogen/Snelheid --}}
             @php
                 $oudsteLT2 = $geselecteerdeTesten->last() ? 
@@ -263,38 +321,55 @@
                 </td>
             </tr>
 
-            {{-- LT1 Vermogen/Snelheid --}}
+            {{-- Max Hartslag --}}
             @php
-                $oudsteLT1 = $geselecteerdeTesten->last() ? 
-                    ($isLooptest || $isZwemtest ? $geselecteerdeTesten->last()->aerobe_drempel_snelheid : $geselecteerdeTesten->last()->aerobe_drempel_vermogen) : null;
-                $huidigeLT1 = $isLooptest || $isZwemtest ? $inspanningstest->aerobe_drempel_snelheid : $inspanningstest->aerobe_drempel_vermogen;
-                $deltaLT1 = ($oudsteLT1 && $huidigeLT1) ? (($huidigeLT1 - $oudsteLT1) / $oudsteLT1) * 100 : null;
+                $oudsteMaxHR = $geselecteerdeTesten->last() ? $geselecteerdeTesten->last()->max_hartslag : null;
+                $huidigeMaxHR = $inspanningstest->max_hartslag;
+                $deltaMaxHR = ($oudsteMaxHR && $huidigeMaxHR) ? (($huidigeMaxHR - $oudsteMaxHR) / $oudsteMaxHR) * 100 : null;
             @endphp
             <tr>
-                <td style="text-align: left; font-weight: 600;">LT1 {{ $isLooptest || $isZwemtest ? 'Snelheid' : 'Vermogen' }}</td>
+                <td style="text-align: left; font-weight: 600;">Max Hartslag</td>
                 @foreach($geselecteerdeTesten->reverse() as $test)
-                    @php
-                        $waarde = $isLooptest || $isZwemtest ? $test->aerobe_drempel_snelheid : $test->aerobe_drempel_vermogen;
-                    @endphp
-                    <td>{{ $waarde ? ($isLooptest || $isZwemtest ? number_format($waarde, 1) . ' km/h' : $waarde . 'W') : '-' }}</td>
+                    <td>{{ $test->max_hartslag ? $test->max_hartslag . ' bpm' : '-' }}</td>
                 @endforeach
                 <td style="background-color: #ede9fe; font-weight: 700; color: #5b21b6;">
-                    {{ $huidigeLT1 ? ($isLooptest || $isZwemtest ? number_format($huidigeLT1, 1) . ' km/h' : $huidigeLT1 . 'W') : '-' }}
+                    {{ $huidigeMaxHR ? $huidigeMaxHR . ' bpm' : '-' }}
                 </td>
-                <td class="{{ $deltaLT1 > 0 ? 'rapport-delta-positief' : ($deltaLT1 < 0 ? 'rapport-delta-negatief' : 'rapport-delta-neutraal') }}">
-                    {{ $deltaLT1 !== null ? ($deltaLT1 > 0 ? '+' : '') . number_format($deltaLT1, 1) . '%' : '-' }}
+                <td class="{{ $deltaMaxHR > 0 ? 'rapport-delta-positief' : ($deltaMaxHR < 0 ? 'rapport-delta-negatief' : 'rapport-delta-neutraal') }}">
+                    {{ $deltaMaxHR !== null ? ($deltaMaxHR > 0 ? '+' : '') . number_format($deltaMaxHR, 1) . '%' : '-' }}
                 </td>
-                <td style="font-size: 14px;">
-                    @if($deltaLT1 > 5) 📈
-                    @elseif($deltaLT1 > 0) ↗️
-                    @elseif($deltaLT1 < -5) 📉
-                    @elseif($deltaLT1 < 0) ↘️
-                    @else →
-                    @endif
-                </td>
+                <td style="font-size: 14px;">→</td>
             </tr>
 
-            {{-- Max Hartslag --}}
+            {{-- VO2max (alleen voor fietstesten) --}}
+            @if(!$isLooptest && !$isZwemtest)
+                @php
+                    $oudsteVO2 = $geselecteerdeTesten->last() ? $geselecteerdeTesten->last()->vo2max : null;
+                    $huidigeVO2 = $inspanningstest->vo2max;
+                    $deltaVO2 = ($oudsteVO2 && $huidigeVO2) ? (($huidigeVO2 - $oudsteVO2) / $oudsteVO2) * 100 : null;
+                @endphp
+                <tr>
+                    <td style="text-align: left; font-weight: 600;">VO2max</td>
+                    @foreach($geselecteerdeTesten->reverse() as $test)
+                        <td>{{ $test->vo2max ? number_format($test->vo2max, 1) . ' ml/kg/min' : '-' }}</td>
+                    @endforeach
+                    <td style="background-color: #ede9fe; font-weight: 700; color: #5b21b6;">
+                        {{ $huidigeVO2 ? number_format($huidigeVO2, 1) . ' ml/kg/min' : '-' }}
+                    </td>
+                    <td class="{{ $deltaVO2 > 0 ? 'rapport-delta-positief' : ($deltaVO2 < 0 ? 'rapport-delta-negatief' : 'rapport-delta-neutraal') }}">
+                        {{ $deltaVO2 !== null ? ($deltaVO2 > 0 ? '+' : '') . number_format($deltaVO2, 1) . '%' : '-' }}
+                    </td>
+                    <td style="font-size: 14px;">
+                        @if($deltaVO2 > 5) 📈
+                        @elseif($deltaVO2 > 0) ↗️
+                        @elseif($deltaVO2 < -5) 📉
+                        @elseif($deltaVO2 < 0) ↘️
+                        @else →
+                        @endif
+                    </td>
+                </tr>
+            @endif
+        </tbody>
             @php
                 $oudsteMaxHR = $geselecteerdeTesten->last() ? $geselecteerdeTesten->last()->max_hartslag : null;
                 $huidigeMaxHR = $inspanningstest->max_hartslag;

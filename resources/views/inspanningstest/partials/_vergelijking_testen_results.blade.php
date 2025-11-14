@@ -141,11 +141,136 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-100">
+                        {{-- DEBUG: Log alle waarden --}}
+                        @php
+                            \Log::info('Vergelijking Debug - Huidige test:', [
+                                'lt1_vermogen' => $inspanningstest->aerobe_drempel_vermogen,
+                                'lt1_snelheid' => $inspanningstest->aerobe_drempel_snelheid,
+                                'lt2_vermogen' => $inspanningstest->anaerobe_drempel_vermogen,
+                                'lt2_snelheid' => $inspanningstest->anaerobe_drempel_snelheid,
+                                'testtype' => $inspanningstest->testtype
+                            ]);
+                        @endphp
+                        
+                        {{-- LT1 Vermogen/Snelheid --}}
+                        @php
+                            // Voor looptesten: gebruik ALTIJD snelheid, voor fietstesten ALTIJD vermogen
+                            $oudsteLT1 = null;
+                            $huidigeLT1 = null;
+                            
+                            if ($vergelijkbareTesten->last()) {
+                                if ($isLooptest || $isZwemtest) {
+                                    // Looptest: probeer snelheid, fallback naar vermogen als snelheid leeg is
+                                    $oudsteLT1 = $vergelijkbareTesten->last()->aerobe_drempel_snelheid;
+                                    if (!$oudsteLT1) {
+                                        $oudsteLT1 = $vergelijkbareTesten->last()->aerobe_drempel_vermogen;
+                                    }
+                                } else {
+                                    // Fietstest: gebruik vermogen
+                                    $oudsteLT1 = $vergelijkbareTesten->last()->aerobe_drempel_vermogen;
+                                }
+                            }
+                            
+                            if ($isLooptest || $isZwemtest) {
+                                $huidigeLT1 = $inspanningstest->aerobe_drempel_snelheid;
+                                if (!$huidigeLT1) {
+                                    $huidigeLT1 = $inspanningstest->aerobe_drempel_vermogen;
+                                }
+                            } else {
+                                $huidigeLT1 = $inspanningstest->aerobe_drempel_vermogen;
+                            }
+                            
+                            $deltaLT1 = ($oudsteLT1 && $huidigeLT1) ? (($huidigeLT1 - $oudsteLT1) / $oudsteLT1) * 100 : null;
+                        @endphp
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                                LT1 {{ $isLooptest || $isZwemtest ? 'Snelheid' : 'Vermogen' }}
+                            </td>
+                            @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
+                                <td class="px-4 py-3 text-sm text-center text-gray-700">
+                                    @php
+                                        if ($isLooptest || $isZwemtest) {
+                                            $waarde = $test->aerobe_drempel_snelheid;
+                                            if (!$waarde) {
+                                                $waarde = $test->aerobe_drempel_vermogen; // Fallback
+                                            }
+                                        } else {
+                                            $waarde = $test->aerobe_drempel_vermogen;
+                                        }
+                                    @endphp
+                                    {{ $waarde ? ($isLooptest || $isZwemtest ? number_format($waarde, 1) . ' km/h' : number_format($waarde, 0) . 'W') : '-' }}
+                                </td>
+                            @endforeach
+                            <td class="px-4 py-3 text-sm text-center font-bold text-purple-700 bg-purple-50">
+                                {{ $huidigeLT1 ? ($isLooptest || $isZwemtest ? number_format($huidigeLT1, 1) . ' km/h' : number_format($huidigeLT1, 0) . 'W') : '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-center font-semibold {{ $deltaLT1 > 0 ? 'text-green-600' : ($deltaLT1 < 0 ? 'text-red-600' : 'text-gray-500') }}">
+                                {{ $deltaLT1 !== null ? ($deltaLT1 > 0 ? '+' : '') . number_format($deltaLT1, 1) . '%' : '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-xl">
+                                @if($deltaLT1 > 5) 📈
+                                @elseif($deltaLT1 > 0) ↗️
+                                @elseif($deltaLT1 < -5) 📉
+                                @elseif($deltaLT1 < 0) ↘️
+                                @else →
+                                @endif
+                            </td>
+                        </tr>
+
+                        {{-- LT1 Hartslag --}}
+                        @php
+                            $oudsteLT1HR = $vergelijkbareTesten->last() ? $vergelijkbareTesten->last()->aerobe_drempel_hartslag : null;
+                            $huidigeLT1HR = $inspanningstest->aerobe_drempel_hartslag;
+                            $deltaLT1HR = ($oudsteLT1HR && $huidigeLT1HR) ? (($huidigeLT1HR - $oudsteLT1HR) / $oudsteLT1HR) * 100 : null;
+                        @endphp
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">LT1 Hartslag</td>
+                            @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
+                                <td class="px-4 py-3 text-sm text-center text-gray-700">
+                                    {{ $test->aerobe_drempel_hartslag ? number_format($test->aerobe_drempel_hartslag, 0) . ' bpm' : '-' }}
+                                </td>
+                            @endforeach
+                            <td class="px-4 py-3 text-sm text-center font-bold text-purple-700 bg-purple-50">
+                                {{ $huidigeLT1HR ? number_format($huidigeLT1HR, 0) . ' bpm' : '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-center font-semibold {{ $deltaLT1HR > 0 ? 'text-green-600' : ($deltaLT1HR < 0 ? 'text-red-600' : 'text-gray-500') }}">
+                                {{ $deltaLT1HR !== null ? ($deltaLT1HR > 0 ? '+' : '') . number_format($deltaLT1HR, 1) . '%' : '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-xl">
+                                @if($deltaLT1HR > 3) 📈
+                                @elseif($deltaLT1HR > 0) ↗️
+                                @elseif($deltaLT1HR < -3) 📉
+                                @elseif($deltaLT1HR < 0) ↘️
+                                @else →
+                                @endif
+                            </td>
+                        </tr>
+
                         {{-- LT2 Vermogen/Snelheid --}}
                         @php
-                            $oudsteLT2 = $vergelijkbareTesten->last() ? 
-                                ($isLooptest || $isZwemtest ? $vergelijkbareTesten->last()->anaerobe_drempel_snelheid : $vergelijkbareTesten->last()->anaerobe_drempel_vermogen) : null;
-                            $huidigeLT2 = $isLooptest || $isZwemtest ? $inspanningstest->anaerobe_drempel_snelheid : $inspanningstest->anaerobe_drempel_vermogen;
+                            $oudsteLT2 = null;
+                            $huidigeLT2 = null;
+                            
+                            if ($vergelijkbareTesten->last()) {
+                                if ($isLooptest || $isZwemtest) {
+                                    $oudsteLT2 = $vergelijkbareTesten->last()->anaerobe_drempel_snelheid;
+                                    if (!$oudsteLT2) {
+                                        $oudsteLT2 = $vergelijkbareTesten->last()->anaerobe_drempel_vermogen;
+                                    }
+                                } else {
+                                    $oudsteLT2 = $vergelijkbareTesten->last()->anaerobe_drempel_vermogen;
+                                }
+                            }
+                            
+                            if ($isLooptest || $isZwemtest) {
+                                $huidigeLT2 = $inspanningstest->anaerobe_drempel_snelheid;
+                                if (!$huidigeLT2) {
+                                    $huidigeLT2 = $inspanningstest->anaerobe_drempel_vermogen;
+                                }
+                            } else {
+                                $huidigeLT2 = $inspanningstest->anaerobe_drempel_vermogen;
+                            }
+                            
                             $deltaLT2 = ($oudsteLT2 && $huidigeLT2) ? (($huidigeLT2 - $oudsteLT2) / $oudsteLT2) * 100 : null;
                         @endphp
                         <tr class="hover:bg-gray-50">
@@ -155,13 +280,20 @@
                             @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
                                 <td class="px-4 py-3 text-sm text-center text-gray-700">
                                     @php
-                                        $waarde = $isLooptest || $isZwemtest ? $test->anaerobe_drempel_snelheid : $test->anaerobe_drempel_vermogen;
+                                        if ($isLooptest || $isZwemtest) {
+                                            $waarde = $test->anaerobe_drempel_snelheid;
+                                            if (!$waarde) {
+                                                $waarde = $test->anaerobe_drempel_vermogen;
+                                            }
+                                        } else {
+                                            $waarde = $test->anaerobe_drempel_vermogen;
+                                        }
                                     @endphp
-                                    {{ $waarde ? ($isLooptest || $isZwemtest ? number_format($waarde, 1) . ' km/h' : $waarde . 'W') : '-' }}
+                                    {{ $waarde ? ($isLooptest || $isZwemtest ? number_format($waarde, 1) . ' km/h' : number_format($waarde, 0) . 'W') : '-' }}
                                 </td>
                             @endforeach
                             <td class="px-4 py-3 text-sm text-center font-bold text-purple-700 bg-purple-50">
-                                {{ $huidigeLT2 ? ($isLooptest || $isZwemtest ? number_format($huidigeLT2, 1) . ' km/h' : $huidigeLT2 . 'W') : '-' }}
+                                {{ $huidigeLT2 ? ($isLooptest || $isZwemtest ? number_format($huidigeLT2, 1) . ' km/h' : number_format($huidigeLT2, 0) . 'W') : '-' }}
                             </td>
                             <td class="px-4 py-3 text-sm text-center font-semibold {{ $deltaLT2 > 0 ? 'text-green-600' : ($deltaLT2 < 0 ? 'text-red-600' : 'text-gray-500') }}">
                                 {{ $deltaLT2 !== null ? ($deltaLT2 > 0 ? '+' : '') . number_format($deltaLT2, 1) . '%' : '-' }}
@@ -186,11 +318,11 @@
                             <td class="px-4 py-3 text-sm font-medium text-gray-900">LT2 Hartslag</td>
                             @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
                                 <td class="px-4 py-3 text-sm text-center text-gray-700">
-                                    {{ $test->anaerobe_drempel_hartslag ? $test->anaerobe_drempel_hartslag . ' bpm' : '-' }}
+                                    {{ $test->anaerobe_drempel_hartslag ? number_format($test->anaerobe_drempel_hartslag, 0) . ' bpm' : '-' }}
                                 </td>
                             @endforeach
                             <td class="px-4 py-3 text-sm text-center font-bold text-purple-700 bg-purple-50">
-                                {{ $huidigeLT2HR ? $huidigeLT2HR . ' bpm' : '-' }}
+                                {{ $huidigeLT2HR ? number_format($huidigeLT2HR, 0) . ' bpm' : '-' }}
                             </td>
                             <td class="px-4 py-3 text-sm text-center font-semibold {{ $deltaLT2HR > 0 ? 'text-green-600' : ($deltaLT2HR < 0 ? 'text-red-600' : 'text-gray-500') }}">
                                 {{ $deltaLT2HR !== null ? ($deltaLT2HR > 0 ? '+' : '') . number_format($deltaLT2HR, 1) . '%' : '-' }}
@@ -206,6 +338,58 @@
                         </tr>
 
                         {{-- Max Hartslag --}}
+                        @php
+                            $oudsteMaxHR = $vergelijkbareTesten->last() ? $vergelijkbareTesten->last()->max_hartslag : null;
+                            $huidigeMaxHR = $inspanningstest->max_hartslag;
+                            $deltaMaxHR = ($oudsteMaxHR && $huidigeMaxHR) ? (($huidigeMaxHR - $oudsteMaxHR) / $oudsteMaxHR) * 100 : null;
+                        @endphp
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">Max Hartslag</td>
+                            @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
+                                <td class="px-4 py-3 text-sm text-center text-gray-700">
+                                    {{ $test->max_hartslag ? number_format($test->max_hartslag, 0) . ' bpm' : '-' }}
+                                </td>
+                            @endforeach
+                            <td class="px-4 py-3 text-sm text-center font-bold text-purple-700 bg-purple-50">
+                                {{ $huidigeMaxHR ? number_format($huidigeMaxHR, 0) . ' bpm' : '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-center font-semibold {{ $deltaMaxHR > 0 ? 'text-green-600' : ($deltaMaxHR < 0 ? 'text-red-600' : 'text-gray-500') }}">
+                                {{ $deltaMaxHR !== null ? ($deltaMaxHR > 0 ? '+' : '') . number_format($deltaMaxHR, 1) . '%' : '-' }}
+                            </td>
+                            <td class="px-4 py-3 text-center text-xl">→</td>
+                        </tr>
+
+                        {{-- VO2max (alleen voor fietstesten) --}}
+                        @if(!$isLooptest && !$isZwemtest)
+                            @php
+                                $oudsteVO2 = $vergelijkbareTesten->last() ? $vergelijkbareTesten->last()->vo2max : null;
+                                $huidigeVO2 = $inspanningstest->vo2max;
+                                $deltaVO2 = ($oudsteVO2 && $huidigeVO2) ? (($huidigeVO2 - $oudsteVO2) / $oudsteVO2) * 100 : null;
+                            @endphp
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3 text-sm font-medium text-gray-900">VO2max</td>
+                                @foreach($vergelijkbareTesten->take(3)->reverse() as $test)
+                                    <td class="px-4 py-3 text-sm text-center text-gray-700">
+                                        {{ $test->vo2max ? number_format($test->vo2max, 1) . ' ml/kg/min' : '-' }}
+                                    </td>
+                                @endforeach
+                                <td class="px-4 py-3 text-sm text-center font-bold text-purple-700 bg-purple-50">
+                                    {{ $huidigeVO2 ? number_format($huidigeVO2, 1) . ' ml/kg/min' : '-' }}
+                                </td>
+                                <td class="px-4 py-3 text-sm text-center font-semibold {{ $deltaVO2 > 0 ? 'text-green-600' : ($deltaVO2 < 0 ? 'text-red-600' : 'text-gray-500') }}">
+                                    {{ $deltaVO2 !== null ? ($deltaVO2 > 0 ? '+' : '') . number_format($deltaVO2, 1) . '%' : '-' }}
+                                </td>
+                                <td class="px-4 py-3 text-center text-xl">
+                                    @if($deltaVO2 > 5) 📈
+                                    @elseif($deltaVO2 > 0) ↗️
+                                    @elseif($deltaVO2 < -5) 📉
+                                    @elseif($deltaVO2 < 0) ↘️
+                                    @else →
+                                    @endif
+                                </td>
+                            </tr>
+                        @endif
+                    </tbody>
                         @php
                             $oudsteMaxHR = $vergelijkbareTesten->last() ? $vergelijkbareTesten->last()->max_hartslag : null;
                             $huidigeMaxHR = $inspanningstest->max_hartslag;
