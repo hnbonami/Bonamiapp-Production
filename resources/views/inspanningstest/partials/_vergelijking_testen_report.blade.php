@@ -321,10 +321,10 @@
                 </td>
             </tr>
 
-            {{-- Max Hartslag (uit laatste testresultaat, zoals drempelwaarden partial) --}}
+            {{-- Max Vermogen/Snelheid (uit laatste testresultaat, zoals drempelwaarden partial) --}}
             @php
-                // Functie om max hartslag uit testresultaten te halen
-                function getMaxHartslagFromTestReport($test) {
+                // Functie om max vermogen/snelheid uit testresultaten te halen
+                function getMaxVermogenFromTestReport($test, $isLooptest, $isZwemtest) {
                     $testresultaten = $test->testresultaten ?? [];
                     
                     // Check of testresultaten een string is (JSON) en decode indien nodig
@@ -335,45 +335,51 @@
                     // Converteer naar array
                     $testresultaten = is_array($testresultaten) ? $testresultaten : [];
                     
-                    // Haal max hartslag uit laatste testresultaat
+                    // Haal max vermogen/snelheid uit laatste testresultaat
                     if (count($testresultaten) > 0) {
                         $laatsteStap = end($testresultaten);
-                        $maxHartslag = $laatsteStap['hartslag'] ?? null;
                         
-                        // Fallback naar ingevuld veld als niet in testresultaten
-                        if (!$maxHartslag) {
-                            $maxHartslag = $test->max_hartslag ?? $test->maximale_hartslag_bpm ?? null;
+                        // Voor looptesten/zwemtesten: gebruik snelheid
+                        if ($isLooptest || $isZwemtest) {
+                            return $laatsteStap['snelheid'] ?? $laatsteStap['vermogen'] ?? null;
+                        } else {
+                            // Voor fietstesten: gebruik vermogen
+                            return $laatsteStap['vermogen'] ?? null;
                         }
-                        
-                        return $maxHartslag;
                     }
                     
-                    // Fallback
-                    return $test->max_hartslag ?? $test->maximale_hartslag_bpm ?? null;
+                    return null;
                 }
                 
-                // Haal max hartslag op voor oudste en huidige test
-                $oudsteMaxHR = $geselecteerdeTesten->last() ? getMaxHartslagFromTestReport($geselecteerdeTesten->last()) : null;
-                $huidigeMaxHR = getMaxHartslagFromTestReport($inspanningstest);
-                $deltaMaxHR = ($oudsteMaxHR && $huidigeMaxHR) ? (($huidigeMaxHR - $oudsteMaxHR) / $oudsteMaxHR) * 100 : null;
+                // Haal max waarden op voor oudste en huidige test
+                $oudsteMax = $geselecteerdeTesten->last() ? getMaxVermogenFromTestReport($geselecteerdeTesten->last(), $isLooptest, $isZwemtest) : null;
+                $huidigeMax = getMaxVermogenFromTestReport($inspanningstest, $isLooptest, $isZwemtest);
+                $deltaMax = ($oudsteMax && $huidigeMax) ? (($huidigeMax - $oudsteMax) / $oudsteMax) * 100 : null;
             @endphp
             <tr>
-                <td style="text-align: left; font-weight: 600;">Max Hartslag</td>
+                <td style="text-align: left; font-weight: 600;">Max {{ $isLooptest || $isZwemtest ? 'Snelheid' : 'Vermogen' }}</td>
                 @foreach($geselecteerdeTesten->reverse() as $test)
                     <td>
                         @php
-                            $maxHR = getMaxHartslagFromTestReport($test);
+                            $maxWaarde = getMaxVermogenFromTestReport($test, $isLooptest, $isZwemtest);
                         @endphp
-                        {{ $maxHR ? number_format($maxHR, 0) . ' bpm' : '-' }}
+                        {{ $maxWaarde ? ($isLooptest || $isZwemtest ? number_format($maxWaarde, 1) . ' km/h' : number_format($maxWaarde, 0) . 'W') : '-' }}
                     </td>
                 @endforeach
                 <td style="background-color: #ede9fe; font-weight: 700; color: #5b21b6;">
-                    {{ $huidigeMaxHR ? number_format($huidigeMaxHR, 0) . ' bpm' : '-' }}
+                    {{ $huidigeMax ? ($isLooptest || $isZwemtest ? number_format($huidigeMax, 1) . ' km/h' : number_format($huidigeMax, 0) . 'W') : '-' }}
                 </td>
-                <td class="{{ $deltaMaxHR > 0 ? 'rapport-delta-positief' : ($deltaMaxHR < 0 ? 'rapport-delta-negatief' : 'rapport-delta-neutraal') }}">
-                    {{ $deltaMaxHR !== null ? ($deltaMaxHR > 0 ? '+' : '') . number_format($deltaMaxHR, 1) . '%' : '-' }}
+                <td class="{{ $deltaMax > 0 ? 'rapport-delta-positief' : ($deltaMax < 0 ? 'rapport-delta-negatief' : 'rapport-delta-neutraal') }}">
+                    {{ $deltaMax !== null ? ($deltaMax > 0 ? '+' : '') . number_format($deltaMax, 1) . '%' : '-' }}
                 </td>
-                <td style="font-size: 14px;">→</td>
+                <td style="font-size: 14px;">
+                    @if($deltaMax > 5) 📈
+                    @elseif($deltaMax > 0) ↗️
+                    @elseif($deltaMax < -5) 📉
+                    @elseif($deltaMax < 0) ↘️
+                    @else →
+                    @endif
+                </td>
             </tr>
         </tbody>
     </table>
