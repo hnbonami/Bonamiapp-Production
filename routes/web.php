@@ -101,6 +101,11 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\InstagramPostController;
 // use App\Http\Controllers\TemplateController; // TEMP DISABLED TO CHECK CONFLICT
 
+// Address lookup API proxy (voor BPost straatnamen autocomplete)
+Route::get('/api/address/search-streets', [App\Http\Controllers\AddressLookupController::class, 'searchStreets'])
+    ->name('api.address.search-streets')
+    ->middleware('auth');
+
 Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard.index');
