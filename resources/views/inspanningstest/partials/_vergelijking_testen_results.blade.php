@@ -419,26 +419,44 @@
             <div class="text-sm text-gray-800 space-y-3">
                 {{-- LT1 Analyse --}}
                 @if(isset($deltaLT1) && $deltaLT1 !== null)
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <p class="flex items-start gap-2">
-                            <span class="{{ $deltaLT1 > 5 ? 'text-green-600' : ($deltaLT1 < -3 ? 'text-red-600' : 'text-blue-600') }} font-bold">
+                            <span class="{{ $deltaLT1 > 5 ? 'text-green-600' : ($deltaLT1 < -3 ? 'text-red-600' : 'text-blue-600') }} font-bold text-lg">
                                 @if($deltaLT1 > 5) ✓ @elseif($deltaLT1 < -3) ⚠ @else → @endif
                             </span>
                             <span>
-                                <strong class="{{ $deltaLT1 > 5 ? 'text-green-700' : ($deltaLT1 < -3 ? 'text-red-700' : 'text-blue-700') }}">
+                                <strong class="{{ $deltaLT1 > 5 ? 'text-green-700' : ($deltaLT1 < -3 ? 'text-red-700' : 'text-blue-700') }} text-base">
                                     Aerobe Basiscapaciteit (LT1): {{ $deltaLT1 > 0 ? '+' : '' }}{{ number_format($deltaLT1, 1) }}%
                                 </strong>
                                 <br>
                                 @if($deltaLT1 > 10)
-                                    Exceptionele verbetering! Je LT1 is met {{ number_format($deltaLT1, 1) }}% gestegen. Dit is buitengewoon en wijst op fundamentele cardiovasculaire adaptaties.
+                                    <span class="text-gray-800">Exceptionele verbetering! Je LT1 is met <strong>{{ number_format($deltaLT1, 1) }}%</strong> gestegen. Dit is buitengewoon en wijst op fundamentele cardiovasculaire adaptaties. 
+                                    <strong>Wat betekent dit?</strong> Je aerobe motor is aanzienlijk krachtiger geworden - je lichaam kan nu veel efficiënter vetten verbranden bij matige intensiteiten. 
+                                    Dit betekent dat je langer kunt trainen zonder te verzuren, je basisuithoudingsvermogen is spectaculair verbeterd, en je herstel tussen intensieve sessies is sneller. 
+                                    In de praktijk: lange duurtrainingen voelen makkelijker aan, je kunt meer trainingsvolume verdragen, en je fundament voor topprestaties is significant sterker geworden.</span>
                                 @elseif($deltaLT1 > 5)
-                                    Uitstekende verbetering! Je LT1 is met {{ number_format($deltaLT1, 1) }}% gestegen. Je basisuithoudingsvermogen is significant verbeterd.
+                                    <span class="text-gray-800">Uitstekende verbetering! Je LT1 is met <strong>{{ number_format($deltaLT1, 1) }}%</strong> gestegen. Je basisuithoudingsvermogen is significant verbeterd. 
+                                    <strong>Wat betekent dit?</strong> Je aerobe capaciteit - het vermogen om vet als brandstof te gebruiken - is duidelijk toegenomen. 
+                                    Dit zorgt ervoor dat je bij lage tot matige intensiteiten efficiënter werkt en minder snel je kostbare glycogeenvoorraden aanbreekt. 
+                                    In de praktijk: je kunt langer trainen op een comfortabel tempo, lange ritten/runs voelen minder zwaar aan, en je lichaam is beter voorbereid op intensievere trainingen. 
+                                    Een sterke aerobe basis is de sleutel tot alle andere verbeteringen.</span>
                                 @elseif($deltaLT1 > 0)
-                                    Positieve ontwikkeling. Je LT1 is met {{ number_format($deltaLT1, 1) }}% gestegen.
+                                    <span class="text-gray-800">Positieve ontwikkeling. Je LT1 is met <strong>{{ number_format($deltaLT1, 1) }}%</strong> gestegen. 
+                                    <strong>Wat betekent dit?</strong> Je aerobe capaciteit ontwikkelt zich in de goede richting. Hoewel de verbetering bescheiden is, betekent dit dat je trainingen effect hebben. 
+                                    Je vetstofwisseling verbetert geleidelijk, waardoor je iets langer kunt trainen voordat je lichaam overstapt op koolhydraten. 
+                                    Om deze vooruitgang te versnellen: focus op meer volume in lage intensiteitszones (zone 1-2), vergroot je wekelijkse trainingsuren geleidelijk, en zorg voor voldoende herstel tussen sessies.</span>
                                 @elseif($deltaLT1 < -5)
-                                    Significante daling. Je LT1 is gedaald met {{ number_format(abs($deltaLT1), 1) }}%. Dit vraagt aandacht en mogelijk herstel.
+                                    <span class="text-gray-800">Significante daling. Je LT1 is gedaald met <strong>{{ number_format(abs($deltaLT1), 1) }}%</strong>. Dit vraagt aandacht en mogelijk herstel. 
+                                    <strong>Wat betekent dit?</strong> Je aerobe basis is verzwakt - je lichaam is minder efficiënt geworden in het gebruik van vetten als brandstof bij matige intensiteiten. 
+                                    Mogelijke oorzaken: overtraining (te veel intensief werk, te weinig rustige basistraining), ondertraining (te weinig trainingsvolume), chronische vermoeidheid, ziekte, of te weinig herstel. 
+                                    <strong>Herstelplan:</strong> Neem 1-2 weken relatieve rust met alleen zeer lage intensiteit. Focus op slaap (8+ uur), voeding (voldoende calorieën), en stressreductie. 
+                                    Bouw daarna geleidelijk weer op met focus op lage intensiteit basiswerk. Je aerobe motor heeft rust nodig om te herstellen.</span>
                                 @else
-                                    Je aerobe basiscapaciteit is stabiel gebleven.
+                                    <span class="text-gray-800">Je aerobe basiscapaciteit is stabiel gebleven. 
+                                    <strong>Wat betekent dit?</strong> Stabiliteit kan zowel goed als neutraal zijn, afhankelijk van je trainingsfase. 
+                                    Als je in een onderhoudsfase zit, is dit prima - je behoudt je niveau. Als je echter aan het opbouwen bent, zou je eigenlijk een stijging willen zien. 
+                                    Overweeg om je trainingsvolume in zone 1-2 te verhogen, langere duurtrainingen toe te voegen, of meer consistency in je trainingsschema aan te brengen. 
+                                    Een sterke aerobe basis blijft essentieel voor alle andere aspecten van je fitheid.</span>
                                 @endif
                             </span>
                         </p>
@@ -447,28 +465,54 @@
 
                 {{-- LT2 Analyse --}}
                 @if(isset($deltaLT2) && $deltaLT2 !== null)
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <p class="flex items-start gap-2">
-                            <span class="{{ $deltaLT2 > 8 ? 'text-green-600' : ($deltaLT2 < -5 ? 'text-red-600' : 'text-blue-600') }} font-bold">
+                            <span class="{{ $deltaLT2 > 8 ? 'text-green-600' : ($deltaLT2 < -5 ? 'text-red-600' : 'text-blue-600') }} font-bold text-lg">
                                 @if($deltaLT2 > 8) ✓ @elseif($deltaLT2 < -5) ⚠ @else → @endif
                             </span>
                             <span>
-                                <strong class="{{ $deltaLT2 > 8 ? 'text-green-700' : ($deltaLT2 < -5 ? 'text-red-700' : 'text-blue-700') }}">
+                                <strong class="{{ $deltaLT2 > 8 ? 'text-green-700' : ($deltaLT2 < -5 ? 'text-red-700' : 'text-blue-700') }} text-base">
                                     Anaerobe Capaciteit (LT2): {{ $deltaLT2 > 0 ? '+' : '' }}{{ number_format($deltaLT2, 1) }}%
                                 </strong>
                                 <br>
                                 @if($deltaLT2 > 10)
-                                    Fenomenale verbetering! Je LT2 is met {{ number_format($deltaLT2, 1) }}% gestegen. Dit is zeldzaam en zeer significant!
+                                    <span class="text-gray-800">Fenomenale verbetering! Je LT2 is met <strong>{{ number_format($deltaLT2, 1) }}%</strong> gestegen. Dit is zeldzaam en zeer significant! 
+                                    <strong>Wat betekent dit?</strong> Je anaerobe drempel - het punt waarop lactaatproductie en -verwerking in evenwicht zijn - ligt nu aanzienlijk hoger. 
+                                    Dit betekent dat je veel harder kunt rijden/lopen voordat je "verzuurt". Je lactaatbuffering is spectaculair verbeterd, waardoor je hogere intensiteiten veel langer vol kunt houden. 
+                                    In de praktijk: je FTP/threshold power is flink gestegen, tempotrainingen voelen makkelijker aan, je kunt langer op wedstrijdtempo blijven, en je herstel tussen intervallen is sneller. 
+                                    Deze verbetering vertaalt zich direct in betere wedstrijdprestaties - je kunt harder finishen, beter klimmen, en langer bij het tempo blijven bij aanvallen.</span>
                                 @elseif($deltaLT2 > 8)
-                                    Uitstekende verbetering! Je LT2 is met {{ number_format($deltaLT2, 1) }}% gestegen. Je lactaatbuffering is aanzienlijk verbeterd.
+                                    <span class="text-gray-800">Uitstekende verbetering! Je LT2 is met <strong>{{ number_format($deltaLT2, 1) }}%</strong> gestegen. Je lactaatbuffering is aanzienlijk verbeterd. 
+                                    <strong>Wat betekent dit?</strong> Je anaerobe capaciteit is flink toegenomen - je lichaam kan lactaat nu veel efficiënter bufferen en recyclen. 
+                                    Dit betekent dat je threshold (het hoogste tempo dat je langdurig vol kunt houden) is gestegen. Je kunt nu harder werken zonder te verzuren. 
+                                    In de praktijk: intervaltrainingen voelen makkelijker aan, je kunt hoger tempo volhouden tijdens klimmen of temporitten, en je presteert beter in wedstrijdsituaties waar je langdurig net onder je maximum moet werken. 
+                                    Deze zone is cruciaal voor competitieve prestaties.</span>
                                 @elseif($deltaLT2 > 5)
-                                    Je anaerobe drempel is met {{ number_format($deltaLT2, 1) }}% gestegen. Dit betekent dat je lichaam efficiënter is geworden in het verwerken van lactaat bij hogere intensiteiten.
+                                    <span class="text-gray-800">Je anaerobe drempel is met <strong>{{ number_format($deltaLT2, 1) }}%</strong> gestegen. Dit betekent dat je lichaam efficiënter is geworden in het verwerken van lactaat bij hogere intensiteiten. 
+                                    <strong>Wat betekent dit?</strong> Je threshold power/pace ligt nu hoger. Je kunt harder werken voordat lactaat begint op te hopen in je spieren. 
+                                    Dit is het directe resultaat van specifieke threshold trainingen - je spieren hebben zich aangepast aan het bufferen van lactaat, en je cardiovasculaire systeem is beter geworden in het afvoeren ervan. 
+                                    In de praktijk: je kunt langer op wedstrijdtempo blijven, tempotrainingen (zoals 2x20min) voelen minder zwaar aan, en je prestaties bij langere klimmen zijn verbeterd. 
+                                    Blijf dit onderhouden met wekelijkse threshold sessies.</span>
                                 @elseif($deltaLT2 > 0)
-                                    Positieve ontwikkeling. Je LT2 is met {{ number_format($deltaLT2, 1) }}% gestegen. Blijf doortrainen met focus op je zwakke zones.
+                                    <span class="text-gray-800">Positieve ontwikkeling. Je LT2 is met <strong>{{ number_format($deltaLT2, 1) }}%</strong> gestegen. Blijf doortrainen met focus op threshold werk. 
+                                    <strong>Wat betekent dit?</strong> Je anaerobe capaciteit verbetert geleidelijk. Dit is een goede basis, maar er is nog ruimte voor verbetering. 
+                                    Een kleine stijging betekent vaak dat je net begint met specifiek threshold training, of dat de trainingsfrequentie/intensiteit nog geoptimaliseerd kan worden. 
+                                    <strong>Hoe verder te verbeteren?</strong> Voeg meer specifiek threshold werk toe: denk aan 2x20min net onder LT2, 3x10min op LT2, of 4x8min net boven LT2. 
+                                    Combineer dit met VO2max intervallen (1x per week) voor maximale stimulus. Zorg wel voor voldoende herstel - deze intensiteit vraagt veel van je lichaam.</span>
                                 @elseif($deltaLT2 < -5)
-                                    Daling gedetecteerd. Je LT2 is gedaald met {{ number_format(abs($deltaLT2), 1) }}%. Dit kan wijzen op overtraining, onderherstel of ziekte. Overweeg rustdagen of een trainingsaanpassing.
+                                    <span class="text-gray-800">Daling gedetecteerd. Je LT2 is gedaald met <strong>{{ number_format(abs($deltaLT2), 1) }}%</strong>. Dit kan wijzen op overtraining, onderherstel of ziekte. 
+                                    <strong>Wat betekent dit?</strong> Je anaerobe capaciteit is verzwakt - je kunt minder hard werken voordat lactaat begint op te hopen. 
+                                    Mogelijke oorzaken: te veel intensieve trainingen zonder voldoende herstel (overtraining), chronische vermoeidheid, ziekte of infectie, te weinig slaap, of inadequate voeding. 
+                                    <strong>Herstelplan:</strong> Neem 1-2 weken relatieve rust - alleen lage intensiteit (zone 1-2). Prioriteer herstel: 8+ uur slaap per nacht, voldoende calorieën (vooral koolhydraten), en stressreductie. 
+                                    Bouw daarna geleidelijk weer op: start met sweetspot werk (90% threshold), dan threshold, en pas later weer VO2max. 
+                                    Als de daling aanhoudt, overweeg dan een bloedtest bij je huisarts.</span>
                                 @else
-                                    Je anaerobe capaciteit is stabiel.
+                                    <span class="text-gray-800">Je anaerobe capaciteit is stabiel. 
+                                    <strong>Wat betekent dit?</strong> Als je in een onderhoudsfase zit, is stabiliteit goed - je behoudt je niveau. 
+                                    Als je echter actief aan het trainen bent om te verbeteren, zou je eigenlijk een stijging willen zien. 
+                                    Een plateau in LT2 kan betekenen dat je lichaam gewend is aan de huidige trainingsstimulus. 
+                                    <strong>Doorbraak strategie:</strong> Varieer je intervalformats (wissel tussen 2x20min, 3x12min, 4x8min), 
+                                    probeer polarisatie (meer zone 1-2, meer zone 5, minder zone 3-4), of voeg blokperiodisering toe (4 weken focus op threshold, dan herstelweek).</span>
                                 @endif
                             </span>
                         </p>
@@ -477,26 +521,52 @@
 
                 {{-- Max Capaciteit Analyse --}}
                 @if(isset($deltaMax) && $deltaMax !== null)
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <p class="flex items-start gap-2">
-                            <span class="{{ $deltaMax > 10 ? 'text-green-600' : ($deltaMax < -5 ? 'text-red-600' : 'text-blue-600') }} font-bold">
+                            <span class="{{ $deltaMax > 10 ? 'text-green-600' : ($deltaMax < -5 ? 'text-red-600' : 'text-blue-600') }} font-bold text-lg">
                                 @if($deltaMax > 10) ✓ @elseif($deltaMax < -5) ⚠ @else → @endif
                             </span>
                             <span>
-                                <strong class="{{ $deltaMax > 10 ? 'text-green-700' : ($deltaMax < -5 ? 'text-red-700' : 'text-blue-700') }}">
-                                    Maximale Capaciteit: {{ $deltaMax > 0 ? '+' : '' }}{{ number_format($deltaMax, 1) }}%
+                                <strong class="{{ $deltaMax > 10 ? 'text-green-700' : ($deltaMax < -5 ? 'text-red-700' : 'text-blue-700') }} text-base">
+                                    Maximale Capaciteit (VO2max): {{ $deltaMax > 0 ? '+' : '' }}{{ number_format($deltaMax, 1) }}%
                                 </strong>
                                 <br>
                                 @if($deltaMax > 10)
-                                    Exceptionele verbetering! Je piekprestatie is met {{ number_format($deltaMax, 1) }}% gestegen. Dit toont grote vooruitgang in je VO2max.
+                                    <span class="text-gray-800">Exceptionele verbetering! Je piekprestatie is met <strong>{{ number_format($deltaMax, 1) }}%</strong> gestegen. Dit toont spectaculaire vooruitgang in je VO2max. 
+                                    <strong>Wat betekent dit?</strong> Je maximale zuurstofopname - het absolute plafond van je aërobe systeem - is dramatisch toegenomen. 
+                                    Dit betekent dat je hart meer bloed per slag pompt (groter slagvolume), je longen meer zuurstof kunnen opnemen, en je spieren die zuurstof efficiënter kunnen gebruiken. 
+                                    In de praktijk: je kunt veel hogere pieken bereiken tijdens sprints en explosive momenten, kortere klimmen voelen makkelijker aan, je maximaal duurvermogen (wat je ~1 uur vol kunt houden) ligt aanzienlijk hoger, 
+                                    en je hebt meer reserves voor de finish of aanvallen in wedstrijden. Je absolute prestatieplafond is flink verhoogd - zowel je korte explosive power als je sustained high-intensity vermogen zijn beter.</span>
                                 @elseif($deltaMax > 5)
-                                    Sterke verbetering! Je piekprestatie is met {{ number_format($deltaMax, 1) }}% gestegen.
+                                    <span class="text-gray-800">Sterke verbetering! Je piekprestatie is met <strong>{{ number_format($deltaMax, 1) }}%</strong> gestegen. 
+                                    <strong>Wat betekent dit?</strong> Je VO2max - de maximale hoeveelheid zuurstof die je lichaam kan verwerken - is significant verbeterd. 
+                                    Dit is het resultaat van specifieke VO2max training (zone 5 intervallen). Je cardiovasculaire systeem is krachtiger geworden: je hartminuutvolume is toegenomen, 
+                                    je hemoglobinewaarden zijn mogelijk hoger (meer zuurstoftransport), en je spiervezels kunnen meer zuurstof extraheren uit het bloed. 
+                                    In de praktijk: je kunt harder finishen in wedstrijden, explosive klimmen (1-5min) gaan beter, je kunt hogere power/pace pieken bereiken, 
+                                    en je herstelt sneller tussen harde intervallen. Dit is cruciaal voor wedstrijdsituaties waar je boven threshold moet gaan.</span>
                                 @elseif($deltaMax > 0)
-                                    Positieve ontwikkeling. Je piekprestatie is met {{ number_format($deltaMax, 1) }}% verbeterd.
+                                    <span class="text-gray-800">Positieve ontwikkeling. Je piekprestatie is met <strong>{{ number_format($deltaMax, 1) }}%</strong> verbeterd. 
+                                    <strong>Wat betekent dit?</strong> Je maximale capaciteit ontwikkelt zich in de goede richting. VO2max is relatief moeilijk te verbeteren, dus elke stijging is waardevol. 
+                                    Je hart-long systeem past zich geleidelijk aan aan de trainingsbelasting. Je kunt iets hogere pieken bereiken en je explosive power neemt toe. 
+                                    <strong>Hoe verder te verbeteren?</strong> Voeg meer specifiek VO2max werk toe: 4-6x 4min @ 95-105% max HR, of 8-10x 2min @ 110-120% threshold, 
+                                    of 15-20x 30sec all-out sprints. Doe dit 1-2x per week voor maximale stimulus. Zorg wel voor 48-72u herstel na deze zware sessies. 
+                                    Combineer met krachtraining voor extra power ontwikkeling.</span>
                                 @elseif($deltaMax < -5)
-                                    Daling gedetecteerd. Dit kan wijzen op vermoeidheid of ondertraining.
+                                    <span class="text-gray-800">Daling gedetecteerd. Je max capaciteit is gedaald met <strong>{{ number_format(abs($deltaMax), 1) }}%</strong>. Dit kan wijzen op vermoeidheid of ondertraining. 
+                                    <strong>Wat betekent dit?</strong> Je maximale zuurstofopname is afgenomen - je kunt minder hoge pieken bereiken dan voorheen. 
+                                    Mogelijke oorzaken: overtraining (chronische vermoeidheid door te veel intensiteit), detraining (gebrek aan VO2max specifieke training >3-4 weken), 
+                                    ziekte of infectie (zelfs lichte infecties kunnen je max capaciteit weken verlagen), inadequaat herstel, of ondervoeding. 
+                                    <strong>Herstelplan:</strong> Neem 1-2 weken volledige rust of alleen zeer lage intensiteit (zone 1). Evalueer je lifestyle: slaap >8u, verhoog calorieën iets, 
+                                    verminder stress waar mogelijk. Bouw daarna geleidelijk weer op: eerst threshold werk, dan pas VO2max. 
+                                    Als de daling aanhoudt na 4-6 weken normaal trainen, overweeg dan medische check-up (bloedtest, hartslagvariabiliteit meting).</span>
                                 @else
-                                    Je maximale capaciteit is stabiel.
+                                    <span class="text-gray-800">Je maximale capaciteit is stabiel. 
+                                    <strong>Wat betekent dit?</strong> Max capaciteit is moeilijk te verbeteren eenmaal je een goed niveau hebt bereikt - stabiliteit is vaak normaal, 
+                                    vooral als je focus ligt op andere zones (threshold, endurance). Als je echter actief VO2max training doet zonder verbetering te zien, 
+                                    kan dit betekenen dat je een genetisch plafond nadert, of dat je trainingsaanpak moet worden aangepast. 
+                                    <strong>Opties om door te breken:</strong> Intensiveer je VO2max sessies (hardere intervallen, meer herhalingen tot near-failure), 
+                                    voeg meer variatie toe (wissel tussen 30sec sprints, 2min hard, 4min @ max), probeer blokperiodisering (4-6 weken focus op alleen VO2max training), 
+                                    of voeg hoogtetraining toe indien mogelijk. Blijf wel voldoende basis werk doen - VO2max kan alleen groeien op een sterke aerobe basis.</span>
                                 @endif
                             </span>
                         </p>
