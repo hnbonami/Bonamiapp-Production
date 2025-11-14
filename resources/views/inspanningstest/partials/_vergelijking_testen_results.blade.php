@@ -19,7 +19,7 @@
 @endphp
 
 @if($toonVergelijking)
-<div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6">
+<div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mt-6 mb-6">
     <div class="p-6">
         <div class="flex items-center gap-3 mb-4">
             <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
@@ -638,10 +638,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     pointRadius: 0,
                     pointHoverRadius: 0,
                     showLine: true,
-                    yAxisID: 'y1', // Plot op lactaat-as
+                    yAxisID: 'y1',
                     fill: false,
                     order: 100 - testIndex,
-                    tension: 0
+                    tension: 0,
+                    skipLegend: true // Verberg in legende
                 });
             }
 
@@ -661,10 +662,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     pointRadius: 0,
                     pointHoverRadius: 0,
                     showLine: true,
-                    yAxisID: 'y1', // Plot op lactaat-as
+                    yAxisID: 'y1',
                     fill: false,
                     order: 100 - testIndex,
-                    tension: 0
+                    tension: 0,
+                    skipLegend: true // Verberg in legende
                 });
             }
         });
@@ -707,7 +709,46 @@ document.addEventListener('DOMContentLoaded', function() {
                     labels: {
                         font: { size: 11 },
                         usePointStyle: true,
-                        boxWidth: 8
+                        boxWidth: 8,
+                        padding: 10,
+                        filter: function(legendItem, chartData) {
+                            // Verberg drempellijnen in de legende
+                            const dataset = chartData.datasets[legendItem.datasetIndex];
+                            return !dataset.skipLegend;
+                        },
+                        generateLabels: function(chart) {
+                            const datasets = chart.data.datasets;
+                            const labels = [];
+                            const seenTests = new Set();
+                            
+                            // Groepeer per test datum - toon alleen 1 item per test
+                            datasets.forEach((dataset, i) => {
+                                if (dataset.skipLegend) return; // Skip drempellijnen
+                                
+                                // Extract test datum uit label (bijv. "Huidige test (14-11-2025) - Hartslag")
+                                const match = dataset.label.match(/(.*?)\s*-\s*(Hartslag|Lactaat)/);
+                                if (!match) return;
+                                
+                                const testNaam = match[1].trim();
+                                
+                                // Voeg alleen toe als we deze test nog niet hebben gezien
+                                if (!seenTests.has(testNaam)) {
+                                    seenTests.add(testNaam);
+                                    
+                                    labels.push({
+                                        text: testNaam,
+                                        fontColor: '#1f2937',
+                                        fillStyle: dataset.borderColor,
+                                        strokeStyle: dataset.borderColor,
+                                        lineWidth: 2,
+                                        hidden: false,
+                                        datasetIndex: i
+                                    });
+                                }
+                            });
+                            
+                            return labels;
+                        }
                     }
                 },
                 title: {
