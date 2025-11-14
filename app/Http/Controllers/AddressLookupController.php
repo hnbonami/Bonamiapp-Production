@@ -38,24 +38,55 @@ class AddressLookupController extends Controller
             try {
                 $openDataUrl = "https://api.basisregisters.vlaanderen.be/v2/adresmatch";
                 
-                $openDataResponse = Http::timeout(3)->get($openDataUrl, [
+                Log::info('🌐 Calling Open Data Belgium API...', [
+                    'url' => $openDataUrl,
+                    'params' => [
+                        'straatnaam' => $query,
+                        'postcode' => $postcode
+                    ]
+                ]);
+                
+                $openDataResponse = Http::timeout(5)->get($openDataUrl, [
                     'straatnaam' => $query,
                     'postcode' => $postcode,
-                    'limit' => 20
+                    'limit' => 50
+                ]);
+                
+                Log::info('📡 Open Data Belgium API response', [
+                    'status' => $openDataResponse->status(),
+                    'successful' => $openDataResponse->successful(),
+                    'body_length' => strlen($openDataResponse->body())
                 ]);
                 
                 if ($openDataResponse->successful()) {
                     $data = $openDataResponse->json();
+                    
+                    Log::info('📦 Raw API data', [
+                        'data_keys' => array_keys($data ?? []),
+                        'full_data' => $data
+                    ]);
+                    
                     $straten = [];
                     
+                    // CORRECTE PARSING: adresMatches bevat complexe objecten
                     if (isset($data['adresMatches']) && is_array($data['adresMatches'])) {
                         foreach ($data['adresMatches'] as $match) {
-                            if (isset($match['straatnaam'])) {
+                            // DUBBEL GENESTE STRUCTUUR! straatnaam.straatnaam.geografischeNaam.spelling
+                            if (isset($match['straatnaam']['straatnaam']['geografischeNaam']['spelling'])) {
+                                $straten[] = $match['straatnaam']['straatnaam']['geografischeNaam']['spelling'];
+                            } 
+                            // Alternatieve structuur (enkele nesting)
+                            elseif (isset($match['straatnaam']['geografischeNaam']['spelling'])) {
+                                $straten[] = $match['straatnaam']['geografischeNaam']['spelling'];
+                            }
+                            // Direct string fallback
+                            elseif (isset($match['straatnaam']) && is_string($match['straatnaam'])) {
                                 $straten[] = $match['straatnaam'];
                             }
                         }
                     }
                     
+                    // Remove duplicates en sort
                     $straten = array_unique($straten);
                     sort($straten);
                     $straten = array_values($straten);
@@ -71,43 +102,20 @@ class AddressLookupController extends Controller
                             'straten' => $straten,
                             'source' => 'open_data_belgium'
                         ]);
+                    } else {
+                        Log::warning('⚠️ Open Data Belgium API returned no streets', [
+                            'raw_matches' => $data['adresMatches'] ?? 'no matches'
+                        ]);
                     }
                 }
             } catch (\Exception $apiError) {
-                Log::warning('⚠️ Open Data Belgium API failed', [
-                    'error' => $apiError->getMessage()
+                Log::error('❌ Open Data Belgium API exception', [
+                    'error' => $apiError->getMessage(),
+                    'trace' => $apiError->getTraceAsString()
                 ]);
             }
             
-            // METHODE 2: Probeer GeoNames API (backup, wereldwijde dekking)
-            try {
-                $geoNamesUrl = "http://api.geonames.org/postalCodeSearchJSON";
-                
-                $geoNamesResponse = Http::timeout(3)->get($geoNamesUrl, [
-                    'postalcode' => $postcode,
-                    'country' => 'BE',
-                    'username' => 'demo', // Vervang door eigen GeoNames username
-                    'maxRows' => 50
-                ]);
-                
-                if ($geoNamesResponse->successful()) {
-                    $data = $geoNamesResponse->json();
-                    $straten = [];
-                    
-                    // GeoNames geeft geen straatnamen, maar wel plaatsnamen
-                    // We gebruiken dit als ultra-fallback
-                    
-                    Log::info('✅ GeoNames API responded', [
-                        'data' => $data
-                    ]);
-                }
-            } catch (\Exception $apiError) {
-                Log::warning('⚠️ GeoNames API failed', [
-                    'error' => $apiError->getMessage()
-                ]);
-            }
-            
-            // METHODE 3: Probeer BPost API (origineel)
+            // METHODE 2: Probeer BPost API (backup)
             try {
                 $bpostUrl = "https://webservices-pub.bpost.be/ws/ExternalMailingAddressProofingCSREST_v1/address/autocomplete";
                 
@@ -177,22 +185,43 @@ class AddressLookupController extends Controller
      */
     private function fallbackLocalStreets($query, $postcode)
     {
-        // Gemeenschappelijke straatnamen die in bijna ELKE Belgische gemeente voorkomen
+        // UITGEBREIDE lijst: gemeenschappelijke straatnamen + populaire steden
         $gemeenschappelijkeStraten = [
+            // Top 50 meest voorkomende straatnamen in België
             'Kerkstraat', 'Dorpsstraat', 'Schoolstraat', 'Stationsstraat', 'Markt',
             'Kapelstraat', 'Molenstraat', 'Kasteelstraat', 'Nieuwstraat', 'Hoogstraat',
             'Zuidstraat', 'Noordstraat', 'Ooststraat', 'Weststraat', 'Bergstraat',
             'Veldstraat', 'Bosstraat', 'Parkstraat', 'Industriestraat', 'Stationslaan',
-            'Koning Albertlaan', 'Koninginnelaan', 'Prins Boudewijnlaan', 'Gentsesteenweg',
-            'Brugsesteenweg', 'Antwerpsesteenweg', 'Brusselsesteenweg', 'Grote Markt'
+            'Koning Albertlaan', 'Koninginnelaan', 'Prins Boudewijnlaan', 
+            'Gentsesteenweg', 'Brugsesteenweg', 'Antwerpsesteenweg', 'Brusselsesteenweg',
+            
+            // Gent specifiek (9000)
+            'Overpoortstraat', 'Korenmarkt', 'Veldstraat', 'Kouter', 'Graslei', 'Korenlei',
+            'Sint-Pietersnieuwstraat', 'Coupure', 'Ajuinlei', 'Lammerstraat', 'Cataloniëstraat',
+            'Gaverstraat', 'Phoenixstraat', 'Woodrow Wilsonplein', 'Nederkouter', 'Zuid',
+            'Vrijdagmarkt', 'Sint-Baafsplein', 'Hoogpoort', 'Steendam', 'Ketelvest',
+            'Dendermondsesteenweg', 'Kortrijksesteenweg', 'Papegaaistraat', 'Zonnestraat',
+            
+            // Andere grote steden
+            'Meir', 'Groenplaats', 'De Keyserlei', 'Leysstraat', // Antwerpen
+            'Wetstraat', 'Louizalaan', 'Grote Markt', 'Nieuwstraat', // Brussel
+            'Steenstraat', 'Wollestraat', 'Markt', 'Simon Stevinplein', // Brugge
+            'Bondgenotenlaan', 'Tiensestraat', 'Naamsestraat', 'Oude Markt', // Leuven
+            
+            // Extra gemeenschappelijke namen
+            'Gemeentestraat', 'Hospitaalstraat', 'Brouwerijstraat', 'Stationsplein',
+            'Koningstraat', 'Leopoldlaan', 'Elisabethlaan', 'Albertlaan',
+            'Kleine Breemstraat', 'Lange Nieuwstraat', 'Korte Nieuwstraat'
         ];
         
-        // Filter op query (case-insensitive)
+        // Filter op query (case-insensitive, partial match)
         $gefilterd = array_filter($gemeenschappelijkeStraten, function($straat) use ($query) {
             return stripos($straat, $query) !== false;
         });
         
+        // Sort alfabetisch
         $gefilterd = array_values($gefilterd);
+        sort($gefilterd);
         
         Log::info('📚 Ultra-fallback: gemeenschappelijke straatnamen voor ALLE postcodes', [
             'postcode' => $postcode,
@@ -205,6 +234,7 @@ class AddressLookupController extends Controller
             'success' => true,
             'straten' => $gefilterd,
             'fallback' => true,
+            'source' => 'local_database',
             'message' => count($gefilterd) > 0 
                 ? 'Suggesties op basis van veelvoorkomende straatnamen' 
                 : 'Geen suggesties. Typ de volledige straatnaam in.'
