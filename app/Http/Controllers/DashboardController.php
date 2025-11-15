@@ -461,7 +461,7 @@ class DashboardController extends Controller
             💪 Succes met je training en veel plezier met je resultaten!
         </p>
         <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #cbd5e1;">
-            💡 Tip: Deze widget kan je verbergen via het tandwiel-icoon rechtsboven
+            💡 Tip: Deze widget kan je verbergen via het pijltje rechtsboven
         </p>
     </div>
 </div>';
@@ -627,7 +627,7 @@ class DashboardController extends Controller
             ❓ Hulp nodig? Neem contact op via <strong style="color: #cb5739;">support@performancepulse.be</strong>
         </p>
         <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #cbd5e1;">
-            💡 Tip: Deze widget kan je verwijderen of aanpassen via het tandwiel-icoon rechtsboven
+            💡 Tip: Deze widget kan je verwijderen of aanpassen via het pijltje rechtsboven
         </p>
     </div>
 </div>

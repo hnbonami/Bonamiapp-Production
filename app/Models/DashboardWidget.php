@@ -199,7 +199,28 @@ class DashboardWidget extends Model
 
     public function canBeDeletedBy(User $user)
     {
-        return $this->canBeEditedBy($user);
+        // Super admin mag alleen widgets van organisatie 1 verwijderen
+        if (in_array($user->role, ['super_admin', 'superadmin'])) {
+            return $this->organisatie_id === 1;
+        }
+
+        // Check organisatie
+        if ($this->organisatie_id !== $user->organisatie_id) {
+            return false;
+        }
+
+        // Klanten mogen alleen hun eigen 'only_me' widgets verbergen/verwijderen
+        if ($user->role === 'klant') {
+            return $this->visibility === 'only_me' && $this->created_by === $user->id;
+        }
+
+        // Admin mag alles binnen eigen organisatie verwijderen
+        if (in_array($user->role, ['admin', 'organisatie_admin'])) {
+            return true;
+        }
+
+        // Medewerker mag alleen eigen widgets verwijderen
+        return $this->created_by === $user->id;
     }
 
     public function canBeDraggedBy(User $user)
