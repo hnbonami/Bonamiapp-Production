@@ -80,7 +80,7 @@ class KlantController extends Controller
         $validated = $request->validate([
             'voornaam' => 'required|string|max:255',
             'naam' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255',
+            'email' => 'required|email|max:255',
             'telefoonnummer' => 'nullable|string|max:20',
             'geboortedatum' => 'nullable|date',
             'geslacht' => 'required|in:Man,Vrouw,Anders',
@@ -266,7 +266,7 @@ class KlantController extends Controller
         $validated = $request->validate([
             'voornaam' => 'required|string|max:255',
             'naam' => 'required|string|max:255',
-            'email' => 'nullable|email|max:255|unique:klanten,email',
+            'email' => 'required|email|max:255|unique:klanten,email',
             'telefoonnummer' => 'nullable|string|max:20',
             'geboortedatum' => 'nullable|date',
             'geslacht' => 'required|in:Man,Vrouw,Anders',
