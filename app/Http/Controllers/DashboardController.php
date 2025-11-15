@@ -25,18 +25,41 @@ class DashboardController extends Controller
             ->with('creator')
             ->get();
 
+        // Extra debug-logging: vergelijk met alle widgets van de organisatie
+        // zodat we kunnen zien welke widgets mogelijk door de visibleFor-scope gefilterd worden
+        $allOrgWidgets = DashboardWidget::where('organisatie_id', $user->organisatie_id)->get();
+        \Log::info('DEBUG Dashboard widgets vergelijking', [
+            'user_id' => $user->id,
+            'visible_widget_ids' => $widgets->pluck('id')->toArray(),
+            'visible_widgets_detail' => $widgets->map(fn($w) => [
+                'id' => $w->id,
+                'title' => $w->title ?? null,
+                'visibility' => $w->visibility ?? null,
+                'created_by' => $w->created_by ?? null,
+                'organisatie_id' => $w->organisatie_id ?? null,
+            ])->toArray(),
+            'all_org_widget_ids' => $allOrgWidgets->pluck('id')->toArray(),
+            'all_org_widgets_detail' => $allOrgWidgets->map(fn($w) => [
+                'id' => $w->id,
+                'title' => $w->title ?? null,
+                'visibility' => $w->visibility ?? null,
+                'created_by' => $w->created_by ?? null,
+                'organisatie_id' => $w->organisatie_id ?? null,
+            ])->toArray(),
+        ]);
+
         // Haal user-specific layouts op, of gebruik CREATOR/WIDGET defaults
         $layouts = $widgets->map(function ($widget) use ($user) {
             // ALTIJD de creator layout gebruiken als basis
             $creatorLayout = DashboardUserLayout::where('widget_id', $widget->id)
                 ->where('user_id', $widget->created_by)
                 ->first();
-            
+
             // Haal user layout op (als die bestaat)
             $userLayout = DashboardUserLayout::where('user_id', $user->id)
                 ->where('widget_id', $widget->id)
                 ->first();
-            
+
             // Bepaal welke layout te gebruiken
             if ($userLayout && $user->id === $widget->created_by) {
                 // Creator gebruikt zijn eigen layout
@@ -283,7 +306,7 @@ class DashboardController extends Controller
             'grid_y' => 0,
             'grid_width' => 12, // Volledige breedte
             'grid_height' => 12, // Volledige hoogte voor zichtbaarheid
-            'visibility' => 'only_me', // Alleen zichtbaar voor deze gebruiker
+            'visibility' => 'medewerkers', // Zichtbaar voor alle medewerkers/admins in de organisatie
             'created_by' => $userId,
             'organisatie_id' => $organisatieId,
             'is_active' => true,
@@ -610,7 +633,7 @@ class DashboardController extends Controller
             </div>
 
             <div style="background: #f8faf9; border: 1px solid #e0e5e3; border-radius: 8px; padding: 1rem;">
-                <h4 style="margin: 0 0 0.5rem 0; color: #475569;">🔒 Privacy & Beveiliging</h4>
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1rem;">🔒 Privacy & Beveiliging</h4>
                 <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
                     <li>Alle klantdata is <strong>GDPR-compliant</strong> opgeslagen</li>
                     <li>Alleen jij en je medewerkers hebben toegang tot klantdata</li>
