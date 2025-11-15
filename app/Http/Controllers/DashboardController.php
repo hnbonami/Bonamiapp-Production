@@ -332,7 +332,7 @@ class DashboardController extends Controller
             'grid_x' => 0,
             'grid_y' => 0,
             'grid_width' => 12,
-            'grid_height' => 10,
+            'grid_height' => 15,
             'visibility' => 'only_me',
             'created_by' => $userId,
             'organisatie_id' => $organisatieId,
@@ -346,7 +346,7 @@ class DashboardController extends Controller
             'grid_x' => 0,
             'grid_y' => 0,
             'grid_width' => 12,
-            'grid_height' => 10,
+            'grid_height' => 15,
             'is_visible' => true,
         ]);
 

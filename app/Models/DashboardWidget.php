@@ -178,7 +178,7 @@ class DashboardWidget extends Model
             return $this->organisatie_id === 1;
         }
 
-        // Klanten mogen nooit bewerken
+        // Klanten mogen NOOIT widgets bewerken (ook niet hun eigen)
         if ($user->role === 'klant') {
             return false;
         }
@@ -214,7 +214,7 @@ class DashboardWidget extends Model
             return false;
         }
 
-        // Iedereen binnen eigen organisatie mag drag & droppen
+        // Iedereen binnen eigen organisatie mag drag & droppen (inclusief klanten!)
         return true;
     }
 
@@ -225,22 +225,12 @@ class DashboardWidget extends Model
             return $this->organisatie_id === 1;
         }
 
-        // Klanten mogen niet resizen
-        if ($user->role === 'klant') {
-            return false;
-        }
-
         // Check organisatie
         if ($this->organisatie_id !== $user->organisatie_id) {
             return false;
         }
 
-        // Admin mag alles binnen eigen organisatie
-        if (in_array($user->role, ['admin', 'organisatie_admin'])) {
-            return true;
-        }
-
-        // Medewerker mag alleen eigen widgets
-        return $this->created_by === $user->id;
+        // Iedereen binnen eigen organisatie mag resizen (inclusief klanten!)
+        return true;
     }
 }
