@@ -102,6 +102,26 @@ class OrganisatieController extends Controller
             // ✅ Kopieer Performance Pulse default branding naar nieuwe organisatie
             $this->copyDefaultBrandingToOrganisatie($organisatie);
 
+            // 🎉 Maak automatisch welkomst/handleiding widget aan voor nieuwe organisatie
+            // Deze widget wordt zichtbaar op het dashboard van de eerste admin die inlogt
+            try {
+                \App\Http\Controllers\DashboardController::createWelcomeWidget(
+                    $organisatie->id,
+                    auth()->id() // Superadmin is de creator
+                );
+                
+                Log::info('✅ Welkomst widget automatisch aangemaakt bij nieuwe organisatie', [
+                    'organisatie_id' => $organisatie->id,
+                    'organisatie_naam' => $organisatie->naam
+                ]);
+            } catch (\Exception $widgetError) {
+                // Log error maar laat organisatie aanmaak doorgaan
+                Log::error('⚠️ Kon welkomst widget niet aanmaken', [
+                    'organisatie_id' => $organisatie->id,
+                    'error' => $widgetError->getMessage()
+                ]);
+            }
+
             Log::info('Nieuwe organisatie aangemaakt', [
                 'organisatie_id' => $organisatie->id,
                 'naam' => $organisatie->naam,
@@ -109,7 +129,7 @@ class OrganisatieController extends Controller
             ]);
 
             return redirect()->route('organisaties.index')
-                ->with('success', 'Organisatie "' . $organisatie->naam . '" succesvol aangemaakt.');
+                ->with('success', 'Organisatie "' . $organisatie->naam . '" succesvol aangemaakt (inclusief welkomst widget).');
         } catch (\Exception $e) {
             Log::error('Fout bij aanmaken organisatie', [
                 'error' => $e->getMessage(),

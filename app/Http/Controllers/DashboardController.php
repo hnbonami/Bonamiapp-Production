@@ -257,6 +257,276 @@ class DashboardController extends Controller
     }
 
     /**
+     * Maak welkomst/handleiding widget aan voor nieuwe organisatie
+     * 
+     * @param int $organisatieId
+     * @param int $userId (creator/admin)
+     * @return DashboardWidget
+     */
+    public static function createWelcomeWidget($organisatieId, $userId)
+    {
+        // Haal organisatie op voor personalisatie
+        $organisatie = \App\Models\Organisatie::find($organisatieId);
+        $organisatieNaam = $organisatie ? $organisatie->naam : 'Performance Pulse';
+        
+        // Maak de welkomst widget aan
+        $widget = DashboardWidget::create([
+            'type' => 'text',
+            'title' => '👋 Welkom bij ' . $organisatieNaam,
+            'content' => self::getWelcomeWidgetContent($organisatieNaam),
+            'background_color' => '#ffffff', // Wit
+            'text_color' => '#374151', // Zachte dark gray
+            'grid_x' => 0,
+            'grid_y' => 0,
+            'grid_width' => 12, // Volledige breedte
+            'grid_height' => 12, // ⚡ HOGER: voor volledige zichtbaarheid
+            'visibility' => 'everyone', // Zichtbaar voor iedereen in organisatie
+            'created_by' => $userId,
+            'organisatie_id' => $organisatieId,
+            'is_active' => true,
+        ]);
+
+        // Maak direct een layout aan voor de creator
+        DashboardUserLayout::create([
+            'user_id' => $userId,
+            'widget_id' => $widget->id,
+            'grid_x' => 0,
+            'grid_y' => 0,
+            'grid_width' => 12,
+            'grid_height' => 8,
+            'is_visible' => true,
+        ]);
+
+        Log::info('✅ Welkomst widget aangemaakt voor nieuwe organisatie', [
+            'widget_id' => $widget->id,
+            'organisatie_id' => $organisatieId,
+            'organisatie_naam' => $organisatieNaam,
+            'user_id' => $userId
+        ]);
+
+        return $widget;
+    }
+
+    /**
+     * Genereer HTML content voor welkomst widget
+     */
+    private static function getWelcomeWidgetContent($organisatieNaam = 'Performance Pulse')
+    {
+        return <<<HTML
+<div class="welcome-widget" style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.6;">
+    <!-- Header met subtiele accent kleuren -->
+    <div style="background: linear-gradient(135deg, #f8fafc 0%, #c8e1eb15 100%); color: #475569; padding: 1.5rem; border-radius: 12px 12px 0 0; margin: -1rem -1rem 0 -1rem; border-bottom: 2px solid #c8e1eb;">
+        <h2 style="margin: 0 0 0.5rem 0; font-size: 1.75rem; font-weight: 700; color: #475569;">
+            🎉 Welkom bij <span style="color: #cb5739;">{$organisatieNaam}</span>
+        </h2>
+        <p style="margin: 0; opacity: 0.8; font-size: 1rem; color: #64748b;">
+            Jouw complete platform voor bikefits, inspanningstesten en klantenbeheer
+        </p>
+    </div>
+
+    <!-- Tabbladen met accent kleuren -->
+    <div style="margin-top: 1rem;">
+        <div class="tab-buttons" style="display: flex; gap: 0.5rem; border-bottom: 2px solid #c8e1eb; margin-bottom: 1rem;">
+            <button onclick="showTab('start')" class="tab-btn active" data-tab="start" style="padding: 0.75rem 1.25rem; background: #c8e1eb; color: #475569; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                🚀 Snel Starten
+            </button>
+            <button onclick="showTab('features')" class="tab-btn" data-tab="features" style="padding: 0.75rem 1.25rem; background: #f8fafc; color: #94a3b8; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                ✨ Mogelijkheden
+            </button>
+            <button onclick="showTab('tips')" class="tab-btn" data-tab="tips" style="padding: 0.75rem 1.25rem; background: #f8fafc; color: #94a3b8; border: none; border-radius: 8px 8px 0 0; cursor: pointer; font-weight: 600; transition: all 0.2s;">
+                💡 Tips & Tricks
+            </button>
+        </div>
+
+        <!-- Tab: Snel Starten -->
+        <div id="tab-start" class="tab-content" style="display: block;">
+            <h3 style="color: #475569; margin-top: 0; font-size: 1.25rem;">📋 Eerste stappen</h3>
+            
+            <div style="background: #c8e1eb20; border-left: 3px solid #c8e1eb; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1rem;">1️⃣ Klanten toevoegen</h4>
+                <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
+                    Ga naar <strong style="color: #cb5739;">Klanten</strong> → <strong>Nieuwe klant</strong> om je eerste klant toe te voegen.
+                    Vul naam, contactgegevens en relevante informatie in.
+                </p>
+            </div>
+
+            <div style="background: #f8faf9; border-left: 3px solid #cbd5e1; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1rem;">2️⃣ Inspanningstesten aanmaken</h4>
+                <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
+                    Selecteer een klant → <strong style="color: #cb5739;">Nieuwe inspanningstest</strong>. Kies testtype (fietstest/looptest),
+                    vul testresultaten in en genereer automatisch drempelwaarden + trainingsadvies!
+                </p>
+            </div>
+
+            <div style="background: #fafaf8; border-left: 3px solid #cbd5e1; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1rem;">3️⃣ Bikefits uitvoeren</h4>
+                <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
+                    Ga naar <strong style="color: #cb5739;">Klanten</strong> → selecteer klant → <strong>Nieuwe bikefit</strong>.
+                    Vul metingen in en gebruik de automatische calculator voor optimale fietshouding.
+                </p>
+            </div>
+
+            <div style="background: #cb573910; border-left: 3px solid #cb5739; padding: 1rem; border-radius: 6px;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1rem;">4️⃣ Dashboard widgets aanpassen</h4>
+                <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
+                    Klik rechtsboven op <strong style="color: #cb5739;">+ Widget toevoegen</strong> om je dashboard aan te passen.
+                    Sleep widgets om ze te verplaatsen en pas grootte aan naar wens!
+                </p>
+            </div>
+        </div>
+
+        <!-- Tab: Mogelijkheden -->
+        <div id="tab-features" class="tab-content" style="display: none;">
+            <h3 style="color: #475569; margin-top: 0; font-size: 1.25rem;">✨ Wat kan je allemaal?</h3>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                <div style="background: #c8e1eb15; border: 1px solid #c8e1eb; border-radius: 8px; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">👥</div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: #475569;">Klantenbeheer</h4>
+                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b; font-size: 0.9rem;">
+                        <li>Volledige klantprofielen</li>
+                        <li>Documenten & foto's uploaden</li>
+                        <li>Historie van testen & bikefits</li>
+                        <li>GDPR-compliant</li>
+                    </ul>
+                </div>
+
+                <div style="background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: #475569;">Inspanningstesten</h4>
+                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b; font-size: 0.9rem;">
+                        <li>Automatische drempelberekening</li>
+                        <li>AI-powered trainingsadvies</li>
+                        <li>Test vergelijking (progressie)</li>
+                        <li>PDF rapporten genereren</li>
+                    </ul>
+                </div>
+
+                <div style="background: #cb573908; border: 1px solid #cb573940; border-radius: 8px; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🚴</div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: #475569;">Bikefits</h4>
+                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b; font-size: 0.9rem;">
+                        <li>Geautomatiseerde calculator</li>
+                        <li>Voor & na metingen</li>
+                        <li>Mobiliteitstabellen</li>
+                        <li>Professionele rapporten</li>
+                    </ul>
+                </div>
+
+                <div style="background: #fafafa; border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem;">
+                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📈</div>
+                    <h4 style="margin: 0 0 0.5rem 0; color: #475569;">Analytics & Widgets</h4>
+                    <ul style="margin: 0; padding-left: 1.25rem; color: #64748b; font-size: 0.9rem;">
+                        <li>Real-time statistieken</li>
+                        <li>Aanpasbaar dashboard</li>
+                        <li>Grafieken & metrics</li>
+                        <li>Export functionaliteit</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab: Tips & Tricks -->
+        <div id="tab-tips" class="tab-content" style="display: none;">
+            <h3 style="color: #475569; margin-top: 0; font-size: 1.25rem;">💡 Handige tips</h3>
+            
+            <div style="background: #c8e1eb15; border: 1px solid #c8e1eb; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569;">⌨️ Sneltoetsen</h4>
+                <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                    <li><kbd>Ctrl/Cmd + K</kbd> - Snelle zoekfunctie (overal in de app)</li>
+                    <li><kbd>Ctrl/Cmd + N</kbd> - Nieuwe klant aanmaken</li>
+                    <li>Klik op een klant om direct alle info te zien</li>
+                </ul>
+            </div>
+
+            <div style="background: #fafaf8; border: 1px solid #e5e5e0; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569;">🎯 Best practices</h4>
+                <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                    <li>Vul altijd <strong style="color: #cb5739;">doelstellingen</strong> in bij klanten → betere AI-adviezen!</li>
+                    <li>Upload <strong>testresultaten</strong> direct na de test → geen werk verloren</li>
+                    <li>Gebruik <strong style="color: #cb5739;">test vergelijking</strong> om progressie te tonen aan klanten</li>
+                    <li>Maak gebruik van <strong>PDF export</strong> voor professionele rapportage</li>
+                </ul>
+            </div>
+
+            <div style="background: #f8faf9; border: 1px solid #e0e5e3; border-radius: 8px; padding: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569;">🔒 Privacy & Beveiliging</h4>
+                <ul style="margin: 0; padding-left: 1.25rem; color: #64748b;">
+                    <li>Alle klantdata is <strong>GDPR-compliant</strong> opgeslagen</li>
+                    <li>Alleen jij en je medewerkers hebben toegang tot klantdata</li>
+                    <li>Regelmatige backups voor dataveiligheid</li>
+                    <li>Secure SSL-verbinding voor alle communicatie</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer met accent kleur -->
+    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #c8e1eb; text-align: center; color: #94a3b8; font-size: 0.875rem;">
+        <p style="margin: 0;">
+            ❓ Hulp nodig? Neem contact op via <strong style="color: #cb5739;">support@performancepulse.be</strong>
+        </p>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #cbd5e1;">
+            💡 Tip: Deze widget kan je verwijderen of aanpassen via het tandwiel-icoon rechtsboven
+        </p>
+    </div>
+</div>
+
+<script>
+function showTab(tabName) {
+    // Verberg alle tabs
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+    });
+    
+    // Verwijder active class van alle buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.style.background = '#f8fafc';
+        btn.style.color = '#94a3b8';
+    });
+    
+    // Toon geselecteerde tab
+    document.getElementById('tab-' + tabName).style.display = 'block';
+    
+    // Activeer button met accent kleur
+    const activeBtn = document.querySelector('.tab-btn[data-tab="' + tabName + '"]');
+    activeBtn.style.background = '#c8e1eb';
+    activeBtn.style.color = '#475569';
+}
+
+// Hover effect voor tab buttons met accent kleuren
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            if (this.style.background !== 'rgb(200, 225, 235)') {
+                this.style.background = '#c8e1eb50';
+            }
+        });
+        
+        btn.addEventListener('mouseleave', function() {
+            if (this.style.background !== 'rgb(200, 225, 235)') {
+                this.style.background = '#f8fafc';
+            }
+        });
+    });
+});
+</script>
+
+<style>
+kbd {
+    background: #f8fafc;
+    border: 1px solid #c8e1eb;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.875rem;
+    font-family: monospace;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+</style>
+HTML;
+    }
+
+    /**
      * Toon formulier voor widget bewerken
      */
     public function edit(DashboardWidget $widget)

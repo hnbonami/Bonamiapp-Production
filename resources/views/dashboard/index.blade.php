@@ -88,7 +88,7 @@
                         <div class="widget-content" style="padding:1.5em;">
                             @if($widget->type === 'text')
                                 <div style="font-size:0.95em;line-height:1.6;">
-                                    {!! nl2br(e($widget->content)) !!}
+                                    {!! $widget->content !!}
                                 </div>
                             
                             @elseif($widget->type === 'metric')
