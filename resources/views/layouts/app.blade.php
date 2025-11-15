@@ -31,8 +31,23 @@
     <!-- Dark Mode CSS -->
     <link rel="stylesheet" href="{{ asset('css/darkmode.css') }}">
     
-    <!-- Dark Mode Script (load meteen voor flicker-free) -->
-    <script src="{{ asset('js/darkmode.js') }}"></script>
+    <!-- Dark Mode Script (load meteen voor flicker-free) - AANGEPAST: default LIGHT mode voor nieuwe gebruikers -->
+    <script>
+        // Dark mode initialisatie - ALTIJD light mode voor nieuwe gebruikers
+        (function() {
+            // Haal opgeslagen voorkeur op (alleen als user expliciet heeft gekozen)
+            const savedMode = localStorage.getItem('darkMode');
+            
+            // BELANGRIJK: Alleen dark mode aanzetten als user dit EXPLICIET heeft gekozen
+            // NIET automatisch systeem voorkeur gebruiken voor nieuwe users!
+            if (savedMode === 'enabled') {
+                document.documentElement.classList.add('dark-mode');
+                document.body.classList.add('dark-mode');
+            }
+            // Als savedMode === null (nieuwe gebruiker) of 'disabled': blijf in light mode (default)
+        })();
+    </script>
+    <script src="{{ asset('js/darkmode.js') }}" defer></script>
     
     {{-- Custom Branding CSS Variabelen --}}
     @if(isset($organisatieBranding) && $organisatieBranding)

@@ -500,7 +500,7 @@ class DashboardController extends Controller
     <!-- Header met subtiele accent kleuren -->
     <div style="background: linear-gradient(135deg, #f8fafc 0%, #c8e1eb15 100%); color: #475569; padding: 1.5rem; border-radius: 12px 12px 0 0; margin: -1rem -1rem 0 -1rem; border-bottom: 2px solid #c8e1eb;">
         <h2 style="margin: 0 0 0.5rem 0; font-size: 1.75rem; font-weight: 700; color: #475569;">
-            🎉 Welkom <span style="color: #cb5739;">{$voornaam}</span> bij <span style="color: #cb5739;">{$organisatieNaam}</span>
+            🎉 Welkom bij <span style="color: #cb5739;">{$organisatieNaam}</span>
         </h2>
         <p style="margin: 0; opacity: 0.8; font-size: 1rem; color: #64748b;">
             Jouw complete platform voor bikefits, inspanningstesten en klantenbeheer
