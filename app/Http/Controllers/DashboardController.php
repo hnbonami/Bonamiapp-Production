@@ -265,21 +265,24 @@ class DashboardController extends Controller
      */
     public static function createWelcomeWidget($organisatieId, $userId)
     {
-        // Haal organisatie op voor personalisatie
+        // Haal organisatie en gebruiker op voor personalisatie
         $organisatie = \App\Models\Organisatie::find($organisatieId);
+        $user = \App\Models\User::find($userId);
+        
         $organisatieNaam = $organisatie ? $organisatie->naam : 'Performance Pulse';
+        $voornaam = $user ? $user->voornaam : ($user ? $user->name : 'daar');
         
         // Maak de welkomst widget aan
         $widget = DashboardWidget::create([
             'type' => 'text',
             'title' => '👋 Welkom bij ' . $organisatieNaam,
-            'content' => self::getWelcomeWidgetContent($organisatieNaam),
+            'content' => self::getWelcomeWidgetContent($organisatieNaam, $voornaam),
             'background_color' => '#ffffff', // Wit
             'text_color' => '#374151', // Zachte dark gray
             'grid_x' => 0,
             'grid_y' => 0,
             'grid_width' => 12, // Volledige breedte
-            'grid_height' => 12, // ⚡ HOGER: voor volledige zichtbaarheid
+            'grid_height' => 12, // Volledige hoogte voor zichtbaarheid
             'visibility' => 'everyone', // Zichtbaar voor iedereen in organisatie
             'created_by' => $userId,
             'organisatie_id' => $organisatieId,
@@ -293,7 +296,7 @@ class DashboardController extends Controller
             'grid_x' => 0,
             'grid_y' => 0,
             'grid_width' => 12,
-            'grid_height' => 8,
+            'grid_height' => 12,
             'is_visible' => true,
         ]);
 
@@ -310,14 +313,14 @@ class DashboardController extends Controller
     /**
      * Genereer HTML content voor welkomst widget
      */
-    private static function getWelcomeWidgetContent($organisatieNaam = 'Performance Pulse')
+    private static function getWelcomeWidgetContent($organisatieNaam = 'Performance Pulse', $voornaam = 'daar')
     {
         return <<<HTML
 <div class="welcome-widget" style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.6;">
     <!-- Header met subtiele accent kleuren -->
     <div style="background: linear-gradient(135deg, #f8fafc 0%, #c8e1eb15 100%); color: #475569; padding: 1.5rem; border-radius: 12px 12px 0 0; margin: -1rem -1rem 0 -1rem; border-bottom: 2px solid #c8e1eb;">
         <h2 style="margin: 0 0 0.5rem 0; font-size: 1.75rem; font-weight: 700; color: #475569;">
-            🎉 Welkom bij <span style="color: #cb5739;">{$organisatieNaam}</span>
+            🎉 Welkom <span style="color: #cb5739;">{$voornaam}</span> bij <span style="color: #cb5739;">{$organisatieNaam}</span>
         </h2>
         <p style="margin: 0; opacity: 0.8; font-size: 1rem; color: #64748b;">
             Jouw complete platform voor bikefits, inspanningstesten en klantenbeheer
