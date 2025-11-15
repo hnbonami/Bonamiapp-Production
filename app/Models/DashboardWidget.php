@@ -127,9 +127,17 @@ class DashboardWidget extends Model
         // Basis query: widgets van eigen organisatie
         $query->where('organisatie_id', $user->organisatie_id);
 
-        // Klanten zien alleen 'everyone' widgets
+        // Klanten zien:
+        // - everyone widgets
+        // - only_me widgets die ze zelf hebben gemaakt (voor welkomst widget!)
         if ($user->role === 'klant') {
-            return $query->where('visibility', 'everyone');
+            return $query->where(function($q) use ($user) {
+                $q->where('visibility', 'everyone')
+                  ->orWhere(function($subQ) use ($user) {
+                      $subQ->where('visibility', 'only_me')
+                           ->where('created_by', $user->id);
+                  });
+            });
         }
 
         // Medewerkers en admins zien:
