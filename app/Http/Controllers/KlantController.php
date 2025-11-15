@@ -471,6 +471,25 @@ class KlantController extends Controller
                         ]);
                     }
                     
+                    // 🎉 WELKOMST WIDGET: Maak automatisch een welkomst widget aan voor nieuwe klant
+                    try {
+                        \App\Http\Controllers\DashboardController::createCustomerWelcomeWidget(
+                            $klant->organisatie_id,
+                            $user->id,
+                            $klant->voornaam ?? $klant->naam
+                        );
+                        
+                        \Log::info('✅ Welkomst widget aangemaakt voor nieuwe klant', [
+                            'klant_id' => $klant->id,
+                            'user_id' => $user->id
+                        ]);
+                    } catch (\Exception $widgetError) {
+                        \Log::error('❌ Failed to create welcome widget for customer', [
+                            'klant_id' => $klant->id,
+                            'error' => $widgetError->getMessage()
+                        ]);
+                    }
+                    
                 } catch (\Exception $e) {
                     \Log::error('❌ Fout bij aanmaken user account', [
                         'klant_id' => $klant->id,

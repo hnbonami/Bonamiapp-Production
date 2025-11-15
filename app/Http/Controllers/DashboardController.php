@@ -311,6 +311,163 @@ class DashboardController extends Controller
     }
 
     /**
+     * Maak welkomst widget aan voor nieuwe klant
+     * 
+     * @param int $organisatieId
+     * @param int $userId (klant user ID)
+     * @param string|null $voornaam
+     * @return DashboardWidget
+     */
+    public static function createCustomerWelcomeWidget($organisatieId, $userId, $voornaam = null)
+    {
+        $voornaam = $voornaam ?? 'daar';
+        
+        // Maak de welkomst widget aan voor klant
+        $widget = DashboardWidget::create([
+            'type' => 'text',
+            'title' => '👋 Welkom bij Performance Pulse',
+            'content' => self::getCustomerWelcomeWidgetContent($voornaam),
+            'background_color' => '#ffffff',
+            'text_color' => '#374151',
+            'grid_x' => 0,
+            'grid_y' => 0,
+            'grid_width' => 12,
+            'grid_height' => 10,
+            'visibility' => 'only_me',
+            'created_by' => $userId,
+            'organisatie_id' => $organisatieId,
+            'is_active' => true,
+        ]);
+
+        // Maak direct een layout aan voor de klant
+        DashboardUserLayout::create([
+            'user_id' => $userId,
+            'widget_id' => $widget->id,
+            'grid_x' => 0,
+            'grid_y' => 0,
+            'grid_width' => 12,
+            'grid_height' => 10,
+            'is_visible' => true,
+        ]);
+
+        Log::info('✅ Welkomst widget aangemaakt voor nieuwe klant', [
+            'widget_id' => $widget->id,
+            'organisatie_id' => $organisatieId,
+            'user_id' => $userId,
+            'voornaam' => $voornaam
+        ]);
+
+        return $widget;
+    }
+
+    /**
+     * Genereer HTML content voor klant welkomst widget
+     */
+    private static function getCustomerWelcomeWidgetContent($voornaam = 'daar')
+    {
+        return '<div class="customer-welcome-widget" style="font-family: system-ui, -apple-system, sans-serif; line-height: 1.6;">
+    <div style="background: linear-gradient(135deg, #f8fafc 0%, #c8e1eb15 100%); color: #475569; padding: 1.5rem; border-radius: 12px 12px 0 0; margin: -1rem -1rem 0 -1rem; border-bottom: 2px solid #c8e1eb;">
+        <h2 style="margin: 0 0 0.5rem 0; font-size: 1.75rem; font-weight: 700; color: #475569;">
+            👋 Welkom <span style="color: #cb5739;">' . htmlspecialchars($voornaam) . '</span>!
+        </h2>
+        <p style="margin: 0; opacity: 0.8; font-size: 1rem; color: #64748b;">
+            Jouw persoonlijke dashboard voor testresultaten en trainingsadvies
+        </p>
+    </div>
+
+    <div style="margin-top: 1.5rem;">
+        <h3 style="color: #475569; margin-top: 0; font-size: 1.25rem; margin-bottom: 1rem;">📋 Wat kan je hier vinden?</h3>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: #c8e1eb15; border: 1px solid #c8e1eb; border-radius: 8px; padding: 1rem;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1.1rem;">Dashboard</h4>
+                <p style="margin: 0; color: #64748b; font-size: 0.9rem; line-height: 1.5;">
+                    Hier vind je <strong style="color: #cb5739;">nieuwsberichten</strong>, belangrijke <strong>updates</strong> en 
+                    <strong>statistieken</strong> over je trainingsvoortgang.
+                </p>
+            </div>
+
+            <div style="background: #fafaf8; border: 1px solid #e5e5e0; border-radius: 8px; padding: 1rem;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">👤</div>
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1.1rem;">Mijn Profiel</h4>
+                <p style="margin: 0; color: #64748b; font-size: 0.9rem; line-height: 1.5;">
+                    Via de sidebar links vind je je <strong style="color: #cb5739;">volledige testgeschiedenis</strong>, 
+                    bikefits, inspanningstesten en andere documenten.
+                </p>
+            </div>
+        </div>
+
+        <div style="background: #f8faf9; border: 1px solid #e0e5e3; border-radius: 8px; padding: 1.25rem; margin-bottom: 1.5rem;">
+            <h4 style="margin: 0 0 1rem 0; color: #475569; font-size: 1.1rem;">🎯 Belangrijke functies</h4>
+            
+            <div style="display: grid; gap: 0.75rem;">
+                <div style="display: flex; align-items: start; gap: 0.75rem;">
+                    <div style="flex-shrink: 0; width: 24px; height: 24px; background: #c8e1eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #475569; font-size: 0.75rem;">1</div>
+                    <div>
+                        <strong style="color: #475569;">Sidebar navigatie</strong>
+                        <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.9rem;">
+                            Links in de sidebar vind je al je <strong>bikefits</strong>, <strong>inspanningstesten</strong>, 
+                            <strong>documenten</strong> en <strong>uploads</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: start; gap: 0.75rem;">
+                    <div style="flex-shrink: 0; width: 24px; height: 24px; background: #c8e1eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #475569; font-size: 0.75rem;">2</div>
+                    <div>
+                        <strong style="color: #475569;">Documenten downloaden & printen</strong>
+                        <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.9rem;">
+                            Bij elke test kan je rapporten <strong style="color: #cb5739;">downloaden als PDF</strong> 
+                            of direct <strong>printen</strong> voor je eigen archief.
+                        </p>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: start; gap: 0.75rem;">
+                    <div style="flex-shrink: 0; width: 24px; height: 24px; background: #c8e1eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #475569; font-size: 0.75rem;">3</div>
+                    <div>
+                        <strong style="color: #475569;">Profielinstellingen (rechtsboven)</strong>
+                        <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.9rem;">
+                            Klik rechtsboven op je <strong>avatar</strong> om je <strong>wachtwoord</strong> te wijzigen, 
+                            <strong>profielfoto</strong> te uploaden of <strong>persoonlijke gegevens</strong> aan te passen.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: #cb573910; border: 1px solid #cb573940; border-radius: 8px; padding: 1.25rem;">
+            <h4 style="margin: 0 0 0.75rem 0; color: #475569; font-size: 1.1rem;">💡 Snelle tips</h4>
+            <ul style="margin: 0; padding-left: 1.5rem; color: #64748b; font-size: 0.9rem;">
+                <li style="margin-bottom: 0.5rem;">
+                    <strong style="color: #475569;">Testgeschiedenis:</strong> Bekijk je progressie door verschillende testen met elkaar te vergelijken
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    <strong style="color: #475569;">Trainingsadvies:</strong> Elk testrapport bevat persoonlijk advies op basis van jouw resultaten
+                </li>
+                <li style="margin-bottom: 0.5rem;">
+                    <strong style="color: #475569;">Vragen?</strong> Neem contact op met je coach via de contactgegevens in je profiel
+                </li>
+                <li>
+                    <strong style="color: #475569;">Privacy:</strong> Al je gegevens worden veilig en GDPR-compliant opgeslagen
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 2px solid #c8e1eb; text-align: center; color: #94a3b8; font-size: 0.875rem;">
+        <p style="margin: 0;">
+            💪 Succes met je training en veel plezier met je resultaten!
+        </p>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.75rem; color: #cbd5e1;">
+            💡 Tip: Deze widget kan je verbergen via het tandwiel-icoon rechtsboven
+        </p>
+    </div>
+</div>';
+    }
+
+    /**
      * Genereer HTML content voor welkomst widget
      */
     private static function getWelcomeWidgetContent($organisatieNaam = 'Performance Pulse', $voornaam = 'daar')
