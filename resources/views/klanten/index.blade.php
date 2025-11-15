@@ -117,8 +117,8 @@
                 <td class="px-6 py-4 whitespace-nowrap text-gray-900">
                     <div class="flex items-center gap-3">
                         @php
-                            // Gebruik avatar kolom met cache-busting timestamp
-                            $avatarPath = $klant->avatar ?? null;
+                            // Gebruik avatar_path kolom met cache-busting timestamp
+                            $avatarPath = $klant->avatar_path ?? null;
                             $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
                             
                             // Genereer correcte avatar URL op basis van environment
