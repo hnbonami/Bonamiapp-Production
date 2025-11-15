@@ -236,6 +236,25 @@ class MedewerkerController extends Controller
                 'email' => $medewerker->email
             ]);
 
+            // 🎉 Maak welkomstwidget aan voor nieuwe medewerker
+            try {
+                \App\Http\Controllers\DashboardController::createWelcomeWidget(
+                    $medewerker->organisatie_id,
+                    $medewerker->id
+                );
+                
+                \Log::info('✅ Welkomstwidget aangemaakt voor nieuwe medewerker', [
+                    'medewerker_id' => $medewerker->id,
+                    'organisatie_id' => $medewerker->organisatie_id
+                ]);
+            } catch (\Exception $widgetError) {
+                \Log::error('❌ Fout bij aanmaken welkomstwidget voor medewerker', [
+                    'medewerker_id' => $medewerker->id,
+                    'error' => $widgetError->getMessage()
+                ]);
+                // Geen redirect, gewoon verder met welkomstmail
+            }
+
             // AUTOMATISCH welkomstmail versturen (net zoals bij klanten)
             try {
                 $emailService = app(EmailIntegrationService::class);
