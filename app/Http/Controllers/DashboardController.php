@@ -283,7 +283,7 @@ class DashboardController extends Controller
             'grid_y' => 0,
             'grid_width' => 12, // Volledige breedte
             'grid_height' => 12, // Volledige hoogte voor zichtbaarheid
-            'visibility' => 'everyone', // Zichtbaar voor iedereen in organisatie
+            'visibility' => 'only_me', // Alleen zichtbaar voor deze gebruiker
             'created_by' => $userId,
             'organisatie_id' => $organisatieId,
             'is_active' => true,
