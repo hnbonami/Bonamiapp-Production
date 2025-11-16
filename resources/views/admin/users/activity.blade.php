@@ -57,6 +57,24 @@
     <div class="bg-white rounded-xl shadow-lg p-6 mb-8">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">🔍 Filter Opties</h3>
         <form method="GET" class="flex flex-wrap gap-4 items-end">
+            
+            @if(isset($isSuperAdmin) && $isSuperAdmin)
+            <!-- Organisatie Filter (alleen voor superadmin) -->
+            <div class="min-w-[250px]">
+                <label for="organisatie_id" class="block text-sm font-medium text-gray-700 mb-2">
+                    🏢 Organisatie
+                </label>
+                <select id="organisatie_id" name="organisatie_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="">Alle organisaties</option>
+                    @foreach($organisaties as $org)
+                        <option value="{{ $org->id }}" {{ request('organisatie_id') == $org->id ? 'selected' : '' }}>
+                            {{ $org->naam }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            @endif
+            
             <div class="min-w-[250px]">
                 <label for="user_id" class="block text-sm font-medium text-gray-700 mb-2">Gebruiker</label>
                 <select id="user_id" name="user_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">

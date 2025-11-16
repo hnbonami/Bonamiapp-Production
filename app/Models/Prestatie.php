@@ -101,13 +101,14 @@ class Prestatie extends Model
      */
     public function berekenBedragen(): void
     {
-        // BTW bedrag
+        // BTW bedrag (21%)
         $this->btw_bedrag = round($this->bruto_prijs * ($this->btw_percentage / 100), 2);
         
-        // Netto prijs (bruto - btw)
+        // Netto prijs (bruto - btw) = prijs excl BTW
         $this->netto_prijs = round($this->bruto_prijs - $this->btw_bedrag, 2);
         
-        // Commissie bedrag (op netto)
+        // Commissie bedrag = wat de ORGANISATIE krijgt (op netto)
+        // Bijvoorbeeld: €309 excl BTW * 9% = €27,81 (organisatie commissie)
         $this->commissie_bedrag = round($this->netto_prijs * ($this->commissie_percentage / 100), 2);
     }
 
@@ -128,18 +129,28 @@ class Prestatie extends Model
     }
     
     /**
-     * Accessor voor commissie_bedrag - berekent inkomst medewerker
-     * Formule: (Prijs incl BTW / 1.21) * (100 - organisatie commissie%) / 100
+     * Accessor voor commissie_bedrag - berekent ORGANISATIE commissie
+     * Dit is wat de ORGANISATIE krijgt, NIET wat de medewerker krijgt
      */
     protected function commissieBedrag(): Attribute
     {
         return Attribute::make(
             get: function () {
-                // Bereken inkomst: (Prijs incl BTW / 1.21) * medewerker percentage
+                // Bereken organisatie commissie: Prijs excl BTW * commissie percentage
                 $prijsExclBtw = $this->bruto_prijs / 1.21; // BTW 21% aftrekken
-                $medewerkerPercentage = 100 - $this->commissie_percentage; // 100% - organisatie commissie
-                return ($prijsExclBtw * $medewerkerPercentage) / 100;
+                return ($prijsExclBtw * $this->commissie_percentage) / 100;
             }
         );
+    }
+    
+    /**
+     * Bereken netto inkomst voor de medewerker
+     * Formule: Prijs excl BTW - organisatie commissie
+     */
+    public function getNettoInkomstMedewerkerAttribute()
+    {
+        $prijsExclBtw = $this->bruto_prijs / 1.21; // €309 excl BTW
+        $organisatieCommissie = ($prijsExclBtw * $this->commissie_percentage) / 100; // €309 * 9% = €27,81
+        return $prijsExclBtw - $organisatieCommissie; // €309 - €27,81 = €281,19
     }
 }

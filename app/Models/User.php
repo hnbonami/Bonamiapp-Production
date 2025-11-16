@@ -412,20 +412,39 @@ class User extends Authenticatable
             return (float) $dienst->commissie_percentage;
         }
         
-        // 3. Bereken: basis dienst commissie + bonussen
+        // 3. Bereken: organisatie commissie op basis van bonus richting
         $basisCommissie = (float) $dienst->commissie_percentage;
         $totaleBonus = $algemeen->totale_bonus;
-        $finaleCommissie = $basisCommissie + $totaleBonus;
+        $bonusRichting = $algemeen->bonus_richting;
+        
+        // CORRECTE LOGICA:
+        // - Als bonus_richting = 'plus': organisatie krijgt MINDER, medewerker krijgt MEER
+        //   → organisatie commissie = basis - bonus
+        // - Als bonus_richting = 'minus': organisatie krijgt MEER, medewerker krijgt MINDER
+        //   → organisatie commissie = basis + bonus
+        
+        if ($bonusRichting === 'plus') {
+            // Bonus gaat naar medewerker: haal af van organisatie commissie
+            $finaleCommissie = $basisCommissie - $totaleBonus;
+        } else {
+            // Bonus gaat naar organisatie: tel op bij organisatie commissie
+            $finaleCommissie = $basisCommissie + $totaleBonus;
+        }
+        
+        // Zorg dat commissie nooit negatief wordt
+        $finaleCommissie = max(0, $finaleCommissie);
         
         \Log::info('💰 Commissie berekend met bonussen', [
             'user_id' => $this->id,
             'dienst_id' => $dienst->id,
-            'basis' => $basisCommissie,
+            'basis_organisatie' => $basisCommissie,
+            'bonus_richting' => $bonusRichting,
             'diploma' => $algemeen->diploma_factor,
             'ervaring' => $algemeen->ervaring_factor,
             'ancienniteit' => $algemeen->ancienniteit_factor,
             'totale_bonus' => $totaleBonus,
-            'finale_commissie' => $finaleCommissie
+            'finale_organisatie_commissie' => $finaleCommissie,
+            'medewerker_krijgt' => 100 - $finaleCommissie . '%'
         ]);
         
         return $finaleCommissie;

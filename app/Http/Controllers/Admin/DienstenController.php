@@ -97,9 +97,6 @@ class DienstenController extends Controller
             // Maak dienst aan
             $dienst = Dienst::create($data);
 
-            // Maak dienst aan
-            $dienst = Dienst::create($data);
-
             \Log::info('✅ Dienst aangemaakt', [
                 'dienst_id' => $dienst->id,
                 'naam' => $dienst->naam,

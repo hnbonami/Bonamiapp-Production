@@ -150,13 +150,43 @@ class PrestatieController extends Controller
             'prijs' => $validated['prijs']
         ]);
         
-        // Bereken commissie bedrag
-        $commissieBedrag = ($validated['prijs'] * $commissiePercentage) / 100;
+        // BTW berekening (standaard 21%)
+        $btwPercentage = 21;
+        $prijsExclBtw = round($validated['prijs'] / 1.21, 2); // Prijs excl BTW
+        $btwBedrag = round($validated['prijs'] - $prijsExclBtw, 2); // BTW bedrag
         
-        // BTW berekening (standaard 21%, later uit te breiden per dienst)
-        $btwPercentage = 21; // TODO: Later toevoegen aan diensten tabel (incl/excl BTW optie)
-        $btwBedrag = ($validated['prijs'] * $btwPercentage) / 100;
-        $nettoPrijs = $validated['prijs'] - $btwBedrag;
+        // Commissie bedrag = wat de ORGANISATIE krijgt (berekend over prijs excl BTW)
+        // Voorbeeld: €309 excl BTW * 9% = €27,81 (organisatie commissie)
+        $commissieBedrag = round($prijsExclBtw * ($commissiePercentage / 100), 2);
+        
+        \Log::info('💰 Berekende bedragen', [
+            'bruto_prijs' => $validated['prijs'],
+            'prijs_excl_btw' => $prijsExclBtw,
+            'btw_bedrag' => $btwBedrag,
+            'commissie_percentage_opgeslagen' => $commissiePercentage,
+            'commissie_bedrag_organisatie' => $commissieBedrag,
+            'netto_inkomst_medewerker' => $prijsExclBtw - $commissieBedrag,
+            'BELANGRIJK' => 'commissie_percentage is wat ORGANISATIE krijgt, NIET medewerker'
+        ]);
+        
+        // DUBBEL CHECK: Log de exacte berekening
+        \Log::info('🔍 VERIFICATIE BEREKENING', [
+            'input_bruto' => $validated['prijs'],
+            'stap1_excl_btw' => $prijsExclBtw,
+            'stap2_organisatie_commissie_percentage' => $commissiePercentage,
+            'stap3_organisatie_commissie_bedrag' => $commissieBedrag,
+            'stap4_medewerker_netto' => $prijsExclBtw - $commissieBedrag,
+            'formule' => sprintf('%.2f / 1.21 = %.2f → %.2f × %.2f%% = %.2f (org) → %.2f - %.2f = %.2f (jij)', 
+                $validated['prijs'], 
+                $prijsExclBtw, 
+                $prijsExclBtw, 
+                $commissiePercentage, 
+                $commissieBedrag,
+                $prijsExclBtw,
+                $commissieBedrag,
+                $prijsExclBtw - $commissieBedrag
+            )
+        ]);
         
         // Haal klant naam op als klant_id is opgegeven
         $klantNaam = null;
@@ -181,9 +211,9 @@ class PrestatieController extends Controller
             'bruto_prijs' => $validated['prijs'],
             'btw_percentage' => $btwPercentage,
             'btw_bedrag' => $btwBedrag,
-            'netto_prijs' => $nettoPrijs,
+            'netto_prijs' => $prijsExclBtw, // Dit is prijs EXCL BTW
             'commissie_percentage' => $commissiePercentage,
-            'commissie_bedrag' => $commissieBedrag,
+            'commissie_bedrag' => $commissieBedrag, // Dit is wat ORGANISATIE krijgt
             'opmerkingen' => $validated['opmerkingen'],
             'is_uitgevoerd' => $request->has('is_uitgevoerd') ? true : false,
             'jaar' => date('Y', strtotime($validated['datum_prestatie'])),

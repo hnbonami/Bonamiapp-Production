@@ -306,7 +306,7 @@
                                         </label>
                                         <label class="flex items-center">
                                             <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="commissie">
-                                            <span class="ml-2 text-sm text-gray-700">Bonami Commissie</span>
+                                            <span class="ml-2 text-sm text-gray-700">{{ auth()->user()->organisatie->naam ?? 'Organisatie' }} Commissie</span>
                                         </label>
                                         <label class="flex items-center">
                                             <input type="checkbox" class="kolom-toggle rounded border-gray-300 text-blue-600" data-kolom="opmerkingen" checked>
@@ -345,7 +345,7 @@
                                     Netto Inkomst
                                 </th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider kolom-commissie">
-                                    Bonami Commissie
+                                    {{ auth()->user()->organisatie->naam ?? 'Organisatie' }} Commissie
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider kolom-opmerkingen">
                                     Opmerkingen
@@ -548,7 +548,7 @@
                         <div class="bg-white rounded-lg p-3 border-l-4 border-orange-500 shadow-sm">
                             <div class="text-xs text-gray-600 mb-1 flex items-center gap-1">
                                 <span class="w-2 h-2 bg-orange-500 rounded-full"></span>
-                                Bonami Commissie
+                                {{ auth()->user()->organisatie->naam ?? 'Organisatie' }} Commissie
                             </div>
                             <div class="text-xl font-bold text-orange-600">
                                 @php
@@ -556,10 +556,21 @@
                                         $prijsExclBtw = $p->bruto_prijs / 1.21;
                                         return $prijsExclBtw * ($p->commissie_percentage / 100);
                                     });
+                                    
+                                    // Bereken gemiddeld commissie percentage
+                                    $gemiddeldCommissiePercentage = 0;
+                                    if ($prestaties->count() > 0) {
+                                        $gemiddeldCommissiePercentage = $prestaties->avg('commissie_percentage');
+                                    }
                                 @endphp
                                 €{{ number_format($totaleCommissie, 2, ',', '.') }}
                             </div>
-                            <div class="text-xs text-gray-500 mt-1">Gaat naar organisatie</div>
+                            <div class="text-xs text-gray-500 mt-1">
+                                Gaat naar {{ auth()->user()->organisatie->naam ?? 'organisatie' }} 
+                                @if($gemiddeldCommissiePercentage > 0)
+                                    ({{ number_format($gemiddeldCommissiePercentage, 1) }}%)
+                                @endif
+                            </div>
                         </div>
                         
                         {{-- Jouw Netto Inkomst --}}

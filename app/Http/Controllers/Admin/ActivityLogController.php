@@ -19,6 +19,13 @@ public function index(Request $request)
             });
         }
 
+        // Filter op organisatie (alleen voor superadmin)
+        if ($isSuperAdmin && $request->filled('organisatie_id')) {
+            $query->whereHas('user', function($q) use ($request) {
+                $q->where('organisatie_id', $request->organisatie_id);
+            });
+        }
+
         // Filter op specifieke gebruiker
         if ($request->filled('user_id')) {
             $query->where('user_id', $request->user_id);
@@ -35,12 +42,20 @@ public function index(Request $request)
 
         // Haal logs op met paginatie
         $logs = $query->paginate(20);
+        $loginActivities = $logs; // Alias voor backward compatibility met view
 
         // Bereken statistieken - superadmin ziet alles, admin alleen eigen organisatie
         $statsQuery = \App\Models\LoginActivity::query();
         if (!$isSuperAdmin && $user->organisatie_id) {
             $statsQuery->whereHas('user', function($q) use ($user) {
                 $q->where('organisatie_id', $user->organisatie_id);
+            });
+        }
+        
+        // Als superadmin organisatie filter heeft, pas ook toe op stats
+        if ($isSuperAdmin && $request->filled('organisatie_id')) {
+            $statsQuery->whereHas('user', function($q) use ($request) {
+                $q->where('organisatie_id', $request->organisatie_id);
             });
         }
 
@@ -71,4 +86,14 @@ public function index(Request $request)
         }
         $users = $usersQuery->get();
 
-        return view('admin.users.activity', compact('logs', 'stats', 'users'));
+        // Haal alle organisaties op voor superadmin filter
+        $organisaties = collect();
+        if ($isSuperAdmin) {
+            $organisaties = \App\Models\Organisatie::orderBy('naam')->get();
+            \Log::info('Organisaties opgehaald voor superadmin', [
+                'count' => $organisaties->count(),
+                'organisaties' => $organisaties->pluck('naam', 'id')
+            ]);
+        }
+
+        return view('admin.users.activity-clean', compact('logs', 'loginActivities', 'stats', 'users', 'organisaties', 'isSuperAdmin'));
