@@ -526,22 +526,22 @@ class KlantController extends Controller
         $avatarPath = $klant->avatar;
         $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
         
-        // Bepaal juiste disk op basis van environment
-        $disk = app()->environment('production') ? 'avatars' : 'public';
-        
-        // Voor productie: avatar pad in DB is 'avatars/klanten/file.png'
-        // Maar in 'avatars' disk moeten we 'klanten/file.png' checken
-        $checkPath = $avatarPath;
-        if (app()->environment('production') && $avatarPath) {
-            $checkPath = str_replace('avatars/', '', $avatarPath);
+        // Check of avatar bestaat (zonder Storage disk in productie)
+        $avatarExists = false;
+        if ($avatarPath) {
+            if (app()->environment('production')) {
+                // PRODUCTIE: check direct in filesystem
+                $avatarExists = file_exists(public_path('uploads/' . $avatarPath));
+            } else {
+                // LOKAAL: gebruik Storage disk
+                $avatarExists = \Storage::disk('public')->exists($avatarPath);
+            }
         }
         
         \Log::info('🔍 Klant show - avatar check', [
             'klant_id' => $klant->id,
-            'avatar_from_model' => $avatarPath,
-            'disk' => $disk,
-            'check_path' => $checkPath,
-            'avatar_exists_in_storage' => $avatarPath ? \Storage::disk($disk)->exists($checkPath) : false,
+            'avatar_path' => $avatarPath,
+            'avatar_exists' => $avatarExists,
             'cache_key' => $cacheKey,
             'environment' => app()->environment(),
         ]);
