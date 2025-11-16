@@ -1276,6 +1276,97 @@ function removeLastRow() {
 
 
 
+// 🔧 KLANT GEGEVENS VOOR AI - Haal uit Blade variabelen en zet in window globals
+@if(isset($klant))
+window.klantId = {{ $klant->id }};
+window.klantEmail = "{{ $klant->email ?? 'geen' }}";
+window.klantNaam = "{{ $klant->voornaam ?? '' }} {{ $klant->naam ?? '' }}";
+window.klantGeslacht = "{{ $klant->geslacht ?? 'NIET GEZET' }}";
+window.klantGeboortedatum = "{{ $klant->geboortedatum ?? 'NIET GEZET' }}";
+
+// Bereken leeftijd uit geboortedatum - CRUCIALE FIX
+@if($klant->geboortedatum)
+window.klantLeeftijd = {{ \Carbon\Carbon::parse($klant->geboortedatum)->age }};
+console.log('✅ Klant leeftijd berekend uit geboortedatum:', window.klantLeeftijd, 'jaar (geboortedatum: {{ $klant->geboortedatum }})');
+@else
+window.klantLeeftijd = null;
+console.log('⚠️ Geen geboortedatum beschikbaar voor klant');
+@endif
+
+window.klantGewicht = {{ $klant->lichaamsgewicht_kg ?? 'null' }};
+window.klantLengte = {{ $klant->lichaamslengte_cm ?? 'null' }};
+
+console.log('🔍 WINDOW GLOBALS GEZET:', {
+    klantId: window.klantId,
+    klantGeboortedatum: window.klantGeboortedatum,
+    klantLeeftijd: window.klantLeeftijd
+});
+
+// 🎯 DATA ATTRIBUTES: Zet klantgegevens ook in data attributes voor fallback
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('#inspanningstest-form');
+    if (form) {
+        form.setAttribute('data-klant-id', '{{ $klant->id ?? '' }}');
+        form.setAttribute('data-klant-naam', '{{ $klant->voornaam ?? '' }} {{ $klant->naam ?? '' }}');
+        form.setAttribute('data-klant-geslacht', '{{ $klant->geslacht ?? 'NIET GEZET' }}');
+        form.setAttribute('data-klant-geboortedatum', '{{ $klant->geboortedatum ?? 'NIET GEZET' }}');
+        @if($klant->geboortedatum)
+        form.setAttribute('data-klant-leeftijd', '{{ \Carbon\Carbon::parse($klant->geboortedatum)->age }}');
+        @else
+        form.setAttribute('data-klant-leeftijd', '35');
+        @endif
+        form.setAttribute('data-klant-gewicht', '{{ $klant->lichaamsgewicht_kg ?? 'NIET GEZET' }}');
+        form.setAttribute('data-klant-lengte', '{{ $klant->lichaamslengte_cm ?? 'NIET GEZET' }}');
+        console.log('✅ Data attributes gezet op form element');
+    }
+});
+
+// 🎯 DEBUG: Log alle window globals voor verificatie
+console.log('🔍 WINDOW GLOBALS VOOR AI:', {
+    klantId: window.klantId,
+    klantEmail: window.klantEmail,
+    klantNaam: window.klantNaam,
+    klantGeslacht: window.klantGeslacht,
+    klantGeboortedatum: window.klantGeboortedatum,
+    klantLeeftijd: window.klantLeeftijd,
+    klantGewicht: window.klantGewicht,
+    klantLengte: window.klantLengte
+});
+
+// 🔥 DEBUG: Log alle klant globals
+console.log('🔍 KLANT GLOBALS GEZET:', {
+    id: window.klantId,
+    email: window.klantEmail,
+    naam: window.klantNaam,
+    geslacht: window.klantGeslacht,
+    geboortedatum: window.klantGeboortedatum,
+    leeftijd: window.klantLeeftijd,
+    gewicht: window.klantGewicht,
+    lengte: window.klantLengte
+});
+
+console.log('✅ Klantgegevens geladen voor AI:', {
+    id: window.klantId,
+    email: window.klantEmail,
+    naam: window.klantNaam,
+    geslacht: window.klantGeslacht,
+    geboortedatum: window.klantGeboortedatum,
+    leeftijd: window.klantLeeftijd,
+    gewicht: window.klantGewicht,
+    lengte: window.klantLengte
+});
+@else
+console.log('⚠️ Geen klantgegevens beschikbaar');
+window.klantId = null;
+window.klantEmail = null;
+window.klantNaam = null;
+window.klantGeslacht = "NIET GEZET";
+window.klantGeboortedatum = "NIET GEZET";
+window.klantLeeftijd = null;
+window.klantGewicht = null;
+window.klantLengte = null;
+@endif
+
 // Automatisch BMI berekenen
 document.addEventListener('DOMContentLoaded', function() {
     const lengteInput = document.getElementById('lichaamslengte_cm');
@@ -3402,10 +3493,41 @@ function generateCompleteAIAnalysis() {
  * Verzamel ALLE beschikbare testdata voor complete analyse
  */
 function collectCompleteTestData() {
-    // Bepaal leeftijd (fallback van 35 jaar indien niet beschikbaar)
-    let leeftijd = 35;
+    console.log('🔍 collectCompleteTestData() gestart');
+    
+    // 🔥 STAP 1: Haal klantgegevens DIRECT uit window globals (gezet door Blade)
+    const klantId = window.klantId || null;
+    const klantEmail = window.klantEmail || null;
+    const klantNaam = window.klantNaam || null;
+    const klantGeslacht = window.klantGeslacht || 'NIET GEZET';
+    const klantGeboortedatum = window.klantGeboortedatum || 'NIET GEZET';
+    
+    // 🎯 CRUCIALE FIX: Gebruik ALTIJD window.klantLeeftijd (die AL correct berekend is in Blade)
+    const klantLeeftijd = window.klantLeeftijd || null; // GEEN fallback naar 35!
+    
+    console.log('🔍 Window globals gelezen:', {
+        klantId,
+        klantEmail,
+        klantNaam,
+        klantGeslacht,
+        klantGeboortedatum,
+        klantLeeftijd,
+        bron: 'DIRECT uit window.klantLeeftijd (berekend in Blade)'
+    });
+    
+    // ✅ Verificatie: Log waarschuwing als leeftijd ontbreekt
+    if (!klantLeeftijd) {
+        console.warn('⚠️ WAARSCHUWING: Geen leeftijd beschikbaar - geen geboortedatum in database');
+    } else {
+        console.log('✅ Leeftijd correct opgehaald uit window.klantLeeftijd:', klantLeeftijd, 'jaar');
+    }
     
     return {
+        // Klant identificatie (voor AIAnalysisService om klant op te halen)
+        klant_id: klantId,
+        klant_email: klantEmail,
+        klant_naam: klantNaam,
+        
         // Testtype en protocol
         testtype: document.getElementById('testtype')?.value || 'fietstest',
         analyse_methode: document.getElementById('analyse_methode')?.value || '',
@@ -3414,8 +3536,10 @@ function collectCompleteTestData() {
         // Doelstellingen - ZEER BELANGRIJK voor AI
         specifieke_doelstellingen: document.getElementById('specifieke_doelstellingen')?.value || 'Algemene fitheid verbetering',
         
-        // Persoonlijke gegevens
-        leeftijd: leeftijd,
+        // Persoonlijke gegevens - ✅ GEBRUIK KLANTGEGEVENS UIT WINDOW GLOBALS
+        leeftijd: klantLeeftijd, // ✅ GEFIXEERD: Geen fallback naar 35
+        geslacht: klantGeslacht,
+        geboortedatum: klantGeboortedatum,
         lichaamsgewicht_kg: parseFloat(document.getElementById('lichaamsgewicht_kg')?.value) || null,
         lichaamslengte_cm: parseFloat(document.getElementById('lichaamslengte_cm')?.value) || null,
         bmi: parseFloat(document.getElementById('bmi')?.value) || null,
