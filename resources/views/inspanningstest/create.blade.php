@@ -596,24 +596,24 @@ document.addEventListener('DOMContentLoaded', function() {
                     <!-- Trainingszones Configuratie - NIEUWE SECTIE -->
                     <h3 class="text-xl font-bold mt-8 mb-4">Trainingszones Berekening</h3>
                     
-                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
-                        <div class="flex items-center justify-between gap-4">
-                            <p class="text-blue-800 text-sm flex-1">
-                                🏃‍♂️ <strong>Automatische Zones:</strong> Kies een wetenschappelijke methode om trainingszones te berekenen op basis van je gemeten drempels.
-                                De zones worden live bijgewerkt wanneer je de configuratie wijzigt.
-                            </p>
-                            <button type="button" 
-                                    id="herbereken-zones-btn"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm whitespace-nowrap flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                                Zones Updaten
-                            </button>
-                        </div>
-                    </div>
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+            <div class="flex items-center justify-between gap-4">
+                <p class="text-blue-800 text-sm flex-1">
+                    🏃‍♂️ <strong>Automatische Zones:</strong> Kies een wetenschappelijke methode om trainingszones te berekenen op basis van je gemeten drempels.
+                    De zones worden live bijgewerkt wanneer je de configuratie wijzigt.
+                </p>
+                <button type="button" 
+                        id="herbereken-zones-btn"
+                        class="px-4 py-2 text-gray-800 rounded-lg hover:opacity-80 transition-opacity font-medium text-sm whitespace-nowrap flex items-center gap-2"
+                        style="background-color: #c8e1eb;">
 
-                    <script>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Zones Updaten
+                </button>
+            </div>
+        </div>                    <script>
                         // Veilige knop handler voor zones updaten
                         document.addEventListener('DOMContentLoaded', function() {
                             const herberekeBtn = document.getElementById('herbereken-zones-btn');
@@ -734,16 +734,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
 
                     <!-- Submit buttons -->
-                    <div class="mt-8 flex gap-3 justify-start flex-wrap">
-                        <div class="flex gap-3">
+                    <div class="mt-12 mb-24 flex gap-6 justify-start flex-wrap" style="padding-left: 20px; padding-right: 20px;">
+                        <div class="flex gap-6">
                             <a href="{{ route('klanten.show', $klant->id) }}" 
-                               class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200" 
-                               style="background-color: #c8e1eb;">
+                               class="px-8 py-8 text-gray-800 font-bold text-lg flex items-center justify-center hover:opacity-80 transition duration-200 shadow-lg" 
+                               style="background-color: #c8e1eb; border-radius: 10px; width: 80px; height: 40px;">
                                 Terug
                             </a>
                             <button type="submit" 
-                                    class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200" 
-                                    style="background-color: #c8e1eb;">
+                                    class="px-8 py-8 text-gray-800 font-bold text-lg flex items-center justify-center hover:opacity-80 transition duration-200 shadow-lg" 
+                                    style="background-color: #c8e1eb; border-radius: 10px; width: 160px; height: 40px;">
                                 Test Aanmaken
                             </button>
                         </div>
@@ -1377,6 +1377,7 @@ document.addEventListener('DOMContentLoaded', function() {
             notificatieContainer.innerHTML = '<strong style="color: #1976d2;">📋 Selecteer een testtype om te zien of er een sjabloon beschikbaar is voor rapportgeneratie.</strong>';
             notificatieContainer.style.background = '#e3f2fd';
             notificatieContainer.style.borderColor = '#2196f3';
+            notificatieContainer.style.padding = '15px 20px'; // Consistente padding
             return;
         }
         
@@ -1384,6 +1385,7 @@ document.addEventListener('DOMContentLoaded', function() {
         notificatieContainer.innerHTML = '<strong style="color: #2e7d32;">✅ Testtype "' + selectedType + '" geselecteerd - Na het aanmaken van de test kun je rapporten genereren!</strong>';
         notificatieContainer.style.background = '#e8f5e8';
         notificatieContainer.style.borderColor = '#4caf50';
+        notificatieContainer.style.padding = '15px 20px'; // Consistente padding
     }
     
     function updateProtocolFields() {

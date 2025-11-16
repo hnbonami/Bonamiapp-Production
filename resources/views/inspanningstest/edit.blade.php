@@ -583,7 +583,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             </p>
                             <button type="button" 
                                     id="herbereken-zones-btn"
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm whitespace-nowrap flex items-center gap-2">
+                                    class="px-4 py-2 text-gray-800 rounded-lg hover:opacity-80 transition-opacity font-medium text-sm whitespace-nowrap flex items-center gap-2"
+                                    style="background-color: #c8e1eb;">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
@@ -617,14 +618,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                         
                                         // Toon feedback
                                         herberekeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Bijgewerkt!';
-                                        herberekeBtn.classList.add('bg-green-600');
-                                        herberekeBtn.classList.remove('bg-blue-600');
+                                        herberekeBtn.style.backgroundColor = '#4caf50';
                                         
                                         // Reset na 2 seconden
                                         setTimeout(() => {
                                             herberekeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> Zones Updaten';
-                                            herberekeBtn.classList.remove('bg-green-600');
-                                            herberekeBtn.classList.add('bg-blue-600');
+                                            herberekeBtn.style.backgroundColor = '#c8e1eb';
                                         }, 2000);
                                     } else {
                                         console.warn('⚠️ updateTrainingszones functie niet gevonden');
@@ -713,22 +712,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     </div>                    <!-- Sjabloon notificatie - EENVOUDIGE VERSIE -->
-                    <div id="sjabloon-notificatie" class="mt-6 mb-6" style="background: #e3f2fd; border: 2px solid #2196f3; padding: 15px; border-radius: 8px;">
+                    <div id="sjabloon-notificatie" class="mt-6 mb-6 p-6" style="background: #e3f2fd; border: 2px solid #2196f3; border-radius: 8px;">
                         <strong style="color: #1976d2;">📋 Selecteer een testtype om te zien of er een sjabloon beschikbaar is voor rapportgeneratie.</strong>
                     </div>
 
-                    <!-- Submit buttons -->
-                    <div class="mt-8 flex gap-3 justify-start flex-wrap">
-                        <div class="flex gap-3">
+                     <!-- Submit buttons -->
+                    <div class="mt-12 mb-24 flex gap-6 justify-start flex-wrap" style="padding-left: 20px; padding-right: 20px;">
+                        <div class="flex gap-6">
                             <a href="{{ route('klanten.show', $klant->id) }}" 
-                               class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200" 
-                               style="background-color: #c8e1eb;">
+                               class="px-8 py-8 text-gray-800 font-bold text-lg flex items-center justify-center hover:opacity-80 transition duration-200 shadow-lg" 
+                               style="background-color: #c8e1eb; border-radius: 10px; width: 80px; height: 40px;">
                                 Terug
                             </a>
                             <button type="submit" 
-                                    class="rounded-full px-6 py-2 text-gray-800 font-bold text-sm flex items-center justify-center hover:opacity-80 transition duration-200" 
-                                    style="background-color: #c8e1eb;">
-                                Test Bijwerken
+                                    class="px-8 py-8 text-gray-800 font-bold text-lg flex items-center justify-center hover:opacity-80 transition duration-200 shadow-lg" 
+                                    style="background-color: #c8e1eb; border-radius: 10px; width: 160px; height: 40px;">
+                                Test Aanmaken
                             </button>
                         </div>
                     </div>
@@ -1416,6 +1415,7 @@ document.addEventListener('DOMContentLoaded', function() {
             notificatieContainer.innerHTML = '<strong style="color: #1976d2;">📋 Selecteer een testtype om te zien of er een sjabloon beschikbaar is voor rapportgeneratie.</strong>';
             notificatieContainer.style.background = '#e3f2fd';
             notificatieContainer.style.borderColor = '#2196f3';
+            notificatieContainer.style.padding = '15px 20px'; // Consistente padding
             return;
         }
         
@@ -1423,6 +1423,7 @@ document.addEventListener('DOMContentLoaded', function() {
         notificatieContainer.innerHTML = '<strong style="color: #2e7d32;">✅ Testtype "' + selectedType + '" geselecteerd - Na het aanmaken van de test kun je rapporten genereren!</strong>';
         notificatieContainer.style.background = '#e8f5e8';
         notificatieContainer.style.borderColor = '#4caf50';
+        notificatieContainer.style.padding = '15px 20px'; // Consistente padding
     }
     
     function updateProtocolFields() {
