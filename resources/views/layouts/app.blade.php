@@ -26,7 +26,12 @@
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,800|georgia:400,700|times-new-roman:400,700|arial:400,700|courier-new:400,700&display=swap" rel="stylesheet" />
             <!-- Scripts -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @if(config('app.env') === 'local')
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @else
+        <!-- Productie: gebruik gecompileerde assets of CDN -->
+        <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    @endif
     
     <!-- Dark Mode CSS -->
     <link rel="stylesheet" href="{{ asset('css/darkmode.css') }}">
