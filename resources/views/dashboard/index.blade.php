@@ -433,6 +433,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
+    // 🔥 Debounce helper om spam te voorkomen
+    let saveTimeout = null;
+    function debounceSave(callback, delay = 500) {
+        clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(callback, delay);
+    }
+    
     // ⚡ Bepaal per widget of deze resizable is
     const widgets = @json($layouts->map(function($item) {
         return [
@@ -444,20 +451,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('🔐 Widget permissions:', widgets);
     
-    // Initialize Gridstack ZONDER animation + met auto-compact (alleen desktop)
+    // 🔥 FIX: Gebruik float: true om AUTO-COMPACT uit te schakelen!
     const grid = GridStack.init({
         cellHeight: 80,
         column: 12,
-        float: false, // ⚡ FALSE = auto-compact naar boven!
+        float: true, // 🔥 TRUE = geen auto-compact! Widgets blijven waar je ze plaatst
         animate: false, // Uit tijdens load!
-        minRow: 1, // 🔥 FIX: Minimale rij hoogte
+        minRow: 1,
         resizable: {
-            handles: 'e, se, s, sw, w' // Standaard handles
+            handles: 'e, se, s, sw, w'
         },
         draggable: {
             handle: '.widget-header'
         },
-        disableOneColumnMode: true // ⚡ BELANGRIJK: voorkom auto 1-column mode
+        disableOneColumnMode: true
     });
 
     // 🔥 FIX: Voorkom widgets kleiner dan 1x1
@@ -470,6 +477,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('🔒 Widget resize minimums ingesteld:', { minWidth, minHeight });
     });
+
+    // 🔥 BELANGRIJK: Track of we ECHT aan het bewerken zijn (user interaction)
+    let isUserInteraction = false;
+    let layoutLoadComplete = false;
 
     // ⚡ FIX: Force correcte groottes NA initialisatie + zet per-widget rechten
     setTimeout(() => {
@@ -493,79 +504,105 @@ document.addEventListener('DOMContentLoaded', function() {
                 canDrag: widgetPerms?.canDrag 
             });
             
-            // ⚡ Voor KLANTEN: gebruik MASTER grootte + disable resize (maar WEL move!)
-            // ⚡ Voor ADMIN/MEDEWERKER: normale rechten
             grid.update(item, {
                 x: x,
                 y: y,
                 w: w,
                 h: h,
-                noResize: isKlant ? true : !widgetPerms?.canResize, // Klanten kunnen NIET resizen
-                noMove: isKlant ? false : !widgetPerms?.canDrag, // ✅ Klanten KUNNEN verplaatsen!
-                locked: false // NIET vergrendelen voor klanten
+                noResize: isKlant ? true : !widgetPerms?.canResize,
+                noMove: isKlant ? false : !widgetPerms?.canDrag,
+                locked: false
             });
         });
         
-        // ⚡ BELANGRIJK: Voor klanten, compact altijd de layout om gaten te verwijderen
-        if (userRole === 'klant') {
-            console.log('🔧 Klant dashboard: compacting layout om gaten te verwijderen...');
-            grid.compact();
-        }
-        
         grid.opts.animate = true; // Enable animation
-        console.log('✅ All widgets configured with correct permissions and sizes!');
+        layoutLoadComplete = true; // 🔥 Markeer dat initial load klaar is
+        console.log('✅ All widgets configured - layout load complete!');
     }, 150);
 
-    // Save layout on change (admin/medewerker én klanten kunnen nu verplaatsen!)
+    // 🔥 BELANGRIJK: Track wanneer gebruiker START met slepen/resizen
+    grid.on('dragstart resizestart', function() {
+        isUserInteraction = true;
+        console.log('👆 User start drag/resize');
+    });
+
+    // 🔥 BELANGRIJK: Track wanneer gebruiker KLAAR is met slepen/resizen
+    grid.on('dragstop resizestop', function() {
+        console.log('👆 User stop drag/resize');
+        // isUserInteraction blijft true tot opgeslagen is
+    });
+
+    // Save layout on change - ALLEEN als het ECHTE user interaction is!
     grid.on('change', function(event, items) {
         if (!items || items.length === 0) return;
         
-        items.forEach(item => {
-            const widgetId = item.el.getAttribute('data-widget-id');
+        // 🔥 FIX: Negeer change events tijdens initial load
+        if (!layoutLoadComplete) {
+            console.log('⏭️ Negeer change tijdens initial load');
+            return;
+        }
+        
+        // 🔥 FIX: Alleen opslaan bij ECHTE user interaction
+        if (!isUserInteraction) {
+            console.log('⏭️ Negeer automatic change event (geen user interaction)');
+            return;
+        }
+        
+        // 🔥 Debounce de save - wacht 500ms na laatste change
+        debounceSave(() => {
+            console.log('💾 Debounced save - opslaan van', items.length, 'widgets');
             
-            // 🔥 EXTRA VALIDATIE: Voorkom 0 of negatieve waardes
-            const width = Math.max(item.w || 4, 1);
-            const height = Math.max(item.h || 3, 1);
-            const x = Math.max(item.x || 0, 0);
-            const y = Math.max(item.y || 0, 0);
-            
-            console.log('💾 Gebruiker wijzigt widget layout:', {
-                role: userRole,
-                id: widgetId,
-                x: x,
-                y: y,
-                width: width,
-                height: height
-            });
-            
-            fetch('{{ route("dashboard.widgets.updateLayout") }}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    widget_id: widgetId,
-                    grid_x: x,
-                    grid_y: y,
-                    grid_width: width,
-                    grid_height: height
+            items.forEach(item => {
+                const widgetId = item.el.getAttribute('data-widget-id');
+                
+                // 🔥 EXTRA VALIDATIE: Voorkom 0 of negatieve waardes
+                const width = Math.max(item.w || 4, 1);
+                const height = Math.max(item.h || 3, 1);
+                const x = Math.max(item.x || 0, 0);
+                const y = Math.max(item.y || 0, 0);
+                
+                console.log('💾 Gebruiker wijzigt widget layout:', {
+                    role: userRole,
+                    id: widgetId,
+                    x: x,
+                    y: y,
+                    width: width,
+                    height: height
+                });
+                
+                fetch('{{ route("dashboard.widgets.updateLayout") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        widget_id: widgetId,
+                        grid_x: x,
+                        grid_y: y,
+                        grid_width: width,
+                        grid_height: height
+                    })
                 })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('✅ Layout opgeslagen:', data);
-            })
-            .catch(error => {
-                console.error('❌ Error bij opslaan layout:', error);
+                .then(response => response.json())
+                .then(data => {
+                    console.log('✅ Layout opgeslagen:', data);
+                })
+                .catch(error => {
+                    console.error('❌ Error bij opslaan layout:', error);
+                });
             });
-        });
+            
+            // Reset interaction flag na save
+            isUserInteraction = false;
+        }, 500);
     });
     
-    // ⚡ Auto-compact bij widget verwijdering
+    // ⚡ Auto-compact bij widget verwijdering - ALLEEN als user het verwijdert
     grid.on('removed', function(event, items) {
-        console.log('🗑️ Widget verwijderd, compacting...');
-        grid.compact();
+        console.log('🗑️ Widget verwijderd door user');
+        isUserInteraction = true; // Markeer als user action
+        // Compact layout NIET automatisch - laat float: true het afhandelen
     });
 
     // Widget toggle (minimize/maximize)
