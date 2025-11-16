@@ -19,19 +19,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Override public_path voor productieserver (One.com hosting) - HARDERE FIX
+        // Override public_path voor productieserver (One.com hosting)
         if (env('APP_ENV') === 'production') {
-            // Bind ZOWEL path.public ALS publieke helper functie
+            // Bind path.public voor Laravel's interne gebruik
             $this->app->bind('path.public', function() {
-                return '/customers/5/a/2/hannesbonami.be/httpd.www/public';
+                return base_path('public');
             });
             
-            // HARD OVERRIDE van public_path() helper functie
-            if (!function_exists('public_path_override')) {
-                function public_path_override($path = '') {
-                    return '/customers/5/a/2/hannesbonami.be/httpd.www/public' . ($path ? DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR) : $path);
-                }
-            }
+            // 🔥 FIX: Forceer asset URL prefix voor uploads in productie
+            // Alle uploads gaan naar /public/uploads/, maar Laravel moet weten dat
+            // ze bereikbaar zijn via /uploads/ (niet /storage/uploads/)
+            \URL::forceScheme('https');
         }
 
         // Registreer custom Blade directive voor feature checks
