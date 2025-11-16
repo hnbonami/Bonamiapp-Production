@@ -1292,6 +1292,38 @@ function removeLastRow() {
 
 
 
+// 🔧 KLANT GEGEVENS VOOR AI - Haal uit Blade variabelen en zet in window globals
+@if(isset($klant))
+window.klantId = {{ $klant->id }};
+window.klantEmail = "{{ $klant->email ?? 'geen' }}";
+window.klantNaam = "{{ $klant->voornaam ?? '' }} {{ $klant->naam ?? '' }}";
+window.klantGeslacht = "{{ $klant->geslacht ?? 'NIET GEZET' }}";
+window.klantGeboortedatum = "{{ $klant->geboortedatum ?? 'NIET GEZET' }}";
+
+// Bereken leeftijd uit geboortedatum - CRUCIALE FIX
+@if($klant->geboortedatum)
+window.klantLeeftijd = {{ \Carbon\Carbon::parse($klant->geboortedatum)->age }};
+console.log('✅ Klant leeftijd berekend uit geboortedatum:', window.klantLeeftijd, 'jaar (geboortedatum: {{ $klant->geboortedatum }})');
+@else
+window.klantLeeftijd = null;
+console.log('⚠️ Geen geboortedatum beschikbaar voor klant');
+@endif
+
+console.log('🔍 WINDOW GLOBALS GEZET:', {
+    klantId: window.klantId,
+    klantGeboortedatum: window.klantGeboortedatum,
+    klantLeeftijd: window.klantLeeftijd
+});
+@else
+console.log('⚠️ Geen klantgegevens beschikbaar');
+window.klantId = null;
+window.klantEmail = null;
+window.klantNaam = null;
+window.klantGeslacht = "NIET GEZET";
+window.klantGeboortedatum = "NIET GEZET";
+window.klantLeeftijd = null;
+@endif
+
 // Automatisch BMI berekenen
 document.addEventListener('DOMContentLoaded', function() {
     const lengteInput = document.getElementById('lichaamslengte_cm');
@@ -3539,10 +3571,29 @@ function generateCompleteAIAnalysis() {
  * Verzamel ALLE beschikbare testdata voor complete analyse
  */
 function collectCompleteTestData() {
-    // Bepaal leeftijd (fallback van 35 jaar indien niet beschikbaar)
-    let leeftijd = 35;
+    // 🔥 HAAL KLANTGEGEVENS UIT WINDOW GLOBALS (berekend uit database in Blade)
+    const klantId = window.klantId || null;
+    const klantEmail = window.klantEmail || null;
+    const klantNaam = window.klantNaam || null;
+    const klantGeslacht = window.klantGeslacht || 'NIET GEZET';
+    const klantGeboortedatum = window.klantGeboortedatum || 'NIET GEZET';
+    const klantLeeftijd = window.klantLeeftijd || null;
+    
+    console.log('🔍 collectCompleteTestData - klantgegevens:', {
+        id: klantId,
+        email: klantEmail,
+        naam: klantNaam,
+        geslacht: klantGeslacht,
+        geboortedatum: klantGeboortedatum,
+        leeftijd: klantLeeftijd,
+        bron: window.klantLeeftijd ? 'window.klantLeeftijd (berekend uit geboortedatum)' : 'NIET BESCHIKBAAR'
+    });
     
     return {
+        // Klant identificatie (voor AIAnalysisService om klant op te halen)
+        klant_id: klantId,
+        klant_email: klantEmail,
+        klant_naam: klantNaam,
         // Testtype en protocol
         testtype: document.getElementById('testtype')?.value || 'fietstest',
         analyse_methode: document.getElementById('analyse_methode')?.value || '',
@@ -3552,7 +3603,9 @@ function collectCompleteTestData() {
         specifieke_doelstellingen: document.getElementById('specifieke_doelstellingen')?.value || 'Algemene fitheid verbetering',
         
         // Persoonlijke gegevens
-        leeftijd: leeftijd,
+        leeftijd: klantLeeftijd, // ✅ FIX: gebruik klantLeeftijd in plaats van undefined 'leeftijd'
+        geslacht: klantGeslacht,
+        geboortedatum: klantGeboortedatum,
         lichaamsgewicht_kg: parseFloat(document.getElementById('lichaamsgewicht_kg')?.value) || null,
         lichaamslengte_cm: parseFloat(document.getElementById('lichaamslengte_cm')?.value) || null,
         bmi: parseFloat(document.getElementById('bmi')?.value) || null,
@@ -3646,18 +3699,25 @@ Voor een uitgebreidere AI-analyse probeer het opnieuw wanneer de verbinding hers
  * Verzamel alle relevante testdata voor AI analyse
  */
 function collectTestDataForAI(type) {
-    // Probeer leeftijd uit geboortedatum te berekenen (uit klant context indien beschikbaar)
-    const today = new Date();
-    let leeftijd = 45; // Default fallback
+    // 🔥 HAAL KLANTGEGEVENS UIT WINDOW GLOBALS (berekend uit database in Blade)
+    const klantId = window.klantId || null;
+    const klantEmail = window.klantEmail || null;
+    const klantNaam = window.klantNaam || null;
+    const klantGeslacht = window.klantGeslacht || 'NIET GEZET';
+    const klantGeboortedatum = window.klantGeboortedatum || 'NIET GEZET';
+    const klantLeeftijd = window.klantLeeftijd || null;
     
-    // Probeer uit pagina context te halen (bijv. uit hidden fields of klant info)
-    const klantLeeftijdElement = document.querySelector('[data-klant-leeftijd]');
-    if (klantLeeftijdElement) {
-        leeftijd = parseInt(klantLeeftijdElement.getAttribute('data-klant-leeftijd')) || 45;
-    }
+    console.log('🔍 collectTestDataForAI - klantgegevens:', {
+        id: klantId,
+        email: klantEmail,
+        naam: klantNaam,
+        geslacht: klantGeslacht,
+        geboortedatum: klantGeboortedatum,
+        leeftijd: klantLeeftijd,
+        bron: window.klantLeeftijd ? 'window.klantLeeftijd (berekend uit geboortedatum)' : 'NIET BESCHIKBAAR'
+    });
     
-    // Verzamel alle beschikbare data
-    const testData = {
+    return {
         type: type,
         testtype: document.getElementById('testtype')?.value || 'fietstest',
         
@@ -3671,17 +3731,15 @@ function collectTestDataForAI(type) {
         specifieke_doelstellingen: document.getElementById('specifieke_doelstellingen')?.value || 'Algemene fitheid verbetering',
         lichaamsgewicht_kg: parseFloat(document.getElementById('lichaamsgewicht_kg')?.value) || null,
         lichaamslengte_cm: parseFloat(document.getElementById('lichaamslengte_cm')?.value) || null,
-        leeftijd: leeftijd,
+        leeftijd: klantLeeftijd, // ✅ FIX: Gebruik klantLeeftijd uit window globals (berekend uit geboortedatum)
+        geslacht: klantGeslacht,
+        geboortedatum: klantGeboortedatum,
         
         // Extra context
         maximale_hartslag_bpm: parseFloat(document.getElementById('maximale_hartslag_bpm')?.value) || null,
         hartslag_rust_bpm: parseFloat(document.getElementById('hartslag_rust_bpm')?.value) || null,
         bmi: parseFloat(document.getElementById('bmi')?.value) || null
     };
-    
-    console.log('🔍 Verzamelde testdata voor AI:', testData);
-    
-    return testData;
 }
 
 /**
