@@ -143,22 +143,46 @@ class DashboardController extends Controller
         // Check autorisatie via policy
         $this->authorize('create', DashboardWidget::class);
 
+        // 🔥 VEREENVOUDIGDE VALIDATIE: content altijd nullable, check later
         $validated = $request->validate([
             'type' => 'required|in:text,metric,chart,image,button',
             'title' => 'required|string|max:255',
-            'content' => 'nullable|string',
+            'content' => 'nullable|string', // Altijd nullable, we checken later
             'chart_type' => 'nullable|string',
             'chart_data' => 'nullable|string',
             'image' => 'nullable|image|max:2048',
             'button_text' => 'nullable|string|max:255',
             'button_url' => 'nullable|string|max:255',
-            'button_color' => 'nullable|string', // Knop kleur validatie
+            'button_color' => 'nullable|string',
             'background_color' => 'nullable|string',
             'text_color' => 'nullable|string',
             'grid_width' => 'nullable|integer|min:1|max:12',
             'grid_height' => 'nullable|integer|min:1|max:10',
             'visibility' => 'required|in:everyone,medewerkers,only_me',
-            'metric_type' => 'nullable|string', // NIEUW: Valideer metric type
+            'metric_type' => 'nullable|string',
+        ]);
+        
+        // 🔥 HANDMATIGE CHECK: Voor text widgets moet content ingevuld zijn
+        if ($validated['type'] === 'text' && (!isset($validated['content']) || trim($validated['content']) === '')) {
+            Log::warning('⚠️ Text widget zonder content', [
+                'content_isset' => isset($validated['content']),
+                'content_value' => $validated['content'] ?? 'NULL',
+                'content_trimmed' => isset($validated['content']) ? trim($validated['content']) : 'NULL'
+            ]);
+            
+            return redirect()->back()
+                ->withErrors(['content' => 'Tekst is verplicht voor een tekst widget.'])
+                ->withInput();
+        }
+        
+        // 🔥 DEBUG: Log ALLE request data
+        Log::info('📝 === WIDGET AANMAKEN START ===', [
+            'request_all' => $request->all(),
+            'validated_data' => $validated,
+            'type' => $validated['type'],
+            'content_isset' => isset($validated['content']),
+            'content_value' => $validated['content'] ?? 'NULL',
+            'content_length' => isset($validated['content']) ? strlen($validated['content']) : 0,
         ]);
 
         // Medewerkers mogen geen 'everyone' visibility instellen (alleen admin)
@@ -240,7 +264,33 @@ class DashboardController extends Controller
         // Bereken de metric waarde
         $metricValue = $this->calculateMetricValue($validated['metric_type']);
         $validated['content'] = $metricValue['formatted'];
-    }        $widget = DashboardWidget::create($validated);
+    }
+    
+    // 🔥 DEBUG: Log wat er precies wordt opgeslagen
+    Log::info('📝 Widget aanmaken - validated data', [
+        'type' => $validated['type'],
+        'title' => $validated['title'],
+        'content' => $validated['content'] ?? 'NIET GEZET',
+        'content_length' => isset($validated['content']) ? strlen($validated['content']) : 0,
+        'all_keys' => array_keys($validated)
+    ]);
+    
+    // 🔥 FIX: Voor text widgets, zorg dat content ALTIJD wordt opgeslagen (zelfs als leeg)
+    if ($validated['type'] === 'text' && !isset($validated['content'])) {
+        Log::warning('⚠️ Content niet gezet voor text widget, zet naar lege string');
+        $validated['content'] = '';
+    }
+    
+    $widget = DashboardWidget::create($validated);
+    
+    // 🔥 DEBUG: Verificatie na opslaan
+    Log::info('✅ Widget opgeslagen in database', [
+        'widget_id' => $widget->id,
+        'type' => $widget->type,
+        'title' => $widget->title,
+        'content_in_db' => $widget->content ?? 'NULL',
+        'content_length_in_db' => $widget->content ? strlen($widget->content) : 0
+    ]);
 
         // ⚡ BELANGRIJK: Maak direct een layout aan voor de creator met de widget defaults
         // Zodat andere users (medewerkers/klanten) deze layout kunnen overnemen

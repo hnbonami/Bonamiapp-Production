@@ -437,6 +437,9 @@ class InspanningstestController extends Controller {
         ]);
 
         try {
+            \Log::info('🔄 AUTO-SAVE CREATE gestart voor klant: ' . $klant->id);
+            \Log::info('📊 Request data ontvangen:', $request->except('_token'));
+            
             // Haal bestaande test ID uit session of maak nieuwe
             $testId = session('inspanningstest_draft_id');
             

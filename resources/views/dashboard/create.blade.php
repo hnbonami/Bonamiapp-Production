@@ -47,8 +47,9 @@
         <!-- Text Fields -->
         <div id="text-fields" style="display:none;">
             <div style="margin-bottom:1.5em;">
-                <label for="text-content" style="display:block;font-weight:600;margin-bottom:0.5em;">Tekst *</label>
-                <textarea name="content" id="text-content" rows="6" style="width:100%;padding:0.8em;border:1px solid #d1d5db;border-radius:7px;" placeholder="Voer je tekst in...">{{ old('content') }}</textarea>
+                <label for="content" style="display:block;font-weight:600;margin-bottom:0.5em;">Tekst *</label>
+                <textarea id="content" rows="6" style="width:100%;padding:0.8em;border:1px solid #d1d5db;border-radius:7px;" placeholder="Voer je tekst in...">{{ old('content') }}</textarea>
+                <small style="color:#6b7280;display:block;margin-top:0.5em;">💡 De name attribute wordt automatisch toegevoegd wanneer je 'Tekst' selecteert</small>
             </div>
         </div>
 
@@ -244,14 +245,36 @@ document.addEventListener('DOMContentLoaded', function() {
         imageFields.style.display = 'none';
         buttonFields.style.display = 'none';
         chartFields.style.display = 'none';
+        
+        // 🔥 FIX: Verwijder 'name' attribute van velden die niet worden gebruikt
+        const contentTextarea = document.getElementById('content');
+        const metricContentInput = document.getElementById('metric-content');
+        
+        // Reset: verwijder name attributes
+        if (contentTextarea) {
+            contentTextarea.removeAttribute('name');
+            contentTextarea.required = false;
+        }
+        if (metricContentInput) {
+            metricContentInput.removeAttribute('name');
+        }
 
-        // Toon relevante fields
+        // Toon relevante fields en voeg name attribute toe
         switch(selectedType) {
             case 'text':
                 textFields.style.display = 'block';
+                if (contentTextarea) {
+                    contentTextarea.setAttribute('name', 'content');
+                    contentTextarea.required = true;
+                }
+                console.log('📝 Text veld enabled met name="content"');
                 break;
             case 'metric':
                 metricFields.style.display = 'block';
+                if (metricContentInput) {
+                    metricContentInput.setAttribute('name', 'content');
+                }
+                console.log('📝 Metric veld enabled met name="content"');
                 break;
             case 'image':
                 imageFields.style.display = 'block';

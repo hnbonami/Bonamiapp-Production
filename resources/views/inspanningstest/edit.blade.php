@@ -801,13 +801,17 @@ function generateInspanningstestRows(testType) {
     
     for (let i = 0; i < maxStappen; i++) {
         const currentTime = stappenMin * (i + 1);
-        let currentValue = startValue + (stappenIncrement * i); // Eerste rij (i=0) = startValue + 0 = startValue ✅
+        // 🔥 CRUCIALE FIX: Elke rij = startValue + (i * increment)
+        // i=0: startValue + 0*increment = startValue (eerste rij)
+        // i=1: startValue + 1*increment (tweede rij)
+        // i=2: startValue + 2*increment (derde rij), etc.
+        let currentValue = startValue + (stappenIncrement * i);
         
         if (testType === 'fietstest') {
             console.log(`🚴 Fietstest rij ${i + 1}: ${currentTime}min, ${currentValue}W`);
             rows.push({
                 tijd: currentTime,
-                vermogen: currentValue,
+                vermogen: currentValue, // Gebruik EXACTE waarde zonder rounding
                 lactaat: '',
                 hartslag: '',
                 borg: ''
@@ -1137,11 +1141,11 @@ function updateTableSafely(testType) {
         const inputs = rows[i].getElementsByTagName('input');
         
         if (inputs.length >= 2) {
-            const newTime = stappenMin * (i + 1);
+            const newTime = stappenMin * (i + 1); // 🔥 stappenMin is al in MINUTEN!
             const newValue = startValue + (stappenIncrement * i);
             
             // Update alleen eerste twee velden (tijd en vermogen/snelheid)
-            inputs[0].value = newTime; // Tijd
+            inputs[0].value = newTime; // Tijd in minuten
             
             if (testType === 'fietstest' || testType === 'veldtest_fietsen') {
                 inputs[1].value = newValue; // Vermogen
@@ -1424,6 +1428,24 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateProtocolFields() {
         const selectedType = testtypeSelect.value;
         
+        // 🔥 CRUCIALE FIX: Controleer of velden al gevuld zijn (vanuit database)
+        const startwattageInput = document.getElementById('startwattage');
+        const stappenMinInput = document.getElementById('stappen_min');
+        const stappenWattInput = document.getElementById('stappen_watt');
+        
+        const hasExistingValues = startwattageInput.value !== '' || 
+                                 stappenMinInput.value !== '' || 
+                                 stappenWattInput.value !== '';
+        
+        if (hasExistingValues) {
+            console.log('✅ BEHOUD bestaande waarden uit database:', {
+                startwattage: startwattageInput.value,
+                stappen_min: stappenMinInput.value,
+                stappen_watt: stappenWattInput.value
+            });
+            // SKIP het overschrijven van waarden, behoud database waarden!
+        }
+        
         // Verberg eerst alle protocol velden
         protocolFieldLopen.style.display = 'none';
         protocolFieldZwemmen.style.display = 'none';
@@ -1511,8 +1533,12 @@ document.addEventListener('DOMContentLoaded', function() {
             weersomstandighedenField.style.display = 'block';
             startLabel.textContent = 'Start wattage (watt)';
             stappenWattLabel.textContent = 'Stappen (watt)';
-            document.getElementById('startwattage').value = 100;
-            document.getElementById('stappen_watt').value = 40;
+            
+            // 🔥 ALLEEN invullen als velden LEEG zijn
+            if (!hasExistingValues) {
+                document.getElementById('startwattage').value = 100;
+                document.getElementById('stappen_watt').value = 40;
+            }
             
             // VELDTEST FIETS: Update tabel naar fietswattages na protocol instelling
             console.log('🔄 Updating tabel naar veldtest fietswattages...');
@@ -1528,8 +1554,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('🚴 Fietstest protocol instellingen');
                 startLabel.textContent = 'Start wattage (watt)';
                 stappenWattLabel.textContent = 'Stappen (watt)';
-                document.getElementById('startwattage').value = 100;
-                document.getElementById('stappen_watt').value = 40;
+                
+                // 🔥 ALLEEN invullen als velden LEEG zijn
+                if (!hasExistingValues) {
+                    document.getElementById('startwattage').value = 100;
+                    document.getElementById('stappen_watt').value = 40;
+                }
                 
                 // CONSISTENTIE: Update tabel naar fietswattages na protocol instelling
                 console.log('🔄 Updating tabel naar fietswattages...');
@@ -1541,8 +1571,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('🏃 Looptest protocol instellingen');
                 startLabel.textContent = 'Start snelheid (km/h)';
                 stappenWattLabel.textContent = 'Stappen (km/h)';
-                document.getElementById('startwattage').value = 8;
-                document.getElementById('stappen_watt').value = 1;
+                
+                // 🔥 ALLEEN invullen als velden LEEG zijn
+                if (!hasExistingValues) {
+                    document.getElementById('startwattage').value = 8;
+                    document.getElementById('stappen_watt').value = 1;
+                }
                 
                 // BELANGRIJKE TOEVOEGING: Update tabel naar loopsnelheden na protocol instelling
                 console.log('🔄 Updating tabel naar loopsnelheden...');
@@ -1554,8 +1588,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('🔧 Default protocol instellingen');
                 startLabel.textContent = 'Start (watt)';
                 stappenWattLabel.textContent = 'Stappen (watt)';
-                document.getElementById('startwattage').value = 100;
-                document.getElementById('stappen_watt').value = 40;
+                
+                // 🔥 ALLEEN invullen als velden LEEG zijn
+                if (!hasExistingValues) {
+                    document.getElementById('startwattage').value = 100;
+                    document.getElementById('stappen_watt').value = 40;
+                }
             }
         }
     }
@@ -1610,32 +1648,91 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Event listeners voor protocol veld wijzigingen - VEILIGE automatische update
-    document.getElementById('startwattage').addEventListener('input', function() {
-        const selectedType = testtypeSelect.value;
-        console.log('Startwattage gewijzigd voor type:', selectedType);
-        if (selectedType === 'fietstest' || selectedType === 'looptest' || selectedType === 'veldtest_fietsen') {
-            console.log('🔄 Tabel wordt veilig bijgewerkt...');
-            updateTableSafely(selectedType);
-        }
-    });
+    const startwattageInput = document.getElementById('startwattage');
+    const stappenMinInput = document.getElementById('stappen_min');
+    const stappenWattInput = document.getElementById('stappen_watt');
     
-    document.getElementById('stappen_min').addEventListener('input', function() {
-        const selectedType = testtypeSelect.value;
-        console.log('Stappen minuten gewijzigd voor type:', selectedType);
-        if (selectedType === 'fietstest' || selectedType === 'looptest' || selectedType === 'veldtest_fietsen') {
-            console.log('🔄 Tabel wordt veilig bijgewerkt...');
-            updateTableSafely(selectedType);
-        }
-    });
+    if (startwattageInput) {
+        startwattageInput.addEventListener('input', function() {
+            const selectedType = testtypeSelect.value;
+            console.log('🔧 Startwattage gewijzigd naar:', this.value, 'voor type:', selectedType);
+            if (selectedType === 'fietstest' || selectedType === 'looptest' || selectedType === 'veldtest_fietsen') {
+                console.log('🔄 Tabel wordt veilig bijgewerkt...');
+                updateTableSafely(selectedType);
+            }
+        });
+        startwattageInput.addEventListener('change', function() {
+            const selectedType = testtypeSelect.value;
+            console.log('✅ Startwattage change event:', this.value);
+            if (selectedType === 'fietstest' || selectedType === 'looptest' || selectedType === 'veldtest_fietsen') {
+                updateTableSafely(selectedType);
+            }
+        });
+    } else {
+        console.warn('⚠️ startwattage input niet gevonden!');
+    }
     
-    document.getElementById('stappen_watt').addEventListener('input', function() {
-        const selectedType = testtypeSelect.value;
-        console.log('Stappen watt gewijzigd voor type:', selectedType);
-        if (selectedType === 'fietstest' || selectedType === 'looptest' || selectedType === 'veldtest_fietsen') {
-            console.log('🔄 Tabel wordt veilig bijgewerkt...');
-            updateTableSafely(selectedType);
-        }
-    });
+    if (stappenMinInput) {
+        stappenMinInput.addEventListener('input', function() {
+            const selectedType = testtypeSelect.value;
+            console.log('🔧 Stappen minuten gewijzigd naar:', this.value, 'voor type:', selectedType);
+            if (selectedType === 'fietstest' || selectedType === 'looptest' || selectedType === 'veldtest_fietsen') {
+                console.log('🔄 Tabel wordt veilig bijgewerkt...');
+                updateTableSafely(selectedType);
+            }
+        });
+        stappenMinInput.addEventListener('change', function() {
+            const selectedType = testtypeSelect.value;
+            console.log('✅ Stappen min change event:', this.value);
+            if (selectedType === 'fietstest' || selectedType === 'looptest' || selectedType === 'veldtest_fietsen') {
+                updateTableSafely(selectedType);
+            }
+        });
+    } else {
+        console.warn('⚠️ stappen_min input niet gevonden!');
+    }
+    
+    if (stappenWattInput) {
+        stappenWattInput.addEventListener('input', function() {
+            const selectedType = testtypeSelect.value;
+            console.log('🔧 Stappen watt gewijzigd naar:', this.value, 'voor type:', selectedType);
+            if (selectedType === 'fietstest' || selectedType === 'looptest' || selectedType === 'veldtest_fietsen') {
+                console.log('🔄 Tabel wordt veilig bijgewerkt...');
+                updateTableSafely(selectedType);
+            }
+        });
+        stappenWattInput.addEventListener('change', function() {
+            const selectedType = testtypeSelect.value;
+            console.log('✅ Stappen watt change event:', this.value);
+            if (selectedType === 'fietstest' || selectedType === 'looptest' || selectedType === 'veldtest_fietsen') {
+                updateTableSafely(selectedType);
+            }
+        });
+        
+        // 🔥 NIEUWE FIX: Observer voor programmatische wijzigingen (auto-save)
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                    const newValue = stappenWattInput.value;
+                    const selectedType = testtypeSelect.value;
+                    console.log('🔄 MutationObserver: stappen_watt gewijzigd naar', newValue);
+                    if (selectedType === 'fietstest' || selectedType === 'looptest' || selectedType === 'veldtest_fietsen') {
+                        console.log('🔄 Tabel wordt AUTOMATISCH bijgewerkt na waarde wijziging');
+                        updateTableSafely(selectedType);
+                    }
+                }
+            });
+        });
+        
+        observer.observe(stappenWattInput, {
+            attributes: true,
+            attributeFilter: ['value']
+        });
+        
+        console.log('✅ MutationObserver geïnstalleerd voor stappen_watt auto-updates');
+    } else {
+        console.warn('⚠️ stappen_watt input niet gevonden!');
+    }
     
     // Event listener voor testtype wijzigingen
     testtypeSelect.addEventListener('change', updateProtocolFields);
@@ -5110,6 +5207,29 @@ class InspanningstestAutoSave {
                         formData.append(name, value);
                     }
                 }
+            });
+            
+            // 🔥 EXPLICIETE FIX: Protocol velden (startwattage, stappen_min, stappen_watt)
+            // Deze velden hebben mogelijk geen/verkeerd name attribuut, dus expliciet ophalen via id
+            const startwattage = document.getElementById('startwattage')?.value;
+            const stappenMin = document.getElementById('stappen_min')?.value;
+            const stappenWatt = document.getElementById('stappen_watt')?.value;
+            
+            // Forceer deze waarden in FormData (overschrijft eventuele duplicaten)
+            if (startwattage !== null && startwattage !== undefined) {
+                formData.set('startwattage', startwattage);
+            }
+            if (stappenMin !== null && stappenMin !== undefined) {
+                formData.set('stappen_min', stappenMin);
+            }
+            if (stappenWatt !== null && stappenWatt !== undefined) {
+                formData.set('stappen_watt', stappenWatt);
+            }
+            
+            console.log('🔧 Protocol velden expliciet toegevoegd:', {
+                startwattage: startwattage || 'LEEG',
+                stappen_min: stappenMin || 'LEEG',
+                stappen_watt: stappenWatt || 'LEEG'
             });
             
             // 📊 KRITIEK: Verzamel testresultaten uit dynamische tabel
