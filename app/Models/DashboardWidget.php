@@ -38,6 +38,22 @@ class DashboardWidget extends Model
         'chart_data' => 'array',
         'is_active' => 'boolean',
     ];
+    
+    /**
+     * Accessor voor grid_width - voorkom 1x1 bug
+     */
+    public function getGridWidthAttribute($value)
+    {
+        return max($value ?? 4, 1);
+    }
+    
+    /**
+     * Accessor voor grid_height - voorkom 1x1 bug
+     */
+    public function getGridHeightAttribute($value)
+    {
+        return max($value ?? 3, 1);
+    }
 
     // Widget types constanten
     const TYPE_CHART = 'chart';

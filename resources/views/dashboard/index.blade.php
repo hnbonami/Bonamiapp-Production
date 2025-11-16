@@ -450,6 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
         column: 12,
         float: false, // ⚡ FALSE = auto-compact naar boven!
         animate: false, // Uit tijdens load!
+        minRow: 1, // 🔥 FIX: Minimale rij hoogte
         resizable: {
             handles: 'e, se, s, sw, w' // Standaard handles
         },
@@ -457,6 +458,17 @@ document.addEventListener('DOMContentLoaded', function() {
             handle: '.widget-header'
         },
         disableOneColumnMode: true // ⚡ BELANGRIJK: voorkom auto 1-column mode
+    });
+
+    // 🔥 FIX: Voorkom widgets kleiner dan 1x1
+    grid.on('resizestart', function(event, el) {
+        const minWidth = 1;
+        const minHeight = 1;
+        
+        grid.minWidth(el, minWidth);
+        grid.minHeight(el, minHeight);
+        
+        console.log('🔒 Widget resize minimums ingesteld:', { minWidth, minHeight });
     });
 
     // ⚡ FIX: Force correcte groottes NA initialisatie + zet per-widget rechten
@@ -511,13 +523,19 @@ document.addEventListener('DOMContentLoaded', function() {
         items.forEach(item => {
             const widgetId = item.el.getAttribute('data-widget-id');
             
+            // 🔥 EXTRA VALIDATIE: Voorkom 0 of negatieve waardes
+            const width = Math.max(item.w || 4, 1);
+            const height = Math.max(item.h || 3, 1);
+            const x = Math.max(item.x || 0, 0);
+            const y = Math.max(item.y || 0, 0);
+            
             console.log('💾 Gebruiker wijzigt widget layout:', {
                 role: userRole,
                 id: widgetId,
-                x: item.x,
-                y: item.y,
-                width: item.w,
-                height: item.h
+                x: x,
+                y: y,
+                width: width,
+                height: height
             });
             
             fetch('{{ route("dashboard.widgets.updateLayout") }}', {
@@ -528,10 +546,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     widget_id: widgetId,
-                    grid_x: item.x,
-                    grid_y: item.y,
-                    grid_width: item.w,
-                    grid_height: item.h
+                    grid_x: x,
+                    grid_y: y,
+                    grid_width: width,
+                    grid_height: height
                 })
             })
             .then(response => response.json())

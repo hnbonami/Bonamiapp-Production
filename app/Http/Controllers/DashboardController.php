@@ -12,6 +12,48 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class DashboardController extends Controller
 {
     use AuthorizesRequests;
+    
+    /**
+     * Herstel alle corrupte layouts in de database (1x1 bug fix)
+     */
+    private function repairCorruptLayouts($user)
+    {
+        // Vind alle layouts van deze user met ongeldige groottes
+        $corruptLayouts = DashboardUserLayout::where('user_id', $user->id)
+            ->where(function($query) {
+                $query->where('grid_width', '<', 1)
+                      ->orWhere('grid_height', '<', 1);
+            })
+            ->with('widget')
+            ->get();
+        
+        if ($corruptLayouts->count() > 0) {
+            \Log::warning('🔧 PREVENTIEVE FIX: Corrupte layouts gevonden, herstel naar widget defaults', [
+                'user_id' => $user->id,
+                'count' => $corruptLayouts->count(),
+                'widget_ids' => $corruptLayouts->pluck('widget_id')->toArray()
+            ]);
+            
+            foreach ($corruptLayouts as $layout) {
+                $widget = $layout->widget;
+                if ($widget) {
+                    $layout->update([
+                        'grid_width' => max($widget->grid_width ?? 4, 1),
+                        'grid_height' => max($widget->grid_height ?? 3, 1),
+                        'grid_x' => $widget->grid_x ?? 0,
+                        'grid_y' => $widget->grid_y ?? 0,
+                    ]);
+                    
+                    \Log::info('✅ Layout hersteld', [
+                        'widget_id' => $widget->id,
+                        'user_id' => $user->id,
+                        'new_size' => "{$layout->grid_width}x{$layout->grid_height}"
+                    ]);
+                }
+            }
+        }
+    }
+    
     /**
      * Toon het dashboard met widgets
      */
@@ -19,80 +61,133 @@ class DashboardController extends Controller
     {
         $user = auth()->user();
         
+        // 🔥 PREVENTIEVE FIX: Herstel alle corrupte layouts in de database bij page load
+        $this->repairCorruptLayouts($user);
+        
         // Haal widgets op op basis van rol en organisatie
         $widgets = DashboardWidget::visibleFor($user)
             ->active()
             ->with('creator')
             ->get();
 
-        // Extra debug-logging: vergelijk met alle widgets van de organisatie
-        // zodat we kunnen zien welke widgets mogelijk door de visibleFor-scope gefilterd worden
-        $allOrgWidgets = DashboardWidget::where('organisatie_id', $user->organisatie_id)->get();
-        \Log::info('DEBUG Dashboard widgets vergelijking', [
-            'user_id' => $user->id,
-            'visible_widget_ids' => $widgets->pluck('id')->toArray(),
-            'visible_widgets_detail' => $widgets->map(fn($w) => [
-                'id' => $w->id,
-                'title' => $w->title ?? null,
-                'visibility' => $w->visibility ?? null,
-                'created_by' => $w->created_by ?? null,
-                'organisatie_id' => $w->organisatie_id ?? null,
-            ])->toArray(),
-            'all_org_widget_ids' => $allOrgWidgets->pluck('id')->toArray(),
-            'all_org_widgets_detail' => $allOrgWidgets->map(fn($w) => [
-                'id' => $w->id,
-                'title' => $w->title ?? null,
-                'visibility' => $w->visibility ?? null,
-                'created_by' => $w->created_by ?? null,
-                'organisatie_id' => $w->organisatie_id ?? null,
-            ])->toArray(),
-        ]);
-
-        // Haal user-specific layouts op, of gebruik CREATOR/WIDGET defaults
+        // 🔥 FIX: Verbeterde layout logica met validatie tegen 1x1 bug
         $layouts = $widgets->map(function ($widget) use ($user) {
-            // ALTIJD de creator layout gebruiken als basis
-            $creatorLayout = DashboardUserLayout::where('widget_id', $widget->id)
-                ->where('user_id', $widget->created_by)
-                ->first();
-
-            // Haal user layout op (als die bestaat)
+            // Stap 1: Haal user layout op (als die bestaat)
             $userLayout = DashboardUserLayout::where('user_id', $user->id)
                 ->where('widget_id', $widget->id)
                 ->first();
 
-            // Bepaal welke layout te gebruiken
-            if ($userLayout && $user->id === $widget->created_by) {
-                // Creator gebruikt zijn eigen layout
-                $layout = $userLayout;
-            } elseif ($creatorLayout) {
-                // Niet-creators gebruiken ALTIJD de creator layout (live sync!)
-                $layout = new DashboardUserLayout([
+            // Stap 2: Als user al een layout heeft, gebruik die (maar valideer eerst!)
+            if ($userLayout) {
+                // 🔥 BELANGRIJKE CHECK: Valideer dat de layout niet corrupt is (1x1 bug)
+                if ($userLayout->grid_width < 1 || $userLayout->grid_height < 1) {
+                    \Log::warning('⚠️ Corrupte layout gedetecteerd (1x1 bug), herstel naar widget defaults', [
+                        'widget_id' => $widget->id,
+                        'user_id' => $user->id,
+                        'corrupt_size' => $userLayout->grid_width . 'x' . $userLayout->grid_height,
+                    ]);
+                    
+                    // Herstel naar widget defaults
+                    $userLayout->update([
+                        'grid_width' => max($widget->grid_width ?? 4, 1),
+                        'grid_height' => max($widget->grid_height ?? 3, 1),
+                        'grid_x' => $widget->grid_x ?? 0,
+                        'grid_y' => $widget->grid_y ?? 0,
+                    ]);
+                    
+                    $userLayout->refresh();
+                }
+                
+                return [
+                    'widget' => $widget,
+                    'layout' => $userLayout,
+                ];
+            }
+
+            // Stap 3: Geen user layout, maar is dit de creator? Maak een nieuwe aan
+            if ($user->id === $widget->created_by) {
+                // Creator heeft nog geen layout, gebruik widget defaults
+                $layout = DashboardUserLayout::create([
                     'user_id' => $user->id,
                     'widget_id' => $widget->id,
-                    'grid_x' => $creatorLayout->grid_x,
-                    'grid_y' => $creatorLayout->grid_y,
-                    'grid_width' => $creatorLayout->grid_width,
-                    'grid_height' => $creatorLayout->grid_height,
+                    'grid_x' => $widget->grid_x ?? 0,
+                    'grid_y' => $widget->grid_y ?? 0,
+                    'grid_width' => max($widget->grid_width ?? 4, 1),
+                    'grid_height' => max($widget->grid_height ?? 3, 1),
                     'is_visible' => true,
                 ]);
                 
-                \Log::info('� Live sync: gebruiker ziet creator layout', [
+                \Log::info('✅ Creator layout aangemaakt met widget defaults', [
                     'widget_id' => $widget->id,
                     'user_id' => $user->id,
-                    'creator_id' => $widget->created_by,
-                    'size' => $creatorLayout->grid_width . 'x' . $creatorLayout->grid_height,
-                    'creator_layout_updated_at' => $creatorLayout->updated_at
+                    'size' => $layout->grid_width . 'x' . $layout->grid_height,
                 ]);
+                
+                return [
+                    'widget' => $widget,
+                    'layout' => $layout,
+                ];
+            }
+
+            // Stap 4: Niet-creator zonder layout, check creator layout voor live sync
+            $creatorLayout = DashboardUserLayout::where('widget_id', $widget->id)
+                ->where('user_id', $widget->created_by)
+                ->first();
+
+            if ($creatorLayout) {
+                // 🔥 FIX: Valideer creator layout voordat we die gebruiken
+                if ($creatorLayout->grid_width < 1 || $creatorLayout->grid_height < 1) {
+                    \Log::warning('⚠️ Creator layout corrupt, gebruik widget defaults', [
+                        'widget_id' => $widget->id,
+                        'creator_id' => $widget->created_by,
+                        'corrupt_size' => $creatorLayout->grid_width . 'x' . $creatorLayout->grid_height,
+                    ]);
+                    
+                    // Gebruik widget defaults in plaats van corrupte creator layout
+                    $layout = new DashboardUserLayout([
+                        'user_id' => $user->id,
+                        'widget_id' => $widget->id,
+                        'grid_x' => $widget->grid_x ?? 0,
+                        'grid_y' => $widget->grid_y ?? 0,
+                        'grid_width' => max($widget->grid_width ?? 4, 1),
+                        'grid_height' => max($widget->grid_height ?? 3, 1),
+                        'is_visible' => true,
+                    ]);
+                } else {
+                    // Creator layout is OK, gebruik die voor live sync
+                    $layout = new DashboardUserLayout([
+                        'user_id' => $user->id,
+                        'widget_id' => $widget->id,
+                        'grid_x' => $creatorLayout->grid_x,
+                        'grid_y' => $creatorLayout->grid_y,
+                        'grid_width' => $creatorLayout->grid_width,
+                        'grid_height' => $creatorLayout->grid_height,
+                        'is_visible' => true,
+                    ]);
+                    
+                    \Log::info('🔄 Live sync: gebruiker ziet creator layout', [
+                        'widget_id' => $widget->id,
+                        'user_id' => $user->id,
+                        'creator_id' => $widget->created_by,
+                        'size' => $creatorLayout->grid_width . 'x' . $creatorLayout->grid_height,
+                    ]);
+                }
             } else {
-                // Fallback: gebruik widget defaults
+                // Geen creator layout EN geen user layout: gebruik widget defaults
                 $layout = new DashboardUserLayout([
                     'user_id' => $user->id,
                     'widget_id' => $widget->id,
                     'grid_x' => $widget->grid_x ?? 0,
                     'grid_y' => $widget->grid_y ?? 0,
-                    'grid_width' => $widget->grid_width ?? 4,
-                    'grid_height' => $widget->grid_height ?? 3,
+                    'grid_width' => max($widget->grid_width ?? 4, 1),
+                    'grid_height' => max($widget->grid_height ?? 3, 1),
                     'is_visible' => true,
+                ]);
+                
+                \Log::info('📦 Geen layouts gevonden, gebruik widget defaults', [
+                    'widget_id' => $widget->id,
+                    'user_id' => $user->id,
+                    'size' => $layout->grid_width . 'x' . $layout->grid_height,
                 ]);
             }
 
@@ -584,7 +679,7 @@ class DashboardController extends Controller
             </div>
 
             <div style="background: #f8faf9; border-left: 3px solid #cbd5e1; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
-                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1rem;">2️⃣ Inspanningstesten aanmaken</h4>
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1rem;">2️⃣ Inspanningstesten aanmaken (afhankelijk van de rechten die je organisatie toegekend krijgt)</h4>
                 <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
                     Selecteer een klant → <strong style="color: #cb5739;">Nieuwe inspanningstest</strong>. Kies testtype (fietstest/looptest),
                     vul testresultaten in en genereer automatisch drempelwaarden + trainingsadvies!
@@ -592,7 +687,7 @@ class DashboardController extends Controller
             </div>
 
             <div style="background: #fafaf8; border-left: 3px solid #cbd5e1; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
-                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1rem;">3️⃣ Bikefits uitvoeren</h4>
+                <h4 style="margin: 0 0 0.5rem 0; color: #475569; font-size: 1rem;">3️⃣ Bikefits uitvoeren (afhankelijk van de rechten die je organisatie toegekend krijgt)</h4>
                 <p style="margin: 0; color: #64748b; font-size: 0.95rem;">
                     Ga naar <strong style="color: #cb5739;">Klanten</strong> → selecteer klant → <strong>Nieuwe bikefit</strong>.
                     Vul metingen in en gebruik de automatische calculator voor optimale fietshouding.
@@ -900,6 +995,10 @@ HTML;
             'grid_height' => 'required|integer|min:1|max:10',
         ]);
 
+        // 🔥 EXTRA VALIDATIE: Zorg dat we nooit 0 of negatieve waardes krijgen
+        $validated['grid_width'] = max($validated['grid_width'], 1);
+        $validated['grid_height'] = max($validated['grid_height'], 1);
+        
         $widget = DashboardWidget::findOrFail($validated['widget_id']);
 
         // Check of user deze widget mag verplaatsen/resizen
@@ -910,7 +1009,7 @@ HTML;
             ], 403);
         }
 
-        // Update of create user layout
+        // 🔥 FIX: Update of create user layout met extra validatie
         $layout = DashboardUserLayout::updateOrCreate(
             [
                 'user_id' => $user->id,
@@ -934,7 +1033,7 @@ HTML;
                 'grid_height' => $validated['grid_height'],
             ]);
             
-            Log::info('Widget defaults bijgewerkt door creator', [
+            Log::info('✅ Widget defaults bijgewerkt door creator', [
                 'widget_id' => $widget->id,
                 'user_id' => $user->id,
                 'position' => "{$validated['grid_x']},{$validated['grid_y']}",
@@ -942,7 +1041,7 @@ HTML;
             ]);
         }
 
-        Log::info('Widget layout bijgewerkt', [
+        Log::info('✅ Widget layout bijgewerkt', [
             'widget_id' => $widget->id,
             'user_id' => $user->id,
             'is_creator' => $widget->created_by === $user->id,
