@@ -72,6 +72,13 @@
                         $medewerker = auth()->user();
                         $factoren = $medewerker->commissieFactoren->first();
                         $totaleBonus = $factoren ? $factoren->totale_bonus : 0;
+                        $organisatieNaam = $medewerker->organisatie->naam ?? 'Organisatie';
+                        
+                        // Bereken gemiddeld effectief commissie percentage voor deze medewerker
+                        $gemiddeldEffectiefPercentage = 0;
+                        if ($prestaties->count() > 0) {
+                            $gemiddeldEffectiefPercentage = $prestaties->avg('commissie_percentage');
+                        }
                     @endphp
                     {{ $totaleBonus > 0 ? '+' : '' }}{{ number_format($totaleBonus, 1, ',', '.') }}%
                 </div>
@@ -88,6 +95,11 @@
                 <div class="text-xs text-gray-500 mt-1">
                     {{ $factoren->bonus_richting === 'plus' ? '→ Extra inkomst voor jou' : '→ Gaat naar organisatie' }}
                 </div>
+                @if($gemiddeldEffectiefPercentage > 0)
+                    <div class="text-xs font-medium text-gray-700 mt-2 p-2 bg-gray-50 rounded">
+                        {{ $organisatieNaam }} krijgt gem. {{ number_format($gemiddeldEffectiefPercentage, 1) }}%
+                    </div>
+                @endif
             @endif
         </div>
         

@@ -66,8 +66,8 @@
                     </div>
                     <div class="mt-3 text-xs text-gray-600 bg-white p-2 rounded">
                         <strong>Voorbeeld (30% standaard voor organisatie commissie, 15% bonus naar medewerker):</strong><br>
-                        • <span class="text-green-700 font-semibold">+ Mode:</span> Medewerker 15%, Bonami 85%<br>
-                        • <span class="text-red-700 font-semibold">- Mode:</span> Medewerker 45%, Bonami 55%
+                        • <span class="text-green-700 font-semibold">+ Mode:</span> Medewerker 15%, {{ $medewerker->organisatie->naam ?? 'Organisatie' }} 85%<br>
+                        • <span class="text-red-700 font-semibold">- Mode:</span> Medewerker 45%, {{ $medewerker->organisatie->naam ?? 'Organisatie' }} 55%
                     </div>
                 </div>
                 
@@ -103,7 +103,7 @@
                         <input type="number" name="ancienniteit_factor" step="0.01" min="0" max="100"
                                value="{{ old('ancienniteit_factor', $algemeneFactoren->ancienniteit_factor ?? 0) }}"
                                class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <span class="text-xs text-gray-500">Diensttijd Bonami</span>
+                        <span class="text-xs text-gray-500">Diensttijd {{ $medewerker->organisatie->naam ?? 'Organisatie' }}</span>
                     </div>
                 </div>
 
