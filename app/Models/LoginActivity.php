@@ -10,22 +10,21 @@ class LoginActivity extends Model
 {
     use HasFactory;
 
+    protected $table = 'login_activities';
+
     protected $fillable = [
         'user_id',
         'ip_address',
         'user_agent',
-        'device',
-        'browser',
-        'platform',
-        'location',
-        'status',
         'logged_in_at',
         'logged_out_at',
+        'session_duration',
     ];
 
     protected $casts = [
         'logged_in_at' => 'datetime',
         'logged_out_at' => 'datetime',
+        'session_duration' => 'integer',
     ];
 
     public function user(): BelongsTo

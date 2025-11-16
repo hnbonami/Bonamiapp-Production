@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use App\Models\LoginActivity;
 
 class LoginController extends Controller
 {
+    use AuthenticatesUsers;
+
     protected $redirectTo = '/dashboard';
 
     /**
@@ -56,31 +58,42 @@ class LoginController extends Controller
 
     /**
      * Log the user out of the application.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function logout(Request $request)
     {
-        // Update de laatste login activiteit met logout tijd
-        $lastActivity = \App\Models\ActivityLog::where('user_id', auth()->id())
-            ->whereNull('logout_at')
-            ->latest('login_at')
-            ->first();
-
-        if ($lastActivity) {
-            $logoutTime = now();
-            $sessionDuration = $lastActivity->login_at->diffInSeconds($logoutTime);
+        // Update de laatste login activity met logout tijd
+        try {
+            $userId = auth()->id();
             
-            $lastActivity->update([
-                'logout_at' => $logoutTime,
-                'session_duration' => $sessionDuration,
-            ]);
-
-            \Log::info('User logged out', [
-                'user_id' => auth()->id(),
-                'session_duration' => gmdate('H:i:s', $sessionDuration)
-            ]);
+            if ($userId) {
+                $lastActivity = LoginActivity::where('user_id', $userId)
+                    ->whereNull('logged_out_at')
+                    ->orderBy('logged_in_at', 'desc')
+                    ->first();
+                
+                if ($lastActivity) {
+                    $loggedOutAt = now();
+                    $sessionDuration = $loggedOutAt->diffInSeconds($lastActivity->logged_in_at);
+                    
+                    $lastActivity->update([
+                        'logged_out_at' => $loggedOutAt,
+                        'session_duration' => $sessionDuration,
+                    ]);
+                    
+                    \Log::info('Logout Activity Logged', [
+                        'user_id' => $userId,
+                        'session_duration' => $sessionDuration
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Failed to log logout activity: ' . $e->getMessage());
         }
 
-        Auth::logout();
+        $this->guard()->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -90,25 +103,30 @@ class LoginController extends Controller
 
     /**
      * The user has been authenticated.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  mixed  $user
+     * @return mixed
      */
     protected function authenticated(Request $request, $user)
     {
         // Log de login activiteit
-        \App\Models\ActivityLog::create([
-            'user_id' => $user->id,
-            'login_at' => now(),
-            'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-        ]);
-
-        \Log::info('User logged in', [
-            'user_id' => $user->id,
-            'email' => $user->email,
-            'ip' => $request->ip(),
-            'timestamp' => now()
-        ]);
-
-        return redirect()->intended($this->redirectPath());
+        try {
+            LoginActivity::create([
+                'user_id' => $user->id,
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+                'logged_in_at' => now(),
+            ]);
+            
+            \Log::info('Login Activity Logged', [
+                'user_id' => $user->id,
+                'email' => $user->email,
+                'ip' => $request->ip()
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Failed to log login activity: ' . $e->getMessage());
+        }
     }
 
     private function logLoginActivity($request, $user)
