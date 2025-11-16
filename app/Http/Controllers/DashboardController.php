@@ -252,7 +252,7 @@ class DashboardController extends Controller
             'background_color' => 'nullable|string',
             'text_color' => 'nullable|string',
             'grid_width' => 'nullable|integer|min:1|max:12',
-            'grid_height' => 'nullable|integer|min:1|max:10',
+            'grid_height' => 'nullable|integer|min:1|max:50', // 🔥 Verhoogd naar 50 voor hele lange widgets
             'visibility' => 'required|in:everyone,medewerkers,only_me',
             'metric_type' => 'nullable|string',
         ]);
@@ -884,7 +884,7 @@ HTML;
             'text_color' => 'nullable|string',
             'visibility' => 'required|in:everyone,medewerkers,only_me',
             'grid_width' => 'nullable|integer|min:1|max:12',
-            'grid_height' => 'nullable|integer|min:1|max:10',
+            'grid_height' => 'nullable|integer|min:1|max:50', // 🔥 Verhoogd naar 50 voor hele lange widgets
         ]);
 
         // Medewerkers mogen geen 'everyone' visibility instellen (alleen admin)
@@ -992,7 +992,7 @@ HTML;
             'grid_x' => 'required|integer|min:0',
             'grid_y' => 'required|integer|min:0',
             'grid_width' => 'required|integer|min:1|max:12',
-            'grid_height' => 'required|integer|min:1|max:10',
+            'grid_height' => 'required|integer|min:1|max:50', // 🔥 Verhoogd naar 50 voor hele lange widgets
         ]);
 
         // 🔥 EXTRA VALIDATIE: Zorg dat we nooit 0 of negatieve waardes krijgen
