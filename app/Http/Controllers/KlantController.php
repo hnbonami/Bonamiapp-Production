@@ -108,16 +108,15 @@ class KlantController extends Controller
             ]);
             
             if (app()->environment('production')) {
-                // PRODUCTIE: Upload direct naar httpd.www/uploads/avatars/klanten (NIET httpd.private!)
-                // One.com gebruikt httpd.www als public directory
-                $uploadsPath = base_path('../httpd.www/uploads/avatars/klanten');
+                // PRODUCTIE: Upload direct naar public/uploads/avatars/klanten
+                $uploadsPath = public_path('uploads/avatars/klanten');
                 if (!file_exists($uploadsPath)) {
                     mkdir($uploadsPath, 0755, true);
                 }
                 
                 // Verwijder oude avatar
                 if ($klant->avatar) {
-                    $oldPath = base_path('../httpd.www/uploads/' . $klant->avatar);
+                    $oldPath = public_path('uploads/' . $klant->avatar);
                     if (file_exists($oldPath)) {
                         unlink($oldPath);
                         \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
@@ -308,8 +307,8 @@ class KlantController extends Controller
             ]);
             
             if (app()->environment('production')) {
-                // PRODUCTIE: Upload direct naar httpd.www/uploads/avatars/klanten (NIET httpd.private!)
-                $uploadsPath = base_path('../httpd.www/uploads/avatars/klanten');
+                // PRODUCTIE: Upload direct naar public/uploads/avatars/klanten
+                $uploadsPath = public_path('uploads/avatars/klanten');
                 if (!file_exists($uploadsPath)) {
                     mkdir($uploadsPath, 0755, true);
                 }
@@ -318,7 +317,7 @@ class KlantController extends Controller
                 $request->file('avatar')->move($uploadsPath, $fileName);
                 $avatarPath = 'avatars/klanten/' . $fileName;
                 
-                \Log::info('✅ Avatar opgeslagen in httpd.www/uploads bij CREATE', [
+                \Log::info('✅ Avatar opgeslagen in public/uploads bij CREATE', [
                     'path' => $avatarPath,
                     'full_path' => $uploadsPath . '/' . $fileName,
                     'file_exists' => file_exists($uploadsPath . '/' . $fileName)
