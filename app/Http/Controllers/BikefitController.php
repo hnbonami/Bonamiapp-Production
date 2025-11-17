@@ -1536,22 +1536,34 @@ const fs = require('fs');
                 'testzadel_id' => $testzadel->id,
                 'onderdeel_type' => $testzadel->onderdeel_type,
                 'status' => $testzadel->status,
-                'klant_naam' => $testzadel->klant->naam ?? 'onbekend'
+                'klant_naam' => $testzadel->klant->naam ?? 'onbekend',
+                'automatisch_mailtje' => $testzadel->automatisch_mailtje ? 'JA' : 'NEE',
+                'verwachte_retour_datum' => $testzadel->verwachte_retour_datum
             ]);
             
-            // Schedule reminder email if automatisch_mailtje is enabled
-            if ($uitleenData['automatisch_mailtje']) {
-                $this->scheduleReminderEmail($testzadel);
-            }
         } catch (\Exception $e) {
             \Log::error('❌ Testzadel aanmaken GEFAALD', [
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-                'data' => $uitleenData
+                'trace' => $e->getTraceAsString()
             ]);
+            throw $e;
         }
     }
-
+    
+    /**
+     * OUDE METHODE - NIET MEER GEBRUIKT
+     * Schedule automatic reminder email for testzadel
+     * @deprecated Wordt niet meer gebruikt - emails worden nu alleen verstuurd via TestzadelsController
+     */
+    private function scheduleReminderEmail($testzadel)
+    {
+        // Deze methode is uitgeschakeld - zie TestzadelsController@sendReminder voor correcte implementatie
+        \Log::warning('⚠️ scheduleReminderEmail() aangeroepen maar is uitgeschakeld', [
+            'testzadel_id' => $testzadel->id
+        ]);
+        return false;
+    }
+    
     /**
      * Update existing testzadel record
      */
@@ -1582,48 +1594,6 @@ const fs = require('fs');
         $updateData['opmerkingen'] = $request->input('onderdeel_opmerkingen');
 
         $testzadel->update($updateData);
-    }
-
-    /**
-     * Schedule automatic reminder email for testzadel
-     */
-    private function scheduleReminderEmail($testzadel)
-    {
-        // Use the email integration service to schedule reminder
-        $emailService = new \App\Services\EmailIntegrationService();
-        
-        try {
-            // Send testzadel reminder email
-            $variables = [
-                'voornaam' => $testzadel->klant->voornaam,
-                'naam' => $testzadel->klant->naam,
-                'email' => $testzadel->klant->email,
-                'onderdeel_type' => $testzadel->onderdeel_type,
-                'zadel_merk' => $testzadel->zadel_merk,
-                'zadel_model' => $testzadel->zadel_model,
-                'uitleen_datum' => $testzadel->uitleen_datum,
-                'verwachte_retour_datum' => $testzadel->verwachte_retour_datum,
-                'datum' => now()->format('d-m-Y'),
-            ];
-            
-            $emailResult = $emailService->sendTestzadelReminderEmail(
-                $testzadel->klant,
-                $variables
-            );
-            
-            if ($emailResult) {
-                $testzadel->update([
-                    'herinnering_verstuurd' => true,
-                    'herinnering_verstuurd_op' => now(),
-                    'laatste_herinnering' => now()
-                ]);
-                
-                \Log::info('Testzadel reminder email scheduled for: ' . $testzadel->klant->email);
-            }
-            
-        } catch (\Exception $e) {
-            \Log::error('Failed to schedule testzadel reminder email: ' . $e->getMessage());
-        }
     }
 
     /**

@@ -46,11 +46,25 @@ class RapportVariabelenService
             ]);
             
             if ($dbInstellingen) {
+                // Genereer correcte logo URL op basis van environment
+                $logoUrl = $dbInstellingen->logo_path 
+                    ? (app()->environment('production') 
+                        ? asset('uploads/' . $dbInstellingen->logo_path)
+                        : asset('storage/' . $dbInstellingen->logo_path))
+                    : null;
+                
+                // Genereer correcte voorblad foto URL op basis van environment
+                $voorbladUrl = $dbInstellingen->voorblad_foto_path
+                    ? (app()->environment('production')
+                        ? asset('uploads/' . $dbInstellingen->voorblad_foto_path)
+                        : asset('storage/' . $dbInstellingen->voorblad_foto_path))
+                    : null;
+                
                 return [
                     'header' => $dbInstellingen->header_tekst ?? config('rapport.header'),
                     'footer' => $dbInstellingen->footer_tekst ?? config('rapport.footer'),
-                    'logo_html' => $dbInstellingen->logo_path ? '<div style="position: absolute; top: 20mm; right: -33mm;"><img src="' . asset('storage/' . $dbInstellingen->logo_path) . '" alt="Logo" style="max-width: 84px; height: auto;"></div><div style="height: 92px;"></div>' : '',
-                    'voorblad_foto_html' => $dbInstellingen->voorblad_foto_path ? '<div style="position: relative; left: -20mm; width: 210mm; height: 208mm; overflow: hidden; margin: 20px 0;"><img src="' . asset('storage/' . $dbInstellingen->voorblad_foto_path) . '" alt="Voorblad" style="width: 210mm; height: 208mm; object-fit: cover; object-position: center;"></div>' : '',
+                    'logo_html' => $logoUrl ? '<div style="position: absolute; top: 10mm; right: -33mm;"><img src="' . $logoUrl . '" alt="Logo" style="max-width: 84px; height: auto;"></div><div style="height: 92px;"></div>' : '',
+                    'voorblad_foto_html' => $voorbladUrl ? '<div style="position: relative; left: -20mm; width: 210mm; height: 50mm; overflow: hidden; margin: 0; padding: 0;"><img src="' . $voorbladUrl . '" alt="Voorblad" style="width: 210mm; height: 50mm; object-fit: cover; object-position: center;"></div>' : '',
                     'inleidende_tekst' => $dbInstellingen->inleidende_tekst ?? config('rapport.inleidende_tekst'),
                     'laatste_blad_tekst' => $dbInstellingen->laatste_blad_tekst ?? config('rapport.laatste_blad_tekst'),
                     'disclaimer' => $dbInstellingen->disclaimer_tekst ?? config('rapport.disclaimer'),
