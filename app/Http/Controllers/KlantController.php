@@ -578,84 +578,34 @@ class KlantController extends Controller
         ]);
 
         try {
-            $file = $request->file('avatar');
-            $filename = \Illuminate\Support\Str::random(40) . '.' . $file->getClientOriginalExtension();
-            
-            if (app()->environment('production')) {
-                // PRODUCTIE: gebruik 'avatars' disk
-                $disk = 'avatars';
-                
-                // Verwijder oude avatar
-                if ($klant->avatar) {
-                    // Avatar pad is relatief: avatars/klanten/file.png
-                    // Maar in 'avatars' disk moeten we alleen 'klanten/file.png' gebruiken
-                    $oldFile = str_replace('avatars/', '', $klant->avatar);
-                    if (\Storage::disk($disk)->exists($oldFile)) {
-                        \Storage::disk($disk)->delete($oldFile);
-                        \Log::info('🗑️ Oude avatar verwijderd', ['path' => $oldFile]);
-                    }
-                }
-                
-                // Upload naar 'klanten' subdir in 'avatars' disk
-                $storedPath = $file->storeAs('klanten', $filename, $disk);
-                
-                // Database pad: avatars/klanten/file.png (voor URL generatie)
-                $dbPath = 'avatars/klanten/' . $filename;
-                
-                // Avatar URL: https://hannesbonami.be/uploads/avatars/klanten/file.png
-                $avatarUrl = asset('uploads/' . $dbPath);
-                
-            } else {
-                // LOKAAL: gebruik 'public' disk
-                $disk = 'public';
-                
-                // Verwijder oude avatar
-                if ($klant->avatar && \Storage::disk($disk)->exists($klant->avatar)) {
-                    \Storage::disk($disk)->delete($klant->avatar);
-                    \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
-                }
-                
-                // Upload naar avatars/klanten in 'public' disk
-                $storedPath = $file->storeAs('avatars/klanten', $filename, $disk);
-                
-                // Database pad: avatars/klanten/file.png
-                $dbPath = $storedPath;
-                
-                // Avatar URL: http://localhost/storage/avatars/klanten/file.png
-                $avatarUrl = asset('storage/' . $dbPath);
+            // Verwijder oude avatar als deze bestaat
+            if ($klant->avatar && Storage::disk('public')->exists($klant->avatar)) {
+                Storage::disk('public')->delete($klant->avatar);
             }
-            
-            // Update database
-            $klant->avatar = $dbPath;
-            $klant->save();
 
-            \Log::info('✅ Avatar geüpload', [
+            // Upload nieuwe avatar naar storage/app/public/avatars/klanten
+            $path = $request->file('avatar')->store('avatars/klanten', 'public');
+
+            // Update klant met nieuwe avatar path
+            $klant->update([
+                'avatar' => $path,
+                'avatar_path' => $path, // Voor backward compatibility
+            ]);
+
+            \Log::info('✅ Avatar succesvol geüpload', [
                 'klant_id' => $klant->id,
-                'filename' => $filename,
-                'stored_path' => $storedPath,
-                'db_path' => $dbPath,
-                'avatar_url' => $avatarUrl,
-                'disk' => $disk,
-                'environment' => app()->environment(),
+                'path' => $path,
+                'url' => Storage::disk('public')->url($path)
             ]);
 
-            return response()->json([
-                'success' => true,
-                'avatar_url' => $avatarUrl,
-                'message' => 'Avatar succesvol geüpload!'
-            ]);
-
+            return redirect()->back()->with('success', 'Profielfoto succesvol bijgewerkt.');
         } catch (\Exception $e) {
-            \Log::error('❌ Avatar upload gefaald', [
+            \Log::error('❌ Avatar upload mislukt', [
                 'klant_id' => $klant->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'error' => $e->getMessage()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Avatar upload mislukt: ' . $e->getMessage()
-            ], 500);
+            return redirect()->back()->with('error', 'Fout bij uploaden profielfoto: ' . $e->getMessage());
         }
     }
 
