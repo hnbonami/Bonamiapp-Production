@@ -119,20 +119,26 @@
                             <td class="px-6 py-4 whitespace-nowrap text-gray-900">
                                 <div class="flex items-center gap-3">
                                     @php
-                                        // Genereer correcte avatar URL
-                                        if ($medewerker->avatar_path) {
-                                            $avatarUrl = app()->environment('production') 
-                                                ? asset('uploads/' . $medewerker->avatar_path)
-                                                : asset('storage/' . $medewerker->avatar_path);
-                                        } else {
-                                            $avatarUrl = null;
+                                        // AVATAR PATH - productie compatibel (EXACT ZELFDE ALS KLANTEN)
+                                        $avatarPath = $medewerker->avatar_path ?? null;
+                                        $cacheKey = optional($medewerker->updated_at)->timestamp ?? time();
+                                        $avatarUrl = null;
+                                        
+                                        if ($avatarPath) {
+                                            // Database bevat: 'avatars/medewerkers/filename.png'
+                                            // Omzetten naar: 'uploads/avatars/medewerkers/filename.png'
+                                            if (app()->environment('production')) {
+                                                $avatarUrl = url(str_replace('avatars/', 'uploads/avatars/', $avatarPath));
+                                            } else {
+                                                $avatarUrl = asset('storage/' . $avatarPath);
+                                            }
                                         }
                                     @endphp
                                     @if($avatarUrl)
-                                        <img src="{{ $avatarUrl }}" alt="Avatar" class="w-9 h-9 rounded-full object-cover flex-none" style="aspect-ratio:1/1;" />
+                                        <img src="{{ $avatarUrl }}?t={{ $cacheKey }}" alt="{{ $medewerker->name }}" class="h-10 w-10 rounded-full object-cover">
                                     @else
-                                        <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-semibold flex-none" style="aspect-ratio:1/1;">
-                                            {{ strtoupper(substr($medewerker->voornaam ?? $medewerker->name, 0, 1)) }}
+                                        <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-semibold">
+                                            {{ strtoupper(substr($medewerker->voornaam, 0, 1)) }}
                                         </div>
                                     @endif
                                     <a href="{{ route('medewerkers.show', $medewerker) }}" class="font-semibold text-blue-700 hover:underline medewerker-naam" title="Bekijk profiel">

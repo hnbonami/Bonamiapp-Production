@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Klant;
 use App\Models\User;
+use App\Models\KlantDocument;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -13,6 +14,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\KlantenImport;
 use App\Exports\KlantenExport;
 use App\Exports\KlantenTemplateExport;
+use Illuminate\Support\Facades\Storage;
 
 class KlantController extends Controller
 {
@@ -99,57 +101,70 @@ class KlantController extends Controller
         // Verwijder avatar uit validatedData (is een file object, niet een string)
         unset($validated['avatar']);
 
-        // Handle avatar upload - ALLEEN als er een nieuwe is
-        if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
-            \Log::info('🖼️ Avatar upload gedetecteerd', [
-                'klant_id' => $klant->id,
-                'file_original_name' => $request->file('avatar')->getClientOriginalName(),
-                'file_size' => $request->file('avatar')->getSize()
-            ]);
-            
-            if (app()->environment('production')) {
-                // PRODUCTIE: Upload direct naar public/uploads/avatars/klanten
-                $uploadsPath = public_path('uploads/avatars/klanten');
-                if (!file_exists($uploadsPath)) {
-                    mkdir($uploadsPath, 0755, true);
-                }
+        // Avatar handling - productie-compatibel
+        if ($request->hasFile('avatar')) {
+            try {
+                $file = $request->file('avatar');
                 
-                // Verwijder oude avatar
-                if ($klant->avatar) {
-                    $oldPath = public_path('uploads/' . $klant->avatar);
-                    if (file_exists($oldPath)) {
-                        unlink($oldPath);
-                        \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
+                // Genereer unieke bestandsnaam
+                $filename = 'avatar_' . $klant->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+                
+                // Bepaal storage locatie op basis van omgeving
+                if (app()->environment('production')) {
+                    // PRODUCTIE: direct in public/uploads/avatars (één level boven private/)
+                    $uploadPath = dirname(base_path()) . '/public/uploads/avatars';
+                    
+                    // Maak directory als deze niet bestaat
+                    if (!file_exists($uploadPath)) {
+                        mkdir($uploadPath, 0755, true);
                     }
+                    
+                    // Verwijder oude avatar
+                    if ($klant->avatar_path) {
+                        $oldPath = dirname(base_path()) . '/public/uploads/' . $klant->avatar_path;
+                        if (file_exists($oldPath)) {
+                            unlink($oldPath);
+                        }
+                    }
+                    
+                    // Upload nieuwe avatar
+                    $file->move($uploadPath, $filename);
+                    $validated['avatar_path'] = 'avatars/' . $filename;
+                    
+                    // Fix permissions voor productie (kritiek!)
+                    $fullPath = $uploadPath . '/' . $filename;
+                    chmod($fullPath, 0755);
+                    
+                    \Log::info('🔐 Permissions ingesteld', [
+                        'file' => $fullPath,
+                        'permissions' => '0755'
+                    ]);
+                    
+                } else {
+                    // LOKAAL: gebruik storage/app/public
+                    if ($klant->avatar_path) {
+                        Storage::disk('public')->delete($klant->avatar_path);
+                    }
+                    
+                    $path = $file->storeAs('avatars', $filename, 'public');
+                    $validated['avatar_path'] = $path;
                 }
                 
-                $fileName = $request->file('avatar')->hashName();
-                $request->file('avatar')->move($uploadsPath, $fileName);
-                $avatarPath = 'avatars/klanten/' . $fileName;
-                
-                \Log::info('✅ Avatar opgeslagen in httpd.www/uploads', [
-                    'path' => $avatarPath,
-                    'full_path' => $uploadsPath . '/' . $fileName,
-                    'file_exists' => file_exists($uploadsPath . '/' . $fileName)
+                \Log::info('Avatar succesvol geüpload', [
+                    'klant_id' => $klant->id,
+                    'filename' => $filename,
+                    'environment' => app()->environment()
                 ]);
-            } else {
-                // LOKAAL: Upload naar storage/app/public
-                // Verwijder oude avatar
-                if ($klant->avatar && \Storage::disk('public')->exists($klant->avatar)) {
-                    \Storage::disk('public')->delete($klant->avatar);
-                    \Log::info('🗑️ Oude avatar verwijderd', ['path' => $klant->avatar]);
-                }
                 
-                $avatarPath = $request->file('avatar')->store('avatars/klanten', 'public');
-                
-                \Log::info('✅ Avatar opgeslagen in storage', [
-                    'path' => $avatarPath,
-                    'full_path' => storage_path('app/public/' . $avatarPath),
-                    'file_exists' => \Storage::disk('public')->exists($avatarPath)
+            } catch (\Exception $e) {
+                \Log::error('Avatar upload fout', [
+                    'klant_id' => $klant->id,
+                    'error' => $e->getMessage()
                 ]);
+                
+                return redirect()->route('klanten.show', $klant)
+                    ->with('error', 'Avatar upload mislukt. Probeer opnieuw.');
             }
-            
-            $validated['avatar_path'] = $avatarPath;
         }
 
         // Update via DB
@@ -307,8 +322,8 @@ class KlantController extends Controller
             ]);
             
             if (app()->environment('production')) {
-                // PRODUCTIE: Upload direct naar public/uploads/avatars/klanten
-                $uploadsPath = public_path('uploads/avatars/klanten');
+                // PRODUCTIE: Upload direct naar public/uploads/avatars/klanten (één level boven private/)
+                $uploadsPath = dirname(base_path()) . '/public/uploads/avatars/klanten';
                 if (!file_exists($uploadsPath)) {
                     mkdir($uploadsPath, 0755, true);
                 }
@@ -317,10 +332,13 @@ class KlantController extends Controller
                 $request->file('avatar')->move($uploadsPath, $fileName);
                 $avatarPath = 'avatars/klanten/' . $fileName;
                 
-                \Log::info('✅ Avatar opgeslagen in public/uploads bij CREATE', [
-                    'path' => $avatarPath,
-                    'full_path' => $uploadsPath . '/' . $fileName,
-                    'file_exists' => file_exists($uploadsPath . '/' . $fileName)
+                // Fix permissions voor productie (kritiek!)
+                $fullPath = $uploadsPath . '/' . $fileName;
+                chmod($fullPath, 0755);
+                
+                \Log::info('🔐 Permissions ingesteld', [
+                    'file' => $fullPath,
+                    'permissions' => '0755'
                 ]);
             } else {
                 // LOKAAL: Upload naar storage/app/public
@@ -523,15 +541,22 @@ class KlantController extends Controller
         $klant = $klant->fresh();
         
         // Avatar path ophalen - SIMPEL en direct
-        $avatarPath = $klant->avatar;
+        $avatarPath = $klant->avatar_path;
         $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
         
         // Check of avatar bestaat (zonder Storage disk in productie)
         $avatarExists = false;
         if ($avatarPath) {
             if (app()->environment('production')) {
-                // PRODUCTIE: check direct in filesystem
-                $avatarExists = file_exists(public_path('uploads/' . $avatarPath));
+                // PRODUCTIE: check direct in filesystem (één level boven private/)
+                $fullPath = dirname(base_path()) . '/public/uploads/' . $avatarPath;
+                $avatarExists = file_exists($fullPath);
+                
+                \Log::info('🔍 Avatar check in show()', [
+                    'avatar_path' => $avatarPath,
+                    'full_path' => $fullPath,
+                    'file_exists' => $avatarExists
+                ]);
             } else {
                 // LOKAAL: gebruik Storage disk
                 $avatarExists = \Storage::disk('public')->exists($avatarPath);
@@ -695,6 +720,108 @@ class KlantController extends Controller
                 'error' => $e->getMessage()
             ]);
             return null;
+        }
+    }
+    
+    public function storeDocument(Request $request, Klant $klant)
+    {
+        $validated = $request->validate([
+            'document' => 'required|file|max:10240', // max 10MB
+            'naam' => 'nullable|string|max:255',
+            'beschrijving' => 'nullable|string|max:500',
+            'toegang' => 'required|in:alle_medewerkers,alleen_mezelf,klant,iedereen',
+        ]);
+
+        try {
+            $file = $request->file('document');
+            
+            // Genereer unieke bestandsnaam
+            $filename = time() . '_' . Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $file->getClientOriginalExtension();
+            
+            // Bepaal storage locatie op basis van omgeving
+            if (app()->environment('production')) {
+                // PRODUCTIE: direct in public/uploads/documenten (één level boven private/)
+                $uploadPath = dirname(base_path()) . '/public/uploads/documenten';
+                
+                // Maak directory als deze niet bestaat
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+                
+                // Upload document
+                $file->move($uploadPath, $filename);
+                $bestandspad = 'documenten/' . $filename;
+                
+            } else {
+                // LOKAAL: gebruik storage/app/public
+                $bestandspad = $file->storeAs('documenten', $filename, 'public');
+            }
+
+            // Sla document metadata op in database
+            KlantDocument::create([
+                'klant_id' => $klant->id,
+                'user_id' => auth()->id(),
+                'titel' => $validated['naam'] ?? $file->getClientOriginalName(),
+                'beschrijving' => $validated['beschrijving'],
+                'bestandspad' => $bestandspad,
+                'bestandsnaam' => $file->getClientOriginalName(),
+                'bestandstype' => $file->getClientOriginalExtension(),
+                'bestandsgrootte' => $file->getSize(),
+                'upload_datum' => now(),
+                'toegang' => $validated['toegang'],
+            ]);
+
+            \Log::info('Document succesvol geüpload', [
+                'klant_id' => $klant->id,
+                'filename' => $filename,
+                'environment' => app()->environment()
+            ]);
+
+            return redirect()->route('klanten.show', $klant)
+                ->with('success', 'Document succesvol geüpload.');
+                
+        } catch (\Exception $e) {
+            \Log::error('Document upload fout', [
+                'klant_id' => $klant->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return redirect()->route('klanten.show', $klant)
+                ->with('error', 'Document upload mislukt. Probeer opnieuw.');
+        }
+    }
+
+    public function downloadDocument(Klant $klant, KlantDocument $document)
+    {
+        try {
+            // Bepaal bestandspad op basis van omgeving
+            if (app()->environment('production')) {
+                $filePath = dirname(base_path()) . '/public/uploads/' . $document->bestandspad;
+            } else {
+                $filePath = storage_path('app/public/' . $document->bestandspad);
+            }
+
+            // Controleer of bestand bestaat
+            if (!file_exists($filePath)) {
+                \Log::error('Document niet gevonden', [
+                    'document_id' => $document->id,
+                    'path' => $filePath
+                ]);
+                
+                return redirect()->route('klanten.show', $klant)
+                    ->with('error', 'Document niet gevonden.');
+            }
+
+            return response()->download($filePath, $document->bestandsnaam);
+            
+        } catch (\Exception $e) {
+            \Log::error('Document download fout', [
+                'document_id' => $document->id,
+                'error' => $e->getMessage()
+            ]);
+            
+            return redirect()->route('klanten.show', $klant)
+                ->with('error', 'Download mislukt.');
         }
     }
 }

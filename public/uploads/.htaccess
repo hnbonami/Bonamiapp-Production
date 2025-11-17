@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+    # Disable directory listing
+    Options -Indexes
+    
+    # Allow access to uploaded files
+    <FilesMatch "\.(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx)$">
+        Allow from all
+    </FilesMatch>
+</IfModule>
+
+# Prevent access to PHP files in uploads
+<FilesMatch "\.php$">
+    Deny from all
+</FilesMatch>

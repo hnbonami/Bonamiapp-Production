@@ -20,25 +20,25 @@
     <!-- Compacte Header met avatar en kerngegevens -->
     <div class="mb-6">
         @php
-            // AVATAR PATH - robuuste error handling
-            try {
-                $avatarPath = $klant->avatar_path ?? null;
-                $cacheKey = optional($klant->updated_at)->timestamp ?? time();
-                $avatarUrl = null;
-                
-                // Genereer correcte avatar URL met validatie
-                if ($avatarPath && is_string($avatarPath)) {
-                    $avatarUrl = app()->environment('production') 
-                        ? asset('uploads/' . $avatarPath)
-                        : asset('storage/' . $avatarPath);
+            // AVATAR PATH - productie compatibel (FIXED)
+            $avatarPath = $klant->avatar_path ?? null;
+            $cacheKey = optional($klant->updated_at)->timestamp ?? time();
+            $avatarUrl = null;
+            
+            if ($avatarPath) {
+                // Database bevat nu: 'avatars/filename.png'
+                // We moeten dit omzetten naar: 'uploads/avatars/filename.png'
+                if (app()->environment('production')) {
+                    $avatarUrl = url(str_replace('avatars/', 'uploads/avatars/', $avatarPath));
+                } else {
+                    $avatarUrl = asset('storage/' . $avatarPath);
                 }
-            } catch (\Exception $e) {
-                \Log::error('Avatar generatie fout', [
-                    'klant_id' => $klant->id ?? 'unknown',
-                    'error' => $e->getMessage()
+                
+                \Log::info('🖼️ Avatar URL gegenereerd', [
+                    'avatar_path' => $avatarPath,
+                    'avatar_url' => $avatarUrl,
+                    'environment' => app()->environment()
                 ]);
-                $avatarUrl = null;
-                $cacheKey = time();
             }
         @endphp
         
