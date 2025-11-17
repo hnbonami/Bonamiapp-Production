@@ -20,25 +20,26 @@
     <!-- Compacte Header met avatar en kerngegevens -->
     <div class="mb-6">
         @php
-            // AVATAR PATH - gebruik 'avatar_path' kolom uit database (NIET avatar)
-            $avatarPath = $klant->avatar_path;
-            $cacheKey = $klant->updated_at ? $klant->updated_at->timestamp : time();
-            
-            // Genereer correcte avatar URL op basis van environment
-            if ($avatarPath) {
-                $avatarUrl = app()->environment('production') 
-                    ? asset('uploads/' . $avatarPath)
-                    : asset('storage/' . $avatarPath);
-            } else {
+            // AVATAR PATH - robuuste error handling
+            try {
+                $avatarPath = $klant->avatar_path ?? null;
+                $cacheKey = optional($klant->updated_at)->timestamp ?? time();
                 $avatarUrl = null;
+                
+                // Genereer correcte avatar URL met validatie
+                if ($avatarPath && is_string($avatarPath)) {
+                    $avatarUrl = app()->environment('production') 
+                        ? asset('uploads/' . $avatarPath)
+                        : asset('storage/' . $avatarPath);
+                }
+            } catch (\Exception $e) {
+                \Log::error('Avatar generatie fout', [
+                    'klant_id' => $klant->id ?? 'unknown',
+                    'error' => $e->getMessage()
+                ]);
+                $avatarUrl = null;
+                $cacheKey = time();
             }
-            
-            \Log::info('🖼️ Avatar debug show.blade', [
-                'klant_id' => $klant->id,
-                'avatar_path_from_model' => $avatarPath,
-                'avatar_url' => $avatarUrl ?? 'geen avatar',
-                'environment' => app()->environment()
-            ]);
         @endphp
         
         <!-- Mobile: Avatar links, Geslacht + Email rechts ernaast -->
