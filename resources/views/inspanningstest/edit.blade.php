@@ -1,6 +1,98 @@
 @extends('layouts.app')
 
 @section('content')
+<script>
+// === NIEUWE FUNCTIONALITEIT: TEMPLATE ZONES HANDLER ===
+
+/**
+ * Verwerk template selectie en laad bijbehorende zones
+ */
+function handleTemplateChange() {
+    const templateSelect = document.getElementById('zone_template_id');
+    if (!templateSelect || !templateSelect.value) {
+        console.log('⚠️ Geen template geselecteerd, gebruik oude Bonami methode');
+        // Toon oude methode velden terug
+        document.getElementById('zones_methode')?.closest('div')?.classList.remove('hidden');
+        document.getElementById('zones_aantal')?.closest('div')?.classList.remove('hidden');
+        document.getElementById('zones_eenheid')?.closest('div')?.classList.remove('hidden');
+        updateTrainingszones(); // Oude methode
+        return;
+    }
+    
+    // Verberg oude methode velden
+    document.getElementById('zones_methode')?.closest('div')?.classList.add('hidden');
+    document.getElementById('zones_aantal')?.closest('div')?.classList.add('hidden');
+    document.getElementById('zones_eenheid')?.closest('div')?.classList.add('hidden');
+    
+    const selectedOption = templateSelect.options[templateSelect.selectedIndex];
+    const zonesData = JSON.parse(selectedOption.dataset.zones || '[]');
+    const berekeningBasis = selectedOption.dataset.basis || 'lt2';
+    
+    console.log('🎨 Template zones laden:', zonesData.length, 'zones, basis:', berekeningBasis);
+    
+    // Haal drempelwaarden op basis van template configuratie
+    let basisWaarde = 0;
+    if (berekeningBasis === 'lt1') {
+        basisWaarde = parseFloat(document.getElementById('aerobe_drempel_vermogen')?.value) || 0;
+    } else if (berekeningBasis === 'lt2') {
+        basisWaarde = parseFloat(document.getElementById('anaerobe_drempel_vermogen')?.value) || 0;
+    } else if (berekeningBasis === 'max') {
+        basisWaarde = parseFloat(document.getElementById('maximale_hartslag_bpm')?.value) || 190;
+    }
+    
+    if (basisWaarde === 0) {
+        console.warn('⚠️ Geen basis waarde beschikbaar voor', berekeningBasis);
+        toonZonesError('Vul eerst de drempelwaarden in (LT1/LT2) om zones te berekenen');
+        return;
+    }
+    
+    // Bereken zones op basis van template percentages
+    const berekendeZones = zonesData.map(zone => {
+        const minWaarde = (basisWaarde * zone.min_percentage) / 100;
+        const maxWaarde = (basisWaarde * zone.max_percentage) / 100;
+        
+        // Schat hartslag (simpele benadering)
+        const LT2_HR = parseFloat(document.getElementById('anaerobe_drempel_hartslag')?.value) || 160;
+        const HRmax = parseFloat(document.getElementById('maximale_hartslag_bpm')?.value) || 190;
+        const HRrust = parseFloat(document.getElementById('hartslag_rust_bpm')?.value) || 60;
+        
+        const minHR = Math.round(HRrust + ((LT2_HR - HRrust) * zone.min_percentage) / 100);
+        const maxHR = Math.round(HRrust + ((LT2_HR - HRrust) * zone.max_percentage) / 100);
+        
+        return {
+            naam: zone.zone_naam,
+            kleur: zone.kleur,
+            minVermogen: Math.round(minWaarde * 10) / 10,
+            maxVermogen: Math.round(maxWaarde * 10) / 10,
+            minHartslag: Math.max(minHR, HRrust),
+            maxHartslag: Math.min(maxHR, HRmax),
+            beschrijving: zone.beschrijving || ''
+        };
+    });
+    
+    console.log('✅ Zones berekend uit template:', berekendeZones);
+    
+    // Sla zones op in huidigeZonesData
+    huidigeZonesData = berekendeZones;
+    
+    // Update hidden input
+    document.getElementById('trainingszones_data').value = JSON.stringify(berekendeZones);
+    
+    // Genereer tabel met template zones
+    genereerZonesTabel(berekendeZones, 'vermogen');
+    
+    // Toon container
+    document.getElementById('trainingszones-container').style.display = 'block';
+    
+    // Update label
+    const methodeLabel = document.getElementById('zones-methode-label');
+    if (methodeLabel) {
+        methodeLabel.textContent = '(Template: ' + selectedOption.text + ')';
+    }
+}
+
+// ...existing code...
+</script>
 <style>
 /* Bonami Slider Styling */
 .slider-bonami {
@@ -576,6 +668,52 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h3 class="text-xl font-bold mt-8 mb-4">Trainingszones Berekening</h3>
                     
                     <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
+                        <p class="text-sm text-blue-800">
+                            💡 <strong>Automatische Zones:</strong> Kies een wetenschappelijke methode om trainingszones te berekenen op basis van je gemeten drempels. De zones worden live bijgewerkt wanneer je de configuratie wijzigt.
+                        </p>
+                    </div>
+
+                    <!-- 🆕 NIEUWE ZONE TEMPLATE SELECTOR - GROTE OPVALLENDE BOX -->
+                    <div class="mb-6 p-6 bg-gradient-to-r from-green-50 to-blue-50 border-4 border-green-400 rounded-xl shadow-lg">
+                        <div class="flex items-center gap-3 mb-3">
+                            <span class="text-3xl">🎨</span>
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-900">Zone Template Kiezen (Nieuw Systeem!)</h4>
+                                <p class="text-sm text-gray-600">Gebruik de nieuwe configureerbare zone templates uit Instellingen</p>
+                            </div>
+                        </div>
+                        
+                        <select id="zone_template_id" 
+                                name="zone_template_id"
+                                class="w-full px-4 py-3 text-lg border-2 border-green-500 rounded-lg focus:ring-2 focus:ring-green-600 font-medium bg-white shadow-sm"
+                                onchange="handleTemplateChange()">
+                            <option value="">-- Gebruik onderstaande oude Bonami/Karvonen methodes --</option>
+                            @php
+                                $zoneTemplates = \App\Models\TrainingsZonesTemplate::with('zones')
+                                    ->where(function($q) {
+                                        $q->where('organisatie_id', auth()->user()->organisatie_id)
+                                          ->orWhere('is_systeem', true);
+                                    })
+                                    ->where('is_actief', true)
+                                    ->orderBy('is_systeem', 'desc')
+                                    ->orderBy('naam')
+                                    ->get();
+                            @endphp
+                            @foreach($zoneTemplates as $tpl)
+                                <option value="{{ $tpl->id }}" 
+                                        data-zones='@json($tpl->zones)'
+                                        data-basis="{{ $tpl->berekening_basis }}"
+                                        {{ old('zone_template_id', $inspanningstest->zone_template_id ?? '') == $tpl->id ? 'selected' : '' }}>
+                                    {{ $tpl->is_systeem ? '⭐ SYSTEEM' : '🔧 CUSTOM' }} • {{ $tpl->naam }} ({{ $tpl->zones->count() }} zones • {{ strtoupper($tpl->berekening_basis) }})
+                                </option>
+                            @endforeach
+                        </select>
+                        
+                        <div class="mt-3 flex items-center gap-2 text-sm">
+                            <span class="px-3 py-1 bg-green-200 text-green-800 rounded-full font-medium">🆕 Nieuw</span>
+                            <span class="text-gray-700">Beheer templates via: <a href="{{ route('admin.inspanningstesten.instellingen') }}" class="text-blue-600 underline font-medium" target="_blank">Inspanningstesten → Instellingen</a></span>
+                        </div>
+                    </div>
                         <div class="flex items-center justify-between gap-4">
                             <p class="text-blue-800 text-sm flex-1">
                                 🏃‍♂️ <strong>Automatische Zones:</strong> Kies een wetenschappelijke methode om trainingszones te berekenen op basis van je gemeten drempels.

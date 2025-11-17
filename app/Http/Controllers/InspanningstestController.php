@@ -299,6 +299,7 @@ class InspanningstestController extends Controller {
             'zones_aantal' => $request->zones_aantal,
             'zones_eenheid' => $request->zones_eenheid,
             'trainingszones_data' => $request->trainingszones_data,
+            'zone_template_id' => $request->zone_template_id, // NIEUW: Sla gekozen template op
         ]);
 
         \Log::info('✅ Inspanningstest bijgewerkt', ['test_id' => $test->id]);

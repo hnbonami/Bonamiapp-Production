@@ -46,6 +46,7 @@ class Inspanningstest extends Model
         'zones_methode',
         'zones_aantal', 
         'zones_eenheid',
+        'zone_template_id', // NIEUW: Link naar gekozen zone template
     ];
     protected $casts = [
         'datum' => 'date', // Cast 'datum' kolom als date
@@ -69,16 +70,35 @@ class Inspanningstest extends Model
         $this->attributes['datum'] = $value;
     }
 
+    /**
+     * Relatie: Inspanningstest hoort bij een klant
+     */
+    public function klant()
+    {
+        return $this->belongsTo(Klant::class);
+    }
+
+    /**
+     * Relatie: Inspanningstest hoort bij een gebruiker (tester)
+     */
     public function user()
     {
         return $this->belongsTo(User::class);
     }
-    
+
     /**
-     * Relatie met Klant
+     * Relatie: Inspanningstest hoort bij een organisatie
      */
-    public function klant()
+    public function organisatie()
     {
-        return $this->belongsTo(Klant::class, 'klant_id');
+        return $this->belongsTo(Organisatie::class);
+    }
+
+    /**
+     * NIEUW: Relatie naar gekozen zone template
+     */
+    public function zoneTemplate()
+    {
+        return $this->belongsTo(TrainingsZonesTemplate::class, 'zone_template_id');
     }
 }

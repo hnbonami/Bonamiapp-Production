@@ -1519,6 +1519,21 @@ Route::get('/avatars/klanten/{filename}', function($filename) {
     return response()->file($path);
 })->name('avatar.serve');
 
+// Inspanningstesten instellingen (admin only)
+Route::get('/admin/inspanningstesten/instellingen', function() {
+    return view('admin.inspanningstesten.instellingen');
+})->middleware(['auth'])->name('admin.inspanningstesten.instellingen');
+
+// Inspanningstesten Instellingen Routes
+Route::prefix('admin/inspanningstesten')->name('admin.inspanningstesten.')->middleware(['auth'])->group(function () {
+    Route::get('/instellingen', [App\Http\Controllers\Admin\InspanningstestenInstellingenController::class, 'index'])->name('instellingen');
+    Route::get('/templates/create', [App\Http\Controllers\Admin\InspanningstestenInstellingenController::class, 'create'])->name('create');
+    Route::post('/templates', [App\Http\Controllers\Admin\InspanningstestenInstellingenController::class, 'store'])->name('store');
+    Route::get('/templates/{id}/edit', [App\Http\Controllers\Admin\InspanningstestenInstellingenController::class, 'edit'])->name('edit');
+    Route::put('/templates/{id}', [App\Http\Controllers\Admin\InspanningstestenInstellingenController::class, 'update'])->name('update');
+    Route::delete('/templates/{id}', [App\Http\Controllers\Admin\InspanningstestenInstellingenController::class, 'destroy'])->name('destroy');
+});
+
 // Test route voor upload debugging (verwijder later)
 Route::get('/test-upload', function() {
     $disk = 'public_uploads';
